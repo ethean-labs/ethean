@@ -688,7 +688,7 @@ impl LMDGHOSTForkChoice {
 mod tests {
     use super::*;
     use crate::types::Validator;
-    use crate::consensus::validator_management::{ValidatorConfig, ValidatorManager};
+    use crate::consensus::{AttestationProcessor, validator_management::{ValidatorConfig, ValidatorManager}};
     use crate::storage::{StateStore, Database};
     
     fn create_test_block(slot: Slot, parent_root: Hash) -> (Hash, Hash, Slot, Hash) {
