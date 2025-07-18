@@ -142,7 +142,7 @@ impl PerformanceMonitor {
     
     /// Calculate memory metrics
     fn calculate_memory_metrics(&self) -> MemoryMetrics {
-        let peak_memory_mb = self.memory_samples.iter().fold(0.0, |a, &b| a.max(b));
+        let peak_memory_mb = self.memory_samples.iter().fold(0.0_f64, |a, &b| a.max(b));
         let current_memory_mb = self.memory_samples.last().cloned().unwrap_or(0.0);
         
         MemoryMetrics {

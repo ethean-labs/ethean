@@ -7,14 +7,12 @@ pub mod attestation_processing;
 pub mod block_processing;
 pub mod performance;
 pub mod state_transition;
-pub mod types;
 pub mod validator_management;
 
 pub use attestation_processing::*;
 pub use block_processing::*;
 pub use performance::*;
 pub use state_transition::*;
-pub use types::*;
 pub use validator_management::*;
 
 /// Consensus result type
