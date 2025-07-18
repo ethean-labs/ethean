@@ -2,6 +2,9 @@
 name = "panro"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/panro-labs/panro"
+authors = ["Panro Team <paro@gmx.us>"]
 
 [dependencies]
 # Core async runtime
@@ -22,35 +25,10 @@ futures-util = "0.3"
 
 # API documentation and validation
 utoipa = { version = "4.0", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "6.0", features = ["axum"] }"
-version = "0.1.0"
-edition = "2021"
-license = "MIT"
-repository = "https://github.com/panro-labs/panro"
-authors = ["Panro Team <team@panro.dev>"]
-
-[dependencies]
-# Async runtime
-tokio = { version = "1.0", features = ["full"] }
-tokio-util = "0.7"
-
-# Web framework and API
-axum = "0.7"
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
-hyper = "1.0"
-tokio-tungstenite = "0.21"
-
-# API documentation and validation
-utoipa = { version = "4.0", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
 
 # Networking
-libp2p = "0.54"
-
-# Serialization
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+libp2p = { version = "0.53", features = ["identify", "ping", "mdns", "yamux", "noise", "tcp", "dns", "gossipsub"] }
 
 # Database
 rocksdb = "0.22"
@@ -84,3 +62,11 @@ panic = "abort"
 [profile.dev]
 debug = true
 opt-level = 0
+
+[[bin]]
+name = "panro"
+path = "src/bin/main.rs"
+
+[[bin]]
+name = "benchmark"
+path = "src/bin/benchmark.rs"
