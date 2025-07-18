@@ -552,6 +552,14 @@ impl AttestationProcessor {
                 // Base reward for correct attestation
                 let mut validator_reward = base_reward;
 
+                // Check validator performance from state
+                if let Some(validator) = state.validators.validators.get(committee.validators.get(i).unwrap_or(&0)) {
+                    // Bonus for high effective balance
+                    if validator.effective_balance > 1_000_000_000 {
+                        validator_reward += base_reward / 16; // High stake bonus
+                    }
+                }
+
                 // Bonus for fast inclusion
                 if inclusion_delay == 1 {
                     validator_reward += base_reward / 8; // Inclusion bonus
@@ -601,47 +609,6 @@ impl AttestationProcessor {
     fn is_inactivity_leak(&self, state: &BeaconState) -> bool {
         // Simplified: check if we haven't finalized in 4 epochs
         state.current_epoch(32).saturating_sub(state.finalized_checkpoint.epoch) > 4
-    }
-    /// Get committee for attestation processing (delegates to committee manager)
-    fn get_committee(
-        &mut self,
-        state: &BeaconState,
-        slot: Slot,
-        committee_index: u64,
-    ) -> Result<Committee, AttestationError> {
-        self.committee_manager.get_committee_for_slot(slot, committee_index, state)
-    }
-
-    /// Calculate committee assignment for given slot and index
-    fn calculate_committee(
-        &self,
-        state: &BeaconState,
-        slot: Slot,
-        committee_index: u64,
-    ) -> Result<Committee, AttestationError> {
-        // Get active validators for current epoch
-        let current_epoch = state.current_epoch(32); // 32 slots per epoch
-        let active_validators = self.get_active_validators(state, current_epoch);
-
-        if active_validators.is_empty() {
-            return Err(AttestationError::CommitteeNotFound { slot, index: committee_index });
-        }
-
-        // Simple committee assignment (in real implementation, would use RANDAO)
-        let validators_per_committee = std::cmp::max(1, active_validators.len() / self.config.committees_per_slot as usize);
-        let start_index = (committee_index as usize * validators_per_committee) % active_validators.len();
-        
-        let mut committee_validators = Vec::new();
-        for i in 0..validators_per_committee {
-            let validator_index = active_validators[(start_index + i) % active_validators.len()];
-            committee_validators.push(validator_index);
-        }
-
-        Ok(Committee {
-            slot,
-            index: committee_index,
-            validators: committee_validators,
-        })
     }
 
     /// Get list of active validators for epoch
@@ -842,10 +809,11 @@ mod tests {
 
     #[test]
     fn test_committee_calculation() {
-        let processor = setup_attestation_processor();
+        let mut processor = setup_attestation_processor();
         let state = setup_test_state();
         
-        let committee = processor.calculate_committee(&state, 10, 0);
+        // Use committee manager instead of deprecated method
+        let committee = processor.committee_manager.get_committee_for_slot(10, 0, &state);
         assert!(committee.is_ok());
         
         let committee = committee.unwrap();
