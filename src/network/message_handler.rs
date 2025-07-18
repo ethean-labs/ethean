@@ -468,14 +468,13 @@ impl MessageHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{BeaconBlock, BeaconBlockHeader, BeaconBlockBody, Attestation};
-    use crate::types::attestation::AttestationData;
+    use crate::types::{BeaconBlock, block::BeaconBlockBody, Attestation};
     use crate::consensus::validator_management::{ValidatorConfig, ValidatorManager};
     use crate::storage::{StateStore, Database};
     
     fn create_test_validator_manager() -> Arc<ValidatorManager> {
         let config = ValidatorConfig::default();
-        let state_store = StateStore::new(Database::new_in_memory());
+        let state_store = StateStore::new(Database::in_memory());
         Arc::new(ValidatorManager::new(config, state_store))
     }
     
