@@ -608,44 +608,17 @@ impl ValidatorManager {
         (self.exit_queue.len(), self.exit_queue.is_empty())
     }
 
-    /// Process validator exits for current epoch
-    pub fn process_exits(
-        &mut self,
-        state: &mut BeaconState,
-        current_epoch: Epoch,
-    ) -> Result<Vec<ValidatorIndex>, ValidatorError> {
-        let mut exited = Vec::new();
-        let mut to_exit = Vec::new();
-
-        // Find validators ready for exit
-        while let Some(entry) = self.exit_queue.front() {
-            if entry.exit_epoch <= current_epoch {
-                to_exit.push(self.exit_queue.pop_front().unwrap());
-            } else {
-                break;
-            }
-        }
-
-        // Exit validators
-        for entry in to_exit {
-            self.exit_validator(state, entry.validator_index, current_epoch)?;
-            exited.push(entry.validator_index);
-        }
-
-        Ok(exited)
-    }
-
-    /// Exit a specific validator
-    fn exit_validator(
+    /// Activate a specific validator
+    fn activate_validator(
         &self,
         state: &mut BeaconState,
         validator_index: ValidatorIndex,
-        exit_epoch: Epoch,
+        activation_epoch: Epoch,
     ) -> Result<(), ValidatorError> {
         let validator = state.validators.validators.get_mut(validator_index as usize)
             .ok_or(ValidatorError::NotFound(validator_index))?;
 
-        validator.exit_epoch = exit_epoch;
+        validator.activation_epoch = activation_epoch;
         
         Ok(())
     }
