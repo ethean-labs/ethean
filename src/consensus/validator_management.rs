@@ -776,7 +776,7 @@ mod tests {
         assert!(result.is_err()); // Validator not found initially
 
         // Add validator first
-        let pubkey = PublicKey([1u8; 48]);
+        let pubkey = vec![1u8; 48]; // PublicKey is Vec<u8>
         let withdrawal_credentials = [1u8; 32];
         manager.add_validator(pubkey, withdrawal_credentials, initial_balance).unwrap();
 
