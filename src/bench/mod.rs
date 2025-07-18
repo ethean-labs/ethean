@@ -66,7 +66,7 @@ impl BeamChainBenchmark {
     
     /// Benchmark BLS signature operations
     pub fn benchmark_bls_operations(&mut self, iterations: u32) -> String {
-        let mut results: Vec<String> = Vec::new();
+        let _results: Vec<String> = Vec::new();
         
         // Signature generation benchmark
         let sig_start = Instant::now();
@@ -125,7 +125,7 @@ impl BeamChainBenchmark {
         let start_time = Instant::now();
         let mut successful_operations = 0;
         
-        for i in 0..iterations {
+        for _i in 0..iterations {
             let timer = self.monitor.start_operation("attestation_processing");
             
             // Simulate attestation processing work
@@ -137,7 +137,7 @@ impl BeamChainBenchmark {
             self.monitor.record_operation(&operation, duration, true);
             
             // Simulate memory usage
-            self.monitor.sample_memory(100.0 + (i as f64 * 0.1));
+            self.monitor.sample_memory(100.0 + (_i as f64 * 0.1));
         }
         
         let total_duration = start_time.elapsed();
