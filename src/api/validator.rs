@@ -13,8 +13,9 @@ use axum::{
 use serde::{Serialize, Deserialize};
 use utoipa::{ToSchema, IntoParams};
 
-use crate::types::{Slot, Epoch, Hash32, Attestation};
-use super::{ApiState, Result, Error};
+use crate::types::{Slot, Epoch, BlockHash, Attestation};
+use super::ApiState;
+use super::error::{Result, Error};
 
 /// Create validator API routes
 pub fn create_routes() -> Router<ApiState> {
@@ -55,7 +56,7 @@ pub struct AttesterDuty {
 /// Attester duties response
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AttesterDutiesResponse {
-    pub dependent_root: Hash32,
+    pub dependent_root: BlockHash,
     pub execution_optimistic: bool,
     pub data: Vec<AttesterDuty>,
 }
@@ -71,7 +72,7 @@ pub struct ProposerDuty {
 /// Proposer duties response
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProposerDutiesResponse {
-    pub dependent_root: Hash32,
+    pub dependent_root: BlockHash,
     pub execution_optimistic: bool,
     pub data: Vec<ProposerDuty>,
 }
@@ -107,7 +108,7 @@ pub struct AttestationSubmission {
 /// Aggregated attestation query
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct AggregatedAttestationQuery {
-    pub attestation_data_root: Hash32,
+    pub attestation_data_root: BlockHash,
     pub slot: Slot,
 }
 
@@ -479,21 +480,18 @@ mod tests {
     use super::*;
     use crate::consensus::validator_management::{ValidatorConfig, ValidatorManager};
     use crate::storage::{StateStore, Database};
-    use crate::network::{NetworkService, NetworkConfig};
+    use crate::network::NetworkConfig;
     use std::sync::Arc;
 
     fn create_test_state() -> ApiState {
         let validator_config = ValidatorConfig::default();
         let state_store = Arc::new(StateStore::new(Database::in_memory()));
-        let validator_manager = Arc::new(ValidatorManager::new(validator_config, state_store.clone()));
-        let network_config = NetworkConfig::local();
-        let network_service = Arc::new(NetworkService::new(network_config).unwrap());
+        let validator_manager = Arc::new(ValidatorManager::new(validator_config, (*state_store).clone()));
         let config = super::super::ApiConfig::default();
         
         ApiState {
             validator_manager,
             state_store,
-            network_service,
             config,
         }
     }

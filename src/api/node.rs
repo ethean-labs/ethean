@@ -13,7 +13,8 @@ use axum::{
 use serde::{Serialize, Deserialize};
 use utoipa::{ToSchema, IntoParams};
 
-use super::{ApiState, Result, Error};
+use super::ApiState;
+use super::error::{Result, Error};
 
 /// Create node API routes
 pub fn create_routes() -> Router<ApiState> {
@@ -215,7 +216,7 @@ pub async fn get_peers(
     path = "/eth/v1/node/peers/{peer_id}",
     tag = "node",
     params(
-        ("peer_id" = String, axum::extract::Path, description = "Peer identifier")
+        ("peer_id" = String, Path, description = "Peer identifier")
     ),
     responses(
         (status = 200, description = "Peer information", body = PeerResponse),
@@ -318,21 +319,18 @@ mod tests {
     use super::*;
     use crate::consensus::validator_management::{ValidatorConfig, ValidatorManager};
     use crate::storage::{StateStore, Database};
-    use crate::network::{NetworkService, NetworkConfig};
+    use crate::network::NetworkConfig;
     use std::sync::Arc;
 
     fn create_test_state() -> ApiState {
         let validator_config = ValidatorConfig::default();
         let state_store = Arc::new(StateStore::new(Database::in_memory()));
-        let validator_manager = Arc::new(ValidatorManager::new(validator_config, state_store.clone()));
-        let network_config = NetworkConfig::local();
-        let network_service = Arc::new(NetworkService::new(network_config).unwrap());
+        let validator_manager = Arc::new(ValidatorManager::new(validator_config, (*state_store).clone()));
         let config = super::super::ApiConfig::default();
         
         ApiState {
             validator_manager,
             state_store,
-            network_service,
             config,
         }
     }

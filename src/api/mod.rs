@@ -17,14 +17,12 @@ use std::sync::Arc;
 
 use crate::consensus::validator_management::ValidatorManager;
 use crate::storage::StateStore;
-use crate::network::P2PService;
 
 /// API server state
 #[derive(Clone)]
 pub struct ApiState {
     pub validator_manager: Arc<ValidatorManager>,
     pub state_store: Arc<StateStore>,
-    pub network_service: Arc<P2PService>,
     pub config: ApiConfig,
 }
 
@@ -79,13 +77,11 @@ impl ApiServer {
     pub fn new(
         validator_manager: Arc<ValidatorManager>,
         state_store: Arc<StateStore>,
-        network_service: Arc<P2PService>,
         config: ApiConfig,
     ) -> Self {
         let state = ApiState {
             validator_manager,
             state_store,
-            network_service,
             config,
         };
 
