@@ -5,6 +5,7 @@
 use bls12_381::{G1Affine, G2Affine, G1Projective, Scalar};
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 use thiserror::Error;
 
 /// BLS signature errors
@@ -27,6 +28,19 @@ pub enum BLSError {
     
     #[error("Empty signature set")]
     EmptySignatureSet,
+}
+
+/// Performance statistics for BLS operations
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct BLSStats {
+    pub total_signatures: u64,
+    pub total_verifications: u64,
+    pub total_aggregations: u64,
+    pub avg_signature_time_ms: f64,
+    pub avg_verification_time_ms: f64,
+    pub avg_aggregation_time_ms: f64,
+    pub signature_cache_hits: u64,
+    pub signature_cache_misses: u64,
 }
 
 /// Legacy BLS signature type for backwards compatibility
@@ -114,8 +128,9 @@ pub struct RealBLSAggregator {
     /// Cached public keys
     public_key_cache: HashMap<Vec<u8>, G2Affine>,
     /// Performance metrics
-    verifications_performed: u64,
-    cache_hits: u64,
+    stats: BLSStats,
+    /// Start time for performance tracking
+    start_time: Instant,
 }
 
 impl RealBLSAggregator {
@@ -124,8 +139,8 @@ impl RealBLSAggregator {
         Self {
             verification_cache: HashMap::new(),
             public_key_cache: HashMap::new(),
-            verifications_performed: 0,
-            cache_hits: 0,
+            stats: BLSStats::default(),
+            start_time: Instant::now(),
         }
     }
     
@@ -136,13 +151,16 @@ impl RealBLSAggregator {
         message: &[u8],
         public_key: &BLSPublicKey,
     ) -> Result<bool, BLSError> {
+        let start_time = Instant::now();
+        
         // Check cache first
         let cache_key = (signature.point.clone(), [public_key.point.clone(), message.to_vec()].concat());
         
         if let Some(&cached_result) = self.verification_cache.get(&cache_key) {
-            self.cache_hits += 1;
+            self.stats.signature_cache_hits += 1;
             return Ok(cached_result);
         }
+        self.stats.signature_cache_misses += 1;
         
         // Convert to curve points
         let sig_point = signature.to_g1()?;
@@ -157,7 +175,11 @@ impl RealBLSAggregator {
         
         // Cache the result
         self.verification_cache.insert(cache_key, result);
-        self.verifications_performed += 1;
+        
+        // Update performance stats
+        self.stats.total_verifications += 1;
+        let duration = start_time.elapsed();
+        self.update_verification_time(duration);
         
         Ok(result)
     }
