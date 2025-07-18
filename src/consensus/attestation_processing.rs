@@ -842,7 +842,7 @@ mod tests {
 
     #[test]
     fn test_committee_calculation() {
-        let mut processor = setup_attestation_processor();
+        let processor = setup_attestation_processor();
         let state = setup_test_state();
         
         let committee = processor.calculate_committee(&state, 10, 0);
