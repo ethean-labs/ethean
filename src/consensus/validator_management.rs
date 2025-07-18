@@ -294,20 +294,37 @@ impl Default for ValidatorConfig {
 pub struct ValidatorManager {
     config: ValidatorConfig,
     state_store: StateStore,
-    activation_queue: VecDeque<ActivationQueueEntry>,
-    exit_queue: VecDeque<ExitQueueEntry>,
+    activation_queue: ActivationQueue,
+    exit_queue: ExitQueue,
+    balance_tracker: BalanceTracker,
     performance_cache: HashMap<ValidatorIndex, ValidatorPerformance>,
+    slashed_validators: HashMap<ValidatorIndex, Epoch>,
 }
 
 impl ValidatorManager {
     /// Create new validator manager
     pub fn new(config: ValidatorConfig, state_store: StateStore) -> Self {
+        let activation_queue = ActivationQueue::new(
+            config.max_validators_per_epoch,
+            config.activation_delay,
+        );
+        let exit_queue = ExitQueue::new(
+            config.max_validators_per_epoch,
+            config.exit_delay,
+        );
+        let balance_tracker = BalanceTracker::new(
+            config.min_deposit_amount,
+            32_000_000_000, // 32 ETH max effective balance
+        );
+
         Self {
             config,
             state_store,
-            activation_queue: VecDeque::new(),
-            exit_queue: VecDeque::new(),
+            activation_queue,
+            exit_queue,
+            balance_tracker,
             performance_cache: HashMap::new(),
+            slashed_validators: HashMap::new(),
         }
     }
 
