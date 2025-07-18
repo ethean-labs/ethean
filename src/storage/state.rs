@@ -33,15 +33,26 @@ pub trait StateStorage: Send + Sync {
 
 /// State store implementation
 #[derive(Clone)]
-#[derive(Debug)]
 pub struct StateStore {
     database: Database,
+    cache: HashMap<Root, BeaconState>,
+}
+
+impl std::fmt::Debug for StateStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StateStore")
+            .field("cache_size", &self.cache.len())
+            .finish()
+    }
 }
 
 impl StateStore {
     /// Create new state store
     pub fn new(database: Database) -> Self {
-        Self { database }
+        Self { 
+            database,
+            cache: HashMap::new(),
+        }
     }
 
     /// Get state key for database

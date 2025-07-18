@@ -301,7 +301,7 @@ impl VoteAggregator {
     fn verify_vote_signature(
         &mut self,
         vote: &FinalityVote,
-        validator_manager: &ValidatorManager,
+        _validator_manager: &ValidatorManager,
         _state: &BeaconState,
     ) -> Result<bool, FinalityError> {
         // Create vote hash for verification
@@ -645,7 +645,7 @@ mod tests {
     
     #[test]
     fn test_vote_verification() {
-        let mut aggregator = VoteAggregator::new();
+        let aggregator = VoteAggregator::new();
         let vote = create_test_vote(0, 1, VoteType::Prevote);
         
         let vote_hash = aggregator.create_vote_hash(&vote);

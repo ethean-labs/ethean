@@ -430,6 +430,7 @@ impl Default for AttestationConfig {
 }
 
 /// Enhanced attestation processor with advanced features
+#[derive(Debug)]
 pub struct AttestationProcessor {
     config: AttestationConfig,
     validator_manager: ValidatorManager,
