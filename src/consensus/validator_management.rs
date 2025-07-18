@@ -291,7 +291,7 @@ impl Default for ValidatorConfig {
 }
 
 /// Validator manager for handling all validator operations
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ValidatorManager {
     config: ValidatorConfig,
     #[allow(dead_code)]
