@@ -553,10 +553,12 @@ impl AttestationProcessor {
                 let mut validator_reward = base_reward;
 
                 // Check validator performance from state
-                if let Some(validator) = state.validators.validators.get(committee.validators.get(i).unwrap_or(&0)) {
-                    // Bonus for high effective balance
-                    if validator.effective_balance > 1_000_000_000 {
-                        validator_reward += base_reward / 16; // High stake bonus
+                if let Some(&validator_index) = committee.validators.get(i) {
+                    if let Some(validator) = state.validators.validators.get(validator_index as usize) {
+                        // Bonus for high effective balance
+                        if validator.effective_balance > 1_000_000_000 {
+                            validator_reward += base_reward / 16; // High stake bonus
+                        }
                     }
                 }
 
