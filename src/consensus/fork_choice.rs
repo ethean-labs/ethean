@@ -5,7 +5,7 @@
 
 use crate::types::{BeaconState, Slot, Epoch, ValidatorIndex};
 use crate::crypto::hash::Hash;
-use crate::consensus::{AttestationProcessor, ValidatorManager, FinalityGadget, Checkpoint};
+use crate::consensus::{ValidatorManager, FinalityGadget, Checkpoint};
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use std::collections::{HashMap, HashSet, BTreeMap, VecDeque};
