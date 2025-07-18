@@ -90,11 +90,11 @@ impl RateLimiter {
 }
 
 /// Authentication middleware
-pub async fn auth_middleware<B>(
+pub async fn auth_middleware(
     headers: HeaderMap,
-    request: Request<B>,
-    next: Next<B>,
-) -> Result<Response<Body>, StatusCode> {
+    request: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> Result<axum::response::Response, StatusCode> {
     // Check for API key in headers
     if let Some(api_key) = headers.get("x-api-key") {
         if let Ok(key_str) = api_key.to_str() {
@@ -122,11 +122,11 @@ pub async fn auth_middleware<B>(
 }
 
 /// Rate limiting middleware
-pub async fn rate_limit_middleware<B>(
+pub async fn rate_limit_middleware(
     headers: HeaderMap,
-    request: Request<B>,
-    next: Next<B>,
-) -> Result<Response<Body>, StatusCode> {
+    request: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> Result<axum::response::Response, StatusCode> {
     let client_id = get_client_id(&headers, &request);
     let rate_limiter = RateLimiter::new(RateLimitConfig::default());
     
@@ -146,10 +146,10 @@ pub async fn rate_limit_middleware<B>(
 }
 
 /// Request validation middleware
-pub async fn validation_middleware<B>(
-    request: Request<B>,
-    next: Next<B>,
-) -> Result<Response<Body>, StatusCode> {
+pub async fn validation_middleware(
+    request: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> Result<axum::response::Response, StatusCode> {
     // Validate request headers and parameters
     let headers = request.headers();
     
@@ -199,10 +199,10 @@ pub fn tracing_layer() -> TraceLayer<tower_http::classify::SharedClassifier<towe
 }
 
 /// Security headers middleware
-pub async fn security_headers_middleware<B>(
-    mut request: Request<B>,
-    next: Next<B>,
-) -> Result<Response<Body>, StatusCode> {
+pub async fn security_headers_middleware(
+    mut request: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> Result<axum::response::Response, StatusCode> {
     let mut response = next.run(request).await;
     let headers = response.headers_mut();
     
@@ -217,7 +217,7 @@ pub async fn security_headers_middleware<B>(
 }
 
 /// Get client identifier for rate limiting
-fn get_client_id<B>(headers: &HeaderMap, request: &Request<B>) -> String {
+fn get_client_id(headers: &HeaderMap, _request: &axum::http::Request<axum::body::Body>) -> String {
     // Try to get client IP from headers
     if let Some(forwarded_for) = headers.get("x-forwarded-for") {
         if let Ok(ip_str) = forwarded_for.to_str() {
