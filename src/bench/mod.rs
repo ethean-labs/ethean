@@ -3,19 +3,18 @@
 //! Provides performance benchmarks for all core consensus operations.
 
 use std::time::{Duration, Instant};
-use crate::consensus::{PerformanceMonitor, BenchmarkRunner, PerformanceMetrics};
+use crate::consensus::{PerformanceMonitor, PerformanceMetrics};
 use crate::crypto::bls::{RealBLSAggregator, BLSSignature, BLSPublicKey};
-use crate::consensus::attestation_processing::{AttestationProcessor, SignatureAggregator};
+use crate::consensus::attestation_processing::AttestationProcessor;
 use crate::consensus::validator_management::ValidatorManager;
-use crate::consensus::types::{Attestation, Validator, BeaconState, CommitteeIndex};
+use crate::types::{Attestation, Validator, BeaconState, AttestationData, Checkpoint, CommitteeIndex, Slot};
+use crate::storage::state::StateStore;
 use bls12_381::{G1Affine, G2Affine};
 
 /// Comprehensive benchmark suite for Beam Chain
 pub struct BeamChainBenchmark {
     monitor: PerformanceMonitor,
     bls_aggregator: RealBLSAggregator,
-    attestation_processor: AttestationProcessor,
-    validator_manager: ValidatorManager,
 }
 
 impl BeamChainBenchmark {
@@ -24,8 +23,6 @@ impl BeamChainBenchmark {
         Self {
             monitor: PerformanceMonitor::new(),
             bls_aggregator: RealBLSAggregator::new(),
-            attestation_processor: AttestationProcessor::new(),
-            validator_manager: ValidatorManager::new(),
         }
     }
     
