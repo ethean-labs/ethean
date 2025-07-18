@@ -1,5 +1,5 @@
 use axum::{
-    extract::{State, Path, Query},
+    extract::{State, Path},
     response::Json,
     routing::get,
     Router,
@@ -14,20 +14,20 @@ pub fn create_routes() -> Router<ApiState> {
         .route("/states/:state_id/fork", get(get_state_fork))
 }
 
-pub async fn get_genesis(State(state): State<ApiState>) -> Json<ApiResponse<Genesis>> {
+pub async fn get_genesis(State(_state): State<ApiState>) -> Json<ApiResponse<Genesis>> {
     Json(ApiResponse::success(Genesis::default()))
 }
 
 pub async fn get_state_root(
-    Path(state_id): Path<String>,
-    State(state): State<ApiState>,
+    Path(_state_id): Path<String>,
+    State(_state): State<ApiState>,
 ) -> Json<ApiResponse<StateRoot>> {
     Json(ApiResponse::success(StateRoot::default()))
 }
 
 pub async fn get_state_fork(
-    Path(state_id): Path<String>, 
-    State(state): State<ApiState>,
+    Path(_state_id): Path<String>, 
+    State(_state): State<ApiState>,
 ) -> Json<ApiResponse<Fork>> {
     Json(ApiResponse::success(Fork::default()))
 }
