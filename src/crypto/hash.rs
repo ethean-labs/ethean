@@ -54,6 +54,7 @@ pub fn poseidon_hash(input: &[u8]) -> Vec<u8> {
 }
 
 /// Simplified Poseidon permutation
+#[allow(dead_code)]
 fn poseidon_permutation(state: &mut [u64], params: &PoseidonParams) {
     // This is a placeholder implementation
     // Real Poseidon requires proper round constants and MDS matrix
@@ -84,6 +85,7 @@ fn poseidon_permutation(state: &mut [u64], params: &PoseidonParams) {
 }
 
 /// S-box function for Poseidon
+#[allow(dead_code)]
 fn sbox(input: u64, degree: u8) -> u64 {
     match degree {
         3 => input.wrapping_mul(input).wrapping_mul(input),

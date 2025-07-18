@@ -293,6 +293,7 @@ impl Default for ValidatorConfig {
 /// Validator manager for handling all validator operations
 pub struct ValidatorManager {
     config: ValidatorConfig,
+    #[allow(dead_code)]
     state_store: StateStore,
     activation_queue: ActivationQueue,
     exit_queue: ExitQueue,

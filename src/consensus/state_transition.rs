@@ -59,7 +59,9 @@ impl Default for StateTransitionConfig {
 /// State transition processor
 pub struct StateTransitionProcessor {
     config: StateTransitionConfig,
+    #[allow(dead_code)]
     state_store: StateStore,
+    #[allow(dead_code)]
     block_store: BlockStore,
 }
 
@@ -146,6 +148,7 @@ impl StateTransitionProcessor {
     }
 
     /// Validate block proposer
+    #[allow(dead_code)]
     fn validate_proposer(
         &self,
         state: &BeaconState,
