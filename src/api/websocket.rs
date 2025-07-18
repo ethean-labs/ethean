@@ -262,9 +262,6 @@ async fn handle_websocket(socket: WebSocket, state: ApiState) {
                                         }
                                     }
                                 }
-                                        }
-                                    }
-                                }
                                 _ => {
                                     warn!("Unexpected message type received");
                                 }
