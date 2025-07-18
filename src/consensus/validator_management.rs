@@ -689,7 +689,7 @@ impl ValidatorManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::StateStore;
+    use crate::storage::{StateStore, Database};
 
     fn setup_manager() -> ValidatorManager {
         let config = ValidatorConfig::default();

@@ -230,6 +230,7 @@ pub struct ProcessingStats {
 mod tests {
     use super::*;
     use crate::consensus::state_transition::{StateTransitionProcessor, StateTransitionConfig};
+    use crate::storage::Database;
 
     fn setup_processor() -> BlockProcessor {
         let database = Database::in_memory();
