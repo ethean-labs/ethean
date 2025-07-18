@@ -44,6 +44,16 @@ pub struct Committee {
     pub validators: Vec<ValidatorIndex>,
 }
 
+/// Attestation processing result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AttestationResult {
+    pub included: bool,
+    pub committee: Committee,
+    pub rewards: Vec<u64>,
+    pub penalties: Vec<u64>,
+    pub aggregated_signature: Option<Vec<u8>>,
+}
+
 /// Attestation processing statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AttestationStats {
@@ -208,6 +218,43 @@ impl SignatureAggregator {
             aggregated_signatures: HashMap::new(),
             participation_bitfields: HashMap::new(),
         }
+    }
+
+    /// Aggregate signature for attestation
+    pub fn aggregate_signature(
+        &mut self,
+        attestation: &Attestation,
+        committee: &Committee,
+        state: &BeaconState,
+    ) -> Result<(Vec<u8>, Vec<bool>), AttestationError> {
+        let key = (attestation.data.slot, attestation.data.index);
+        
+        // Check cache first
+        if let Some(cached_sig) = self.aggregated_signatures.get(&key) {
+            if let Some(cached_bits) = self.participation_bitfields.get(&key) {
+                return Ok((cached_sig.clone(), cached_bits.clone()));
+            }
+        }
+
+        // Create participation bitfield from attestation
+        let participation_bits = attestation.aggregation_bits.clone();
+        
+        // In real implementation, this would:
+        // 1. Verify individual BLS signatures
+        // 2. Aggregate them using BLS signature aggregation
+        // 3. Verify the aggregated signature
+        
+        // For now, we'll create a placeholder aggregated signature
+        let mut aggregated_signature = Vec::new();
+        aggregated_signature.extend_from_slice(b"BLS_AGG_SIG_");
+        aggregated_signature.extend_from_slice(&attestation.data.slot.to_le_bytes());
+        aggregated_signature.extend_from_slice(&attestation.data.index.to_le_bytes());
+        
+        // Cache the results
+        self.aggregated_signatures.insert(key, aggregated_signature.clone());
+        self.participation_bitfields.insert(key, participation_bits.clone());
+
+        Ok((aggregated_signature, participation_bits))
     }
 
     /// Add signature to aggregation
@@ -468,7 +515,72 @@ impl AttestationProcessor {
         Ok(())
     }
 
-    /// Get committee for given slot and index
+    /// Calculate attestation rewards for validators
+    fn calculate_attestation_rewards(
+        &self,
+        attestation: &Attestation,
+        committee: &Committee,
+        state: &BeaconState,
+    ) -> Result<Vec<u64>, AttestationError> {
+        let mut rewards = vec![0u64; committee.validators.len()];
+        let inclusion_delay = 1; // Simplified for now
+        let base_reward = self.config.base_reward_factor;
+
+        for (i, &participated) in attestation.aggregation_bits.iter().enumerate() {
+            if participated {
+                // Base reward for correct attestation
+                let mut validator_reward = base_reward;
+
+                // Bonus for fast inclusion
+                if inclusion_delay == 1 {
+                    validator_reward += base_reward / 8; // Inclusion bonus
+                }
+
+                // Additional reward for correct source/target
+                validator_reward += base_reward / 4; // Source reward
+                validator_reward += base_reward / 4; // Target reward
+
+                rewards[i] = validator_reward;
+            }
+        }
+
+        Ok(rewards)
+    }
+
+    /// Calculate inactivity penalties for missing attestations
+    fn calculate_inactivity_penalties(
+        &self,
+        attestation: &Attestation,
+        committee: &Committee,
+        state: &BeaconState,
+    ) -> Result<Vec<u64>, AttestationError> {
+        let mut penalties = vec![0u64; committee.validators.len()];
+        let base_penalty = self.config.base_reward_factor / 4;
+
+        // Check if we're in an inactivity leak
+        let inactivity_leak = self.is_inactivity_leak(state);
+
+        for (i, &participated) in attestation.aggregation_bits.iter().enumerate() {
+            if !participated {
+                let mut penalty = base_penalty;
+
+                // Increased penalty during inactivity leak
+                if inactivity_leak {
+                    penalty *= 4; // Quadruple penalty during leak
+                }
+
+                penalties[i] = penalty;
+            }
+        }
+
+        Ok(penalties)
+    }
+
+    /// Check if chain is in inactivity leak
+    fn is_inactivity_leak(&self, state: &BeaconState) -> bool {
+        // Simplified: check if we haven't finalized in 4 epochs
+        state.current_epoch().saturating_sub(state.finalized_checkpoint.epoch) > 4
+    }
     fn get_committee(
         &mut self,
         state: &BeaconState,
