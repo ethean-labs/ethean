@@ -251,7 +251,6 @@ pub mod builtin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::database::DatabaseConfig;
 
     struct TestMigration {
         version: u64,

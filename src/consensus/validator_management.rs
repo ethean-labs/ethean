@@ -410,7 +410,7 @@ impl ValidatorManager {
         validator_index: ValidatorIndex,
         voluntary: bool,
     ) -> Result<(), ValidatorError> {
-        let validator = state.validators.validators.get(validator_index as usize)
+        let _validator = state.validators.validators.get(validator_index as usize)
             .ok_or(ValidatorError::NotFound(validator_index))?;
 
         // Calculate exit epoch
@@ -556,7 +556,7 @@ impl ValidatorManager {
     fn get_last_attestation_epoch(&self, validator_index: ValidatorIndex) -> Option<Epoch> {
         self.performance_cache
             .get(&validator_index)
-            .and_then(|perf| {
+            .and_then(|_perf| {
                 // This would be populated from attestation processing
                 // For now, return None as placeholder
                 None
@@ -689,7 +689,7 @@ impl ValidatorManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::{Database, DatabaseConfig};
+    use crate::storage::StateStore;
 
     fn setup_manager() -> ValidatorManager {
         let config = ValidatorConfig::default();
