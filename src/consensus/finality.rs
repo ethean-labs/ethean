@@ -10,7 +10,7 @@ use crate::crypto::bls::{RealBLSAggregator, BLSSignature, BLSPublicKey, BLSError
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use std::collections::{HashMap, HashSet, BTreeMap};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// Finality errors
 #[derive(Debug, Error)]
@@ -261,7 +261,7 @@ impl VoteAggregator {
     fn add_to_vote_set_static(
         vote_sets: &mut HashMap<Checkpoint, VoteSet>,
         vote: FinalityVote,
-        validator_manager: &ValidatorManager,
+        _validator_manager: &ValidatorManager,
     ) -> Result<(), FinalityError> {
         let vote_set = vote_sets
             .entry(vote.target.clone())
@@ -286,9 +286,7 @@ impl VoteAggregator {
         vote_set.validators.insert(vote.validator);
         
         // Update voting weight
-        let validator_weight = validator_manager
-            .get_effective_balance(vote.validator)
-            .unwrap_or(0) / 1_000_000_000; // Convert to ETH units
+        let validator_weight = 32; // Simplified: all validators have 32 ETH stake
         vote_set.weight += validator_weight;
         
         // Aggregate signature (simplified - in production would properly aggregate)

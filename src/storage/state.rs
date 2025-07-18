@@ -33,6 +33,7 @@ pub trait StateStorage: Send + Sync {
 
 /// State store implementation
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct StateStore {
     database: Database,
 }
