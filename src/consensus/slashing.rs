@@ -766,7 +766,7 @@ mod tests {
         let mut tracker = HistoricalTracker::new(10); // Retain 10 epochs
         
         // Add attestations for different epochs
-        for epoch in 1..15 {
+        for epoch in 1u64..15 {
             let att = create_test_attestation(0, epoch.saturating_sub(1), epoch, [epoch as u8; 32]);
             tracker.add_attestation(&att);
         }
