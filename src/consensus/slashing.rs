@@ -659,7 +659,7 @@ impl Default for SurroundVoteDetector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{AttestationData, Validator};
+    use crate::types::attestation::AttestationData;
     use crate::consensus::validator_management::{ValidatorConfig, ValidatorManager};
     use crate::storage::{StateStore, Database};
     
