@@ -1,15 +1,21 @@
-//! Consensus module for Beam Chain
+//! Beam Chain consensus module
 //!
-//! Implements state transitions, block processing, and consensus mechanisms.
+//! This module implements the core consensus mechanisms for the Beam Chain,
+//! including attestation processing, validator management, and state transitions.
 
-pub mod state_transition;
-pub mod block_processing;
-pub mod validator_management;
 pub mod attestation_processing;
+pub mod block_processing;
+pub mod performance;
+pub mod state_transition;
+pub mod types;
+pub mod validator_management;
 
-pub use state_transition::{StateTransitionProcessor, StateTransitionConfig, StateTransitionError};
-pub use block_processing::{BlockProcessor, BlockProcessingConfig, BlockProcessingError, BlockProcessingResult};
-pub use validator_management::{ValidatorManager, ValidatorConfig, ValidatorError, ValidatorPerformance};
+pub use attestation_processing::*;
+pub use block_processing::*;
+pub use performance::*;
+pub use state_transition::*;
+pub use types::*;
+pub use validator_management::*;
 
 /// Consensus result type
 pub type Result<T> = std::result::Result<T, Error>;
