@@ -636,7 +636,7 @@ impl ValidatorManager {
         *balance = new_balance;
         
         // Update in balance tracker as well
-        self.balance_tracker.set_balance(validator_index, new_balance, state.current_epoch());
+        self.balance_tracker.set_balance(validator_index, new_balance, state.current_epoch(32));
         
         Ok(())
     }
