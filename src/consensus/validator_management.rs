@@ -732,6 +732,10 @@ mod tests {
         let mut manager = setup_manager();
         let state = BeaconState::default();
         let result = manager.request_exit(&state, 0, true);
+        match &result {
+            Ok(_) => {},
+            Err(e) => println!("Exit request error: {:?}", e),
+        }
         assert!(result.is_ok());
     }
 
