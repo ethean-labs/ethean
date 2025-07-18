@@ -541,7 +541,7 @@ impl AttestationProcessor {
         &self,
         attestation: &Attestation,
         committee: &Committee,
-        _state: &BeaconState,
+        state: &BeaconState,
     ) -> Result<Vec<u64>, AttestationError> {
         let mut rewards = vec![0u64; committee.validators.len()];
         let inclusion_delay = 1; // Simplified for now
