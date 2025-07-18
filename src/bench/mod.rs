@@ -5,10 +5,6 @@
 use std::time::{Duration, Instant};
 use crate::consensus::{PerformanceMonitor, PerformanceMetrics};
 use crate::crypto::bls::{RealBLSAggregator, BLSSignature, BLSPublicKey};
-use crate::consensus::attestation_processing::AttestationProcessor;
-use crate::consensus::validator_management::ValidatorManager;
-use crate::types::{Attestation, Validator, BeaconState, AttestationData, Checkpoint, CommitteeIndex, Slot};
-use crate::storage::state::StateStore;
 use bls12_381::{G1Affine, G2Affine};
 
 /// Comprehensive benchmark suite for Beam Chain
