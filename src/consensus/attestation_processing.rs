@@ -499,7 +499,7 @@ impl AttestationProcessor {
     /// Validate attestation structure and timing
     fn validate_attestation(
         &self,
-        state: &BeaconState,
+        _state: &BeaconState,
         attestation: &Attestation,
         inclusion_slot: Slot,
     ) -> Result<(), AttestationError> {
