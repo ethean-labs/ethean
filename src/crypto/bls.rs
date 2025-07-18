@@ -189,7 +189,7 @@ impl RealBLSAggregator {
         &mut self,
         signatures: &[BLSSignature],
     ) -> Result<BLSSignature, BLSError> {
-        let start_time = Instant::now();
+        let _start_time = Instant::now();
         
         if signatures.is_empty() {
             return Err(BLSError::EmptySignatureSet);
