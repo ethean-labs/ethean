@@ -92,7 +92,7 @@ impl BLSPublicKey {
 }
 
 /// BLS signature wrapper
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct BLSSignature {
     pub point: Vec<u8>, // G1 point serialized
 }
