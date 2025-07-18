@@ -8,6 +8,7 @@ pub mod debug;
 pub mod middleware;
 pub mod types;
 pub mod error;
+pub mod websocket;
 
 pub use types::*;
 
@@ -105,6 +106,7 @@ impl ApiServer {
             .nest("/node", node::create_routes())
             .nest("/config", config::create_routes())
             .nest("/debug", debug::create_routes())
+            .nest("/ws", websocket::create_routes())
     }
 
     /// Start the API server
