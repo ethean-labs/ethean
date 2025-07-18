@@ -484,8 +484,8 @@ impl AttestationProcessor {
 
         // Update comprehensive statistics
         self.stats.valid_attestations += 1;
-        self.stats.total_rewards += rewards.iter().sum::<u64>();
-        self.stats.total_penalties += penalties.iter().sum::<u64>();
+        self.stats.total_rewards_distributed += rewards.iter().sum::<u64>();
+        self.stats.total_penalties_applied += penalties.iter().sum::<u64>();
 
         Ok(AttestationResult {
             included: true,
