@@ -8,7 +8,7 @@ use axum::{
         ws::{WebSocket, WebSocketUpgrade},
         State, Path, Query,
     },
-    response::Response,
+    response::{Response, IntoResponse},
     routing::get,
     Router,
 };
