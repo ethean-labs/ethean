@@ -2,7 +2,7 @@
 //!
 //! Handles attestation validation, committee management, aggregation, and rewards.
 
-use crate::types::{BeaconState, Attestation, AttestationData, ValidatorIndex, Slot, Epoch};
+use crate::types::{BeaconState, Attestation, ValidatorIndex, Slot, Epoch};
 use crate::consensus::validator_management::{ValidatorManager, ValidatorError};
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -245,8 +245,8 @@ impl SignatureAggregator {
     pub fn aggregate_signature(
         &mut self,
         attestation: &Attestation,
-        committee: &Committee,
-        state: &BeaconState,
+        _committee: &Committee,
+        _state: &BeaconState,
     ) -> Result<(Vec<u8>, Vec<bool>), AttestationError> {
         let key = (attestation.data.slot, attestation.data.index);
         
@@ -445,7 +445,7 @@ impl AttestationProcessor {
         )?;
 
         // Signature aggregation and verification
-        let (aggregated_signature, participation_bits) = self.signature_aggregator
+        let (aggregated_signature, _participation_bits) = self.signature_aggregator
             .aggregate_signature(attestation, &committee, state)?;
 
         // Calculate rewards and penalties
@@ -541,7 +541,7 @@ impl AttestationProcessor {
         &self,
         attestation: &Attestation,
         committee: &Committee,
-        state: &BeaconState,
+        _state: &BeaconState,
     ) -> Result<Vec<u64>, AttestationError> {
         let mut rewards = vec![0u64; committee.validators.len()];
         let inclusion_delay = 1; // Simplified for now
@@ -786,7 +786,7 @@ impl AttestationProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{BeaconState, Validator, ValidatorSet};
+    use crate::types::{BeaconState, Validator, AttestationData};
     use crate::consensus::validator_management::{ValidatorConfig, ValidatorManager};
     use crate::storage::{StateStore, Database};
 
