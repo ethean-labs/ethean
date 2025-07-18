@@ -12,6 +12,9 @@ pub mod middleware;
 pub mod types;
 pub mod error;
 
+pub use error::{Error, Result};
+pub use types::*;
+
 use axum::{
     Router,
     routing::get,
