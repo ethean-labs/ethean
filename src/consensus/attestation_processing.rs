@@ -316,7 +316,7 @@ impl SignatureAggregator {
 
     /// Create mock public key for testing
     fn create_mock_public_key(&self, validator_index: ValidatorIndex) -> Result<BLSPublicKey, AttestationError> {
-        use bls12_381::{G2Affine, G2Projective, Scalar};
+        use bls12_381::{G2Projective, Scalar};
         
         // Create deterministic public key based on validator index
         let scalar = Scalar::from(validator_index + 1); // Avoid zero
