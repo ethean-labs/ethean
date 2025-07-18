@@ -602,25 +602,14 @@ impl AttestationProcessor {
         // Simplified: check if we haven't finalized in 4 epochs
         state.current_epoch(32).saturating_sub(state.finalized_checkpoint.epoch) > 4
     }
+    /// Get committee for attestation processing (delegates to committee manager)
     fn get_committee(
         &mut self,
         state: &BeaconState,
         slot: Slot,
         committee_index: u64,
     ) -> Result<Committee, AttestationError> {
-        let cache_key = (slot, committee_index);
-        
-        if let Some(committee) = self.committee_cache.get(&cache_key) {
-            return Ok(committee.clone());
-        }
-
-        // Calculate committee for this slot/index
-        let committee = self.calculate_committee(state, slot, committee_index)?;
-        
-        // Cache the committee
-        self.committee_cache.insert(cache_key, committee.clone());
-        
-        Ok(committee)
+        self.committee_manager.get_committee_for_slot(slot, committee_index, state)
     }
 
     /// Calculate committee assignment for given slot and index
@@ -724,13 +713,8 @@ impl AttestationProcessor {
         state: &mut BeaconState,
         epoch: Epoch,
     ) -> Result<(), AttestationError> {
-        // Clear old committee cache (keep only current epoch)
-        let current_epoch_start_slot = epoch * 32;
-        let next_epoch_start_slot = (epoch + 1) * 32;
-        
-        self.committee_cache.retain(|(slot, _), _| {
-            *slot >= current_epoch_start_slot && *slot < next_epoch_start_slot
-        });
+        // Clean old committee data using committee manager
+        self.committee_manager.cleanup_old_data(epoch);
 
         // Process inactivity penalties for validators who didn't attest
         self.process_inactivity_penalties(state, epoch)?;
@@ -787,9 +771,10 @@ impl AttestationProcessor {
         &self.stats
     }
 
-    /// Get committee cache size
+    /// Get committee cache size (delegates to committee manager)
     pub fn get_committee_cache_size(&self) -> usize {
-        self.committee_cache.len()
+        // Return approximate cache size from committee manager
+        self.committee_manager.epoch_committees.len()
     }
 
     /// Reset statistics (for testing)
