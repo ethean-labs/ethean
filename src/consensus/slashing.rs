@@ -4,7 +4,6 @@
 //! generation with optimized data structures for real-time validation.
 
 use crate::types::{Slot, Epoch, ValidatorIndex, Attestation};
-use crate::crypto::hash::Hash;
 use crate::consensus::{ValidatorManager, FinalityGadget};
 use crate::consensus::finality::Checkpoint;
 use crate::crypto::bls::{BLSSignature, BLSError};
@@ -13,6 +12,9 @@ use thiserror::Error;
 use std::collections::{HashMap, BTreeMap, VecDeque};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::sync::Arc;
+
+// Hash type alias for convenience  
+type Hash = [u8; 32];
 
 // Helper function to convert types::checkpoint::Checkpoint to consensus::finality::Checkpoint
 fn convert_checkpoint(types_checkpoint: &crate::types::checkpoint::Checkpoint) -> Checkpoint {
