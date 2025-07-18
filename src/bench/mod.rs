@@ -240,7 +240,7 @@ impl BeamChainBenchmark {
         self.monitor.update_cache_size("committee_cache", 500);
         
         let avg_memory = memory_samples.iter().sum::<f64>() / memory_samples.len() as f64;
-        let max_memory = memory_samples.iter().fold(0.0, |a, &b| a.max(b));
+        let max_memory = memory_samples.iter().fold(0.0_f64, |a, &b| a.max(b));
         let min_memory = memory_samples.iter().fold(f64::INFINITY, |a, &b| a.min(b));
         
         format!(
