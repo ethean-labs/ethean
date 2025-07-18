@@ -414,7 +414,7 @@ impl ValidatorManager {
             .ok_or(ValidatorError::NotFound(validator_index))?;
 
         // Calculate exit epoch
-        let current_epoch = state.current_epoch();
+        let current_epoch = state.current_epoch(32); // 32 slots per epoch
         let exit_epoch = if voluntary {
             current_epoch + self.config.exit_delay
         } else {
