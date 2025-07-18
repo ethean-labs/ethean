@@ -757,7 +757,128 @@ mod tests {
     #[test]
     fn test_validator_exit_request() {
         let mut manager = setup_manager();
-        let result = manager.request_exit(0, true);
+        let state = BeaconState::default();
+        let result = manager.request_exit(&state, 0, true);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_activation_queue() {
+        let mut manager = setup_manager();
+        let pubkey = PublicKey([1u8; 48]);
+        let withdrawal_credentials = [1u8; 32];
+        let deposit_amount = 1_000_000_000; // 1 ETH
+
+        // Add validator to activation queue
+        let result = manager.add_validator(pubkey, withdrawal_credentials, deposit_amount);
+        assert!(result.is_ok());
+
+        let (queue_size, is_empty) = manager.get_activation_queue_status();
+        assert_eq!(queue_size, 1);
+        assert!(!is_empty);
+    }
+
+    #[test]
+    fn test_exit_queue() {
+        let mut manager = setup_manager();
+        let state = BeaconState::default();
+        
+        // Request exit
+        let result = manager.request_exit(&state, 0, true);
+        assert!(result.is_ok());
+
+        let (queue_size, is_empty) = manager.get_exit_queue_status();
+        assert_eq!(queue_size, 1);
+        assert!(!is_empty);
+    }
+
+    #[test]
+    fn test_balance_tracking() {
+        let mut manager = setup_manager();
+        let validator_index = 0;
+        let initial_balance = 1_000_000_000; // 1 ETH
+
+        // Apply reward
+        let result = manager.apply_reward(validator_index, 1000000, 100);
+        assert!(result.is_err()); // Validator not found initially
+
+        // Add validator first
+        let pubkey = PublicKey([1u8; 48]);
+        let withdrawal_credentials = [1u8; 32];
+        manager.add_validator(pubkey, withdrawal_credentials, initial_balance).unwrap();
+
+        // Now apply reward
+        let result = manager.apply_reward(validator_index, 1000000, 100);
+        assert!(result.is_ok());
+
+        let balance = manager.get_balance(validator_index).unwrap();
+        assert_eq!(balance, initial_balance + 1000000);
+    }
+
+    #[test]
+    fn test_slashing_detection() {
+        let manager = setup_manager();
+        let state = BeaconState::default();
+        let validator_index = 0;
+
+        let violations = manager.detect_slashing_conditions(&state, validator_index);
+        // Should be empty for default state
+        assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn test_performance_update() {
+        let mut manager = setup_manager();
+        let validator_index = 0;
+
+        // Update performance
+        let result = manager.update_performance(validator_index, true, 2);
+        assert!(result.is_ok());
+
+        // Check performance cache
+        let performance = manager.get_performance(validator_index);
+        assert!(performance.is_some());
+    }
+
+    #[test]
+    fn test_activation_processing() {
+        let mut manager = setup_manager();
+        let mut state = BeaconState::default();
+        
+        // Add validators to queue
+        for i in 0..3 {
+            let pubkey = PublicKey([i as u8; 48]);
+            let withdrawal_credentials = [i as u8; 32];
+            let deposit_amount = 1_000_000_000; // 1 ETH
+            manager.add_validator(pubkey, withdrawal_credentials, deposit_amount).unwrap();
+        }
+
+        // Process activations
+        let current_epoch = 257; // After activation delay
+        let result = manager.process_activations(&mut state, current_epoch);
+        assert!(result.is_ok());
+        
+        let activated = result.unwrap();
+        assert!(!activated.is_empty());
+    }
+
+    #[test]
+    fn test_exit_processing() {
+        let mut manager = setup_manager();
+        let mut state = BeaconState::default();
+        
+        // Request exits
+        for i in 0..2 {
+            let result = manager.request_exit(&state, i, true);
+            assert!(result.is_ok());
+        }
+
+        // Process exits
+        let current_epoch = 300; // After exit delay
+        let result = manager.process_exits(&mut state, current_epoch);
+        assert!(result.is_ok());
+        
+        let exited = result.unwrap();
+        assert!(!exited.is_empty());
     }
 }
