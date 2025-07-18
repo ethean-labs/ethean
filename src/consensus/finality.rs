@@ -227,6 +227,12 @@ impl VoteAggregator {
         
         self.votes_verified += 1;
         
+        // Get current timestamp
+        let current_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        
         // Get or create round
         let round = self.active_rounds
             .entry(vote.round)
@@ -234,17 +240,17 @@ impl VoteAggregator {
                 round: vote.round,
                 prevotes: HashMap::new(),
                 precommits: HashMap::new(),
-                start_time: Instant::now(),
+                start_time: current_time,
                 completed: false,
             });
         
         // Add vote to appropriate vote set
         match vote.vote_type {
             VoteType::Prevote => {
-                self.add_to_vote_set(&mut round.prevotes, vote, validator_manager)?;
+                Self::add_to_vote_set_static(&mut round.prevotes, vote, validator_manager)?;
             },
             VoteType::Precommit => {
-                self.add_to_vote_set(&mut round.precommits, vote, validator_manager)?;
+                Self::add_to_vote_set_static(&mut round.precommits, vote, validator_manager)?;
             },
         }
         
@@ -252,8 +258,7 @@ impl VoteAggregator {
     }
     
     /// Add vote to a vote set
-    fn add_to_vote_set(
-        &mut self,
+    fn add_to_vote_set_static(
         vote_sets: &mut HashMap<Checkpoint, VoteSet>,
         vote: FinalityVote,
         validator_manager: &ValidatorManager,
