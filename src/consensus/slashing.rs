@@ -18,8 +18,8 @@ use std::sync::Arc;
 fn convert_checkpoint(types_checkpoint: &crate::types::checkpoint::Checkpoint) -> Checkpoint {
     Checkpoint {
         epoch: types_checkpoint.epoch,
-        block_hash: Hash::from(&types_checkpoint.root),
-        state_root: Hash::from(&types_checkpoint.root), // Use same root for both
+        block_hash: types_checkpoint.root,
+        state_root: types_checkpoint.root, // Use same root for both
     }
 }
 
