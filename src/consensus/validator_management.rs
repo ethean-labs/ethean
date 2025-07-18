@@ -475,7 +475,7 @@ impl ValidatorManager {
             .ok_or(ValidatorError::NotFound(validator_index))?;
 
         validator.exit_epoch = withdrawal_epoch;
-        validator.withdrawable_epoch = withdrawal_epoch + self.config.exit_delay;
+        // Note: withdrawable_epoch field not available in Validator struct
         
         Ok(())
     }
