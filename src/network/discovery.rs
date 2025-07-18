@@ -303,9 +303,9 @@ impl DiscoveryService {
     }
     
     /// Handle find_node query
-    fn handle_find_node(&mut self, from: &str, target: &str, count: usize) -> Result<Option<DiscoveryMessage>, NetworkError> {
+    fn handle_find_node(&mut self, from: &str, _target: &str, count: usize) -> Result<Option<DiscoveryMessage>, NetworkError> {
         // Find closest nodes to target
-        let closest_nodes: Vec<&DiscoveryNode> = self.node_table.values()
+        let _closest_nodes: Vec<&DiscoveryNode> = self.node_table.values()
             .filter(|node| node.node_id != *from) // Don't return sender
             .take(count)
             .collect();

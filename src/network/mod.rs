@@ -10,11 +10,9 @@ pub mod message_handler;
 pub mod network_config;
 
 use crate::types::{BeaconBlock, Attestation, Epoch, Slot};
-use crate::consensus::ValidatorManager;
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use thiserror::Error;
 
 // Re-export main components

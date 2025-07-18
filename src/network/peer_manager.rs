@@ -6,8 +6,7 @@ use super::{NetworkError, PeerInfo};
 use crate::network::network_config::PeerConfig;
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::sync::Arc;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// Peer connection states
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -118,7 +117,7 @@ impl ManagedPeer {
         let new_state = state.clone();
         self.state = state;
         if new_state == PeerState::Connected {
-            self.last_seen = Instant::now();
+            self.info.last_seen = Instant::now();
         }
     }
     
