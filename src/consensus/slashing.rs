@@ -438,7 +438,7 @@ impl HistoricalTracker {
     pub fn get_attestations(&self, validator: ValidatorIndex, start_epoch: Epoch, end_epoch: Epoch) -> Vec<SlashingAttestation> {
         if let Some(validator_history) = self.attestations.get(&validator) {
             let mut result = Vec::new();
-            for (&epoch, attestations) in validator_history.range(start_epoch..=end_epoch) {
+            for (&_epoch, attestations) in validator_history.range(start_epoch..=end_epoch) {
                 result.extend(attestations.iter().cloned());
             }
             result
@@ -659,7 +659,6 @@ impl Default for SurroundVoteDetector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::attestation::AttestationData;
     use crate::consensus::validator_management::{ValidatorConfig, ValidatorManager};
     use crate::storage::{StateStore, Database};
     
