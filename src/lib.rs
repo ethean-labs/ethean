@@ -8,6 +8,7 @@ pub mod crypto;
 pub mod consensus;
 pub mod network;
 pub mod storage;
+pub mod bench;
 pub mod api;
 pub mod config;
 pub mod utils;

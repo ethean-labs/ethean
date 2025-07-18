@@ -186,9 +186,11 @@ impl RealBLSAggregator {
     
     /// Aggregate multiple BLS signatures
     pub fn aggregate_signatures(
-        &self,
+        &mut self,
         signatures: &[BLSSignature],
     ) -> Result<BLSSignature, BLSError> {
+        let start_time = Instant::now();
+        
         if signatures.is_empty() {
             return Err(BLSError::EmptySignatureSet);
         }
@@ -242,24 +244,75 @@ impl RealBLSAggregator {
         Ok(true)
     }
     
-    /// Get performance statistics
-    pub fn get_stats(&self) -> BLSStats {
-        BLSStats {
-            verifications_performed: self.verifications_performed,
-            cache_hits: self.cache_hits,
-            cache_size: self.verification_cache.len(),
-            public_key_cache_size: self.public_key_cache.len(),
+    /// Get performance statistics  
+    pub fn get_stats(&self) -> &BLSStats {
+        &self.stats
+    }
+    
+    /// Reset performance statistics
+    pub fn reset_stats(&mut self) {
+        self.stats = BLSStats::default();
+        self.verification_cache.clear();
+        self.start_time = Instant::now();
+    }
+    
+    /// Update verification time statistics
+    fn update_verification_time(&mut self, duration: Duration) {
+        let ms = duration.as_secs_f64() * 1000.0;
+        self.stats.avg_verification_time_ms = 
+            (self.stats.avg_verification_time_ms * (self.stats.total_verifications - 1) as f64 + ms) / 
+            self.stats.total_verifications as f64;
+    }
+    
+    /// Update aggregation time statistics
+    fn update_aggregation_time(&mut self, duration: Duration) {
+        let ms = duration.as_secs_f64() * 1000.0;
+        self.stats.avg_aggregation_time_ms = 
+            (self.stats.avg_aggregation_time_ms * (self.stats.total_aggregations - 1) as f64 + ms) / 
+            self.stats.total_aggregations as f64;
+    }
+    
+    /// Get cache hit ratio
+    pub fn get_cache_hit_ratio(&self) -> f64 {
+        let total_requests = self.stats.signature_cache_hits + self.stats.signature_cache_misses;
+        if total_requests == 0 {
+            0.0
+        } else {
+            self.stats.signature_cache_hits as f64 / total_requests as f64
         }
     }
-}
-
-/// BLS performance statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BLSStats {
-    pub verifications_performed: u64,
-    pub cache_hits: u64,
-    pub cache_size: usize,
-    pub public_key_cache_size: usize,
+    
+    /// Get operations per second
+    pub fn get_operations_per_second(&self) -> f64 {
+        let elapsed_secs = self.start_time.elapsed().as_secs_f64();
+        if elapsed_secs == 0.0 {
+            0.0
+        } else {
+            let total_ops = self.stats.total_verifications + self.stats.total_aggregations;
+            total_ops as f64 / elapsed_secs
+        }
+    }
+    
+    /// Generate performance report
+    pub fn generate_performance_report(&self) -> String {
+        format!(
+            "BLS Performance Report:\n\
+             - Total verifications: {}\n\
+             - Total aggregations: {}\n\
+             - Avg verification time: {:.2}ms\n\
+             - Avg aggregation time: {:.2}ms\n\
+             - Cache hit ratio: {:.2}%\n\
+             - Operations/second: {:.2}\n\
+             - Cache size: {} entries",
+            self.stats.total_verifications,
+            self.stats.total_aggregations,
+            self.stats.avg_verification_time_ms,
+            self.stats.avg_aggregation_time_ms,
+            self.get_cache_hit_ratio() * 100.0,
+            self.get_operations_per_second(),
+            self.verification_cache.len()
+        )
+    }
 }
 
 impl Default for RealBLSAggregator {
@@ -277,14 +330,14 @@ mod tests {
         let aggregator = RealBLSAggregator::new();
         let stats = aggregator.get_stats();
         
-        assert_eq!(stats.verifications_performed, 0);
-        assert_eq!(stats.cache_hits, 0);
-        assert_eq!(stats.cache_size, 0);
+        assert_eq!(stats.total_verifications, 0);
+        assert_eq!(stats.signature_cache_hits, 0);
+        assert_eq!(stats.total_aggregations, 0);
     }
     
     #[test]
     fn test_signature_aggregation() {
-        let aggregator = RealBLSAggregator::new();
+        let mut aggregator = RealBLSAggregator::new();
         
         // Create some test signatures
         let sig1 = BLSSignature::from_g1(&G1Affine::generator());
@@ -294,16 +347,65 @@ mod tests {
         let result = aggregator.aggregate_signatures(&signatures);
         
         assert!(result.is_ok());
+        assert_eq!(aggregator.get_stats().total_aggregations, 1);
     }
     
     #[test]
     fn test_empty_signature_set() {
-        let aggregator = RealBLSAggregator::new();
+        let mut aggregator = RealBLSAggregator::new();
         
         let signatures = vec![];
         let result = aggregator.aggregate_signatures(&signatures);
         
         assert!(matches!(result, Err(BLSError::EmptySignatureSet)));
+    }
+    
+    #[test]
+    fn test_performance_tracking() {
+        let mut aggregator = RealBLSAggregator::new();
+        
+        // Test signature verification performance tracking
+        let sig = BLSSignature::from_g1(&G1Affine::generator());
+        let pubkey = BLSPublicKey::from_g2(&G2Affine::generator());
+        let message = b"test message";
+        
+        let _ = aggregator.verify_signature(&sig, message, &pubkey);
+        
+        let stats = aggregator.get_stats();
+        assert_eq!(stats.total_verifications, 1);
+        assert!(stats.avg_verification_time_ms >= 0.0);
+    }
+    
+    #[test]
+    fn test_cache_functionality() {
+        let mut aggregator = RealBLSAggregator::new();
+        
+        let sig = BLSSignature::from_g1(&G1Affine::generator());
+        let pubkey = BLSPublicKey::from_g2(&G2Affine::generator());
+        let message = b"test message";
+        
+        // Verify twice to test caching
+        let _ = aggregator.verify_signature(&sig, message, &pubkey);
+        let _ = aggregator.verify_signature(&sig, message, &pubkey);
+        
+        let stats = aggregator.get_stats();
+        assert_eq!(stats.total_verifications, 1); // First call creates cache entry
+        assert_eq!(stats.signature_cache_hits, 1); // Second call hits cache
+    }
+    
+    #[test]
+    fn test_performance_report() {
+        let mut aggregator = RealBLSAggregator::new();
+        
+        // Perform some operations
+        let sig = BLSSignature::from_g1(&G1Affine::generator());
+        let pubkey = BLSPublicKey::from_g2(&G2Affine::generator());
+        let message = b"test";
+        let _ = aggregator.verify_signature(&sig, message, &pubkey);
+        
+        let report = aggregator.generate_performance_report();
+        assert!(report.contains("BLS Performance Report"));
+        assert!(report.contains("Total verifications: 1"));
     }
     
     #[test]
