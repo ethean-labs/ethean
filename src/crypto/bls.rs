@@ -207,6 +207,9 @@ impl RealBLSAggregator {
             aggregated += G1Projective::from(point);
         }
         
+        // Update performance stats
+        self.stats.total_aggregations += 1;
+        
         Ok(BLSSignature::from_g1(&aggregated.into()))
     }
     

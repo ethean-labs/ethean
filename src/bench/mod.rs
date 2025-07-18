@@ -352,7 +352,7 @@ mod tests {
         let mut benchmark = BeamChainBenchmark::new();
         
         let result = benchmark.benchmark_validator_management(10);
-        assert!(result.contains("Validators added"));
+        assert!(result.contains("Validators processed"));
         assert!(result.contains("Committee calculations"));
     }
     
