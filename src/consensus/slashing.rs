@@ -4,13 +4,12 @@
 //! generation with optimized data structures for real-time validation.
 
 use crate::types::{Slot, Epoch, ValidatorIndex, Attestation};
-use crate::crypto::hash::Hash;
 use crate::consensus::{ValidatorManager, FinalityGadget};
 use crate::consensus::finality::Checkpoint;
 use crate::crypto::bls::{BLSSignature, BLSError};
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use std::collections::{HashMap, HashSet, BTreeMap, VecDeque};
+use std::collections::{HashMap, BTreeMap, VecDeque};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::sync::Arc;
 
