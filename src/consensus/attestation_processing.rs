@@ -107,7 +107,7 @@ impl CommitteeManager {
         let epoch = slot / 32; // Simplified epoch calculation
         
         // Get committees for this epoch
-        let committees = self.get_committees_for_epoch(state, epoch)?;
+        let committees = self.get_epoch_committees(state, epoch)?;
         
         // Find the specific committee
         committees.into_iter()
