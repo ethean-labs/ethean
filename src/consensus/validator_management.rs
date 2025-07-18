@@ -738,7 +738,7 @@ mod tests {
     #[test]
     fn test_activation_queue() {
         let mut manager = setup_manager();
-        let pubkey = PublicKey([1u8; 48]);
+        let pubkey = vec![1u8; 48]; // PublicKey is Vec<u8>
         let withdrawal_credentials = [1u8; 32];
         let deposit_amount = 1_000_000_000; // 1 ETH
 
