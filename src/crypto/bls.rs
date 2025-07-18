@@ -162,9 +162,17 @@ impl RealBLSAggregator {
         }
         self.stats.signature_cache_misses += 1;
         
-        // Convert to curve points
+        // Convert to curve points with caching
         let sig_point = signature.to_g1()?;
-        let pub_key_point = public_key.to_g2()?;
+        
+        // Check public key cache first
+        let pub_key_point = if let Some(cached_pubkey) = self.public_key_cache.get(&public_key.point) {
+            *cached_pubkey
+        } else {
+            let point = public_key.to_g2()?;
+            self.public_key_cache.insert(public_key.point.clone(), point);
+            point
+        };
         
         // Hash message to G1 (simplified - in real implementation would use proper hash-to-curve)
         let message_hash = self.hash_to_g1(message)?;
@@ -189,7 +197,7 @@ impl RealBLSAggregator {
         &mut self,
         signatures: &[BLSSignature],
     ) -> Result<BLSSignature, BLSError> {
-        let _start_time = Instant::now();
+        let start_time = Instant::now();
         
         if signatures.is_empty() {
             return Err(BLSError::EmptySignatureSet);
@@ -209,6 +217,8 @@ impl RealBLSAggregator {
         
         // Update performance stats
         self.stats.total_aggregations += 1;
+        let duration = start_time.elapsed();
+        self.update_aggregation_time(duration);
         
         Ok(BLSSignature::from_g1(&aggregated.into()))
     }

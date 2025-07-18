@@ -276,7 +276,7 @@ impl BenchmarkRunner {
     pub fn benchmark_committee_calculation(&mut self, iterations: u32) -> Duration {
         let start = Instant::now();
         
-        for i in 0..iterations {
+        for _i in 0..iterations {
             let timer = self.monitor.start_operation("committee_calculation");
             
             // Simulate committee calculation work

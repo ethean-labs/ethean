@@ -160,7 +160,7 @@ impl BeamChainBenchmark {
     pub fn benchmark_validator_management(&mut self, iterations: u32) -> String {
         let start_time = Instant::now();
         
-        for i in 0..iterations {
+        for _i in 0..iterations {
             let timer = self.monitor.start_operation("validator_operations");
             
             // Simulate validator operations

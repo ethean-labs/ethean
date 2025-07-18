@@ -252,7 +252,7 @@ impl SignatureAggregator {
         &mut self,
         attestation: &Attestation,
         committee: &Committee,
-        state: &BeaconState,
+        _state: &BeaconState,
     ) -> Result<(BLSSignature, Vec<bool>), AttestationError> {
         let key = (attestation.data.slot, attestation.data.index);
         

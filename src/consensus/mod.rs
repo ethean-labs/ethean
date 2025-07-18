@@ -5,12 +5,14 @@
 
 pub mod attestation_processing;
 pub mod block_processing;
+pub mod finality;
 pub mod performance;
 pub mod state_transition;
 pub mod validator_management;
 
 pub use attestation_processing::*;
 pub use block_processing::*;
+pub use finality::*;
 pub use performance::*;
 pub use state_transition::*;
 pub use validator_management::*;
