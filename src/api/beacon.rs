@@ -5,7 +5,18 @@
 
 use axum::{
     Router,
-    routing::get,
+  /// GET /eth/v1/beacon/genesis
+#[utoipa::path(
+    get,
+    path = "/eth/v1/beacon/genesis",
+    tag = "beacon",
+    responses(
+        (status = 200, description = "Genesis information", body = ApiResponse<Genesis>)
+    )
+)]
+pub async fn get_genesis(
+    State(_state): State<ApiState>,
+) -> Result<Json<ApiResponse<Genesis>>> {et,
     response::Json,
     extract::{Path, Query, State},
     http::StatusCode,
