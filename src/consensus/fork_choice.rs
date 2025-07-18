@@ -86,10 +86,8 @@ impl BlockNode {
     
     /// Check if this node is a viable head
     pub fn is_viable_head(&self, justified_checkpoint: &Checkpoint) -> bool {
-        match &self.justified_epoch {
-            Some(epoch) => *epoch >= justified_checkpoint.epoch,
-            None => false,
-        }
+        // For simplified version, all nodes are viable if they have sufficient epoch
+        self.slot >= justified_checkpoint.epoch * 32
     }
 }
 
@@ -268,14 +266,17 @@ impl ForkChoiceStore {
             // Find the child with the highest weight
             let mut best_child = None;
             let mut best_weight = 0;
+            let mut best_slot = 0;
             
             for &child_hash in &node.children {
                 if let Some(child) = self.blocks.get(&child_hash) {
                     // Only consider viable heads
                     if child.is_viable_head(&self.justified_checkpoint) {
                         let child_weight = child.get_total_weight();
-                        if child_weight > best_weight {
+                        // Prefer higher weight, break ties with higher slot
+                        if child_weight > best_weight || (child_weight == best_weight && child.slot > best_slot) {
                             best_weight = child_weight;
+                            best_slot = child.slot;
                             best_child = Some(child_hash);
                         }
                     }

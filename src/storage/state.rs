@@ -33,7 +33,6 @@ pub trait StateStorage: Send + Sync {
 
 /// State store implementation
 #[derive(Clone)]
-#[derive(Clone)]
 pub struct StateStore {
     database: Database,
     cache: HashMap<Root, BeaconState>,
