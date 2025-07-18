@@ -12,12 +12,16 @@ pub mod bench;
 pub mod api;
 pub mod config;
 pub mod utils;
+pub mod cli;
+pub mod client;
 
 // Re-export commonly used types
 pub use types::{
     BeaconBlock, BeaconState, Validator, ValidatorIndex,
     Attestation, Checkpoint, Slot, Epoch
 };
+
+pub use client::PanroClient;
 
 /// Main result type for the application
 pub type Result<T> = std::result::Result<T, Error>;

@@ -3,10 +3,12 @@
 use panro::{
     cli::{Cli, Command},
     PanroClient,
-    Result,
 };
 use tracing::{info, error};
 use clap::Parser;
+
+/// Main result type for the application
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
