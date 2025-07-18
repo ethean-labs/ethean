@@ -813,19 +813,25 @@ mod tests {
         let mut detector = setup_slashing_detector();
         
         // Process multiple attestations
-        for i in 1..10 {
+        for i in 1u64..10 {
             let att = create_test_attestation(i % 3, i.saturating_sub(1), i, [i as u8; 32]);
             
             // Create mock attestation for processing
             let attestation = Attestation {
-                data: AttestationData {
+                data: crate::types::attestation::AttestationData {
                     slot: att.slot,
-                    source: att.source.clone(),
-                    target: att.target.clone(),
+                    source: crate::types::checkpoint::Checkpoint {
+                        epoch: att.source.epoch,
+                        root: att.source.block_hash,
+                    },
+                    target: crate::types::checkpoint::Checkpoint {
+                        epoch: att.target.epoch,
+                        root: att.target.block_hash,
+                    },
                     beacon_block_root: [i as u8; 32],
-                    committee_index: 0,
+                    index: 0,
                 },
-                signature: att.signature.clone(),
+                signature: att.signature.point.clone(),
                 aggregation_bits: vec![true; 10],
             };
             
