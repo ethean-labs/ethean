@@ -531,7 +531,7 @@ impl ValidatorManager {
             None => return violations,
         };
 
-        let current_epoch = state.current_epoch();
+        let current_epoch = state.current_epoch(32); // 32 slots per epoch
 
         // Double proposal detection (simplified)
         if let Some(performance) = self.performance_cache.get(&validator_index) {
