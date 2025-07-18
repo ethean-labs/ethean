@@ -1,10 +1,13 @@
-//! Cryptography module placeholder
+//! Cryptography module for Beam Chain
 //!
-//! Will contain WOTS, BLS, Poseidon hash implementations.
+//! Contains WOTS, BLS, Poseidon hash implementations.
 
 pub mod bls;
 pub mod wots;
 pub mod hash;
+
+// Re-export main BLS types for convenience
+pub use bls::{RealBLSAggregator, BLSSignature, BLSPublicKey, BLSError, BLSStats};
 
 /// Crypto result type
 pub type Result<T> = std::result::Result<T, Error>;
