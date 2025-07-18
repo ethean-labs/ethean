@@ -3,7 +3,7 @@
 //! Implements block processing pipeline, epoch transitions, and state updates.
 
 use crate::types::{BeaconState, BeaconBlock, BeaconBlockHeader, Epoch, Slot, ValidatorIndex, BlockHash};
-use crate::storage::{StateStore, BlockStore, Database};
+use crate::storage::{StateStore, BlockStore};
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
@@ -262,15 +262,14 @@ impl StateTransitionProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::{Database, DatabaseConfig, StorageConfig};
+    use crate::storage::{memory_backend::InMemoryBackend, StorageConfig};
 
     fn setup_processor() -> StateTransitionProcessor {
         let config = StateTransitionConfig::default();
-        let db_config = DatabaseConfig::default();
-        let storage_config = StorageConfig::default();
-        let database = Database::open(&db_config).unwrap();
-        let state_store = StateStore::new(database.clone());
-        let block_store = BlockStore::new(database);
+        let _storage_config = StorageConfig::default();
+        let backend = InMemoryBackend::new();
+        let state_store = StateStore::new(backend.clone());
+        let block_store = BlockStore::new(backend);
         
         StateTransitionProcessor::new(config, state_store, block_store)
     }

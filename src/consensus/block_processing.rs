@@ -3,7 +3,7 @@
 //! Handles block validation, processing, and storage integration.
 
 use crate::types::{BeaconState, BeaconBlock, Slot, Epoch};
-use crate::storage::{StateStore, BlockStore, StateStorage, BlockStorage, DatabaseError, Database};
+use crate::storage::{StateStore, BlockStore, StateStorage, BlockStorage, DatabaseError};
 use crate::consensus::state_transition::{StateTransitionProcessor, StateTransitionError};
 use crate::crypto::hash::sha256;
 use serde::{Serialize, Deserialize};
