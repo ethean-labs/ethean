@@ -347,15 +347,22 @@ impl ValidatorManager {
         let _validator = Validator::new(pubkey, withdrawal_credentials);
         let validator_index = self.get_next_validator_index();
 
-        // Add to activation queue
+        // Add to activation queue with timestamp
         let entry = ActivationQueueEntry {
             validator_index,
             activation_epoch: self.calculate_activation_epoch(),
             deposit_amount,
             priority: self.calculate_priority(deposit_amount),
+            deposit_timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
         };
 
-        self.activation_queue.push_back(entry);
+        self.activation_queue.enqueue(entry)?;
+
+        // Initialize balance tracking
+        self.balance_tracker.set_balance(validator_index, deposit_amount, 0);
 
         Ok(validator_index)
     }
@@ -366,20 +373,11 @@ impl ValidatorManager {
         state: &mut BeaconState,
         current_epoch: Epoch,
     ) -> Result<Vec<ValidatorIndex>, ValidatorError> {
+        let activations = self.activation_queue.process_activations(current_epoch);
         let mut activated = Vec::new();
-        let mut to_activate = Vec::new();
 
-        // Find validators ready for activation
-        while let Some(entry) = self.activation_queue.front() {
-            if entry.activation_epoch <= current_epoch && to_activate.len() < self.config.max_validators_per_epoch as usize {
-                to_activate.push(self.activation_queue.pop_front().unwrap());
-            } else {
-                break;
-            }
-        }
-
-        // Activate validators
-        for entry in to_activate {
+        // Activate validators from queue
+        for entry in activations {
             self.activate_validator(state, entry.validator_index, current_epoch)?;
             activated.push(entry.validator_index);
         }
@@ -387,37 +385,227 @@ impl ValidatorManager {
         Ok(activated)
     }
 
-    /// Activate a specific validator
-    fn activate_validator(
-        &self,
+    /// Process validator exits for current epoch
+    pub fn process_exits(
+        &mut self,
         state: &mut BeaconState,
-        validator_index: ValidatorIndex,
-        activation_epoch: Epoch,
-    ) -> Result<(), ValidatorError> {
-        let validator = state.validators.validators.get_mut(validator_index as usize)
-            .ok_or(ValidatorError::NotFound(validator_index))?;
+        current_epoch: Epoch,
+    ) -> Result<Vec<ValidatorIndex>, ValidatorError> {
+        let exits = self.exit_queue.process_exits(current_epoch);
+        let mut exited = Vec::new();
 
-        validator.activation_epoch = activation_epoch;
-        
-        Ok(())
+        // Process exits from queue
+        for entry in exits {
+            self.exit_validator(state, entry.validator_index, entry.withdrawal_epoch)?;
+            exited.push(entry.validator_index);
+        }
+
+        Ok(exited)
     }
 
     /// Request validator exit
     pub fn request_exit(
         &mut self,
+        state: &BeaconState,
         validator_index: ValidatorIndex,
         voluntary: bool,
     ) -> Result<(), ValidatorError> {
-        let exit_epoch = self.calculate_exit_epoch();
-        
+        let validator = state.validators.validators.get(validator_index as usize)
+            .ok_or(ValidatorError::NotFound(validator_index))?;
+
+        // Calculate exit epoch
+        let current_epoch = state.current_epoch();
+        let exit_epoch = if voluntary {
+            current_epoch + self.config.exit_delay
+        } else {
+            current_epoch // Immediate for slashing
+        };
+
+        let withdrawal_epoch = exit_epoch + self.config.exit_delay;
+
         let entry = ExitQueueEntry {
             validator_index,
             exit_epoch,
             voluntary,
+            withdrawal_epoch,
         };
 
-        self.exit_queue.push_back(entry);
+        self.exit_queue.enqueue(entry)?;
         Ok(())
+    }
+
+    /// Apply rewards to validator
+    pub fn apply_reward(
+        &mut self,
+        validator_index: ValidatorIndex,
+        reward: u64,
+        epoch: Epoch,
+    ) -> Result<(), ValidatorError> {
+        self.balance_tracker.apply_reward(validator_index, reward, epoch)
+    }
+
+    /// Apply penalty to validator
+    pub fn apply_penalty(
+        &mut self,
+        validator_index: ValidatorIndex,
+        penalty: u64,
+        epoch: Epoch,
+    ) -> Result<(), ValidatorError> {
+        self.balance_tracker.apply_penalty(validator_index, penalty, epoch)
+    }
+
+    /// Get validator balance
+    pub fn get_balance(&self, validator_index: ValidatorIndex) -> Option<u64> {
+        self.balance_tracker.get_balance(validator_index)
+    }
+
+    /// Get validator effective balance
+    pub fn get_effective_balance(&self, validator_index: ValidatorIndex) -> Option<u64> {
+        self.balance_tracker.get_effective_balance(validator_index)
+    }
+
+    /// Exit a specific validator
+    fn exit_validator(
+        &mut self,
+        state: &mut BeaconState,
+        validator_index: ValidatorIndex,
+        withdrawal_epoch: Epoch,
+    ) -> Result<(), ValidatorError> {
+        let validator = state.validators.validators.get_mut(validator_index as usize)
+            .ok_or(ValidatorError::NotFound(validator_index))?;
+
+        validator.exit_epoch = withdrawal_epoch;
+        validator.withdrawable_epoch = withdrawal_epoch + self.config.exit_delay;
+        
+        Ok(())
+    }
+
+    /// Enhanced slashing with proper penalty calculation
+    pub fn slash_validator(
+        &mut self,
+        state: &mut BeaconState,
+        validator_index: ValidatorIndex,
+        slashing_epoch: Epoch,
+        reason: &str,
+    ) -> Result<(), ValidatorError> {
+        // Check if already slashed
+        if self.slashed_validators.contains_key(&validator_index) {
+            return Err(ValidatorError::AlreadySlashed(validator_index));
+        }
+
+        let validator = state.validators.validators.get_mut(validator_index as usize)
+            .ok_or(ValidatorError::NotFound(validator_index))?;
+
+        // Calculate slashing penalty (1/32 of effective balance)
+        let effective_balance = self.get_effective_balance(validator_index)
+            .unwrap_or(self.config.min_deposit_amount);
+        let slashing_penalty = effective_balance / 32;
+
+        // Apply immediate penalty
+        self.apply_penalty(validator_index, slashing_penalty, slashing_epoch)?;
+
+        // Mark as slashed
+        validator.slashed = true;
+        self.slashed_validators.insert(validator_index, slashing_epoch);
+
+        // Force exit
+        self.request_exit(state, validator_index, false)?;
+
+        println!("Validator {} slashed at epoch {} for: {}", 
+                validator_index, slashing_epoch, reason);
+
+        Ok(())
+    }
+
+    /// Check for slashing conditions
+    pub fn detect_slashing_conditions(
+        &self,
+        state: &BeaconState,
+        validator_index: ValidatorIndex,
+    ) -> Vec<String> {
+        let mut violations = Vec::new();
+
+        // Check if validator is active
+        let validator = match state.validators.validators.get(validator_index as usize) {
+            Some(v) => v,
+            None => return violations,
+        };
+
+        let current_epoch = state.current_epoch();
+
+        // Double proposal detection (simplified)
+        if let Some(performance) = self.performance_cache.get(&validator_index) {
+            if performance.block_proposal_success_rate > 1.0 {
+                violations.push("Double block proposal detected".to_string());
+            }
+        }
+
+        // Inactivity detection
+        if current_epoch > validator.activation_epoch + 4 {
+            if let Some(last_attestation) = self.get_last_attestation_epoch(validator_index) {
+                if current_epoch - last_attestation > 4 {
+                    violations.push("Extended inactivity detected".to_string());
+                }
+            }
+        }
+
+        violations
+    }
+
+    /// Get last attestation epoch for validator
+    fn get_last_attestation_epoch(&self, validator_index: ValidatorIndex) -> Option<Epoch> {
+        self.performance_cache
+            .get(&validator_index)
+            .and_then(|perf| {
+                // This would be populated from attestation processing
+                // For now, return None as placeholder
+                None
+            })
+    }
+
+    /// Update validator performance metrics
+    pub fn update_performance(
+        &mut self,
+        validator_index: ValidatorIndex,
+        attestation_success: bool,
+        inclusion_delay: u64,
+    ) -> Result<(), ValidatorError> {
+        let performance = self.performance_cache
+            .entry(validator_index)
+            .or_insert_with(|| ValidatorPerformance {
+                index: validator_index,
+                attestation_success_rate: 0.0,
+                block_proposal_success_rate: 0.0,
+                uptime_percentage: 100.0,
+                average_inclusion_delay: 0.0,
+                penalties_incurred: 0,
+            });
+
+        // Update attestation success rate (simple moving average)
+        let weight = 0.1; // Weight for new data
+        if attestation_success {
+            performance.attestation_success_rate = 
+                performance.attestation_success_rate * (1.0 - weight) + weight;
+        } else {
+            performance.attestation_success_rate *= 1.0 - weight;
+        }
+
+        // Update inclusion delay
+        performance.average_inclusion_delay = 
+            performance.average_inclusion_delay * (1.0 - weight) + 
+            inclusion_delay as f64 * weight;
+
+        Ok(())
+    }
+
+    /// Get activation queue status
+    pub fn get_activation_queue_status(&self) -> (usize, bool) {
+        (self.activation_queue.len(), self.activation_queue.is_empty())
+    }
+
+    /// Get exit queue status
+    pub fn get_exit_queue_status(&self) -> (usize, bool) {
+        (self.exit_queue.len(), self.exit_queue.is_empty())
     }
 
     /// Process validator exits for current epoch
@@ -462,40 +650,9 @@ impl ValidatorManager {
         Ok(())
     }
 
-    /// Slash validator for misconduct
-    pub fn slash_validator(
-        &mut self,
-        state: &mut BeaconState,
-        validator_index: ValidatorIndex,
-        _slashing_epoch: Epoch,
-    ) -> Result<u64, ValidatorError> {
-        let validator = state.validators.validators.get_mut(validator_index as usize)
-            .ok_or(ValidatorError::NotFound(validator_index))?;
-
-        if validator.slashed {
-            return Err(ValidatorError::AlreadySlashed(validator_index));
-        }
-
-        validator.slashed = true;
-        
-        // Calculate slashing penalty
-        let penalty = validator.effective_balance / self.config.slashing_penalty_multiplier;
-        
-        // Reduce balance
-        let balance = state.balances.get_mut(validator_index as usize)
-            .ok_or(ValidatorError::InvalidIndex(validator_index))?;
-        
-        *balance = balance.saturating_sub(penalty);
-
-        // Force exit
-        self.request_exit(validator_index, false)?;
-
-        Ok(penalty)
-    }
-
-    /// Update validator balance
+    /// Update validator balance (legacy method for compatibility)
     pub fn update_balance(
-        &self,
+        &mut self,
         state: &mut BeaconState,
         validator_index: ValidatorIndex,
         new_balance: u64,
@@ -504,6 +661,9 @@ impl ValidatorManager {
             .ok_or(ValidatorError::InvalidIndex(validator_index))?;
         
         *balance = new_balance;
+        
+        // Update in balance tracker as well
+        self.balance_tracker.set_balance(validator_index, new_balance, state.current_epoch());
         
         Ok(())
     }
@@ -514,15 +674,6 @@ impl ValidatorManager {
         validator_index: ValidatorIndex,
     ) -> Option<&ValidatorPerformance> {
         self.performance_cache.get(&validator_index)
-    }
-
-    /// Update validator performance
-    pub fn update_performance(
-        &mut self,
-        validator_index: ValidatorIndex,
-        performance: ValidatorPerformance,
-    ) {
-        self.performance_cache.insert(validator_index, performance);
     }
 
     /// Get active validator count
