@@ -5,10 +5,10 @@
 
 use axum::{
     extract::{
-        ws::{WebSocket, WebSocketUpgrade},
+        ws::{WebSocket, WebSocketUpgrade, Message},
         State, Path, Query,
     },
-    response::{Response, IntoResponse},
+    response::{Response, IntoResponse, sse},
     routing::get,
     Router,
 };
@@ -186,6 +186,17 @@ pub async fn websocket_handler(
     ws.on_upgrade(|socket| handle_websocket(socket, state))
 }
 
+/// Event receiver wrapper for different message types
+#[derive(Debug)]
+enum EventReceiver {
+    Block(broadcast::Receiver<BeaconBlock>),
+    Attestation(broadcast::Receiver<Attestation>),
+    ValidatorDuty(broadcast::Receiver<ValidatorDutyUpdate>),
+    ChainReorg(broadcast::Receiver<ChainReorgEvent>),
+    FinalizedCheckpoint(broadcast::Receiver<FinalizedCheckpointEvent>),
+    Head(broadcast::Receiver<HeadEvent>),
+}
+
 /// Handle WebSocket connection
 async fn handle_websocket(socket: WebSocket, state: ApiState) {
     let (mut sender, mut receiver) = socket.split();
@@ -193,7 +204,7 @@ async fn handle_websocket(socket: WebSocket, state: ApiState) {
     
     // Create subscription tracking
     let mut subscriptions = std::collections::HashSet::new();
-    let mut receivers = Vec::new();
+    let mut receivers: Vec<EventReceiver> = Vec::new();
 
     info!("WebSocket connection established");
 
@@ -211,27 +222,27 @@ async fn handle_websocket(socket: WebSocket, state: ApiState) {
                                         match topic {
                                             SubscriptionType::Block => {
                                                 let rx = broadcaster.block_tx.subscribe();
-                                                receivers.push(rx);
+                                                receivers.push(EventReceiver::Block(rx));
                                             }
                                             SubscriptionType::Attestation => {
                                                 let rx = broadcaster.attestation_tx.subscribe();
-                                                receivers.push(rx);
+                                                receivers.push(EventReceiver::Attestation(rx));
                                             }
                                             SubscriptionType::ValidatorDuty => {
                                                 let rx = broadcaster.validator_duty_tx.subscribe();
-                                                receivers.push(rx);
+                                                receivers.push(EventReceiver::ValidatorDuty(rx));
                                             }
                                             SubscriptionType::ChainReorg => {
                                                 let rx = broadcaster.chain_reorg_tx.subscribe();
-                                                receivers.push(rx);
+                                                receivers.push(EventReceiver::ChainReorg(rx));
                                             }
                                             SubscriptionType::FinalizedCheckpoint => {
                                                 let rx = broadcaster.finalized_checkpoint_tx.subscribe();
-                                                receivers.push(rx);
+                                                receivers.push(EventReceiver::FinalizedCheckpoint(rx));
                                             }
                                             SubscriptionType::Head => {
                                                 let rx = broadcaster.head_tx.subscribe();
-                                                receivers.push(rx);
+                                                receivers.push(EventReceiver::Head(rx));
                                             }
                                         }
                                     }
@@ -245,9 +256,12 @@ async fn handle_websocket(socket: WebSocket, state: ApiState) {
                                     // Send pong response
                                     let pong_msg = WsMessage::Pong;
                                     if let Ok(json) = serde_json::to_string(&pong_msg) {
-                                        if let Err(e) = sender.send(axum::extract::ws::Message::Text(json)).await {
+                                        if let Err(e) = sender.send(Message::Text(json)).await {
                                             error!("Failed to send pong: {}", e);
                                             break;
+                                        }
+                                    }
+                                }
                                         }
                                     }
                                 }

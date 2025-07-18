@@ -95,6 +95,7 @@ impl ApiServer {
         Router::new()
             .route("/health", get(health_check))
             .nest("/eth/v1", Self::create_v1_routes())
+            .nest("/", websocket::create_routes())
             .with_state(state)
     }
 
@@ -106,7 +107,6 @@ impl ApiServer {
             .nest("/node", node::create_routes())
             .nest("/config", config::create_routes())
             .nest("/debug", debug::create_routes())
-            .nest("/ws", websocket::create_routes())
     }
 
     /// Start the API server
