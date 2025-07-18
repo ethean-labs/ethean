@@ -12,7 +12,39 @@ pub mod network_config;
 use crate::types::{BeaconBlock, Attestation, Epoch, Slot};
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use std::time::Duration;
+use std::sync::Arc;
+
+/// Main network manager
+#[derive(Debug)]
+pub struct NetworkManager {
+    peer_manager: Arc<peer_manager::PeerManager>,
+    gossip: Arc<gossip::GossipService>,
+    discovery: Arc<discovery::Discovery>,
+    message_handler: Arc<message_handler::MessageHandler>,
+}
+
+impl NetworkManager {
+    /// Create a new network manager
+    pub fn new() -> Self {
+        let peer_manager = Arc::new(peer_manager::PeerManager::new());
+        let gossip = Arc::new(gossip::GossipService::new());
+        let discovery = Arc::new(discovery::Discovery::new());
+        let message_handler = Arc::new(message_handler::MessageHandler::new());
+        
+        Self {
+            peer_manager,
+            gossip,
+            discovery,
+            message_handler,
+        }
+    }
+    
+    /// Start the network manager
+    pub async fn start(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // Start network services
+        Ok(())
+    }
+}
 use thiserror::Error;
 
 // Re-export main components

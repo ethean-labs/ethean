@@ -2,9 +2,9 @@
 
 use crate::{
     api::ApiServer,
-    config::Config,
+    config::{Config, ValidatorConfig, ApiConfig},
     consensus::validator_management::ValidatorManager,
-    storage::StateStore,
+    storage::{StateStore, database::Database},
     network::NetworkManager,
 };
 use std::sync::Arc;
@@ -25,19 +25,24 @@ impl PanroClient {
         // Load configuration
         let config = Config::default();
         
+        // Create database
+        let database = Database::new();
+        
         // Create validator manager
-        let validator_manager = Arc::new(ValidatorManager::new());
+        let validator_manager = Arc::new(ValidatorManager::new(
+            config.validator.clone(),
+            StateStore::new(database.clone())
+        ));
         
         // Create state store
-        let state_store = Arc::new(StateStore::new());
+        let state_store = Arc::new(StateStore::new(database));
         
         // Create network manager
         let network_manager = Arc::new(NetworkManager::new());
         
         // Create API server
         let api_server = ApiServer::new(
-            config.clone(),
-            validator_manager,
+            config.api.clone(),
             state_store,
             network_manager,
         );
