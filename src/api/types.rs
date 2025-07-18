@@ -29,6 +29,10 @@ impl<T> ApiResponse<T> {
             data,
         }
     }
+
+    pub fn success(data: T) -> Self {
+        Self::new(data)
+    }
 }
 
 /// Standard error response
@@ -62,12 +66,32 @@ pub struct Genesis {
     pub genesis_fork_version: String,
 }
 
+impl Default for Genesis {
+    fn default() -> Self {
+        Self {
+            genesis_time: "1606824000".to_string(),
+            genesis_validators_root: "0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95".to_string(),
+            genesis_fork_version: "0x00000000".to_string(),
+        }
+    }
+}
+
 /// Fork information
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Fork {
     pub previous_version: String,
     pub current_version: String,
     pub epoch: String,
+}
+
+impl Default for Fork {
+    fn default() -> Self {
+        Self {
+            previous_version: "0x00000000".to_string(),
+            current_version: "0x01000000".to_string(),
+            epoch: "0".to_string(),
+        }
+    }
 }
 
 /// Validator information

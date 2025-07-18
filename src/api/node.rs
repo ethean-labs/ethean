@@ -411,7 +411,7 @@ mod tests {
         
         let response = result.unwrap();
         // All returned peers should have "connected" state
-        for peer in response.data {
+        for peer in &response.data {
             assert_eq!(peer.state, "connected");
         }
     }
