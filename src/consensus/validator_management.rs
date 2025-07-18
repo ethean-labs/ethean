@@ -820,7 +820,7 @@ mod tests {
         
         // Add validators to queue
         for i in 0..3 {
-            let pubkey = PublicKey([i as u8; 48]);
+            let pubkey = vec![i as u8; 48]; // PublicKey is Vec<u8>
             let withdrawal_credentials = [i as u8; 32];
             let deposit_amount = 1_000_000_000; // 1 ETH
             manager.add_validator(pubkey, withdrawal_credentials, deposit_amount).unwrap();
