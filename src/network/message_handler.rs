@@ -500,7 +500,6 @@ mod tests {
                 sync_aggregate: None,
                 execution_payload: None,
             },
-            block_root: [slot as u8; 32],
         }
     }
     
@@ -583,7 +582,7 @@ mod tests {
         handler.handle_message(low_msg, None).unwrap();
         handler.handle_message(high_msg, None).unwrap();
         
-        let (high_size, normal_size, low_size) = handler.get_queue_sizes();
+        let (_high_size, _normal_size, low_size) = handler.get_queue_sizes();
         assert_eq!(high_size, 1); // Block message
         assert_eq!(low_size, 1);  // Status message
         
