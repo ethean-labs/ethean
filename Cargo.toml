@@ -2,6 +2,9 @@
 name = "panro"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/panro-labs/panro"
+authors = ["Panro Team <paro@gmx.us>"]
 
 [[bin]]
 name = "panro"
@@ -10,9 +13,6 @@ path = "src/bin/main.rs"
 [[bin]]
 name = "benchmark"
 path = "src/bin/benchmark.rs"
-license = "MIT"
-repository = "https://github.com/panro-labs/panro"
-authors = ["Panro Team <paro@gmx.us>"]
 
 [dependencies]
 # Core async runtime
@@ -70,11 +70,3 @@ panic = "abort"
 [profile.dev]
 debug = true
 opt-level = 0
-
-[[bin]]
-name = "panro"
-path = "src/bin/main.rs"
-
-[[bin]]
-name = "benchmark"
-path = "src/bin/benchmark.rs"
