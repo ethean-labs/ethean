@@ -11,6 +11,17 @@ authors = ["Panro Team <team@panro.dev>"]
 tokio = { version = "1.0", features = ["full"] }
 tokio-util = "0.7"
 
+# Web framework and API
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "compression"] }
+hyper = "1.0"
+tokio-tungstenite = "0.21"
+
+# API documentation and validation
+utoipa = { version = "4.0", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
+
 # Networking
 libp2p = "0.54"
 
