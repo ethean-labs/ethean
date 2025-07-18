@@ -91,7 +91,7 @@ pub struct VoteSet {
 }
 
 /// Finality round state
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct FinalityRound {
     /// Round number
     pub round: u64,
@@ -99,8 +99,8 @@ pub struct FinalityRound {
     pub prevotes: HashMap<Checkpoint, VoteSet>,
     /// Precommits collected this round
     pub precommits: HashMap<Checkpoint, VoteSet>,
-    /// Round start time
-    pub start_time: Instant,
+    /// Round start time (as timestamp)
+    pub start_time: u64,
     /// Whether this round has completed
     pub completed: bool,
 }
