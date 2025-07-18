@@ -600,7 +600,7 @@ impl AttestationProcessor {
     /// Check if chain is in inactivity leak
     fn is_inactivity_leak(&self, state: &BeaconState) -> bool {
         // Simplified: check if we haven't finalized in 4 epochs
-        state.current_epoch().saturating_sub(state.finalized_checkpoint.epoch) > 4
+        state.current_epoch(32).saturating_sub(state.finalized_checkpoint.epoch) > 4
     }
     fn get_committee(
         &mut self,
