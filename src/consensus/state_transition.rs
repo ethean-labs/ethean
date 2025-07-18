@@ -262,14 +262,14 @@ impl StateTransitionProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::{memory_backend::InMemoryBackend, StorageConfig};
+    use crate::storage::{Database, StorageConfig};
 
     fn setup_processor() -> StateTransitionProcessor {
         let config = StateTransitionConfig::default();
         let _storage_config = StorageConfig::default();
-        let backend = InMemoryBackend::new();
-        let state_store = StateStore::new(backend.clone());
-        let block_store = BlockStore::new(backend);
+        let database = Database::in_memory();
+        let state_store = StateStore::new(database.clone());
+        let block_store = BlockStore::new(database);
         
         StateTransitionProcessor::new(config, state_store, block_store)
     }

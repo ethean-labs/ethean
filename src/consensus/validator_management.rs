@@ -689,12 +689,12 @@ impl ValidatorManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::memory_backend::InMemoryBackend;
+    use crate::storage::Database;
 
     fn setup_manager() -> ValidatorManager {
         let config = ValidatorConfig::default();
-        let backend = InMemoryBackend::new();
-        let state_store = StateStore::new(backend);
+        let database = Database::in_memory();
+        let state_store = StateStore::new(database);
         
         ValidatorManager::new(config, state_store)
     }
