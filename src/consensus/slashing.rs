@@ -89,10 +89,10 @@ impl SlashingAttestation {
             
         Self {
             validator,
-            source: attestation.data.source.clone(),
-            target: attestation.data.target.clone(),
+            source: convert_checkpoint(&attestation.data.source),
+            target: convert_checkpoint(&attestation.data.target),
             slot: attestation.data.slot,
-            signature: attestation.signature.clone(),
+            signature: BLSSignature { point: attestation.signature.clone() },
             timestamp,
         }
     }
