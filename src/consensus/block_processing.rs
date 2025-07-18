@@ -3,7 +3,7 @@
 //! Handles block validation, processing, and storage integration.
 
 use crate::types::{BeaconState, BeaconBlock, Slot, Epoch};
-use crate::storage::{StateStore, BlockStore, StateStorage, BlockStorage, DatabaseError};
+use crate::storage::{StateStore, BlockStore, StateStorage, BlockStorage, DatabaseError, Database};
 use crate::consensus::state_transition::{StateTransitionProcessor, StateTransitionError};
 use crate::crypto::hash::sha256;
 use serde::{Serialize, Deserialize};
@@ -230,7 +230,6 @@ pub struct ProcessingStats {
 mod tests {
     use super::*;
     use crate::consensus::state_transition::{StateTransitionProcessor, StateTransitionConfig};
-    use crate::storage::Database;
 
     fn setup_processor() -> BlockProcessor {
         let database = Database::in_memory();
