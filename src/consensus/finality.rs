@@ -149,12 +149,14 @@ impl FinalityTracker {
             return Err(FinalityError::SafetyViolation);
         }
         
+        let checkpoint_epoch = checkpoint.epoch;
+        
         // Update finalized checkpoint
         self.finalized_checkpoint = checkpoint.clone();
-        self.finalized_history.insert(checkpoint.epoch, checkpoint);
+        self.finalized_history.insert(checkpoint_epoch, checkpoint);
         
         // Clean old justification votes
-        self.justification_votes.retain(|cp, _| cp.epoch >= checkpoint.epoch);
+        self.justification_votes.retain(|cp, _| cp.epoch >= checkpoint_epoch);
         
         Ok(())
     }
