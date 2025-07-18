@@ -97,6 +97,27 @@ impl CommitteeManager {
         }
     }
 
+    /// Get committee for specific slot and index
+    pub fn get_committee_for_slot(
+        &mut self,
+        slot: Slot,
+        committee_index: u64,
+        state: &BeaconState,
+    ) -> Result<Committee, AttestationError> {
+        let epoch = slot / 32; // Simplified epoch calculation
+        
+        // Get committees for this epoch
+        let committees = self.get_committees_for_epoch(state, epoch)?;
+        
+        // Find the specific committee
+        committees.into_iter()
+            .find(|c| c.slot == slot && c.index == committee_index)
+            .ok_or(AttestationError::CommitteeNotFound { 
+                slot, 
+                index: committee_index 
+            })
+    }
+
     /// Get all committees for an epoch
     pub fn get_epoch_committees(
         &mut self,
