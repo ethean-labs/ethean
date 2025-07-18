@@ -4,6 +4,7 @@
 //! generation with optimized data structures for real-time validation.
 
 use crate::types::{Slot, Epoch, ValidatorIndex, Attestation};
+use crate::crypto::hash::Hash;
 use crate::consensus::{ValidatorManager, FinalityGadget};
 use crate::consensus::finality::Checkpoint;
 use crate::crypto::bls::{BLSSignature, BLSError};
