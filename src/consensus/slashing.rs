@@ -894,26 +894,38 @@ mod tests {
         let att2 = create_test_attestation(0, 1, 2, [2u8; 32]);
         
         let attestation1 = Attestation {
-            data: AttestationData {
+            data: crate::types::attestation::AttestationData {
                 slot: att1.slot,
-                source: att1.source.clone(),
-                target: att1.target.clone(),
+                source: crate::types::checkpoint::Checkpoint {
+                    epoch: att1.source.epoch,
+                    root: att1.source.block_hash,
+                },
+                target: crate::types::checkpoint::Checkpoint {
+                    epoch: att1.target.epoch,
+                    root: att1.target.block_hash,
+                },
                 beacon_block_root: att1.target.block_hash,
-                committee_index: 0,
+                index: 0,
             },
-            signature: att1.signature.clone(),
+            signature: att1.signature.point.clone(),
             aggregation_bits: vec![true; 10],
         };
         
         let attestation2 = Attestation {
-            data: AttestationData {
+            data: crate::types::attestation::AttestationData {
                 slot: att2.slot,
-                source: att2.source.clone(),
-                target: att2.target.clone(),
+                source: crate::types::checkpoint::Checkpoint {
+                    epoch: att2.source.epoch,
+                    root: att2.source.block_hash,
+                },
+                target: crate::types::checkpoint::Checkpoint {
+                    epoch: att2.target.epoch,
+                    root: att2.target.block_hash,
+                },
                 beacon_block_root: att2.target.block_hash,
-                committee_index: 0,
+                index: 0,
             },
-            signature: att2.signature.clone(),
+            signature: att2.signature.point.clone(),
             aggregation_bits: vec![true; 10],
         };
         
