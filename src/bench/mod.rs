@@ -14,7 +14,7 @@ use bls12_381::{G1Affine, G2Affine};
 /// Comprehensive benchmark suite for Beam Chain
 pub struct BeamChainBenchmark {
     monitor: PerformanceMonitor,
-    bls_aggregator: RealBLSAggregator,
+    pub bls_aggregator: RealBLSAggregator,
 }
 
 impl BeamChainBenchmark {
@@ -374,7 +374,7 @@ mod tests {
         let mut benchmark = BeamChainBenchmark::new();
         
         // Run some operations
-        benchmark.benchmark_bls_operations(5);
+        let _ = benchmark.benchmark_bls_operations(5);
         
         // Reset and verify
         benchmark.reset();
