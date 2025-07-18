@@ -486,18 +486,8 @@ mod tests {
             state_root: [1u8; 32],
             body: BeaconBlockBody {
                 randao_reveal: vec![0u8; 96],
-                eth1_data: crate::types::block::Eth1Data {
-                    deposit_root: [0u8; 32],
-                    deposit_count: 0,
-                    block_hash: [0u8; 32],
-                },
                 graffiti: [0u8; 32],
-                proposer_slashings: Vec::new(),
-                attester_slashings: Vec::new(),
                 attestations: Vec::new(),
-                deposits: Vec::new(),
-                voluntary_exits: Vec::new(),
-                sync_aggregate: None,
                 execution_payload: None,
             },
         }
