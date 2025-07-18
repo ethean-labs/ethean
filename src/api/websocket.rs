@@ -22,7 +22,7 @@ use super::{ApiState, error::Result};
 use crate::types::{BeaconBlock, Attestation, Slot, Epoch};
 
 /// WebSocket subscription types
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum SubscriptionType {
     Block,
