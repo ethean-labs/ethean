@@ -117,7 +117,10 @@ impl ManagedPeer {
         let new_state = state.clone();
         self.state = state;
         if new_state == PeerState::Connected {
-            self.info.last_seen = Instant::now();
+            self.info.last_seen = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
         }
     }
     
