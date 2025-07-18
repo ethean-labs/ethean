@@ -14,6 +14,15 @@ use std::collections::{HashMap, HashSet, BTreeMap, VecDeque};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::sync::Arc;
 
+// Helper function to convert types::checkpoint::Checkpoint to consensus::finality::Checkpoint
+fn convert_checkpoint(types_checkpoint: &crate::types::checkpoint::Checkpoint) -> Checkpoint {
+    Checkpoint {
+        epoch: types_checkpoint.epoch,
+        block_hash: Hash::from(&types_checkpoint.root),
+        state_root: Hash::from(&types_checkpoint.root), // Use same root for both
+    }
+}
+
 /// Slashing detection errors
 #[derive(Debug, Error)]
 pub enum SlashingError {
