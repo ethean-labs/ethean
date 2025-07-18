@@ -5,6 +5,7 @@
 pub mod state_transition;
 pub mod block_processing;
 pub mod validator_management;
+pub mod attestation_processing;
 
 pub use state_transition::{StateTransitionProcessor, StateTransitionConfig, StateTransitionError};
 pub use block_processing::{BlockProcessor, BlockProcessingConfig, BlockProcessingError, BlockProcessingResult};

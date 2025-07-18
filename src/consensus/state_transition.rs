@@ -201,13 +201,29 @@ impl StateTransitionProcessor {
     /// Process single attestation
     fn process_attestation(
         &self,
-        _state: &mut BeaconState,
-        _attestation: &crate::types::Attestation,
+        state: &mut BeaconState,
+        attestation: &crate::types::Attestation,
     ) -> Result<(), StateTransitionError> {
-        // TODO: Implement attestation processing
-        // - Validate attestation data
-        // - Check committee assignments
-        // - Update validator balances
+        // TODO: Use AttestationProcessor for full implementation
+        // For now, basic validation
+        
+        // Check attestation slot is valid
+        let current_epoch = state.current_epoch(self.config.slots_per_epoch);
+        let attestation_epoch = attestation.data.slot / self.config.slots_per_epoch;
+        
+        if attestation_epoch > current_epoch {
+            return Err(StateTransitionError::ValidationFailed(
+                "Attestation from future epoch".to_string()
+            ));
+        }
+        
+        // Basic signature check placeholder
+        if attestation.signature.is_empty() {
+            return Err(StateTransitionError::ValidationFailed(
+                "Empty attestation signature".to_string()
+            ));
+        }
+        
         Ok(())
     }
 
