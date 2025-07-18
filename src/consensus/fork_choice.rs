@@ -479,8 +479,6 @@ impl ForkChoiceStore {
 pub struct LMDGHOSTForkChoice {
     /// Fork choice store
     store: ForkChoiceStore,
-    /// Attestation processor for validation
-    attestation_processor: Arc<AttestationProcessor>,
     /// Validator manager
     validator_manager: Arc<ValidatorManager>,
     /// Finality gadget integration
@@ -496,12 +494,10 @@ impl LMDGHOSTForkChoice {
     pub fn new(
         genesis_block: Hash,
         genesis_checkpoint: Checkpoint,
-        attestation_processor: Arc<AttestationProcessor>,
         validator_manager: Arc<ValidatorManager>,
     ) -> Self {
         Self {
             store: ForkChoiceStore::new(genesis_block, genesis_checkpoint),
-            attestation_processor,
             validator_manager,
             finality_gadget: None,
             head_computation_times: VecDeque::new(),
@@ -733,19 +729,16 @@ mod tests {
         let state_store = StateStore::new(database);
         let validator_manager = Arc::new(ValidatorManager::new(validator_config, state_store));
         
-        let attestation_processor = Arc::new(AttestationProcessor::new(
+        let _attestation_processor = Arc::new(AttestationProcessor::new(
             Default::default(),
             (*validator_manager).clone(),
         ));
-        
+
         let fork_choice = LMDGHOSTForkChoice::new(
             genesis_block,
             genesis_checkpoint,
-            attestation_processor,
             validator_manager,
-        );
-        
-        let mut state = BeaconState::default();
+        );        let mut state = BeaconState::default();
         // Add test validators
         for i in 0..10 {
             let validator = Validator {

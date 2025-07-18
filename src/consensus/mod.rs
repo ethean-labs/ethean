@@ -8,6 +8,7 @@ pub mod block_processing;
 pub mod finality;
 pub mod fork_choice;
 pub mod performance;
+pub mod slashing;
 pub mod state_transition;
 pub mod validator_management;
 
@@ -16,6 +17,7 @@ pub use block_processing::*;
 pub use finality::*;
 pub use fork_choice::*;
 pub use performance::*;
+pub use slashing::*;
 pub use state_transition::*;
 pub use validator_management::*;
 
