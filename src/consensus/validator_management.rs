@@ -730,8 +730,26 @@ mod tests {
     #[test]
     fn test_validator_exit_request() {
         let mut manager = setup_manager();
-        let state = BeaconState::default();
-        let result = manager.request_exit(&state, 0, true);
+        let mut state = BeaconState::default();
+        
+        // Add a validator first
+        let pubkey = vec![1u8; 48];
+        let withdrawal_credentials = [1u8; 32];
+        let deposit_amount = 1_000_000_000; // 1 ETH
+        let validator_index = manager.add_validator(pubkey, withdrawal_credentials, deposit_amount).unwrap();
+        
+        // Add validator to state
+        let validator = crate::types::Validator {
+            pubkey: vec![1u8; 48],
+            withdrawal_credentials: [1u8; 32],
+            effective_balance: deposit_amount,
+            slashed: false,
+            activation_epoch: 0,
+            exit_epoch: u64::MAX,
+        };
+        state.validators.validators.push(validator);
+        
+        let result = manager.request_exit(&state, validator_index, true);
         match &result {
             Ok(_) => {},
             Err(e) => println!("Exit request error: {:?}", e),
