@@ -47,6 +47,7 @@ pub struct StorageManager {
     state_store: StateStore,
     block_store: BlockStore,
     checkpoint_manager: CheckpointManager,
+    #[allow(dead_code)]
     config: StorageConfig,
 }
 

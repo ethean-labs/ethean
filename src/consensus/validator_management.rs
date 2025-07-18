@@ -674,6 +674,7 @@ impl ValidatorManager {
     }
 
     /// Calculate exit epoch based on queue and delay
+    #[allow(dead_code)]
     fn calculate_exit_epoch(&self) -> Epoch {
         // Add exit delay to current epoch
         // For now, return a placeholder
