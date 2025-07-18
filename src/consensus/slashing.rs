@@ -13,9 +13,6 @@ use std::collections::{HashMap, BTreeMap, VecDeque};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::sync::Arc;
 
-// Hash type alias for convenience  
-type Hash = [u8; 32];
-
 // Helper function to convert types::checkpoint::Checkpoint to consensus::finality::Checkpoint
 fn convert_checkpoint(types_checkpoint: &crate::types::checkpoint::Checkpoint) -> Checkpoint {
     Checkpoint {
@@ -255,6 +252,18 @@ struct IntervalNode {
     attestation: SlashingAttestation,
     /// Maximum target epoch in subtree
     max_target: Epoch,
+}
+
+impl IntervalNode {
+    /// Check if this interval overlaps with given range
+    pub fn overlaps_with(&self, start: Epoch, end: Epoch) -> bool {
+        self.source_start <= end && self.target_end >= start
+    }
+    
+    /// Update max_target for tree balancing
+    pub fn update_max_target(&mut self, subtree_max: Epoch) {
+        self.max_target = self.max_target.max(subtree_max);
+    }
 }
 
 /// Surround vote detector using interval tree optimization
@@ -587,6 +596,12 @@ impl SlashingDetector {
         self.violation_queue.pop_front()
     }
     
+    /// Get validator information for slashing detection
+    pub fn get_validator_info(&self, validator_index: ValidatorIndex) -> Option<bool> {
+        // Use validator manager to check if validator has balance (indicating it's active)
+        self.validator_manager.get_balance(validator_index).map(|balance| balance > 0)
+    }
+    
     /// Cleanup old data based on finalized epoch
     pub fn cleanup_old_data(&mut self) {
         if let Some(ref finality_gadget) = self.finality_gadget {
@@ -664,7 +679,7 @@ mod tests {
     use crate::consensus::validator_management::{ValidatorConfig, ValidatorManager};
     use crate::storage::{StateStore, Database};
     
-    fn create_test_attestation(validator: ValidatorIndex, source_epoch: Epoch, target_epoch: Epoch, target_hash: Hash) -> SlashingAttestation {
+    fn create_test_attestation(validator: ValidatorIndex, source_epoch: Epoch, target_epoch: Epoch, target_hash: [u8; 32]) -> SlashingAttestation {
         SlashingAttestation {
             validator,
             source: Checkpoint {
