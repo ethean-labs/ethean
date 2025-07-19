@@ -12,6 +12,8 @@ pub mod bandwidth;
 pub mod protocol;
 pub mod connection_manager;
 pub mod security;
+pub mod performance;
+pub mod orchestrator;
 
 use crate::types::{BeaconBlock, Attestation, Epoch, Slot};
 use serde::{Serialize, Deserialize};
@@ -46,6 +48,8 @@ pub use message_handler::{MessageHandler, MessageResult, MessagePriority};
 pub use network_config::{NetworkConfig, PeerConfig};
 pub use connection_manager::{ConnectionPool, ConnectionInfo, ConnectionPoolConfig};
 pub use security::{NetworkSecurity, SecurityConfig, AuthMethod, TrustLevel};
+pub use performance::{PerformanceOptimizer, PerformanceConfig, PerformanceMetrics};
+pub use orchestrator::{NetworkOrchestrator, OrchestratorBuilder, OrchestratorConfig, NetworkStatus};
 
 /// Network errors
 #[derive(Debug, Error)]
@@ -64,6 +68,27 @@ pub enum NetworkError {
     
     #[error("Discovery error: {reason}")]
     Discovery { reason: String },
+
+    #[error("Component initialization failed: {component} - {reason}")]
+    InitializationFailed { component: String, reason: String },
+
+    #[error("Network startup failed: {component} - {reason}")]
+    StartupFailed { component: String, reason: String },
+
+    #[error("Security violation: peer {peer_id} - {reason}")]
+    SecurityViolation { peer_id: String, reason: String },
+
+    #[error("Invalid network state: current={current}, expected={expected}")]
+    InvalidState { current: String, expected: String },
+
+    #[error("Performance optimization failed: {reason}")]
+    PerformanceError { reason: String },
+
+    #[error("Authentication failed: {reason}")]
+    AuthenticationFailed { reason: String },
+
+    #[error("Rate limiting error: {reason}")]
+    RateLimitError { reason: String },
 }
 
 /// Network message types for consensus
