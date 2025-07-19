@@ -23,6 +23,21 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::time::{interval, timeout};
 use tracing::{debug, error, info, warn};
 
+/// Discovery service errors
+#[derive(Debug, thiserror::Error)]
+pub enum DiscoveryError {
+    #[error("Bootstrap failed: {0}")]
+    BootstrapFailed(String),
+    #[error("Network error: {0}")]
+    NetworkError(String),
+    #[error("Configuration error: {0}")]
+    ConfigError(String),
+    #[error("Timeout error: {0}")]
+    Timeout(String),
+    #[error("Serialization error: {0}")]
+    SerializationError(String),
+}
+
 /// Enhanced node information for advanced peer discovery
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveryNode {
@@ -152,6 +167,129 @@ impl Default for AdvancedDiscoveryConfig {
             peer_info_ttl: Duration::from_secs(3600), // 1 hour
             random_walk_interval: Duration::from_secs(600), // 10 minutes
             min_peer_score: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum DiscoveryAction {
+    /// Connect to a newly discovered peer
+    ConnectToPeer {
+        peer_id: PeerId,
+        addresses: Vec<Multiaddr>,
+    },
+    /// Disconnect from a peer with poor reputation
+    DisconnectFromPeer {
+        peer_id: PeerId,
+        reason: String,
+    },
+    /// Update routing table entry
+    UpdateRoutingTable {
+        peer_id: PeerId,
+        addresses: Vec<Multiaddr>,
+    },
+    /// Broadcast peer information
+    BroadcastPeer {
+        peer_id: PeerId,
+        addresses: Vec<Multiaddr>,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub enum DiscoveryEvent {
+    Kademlia(KademliaEvent),
+    Mdns(MdnsEvent),
+    Identify(IdentifyEvent),
+}
+
+/// Gossip protocol message types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum GossipMessage {
+    /// Peer advertisement message
+    PeerAdvertisement {
+        peer_id: String,
+        addresses: Vec<String>,
+        timestamp: u64,
+        signature: Vec<u8>,
+    },
+    /// Network topology update
+    TopologyUpdate {
+        updates: Vec<TopologyChange>,
+        timestamp: u64,
+    },
+    /// Content routing information
+    ContentRouting {
+        content_id: String,
+        provider_peers: Vec<String>,
+        timestamp: u64,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TopologyChange {
+    pub peer_id: String,
+    pub change_type: ChangeType,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ChangeType {
+    PeerJoined,
+    PeerLeft,
+    AddressUpdated,
+    CapabilityChanged,
+}
+
+/// Gossip protocol manager for efficient peer information propagation
+pub struct GossipProtocol {
+    local_peer_id: PeerId,
+    gossip_peers: HashMap<PeerId, GossipPeerInfo>,
+    message_cache: HashMap<String, CachedMessage>,
+    config: GossipConfig,
+    stats: GossipStats,
+}
+
+#[derive(Debug, Clone)]
+pub struct GossipPeerInfo {
+    pub peer_id: PeerId,
+    pub score: f64,
+    pub last_message: Instant,
+    pub message_count: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct CachedMessage {
+    pub message: GossipMessage,
+    pub received_at: Instant,
+    pub ttl: Duration,
+    pub propagation_count: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct GossipConfig {
+    pub max_gossip_peers: usize,
+    pub gossip_interval: Duration,
+    pub message_ttl: Duration,
+    pub max_propagation_hops: u32,
+    pub peer_exchange_interval: Duration,
+}
+
+#[derive(Debug, Default)]
+pub struct GossipStats {
+    pub messages_sent: u64,
+    pub messages_received: u64,
+    pub messages_propagated: u64,
+    pub peer_exchanges: u64,
+}
+
+impl Default for GossipConfig {
+    fn default() -> Self {
+        Self {
+            max_gossip_peers: 12,
+            gossip_interval: Duration::from_secs(30),
+            message_ttl: Duration::from_secs(300),
+            max_propagation_hops: 3,
+            peer_exchange_interval: Duration::from_secs(60),
         }
     }
 }
@@ -441,6 +579,137 @@ impl PeerDiscovery {
         // Simplified implementation - would handle identify events
         Ok(Vec::new())
     }
+}
+
+impl GossipProtocol {
+    /// Create new gossip protocol manager
+    pub fn new(local_peer_id: PeerId, config: GossipConfig) -> Self {
+        Self {
+            local_peer_id,
+            gossip_peers: HashMap::new(),
+            message_cache: HashMap::new(),
+            config,
+            stats: GossipStats::default(),
+        }
+    }
+
+    /// Add peer to gossip network
+    pub fn add_gossip_peer(&mut self, peer_id: PeerId) {
+        if self.gossip_peers.len() < self.config.max_gossip_peers {
+            let peer_info = GossipPeerInfo {
+                peer_id,
+                score: 0.5, // Neutral score
+                last_message: Instant::now(),
+                message_count: 0,
+            };
+            self.gossip_peers.insert(peer_id, peer_info);
+        }
+    }
+
+    /// Remove peer from gossip network
+    pub fn remove_gossip_peer(&mut self, peer_id: &PeerId) {
+        self.gossip_peers.remove(peer_id);
+    }
+
+    /// Propagate gossip message to network
+    pub async fn propagate_message(
+        &mut self,
+        message: GossipMessage,
+    ) -> Result<u32, DiscoveryError> {
+        let message_id = self.calculate_message_id(&message);
+        
+        // Check if message is already in cache
+        if self.message_cache.contains_key(&message_id) {
+            return Ok(0);
+        }
+
+        // Cache the message
+        let cached_msg = CachedMessage {
+            message: message.clone(),
+            received_at: Instant::now(),
+            ttl: self.config.message_ttl,
+            propagation_count: 0,
+        };
+        self.message_cache.insert(message_id, cached_msg);
+
+        // Select peers for gossip
+        let gossip_peers = self.select_gossip_peers();
+        let propagated_count = gossip_peers.len() as u32;
+
+        // Update statistics
+        self.stats.messages_propagated += 1;
+
+        Ok(propagated_count)
+    }
+
+    /// Select optimal peers for message gossip
+    fn select_gossip_peers(&self) -> Vec<PeerId> {
+        let target_count = (self.gossip_peers.len() / 3).max(1).min(6);
+        
+        let mut peers: Vec<_> = self.gossip_peers
+            .values()
+            .collect();
+        
+        // Sort by score (descending)
+        peers.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
+        
+        peers.into_iter()
+            .take(target_count)
+            .map(|info| info.peer_id)
+            .collect()
+    }
+
+    /// Calculate unique message ID
+    pub fn calculate_message_id(&self, message: &GossipMessage) -> String {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        format!("{:?}", message).hash(&mut hasher);
+        format!("{:x}", hasher.finish())
+    }
+
+    /// Clean up expired messages from cache
+    pub fn cleanup_expired_messages(&mut self) -> usize {
+        let now = Instant::now();
+        let mut removed = 0;
+
+        self.message_cache.retain(|_id, cached_msg| {
+            if now.duration_since(cached_msg.received_at) > cached_msg.ttl {
+                removed += 1;
+                false
+            } else {
+                true
+            }
+        });
+
+        removed
+    }
+
+    /// Get gossip statistics
+    pub fn stats(&self) -> &GossipStats {
+        &self.stats
+    }
+}
+
+/// Initialize peer discovery with optimized configuration
+pub async fn init_discovery(
+    local_peer_id: PeerId,
+    bootstrap_nodes: Vec<Multiaddr>,
+) -> Result<PeerDiscovery, DiscoveryError> {
+    let config = AdvancedDiscoveryConfig {
+        enable_kademlia: true,
+        enable_mdns: true,
+        bootstrap_nodes,
+        query_timeout: Duration::from_secs(30),
+        max_discovered_peers: 1000,
+        peer_info_ttl: Duration::from_secs(3600),
+        bootstrap_interval: Duration::from_secs(600),
+        min_peer_score: 0,
+        ..Default::default()
+    };
+
+    PeerDiscovery::new(local_peer_id, config)
 }
             self.score = -100;
         }
