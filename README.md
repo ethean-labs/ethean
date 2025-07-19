@@ -693,7 +693,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ##  Support
 
-- **Documentation**: [docs.panro.io](https://docs.panro.io)
 - **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Panro/issues)
 - **Email**: support@panro.io
 
