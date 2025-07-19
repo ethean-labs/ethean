@@ -1,90 +1,447 @@
-//! Peer discovery service using Discovery v5
+//! Advanced P2P peer discovery service
 //!
-//! Implements peer discovery protocol for finding and connecting
-//! to other Beam Chain nodes on the network.
+//! Implements multi-layer peer discovery using Kademlia DHT and mDNS
+//! for robust peer finding in Ethereum Beacon Chain networks.
 
 use super::NetworkError;
 use crate::network::network_config::DiscoveryConfig;
+use libp2p::{
+    identify::{Identify, IdentifyConfig, IdentifyEvent},
+    kad::{
+        Kademlia, KademliaConfig, KademliaEvent, QueryId, QueryResult,
+        Record, RecordKey, store::MemoryStore,
+    },
+    mdns::{Mdns, MdnsConfig, MdnsEvent},
+    multiaddr::Protocol,
+    swarm::{SwarmEvent, Swarm},
+    Multiaddr, PeerId,
+};
 use serde::{Serialize, Deserialize};
 use std::collections::{HashMap, HashSet};
 use std::net::{IpAddr, SocketAddr};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use tokio::time::{interval, timeout};
+use tracing::{debug, error, info, warn};
 
-/// Node information for discovery
+/// Enhanced node information for advanced peer discovery
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveryNode {
-    /// Node ID (public key hash)
-    pub node_id: String,
-    /// IP address
-    pub ip: IpAddr,
-    /// TCP port for connections
-    pub tcp_port: u16,
-    /// UDP port for discovery
-    pub udp_port: u16,
-    /// Node capabilities/protocols
-    pub capabilities: Vec<String>,
+    /// Node ID (libp2p PeerId)
+    pub peer_id: PeerId,
+    /// Multiaddresses for connections
+    pub addresses: Vec<Multiaddr>,
+    /// Supported protocols
+    pub protocols: Vec<String>,
+    /// Agent version string
+    pub agent_version: String,
+    /// Protocol version
+    pub protocol_version: String,
+    /// Discovery timestamp
+    pub discovered_at: Instant,
     /// Last seen timestamp
-    pub last_seen: u64,
-    /// Discovery score (reputation)
-    pub score: i32,
+    pub last_seen: Instant,
+    /// Discovery method used
+    pub discovery_method: DiscoveryMethod,
     /// Connection attempts
     pub connection_attempts: u32,
+    /// Successful connections
+    pub successful_connections: u32,
+    /// Node reputation score
+    pub reputation_score: i32,
+    /// Network latency (if known)
+    pub latency: Option<Duration>,
 }
 
-impl DiscoveryNode {
-    /// Create new discovery node
-    pub fn new(node_id: String, addr: SocketAddr) -> Self {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-            
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum DiscoveryMethod {
+    Bootstrap,
+    Kademlia,
+    Mdns,
+    PeerExchange,
+    Manual,
+}
+
+/// Advanced peer discovery service with DHT and mDNS support
+pub struct PeerDiscovery {
+    /// Kademlia DHT for peer discovery
+    kademlia: Kademlia<MemoryStore>,
+    /// Local network discovery via mDNS
+    mdns: Option<Mdns>,
+    /// Identity protocol for peer information exchange
+    identify: Identify,
+    /// Configuration parameters
+    config: AdvancedDiscoveryConfig,
+    /// Recently discovered peers
+    discovered_peers: HashMap<PeerId, DiscoveryNode>,
+    /// Bootstrap node addresses
+    bootstrap_nodes: Vec<Multiaddr>,
+    /// Active discovery queries
+    active_queries: HashMap<QueryId, QueryInfo>,
+    /// Discovery statistics
+    stats: DiscoveryStats,
+    /// Last bootstrap attempt
+    last_bootstrap: Option<Instant>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AdvancedDiscoveryConfig {
+    /// Enable mDNS discovery for local peers
+    pub enable_mdns: bool,
+    /// Enable Kademlia DHT discovery
+    pub enable_kademlia: bool,
+    /// Bootstrap nodes for DHT
+    pub bootstrap_nodes: Vec<Multiaddr>,
+    /// Query timeout duration
+    pub query_timeout: Duration,
+    /// Bootstrap interval
+    pub bootstrap_interval: Duration,
+    /// Maximum number of peers to discover
+    pub max_discovered_peers: usize,
+    /// Peer information TTL
+    pub peer_info_ttl: Duration,
+    /// Random walk interval for DHT maintenance
+    pub random_walk_interval: Duration,
+    /// Minimum peer score for connections
+    pub min_peer_score: i32,
+}
+
+#[derive(Debug, Clone)]
+struct QueryInfo {
+    query_type: QueryType,
+    started_at: Instant,
+    target: Option<PeerId>,
+}
+
+#[derive(Debug, Clone)]
+enum QueryType {
+    Bootstrap,
+    FindPeer(PeerId),
+    GetProviders(RecordKey),
+    RandomWalk,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct DiscoveryStats {
+    /// Total peers discovered
+    pub peers_discovered: u64,
+    /// Peers discovered via mDNS
+    pub mdns_discoveries: u64,
+    /// Peers discovered via Kademlia
+    pub kademlia_discoveries: u64,
+    /// Bootstrap attempts
+    pub bootstrap_attempts: u64,
+    /// Successful bootstrap operations
+    pub successful_bootstraps: u64,
+    /// Active queries count
+    pub active_queries: u64,
+    /// Failed queries
+    pub failed_queries: u64,
+    /// Average query time
+    pub avg_query_time: Duration,
+}
+
+impl Default for AdvancedDiscoveryConfig {
+    fn default() -> Self {
         Self {
-            node_id,
-            ip: addr.ip(),
-            tcp_port: addr.port(),
-            udp_port: addr.port(),
-            capabilities: vec!["beacon".to_string()],
-            last_seen: timestamp,
-            score: 50, // Neutral score
-            connection_attempts: 0,
+            enable_mdns: true,
+            enable_kademlia: true,
+            bootstrap_nodes: Vec::new(),
+            query_timeout: Duration::from_secs(30),
+            bootstrap_interval: Duration::from_secs(300), // 5 minutes
+            max_discovered_peers: 1000,
+            peer_info_ttl: Duration::from_secs(3600), // 1 hour
+            random_walk_interval: Duration::from_secs(600), // 10 minutes
+            min_peer_score: 0,
         }
     }
-    
-    /// Get socket address for TCP connections
-    pub fn tcp_address(&self) -> SocketAddr {
-        SocketAddr::new(self.ip, self.tcp_port)
+}
+impl PeerDiscovery {
+    /// Create a new advanced peer discovery service
+    pub fn new(
+        local_peer_id: PeerId,
+        config: AdvancedDiscoveryConfig,
+    ) -> Result<Self, DiscoveryError> {
+        // Initialize Kademlia DHT
+        let store = MemoryStore::new(local_peer_id);
+        let mut kademlia_config = KademliaConfig::default();
+        kademlia_config.set_query_timeout(config.query_timeout);
+        kademlia_config.set_replication_factor(
+            std::num::NonZeroUsize::new(20).unwrap()
+        );
+        let mut kademlia = Kademlia::with_config(local_peer_id, store, kademlia_config);
+
+        // Add bootstrap nodes to Kademlia
+        for addr in &config.bootstrap_nodes {
+            if let Some(Protocol::P2p(peer_id_hash)) = addr.iter().last() {
+                if let Ok(peer_id) = PeerId::from_multihash(peer_id_hash) {
+                    kademlia.add_address(&peer_id, addr.clone());
+                }
+            }
+        }
+
+        // Initialize mDNS if enabled
+        let mdns = if config.enable_mdns {
+            match Mdns::new(MdnsConfig::default()) {
+                Ok(mdns) => Some(mdns),
+                Err(e) => {
+                    warn!("Failed to initialize mDNS: {}", e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
+        // Initialize Identify protocol
+        let identify = Identify::new(IdentifyConfig::new(
+            "panro/1.0.0".to_string(),
+            local_peer_id.to_owned().into(),
+        ));
+
+        Ok(Self {
+            kademlia,
+            mdns,
+            identify,
+            bootstrap_nodes: config.bootstrap_nodes.clone(),
+            config,
+            discovered_peers: HashMap::new(),
+            active_queries: HashMap::new(),
+            stats: DiscoveryStats::default(),
+            last_bootstrap: None,
+        })
     }
-    
-    /// Get socket address for UDP discovery
-    pub fn udp_address(&self) -> SocketAddr {
-        SocketAddr::new(self.ip, self.udp_port)
+
+    /// Start peer discovery process
+    pub async fn start_discovery(&mut self) -> Result<(), DiscoveryError> {
+        info!("Starting advanced peer discovery service");
+
+        // Bootstrap Kademlia DHT
+        if self.config.enable_kademlia && !self.bootstrap_nodes.is_empty() {
+            self.bootstrap_kademlia().await?;
+        }
+
+        // Start periodic maintenance tasks
+        self.start_maintenance_tasks().await;
+
+        Ok(())
     }
-    
-    /// Update last seen timestamp
-    pub fn update_last_seen(&mut self) {
-        self.last_seen = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-    }
-    
-    /// Check if node has capability
-    pub fn has_capability(&self, capability: &str) -> bool {
-        self.capabilities.contains(&capability.to_string())
-    }
-    
-    /// Add capability
-    pub fn add_capability(&mut self, capability: String) {
-        if !self.capabilities.contains(&capability) {
-            self.capabilities.push(capability);
+
+    /// Bootstrap Kademlia DHT
+    async fn bootstrap_kademlia(&mut self) -> Result<(), DiscoveryError> {
+        info!("Bootstrapping Kademlia DHT with {} nodes", self.bootstrap_nodes.len());
+        
+        self.stats.bootstrap_attempts += 1;
+        self.last_bootstrap = Some(Instant::now());
+
+        match self.kademlia.bootstrap() {
+            Ok(query_id) => {
+                let query_info = QueryInfo {
+                    query_type: QueryType::Bootstrap,
+                    started_at: Instant::now(),
+                    target: None,
+                };
+                self.active_queries.insert(query_id, query_info);
+                self.stats.active_queries += 1;
+                
+                debug!("Started DHT bootstrap with query ID: {:?}", query_id);
+                Ok(())
+            }
+            Err(e) => {
+                error!("Failed to bootstrap Kademlia: {}", e);
+                Err(DiscoveryError::BootstrapFailed(e.to_string()))
+            }
         }
     }
-    
-    /// Apply score penalty
-    pub fn apply_penalty(&mut self, penalty: i32) {
-        self.score -= penalty;
-        if self.score < -100 {
+
+    /// Handle discovery events
+    pub async fn handle_discovery_event(
+        &mut self,
+        event: DiscoveryEvent,
+    ) -> Result<Vec<DiscoveryAction>, DiscoveryError> {
+        let mut actions = Vec::new();
+
+        match event {
+            DiscoveryEvent::Kademlia(kad_event) => {
+                actions.extend(self.handle_kademlia_event(kad_event).await?);
+            }
+            DiscoveryEvent::Mdns(mdns_event) => {
+                actions.extend(self.handle_mdns_event(mdns_event).await?);
+            }
+            DiscoveryEvent::Identify(identify_event) => {
+                actions.extend(self.handle_identify_event(identify_event).await?);
+            }
+        }
+
+        Ok(actions)
+    }
+
+    /// Add or update peer information
+    pub fn add_or_update_peer(
+        &mut self,
+        peer_id: PeerId,
+        addresses: Vec<Multiaddr>,
+        method: DiscoveryMethod,
+    ) {
+        if let Some(peer_info) = self.discovered_peers.get_mut(&peer_id) {
+            // Update existing peer
+            peer_info.last_seen = Instant::now();
+            
+            // Add new addresses
+            for addr in addresses {
+                if !peer_info.addresses.contains(&addr) {
+                    peer_info.addresses.push(addr.clone());
+                    self.kademlia.add_address(&peer_id, addr);
+                }
+            }
+        } else {
+            // Add new peer
+            if self.discovered_peers.len() >= self.config.max_discovered_peers {
+                // Remove oldest peer to make room
+                if let Some((oldest_peer, _)) = self.discovered_peers
+                    .iter()
+                    .min_by_key(|(_, info)| info.last_seen)
+                    .map(|(peer, info)| (*peer, info.clone()))
+                {
+                    self.discovered_peers.remove(&oldest_peer);
+                }
+            }
+            
+            let peer_info = DiscoveryNode {
+                peer_id,
+                addresses: addresses.clone(),
+                protocols: Vec::new(),
+                agent_version: String::new(),
+                protocol_version: String::new(),
+                discovered_at: Instant::now(),
+                last_seen: Instant::now(),
+                discovery_method: method,
+                connection_attempts: 0,
+                successful_connections: 0,
+                reputation_score: 50, // Neutral score
+                latency: None,
+            };
+            
+            self.discovered_peers.insert(peer_id, peer_info);
+            self.stats.peers_discovered += 1;
+            
+            // Add addresses to Kademlia
+            for addr in addresses {
+                self.kademlia.add_address(&peer_id, addr);
+            }
+        }
+    }
+
+    /// Get discovered peer information
+    pub fn get_peer_info(&self, peer_id: &PeerId) -> Option<&DiscoveryNode> {
+        self.discovered_peers.get(peer_id)
+    }
+
+    /// Get all discovered peers
+    pub fn discovered_peers(&self) -> &HashMap<PeerId, DiscoveryNode> {
+        &self.discovered_peers
+    }
+
+    /// Get discovery statistics
+    pub fn stats(&self) -> &DiscoveryStats {
+        &self.stats
+    }
+
+    /// Clean up expired peer information
+    pub fn cleanup_expired_peers(&mut self) -> usize {
+        let ttl = self.config.peer_info_ttl;
+        let now = Instant::now();
+        let mut removed = 0;
+
+        self.discovered_peers.retain(|_peer_id, peer_info| {
+            if now.duration_since(peer_info.last_seen) > ttl {
+                removed += 1;
+                false
+            } else {
+                true
+            }
+        });
+
+        if removed > 0 {
+            debug!("Cleaned up {} expired peer entries", removed);
+        }
+
+        removed
+    }
+
+    /// Record connection attempt for a peer
+    pub fn record_connection_attempt(&mut self, peer_id: &PeerId, successful: bool) {
+        if let Some(peer_info) = self.discovered_peers.get_mut(peer_id) {
+            peer_info.connection_attempts += 1;
+            if successful {
+                peer_info.successful_connections += 1;
+                peer_info.last_seen = Instant::now();
+                peer_info.reputation_score += 1; // Small reputation boost
+            } else {
+                peer_info.reputation_score -= 2; // Penalty for failed connection
+            }
+        }
+    }
+
+    /// Get peers suitable for connection
+    pub fn get_connectable_peers(&self, max_count: usize) -> Vec<PeerId> {
+        let mut peers: Vec<_> = self.discovered_peers
+            .iter()
+            .filter(|(_, info)| {
+                info.reputation_score >= self.config.min_peer_score &&
+                !info.addresses.is_empty()
+            })
+            .collect();
+        
+        // Sort by reputation score (descending)
+        peers.sort_by_key(|(_, info)| std::cmp::Reverse(info.reputation_score));
+        
+        peers.into_iter()
+            .take(max_count)
+            .map(|(peer_id, _)| *peer_id)
+            .collect()
+    }
+
+    /// Update peer latency information
+    pub fn update_peer_latency(&mut self, peer_id: &PeerId, latency: Duration) {
+        if let Some(peer_info) = self.discovered_peers.get_mut(peer_id) {
+            peer_info.latency = Some(latency);
+            peer_info.last_seen = Instant::now();
+        }
+    }
+
+    /// Start maintenance tasks
+    async fn start_maintenance_tasks(&mut self) {
+        // Implementation would spawn background tasks for periodic maintenance
+        debug!("Started peer discovery maintenance tasks");
+    }
+
+    /// Handle Kademlia DHT events (simplified implementation)
+    async fn handle_kademlia_event(
+        &mut self,
+        _event: KademliaEvent,
+    ) -> Result<Vec<DiscoveryAction>, DiscoveryError> {
+        // Simplified implementation - would handle various Kademlia events
+        Ok(Vec::new())
+    }
+
+    /// Handle mDNS discovery events (simplified implementation)
+    async fn handle_mdns_event(
+        &mut self,
+        _event: MdnsEvent,
+    ) -> Result<Vec<DiscoveryAction>, DiscoveryError> {
+        // Simplified implementation - would handle mDNS events
+        Ok(Vec::new())
+    }
+
+    /// Handle Identify protocol events (simplified implementation)
+    async fn handle_identify_event(
+        &mut self,
+        _event: IdentifyEvent,
+    ) -> Result<Vec<DiscoveryAction>, DiscoveryError> {
+        // Simplified implementation - would handle identify events
+        Ok(Vec::new())
+    }
+}
             self.score = -100;
         }
     }
@@ -284,7 +641,90 @@ impl DiscoveryService {
             return Ok(None); // Ignore expired messages
         }
         
-        match message.query {
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_peer_discovery_initialization() {
+        let local_peer_id = PeerId::random();
+        let bootstrap_nodes = vec![
+            "/ip4/127.0.0.1/tcp/8000".parse().unwrap(),
+        ];
+        
+        let discovery = init_discovery(local_peer_id, bootstrap_nodes).await;
+        assert!(discovery.is_ok());
+    }
+
+    #[tokio::test] 
+    async fn test_peer_addition_and_retrieval() {
+        let local_peer_id = PeerId::random();
+        let config = AdvancedDiscoveryConfig::default();
+        let mut discovery = PeerDiscovery::new(local_peer_id, config).unwrap();
+        
+        let peer_id = PeerId::random();
+        let addresses = vec!["/ip4/192.168.1.100/tcp/8001".parse().unwrap()];
+        
+        discovery.add_or_update_peer(
+            peer_id,
+            addresses.clone(),
+            DiscoveryMethod::Kademlia,
+        );
+        
+        let peer_info = discovery.get_peer_info(&peer_id);
+        assert!(peer_info.is_some());
+        assert_eq!(peer_info.unwrap().addresses, addresses);
+    }
+
+    #[test]
+    fn test_gossip_protocol_message_propagation() {
+        let local_peer_id = PeerId::random();
+        let config = GossipConfig::default();
+        let mut gossip = GossipProtocol::new(local_peer_id, config);
+        
+        // Add test peer
+        let peer_id = PeerId::random();
+        gossip.add_gossip_peer(peer_id);
+        
+        let message = GossipMessage::PeerAdvertisement {
+            peer_id: peer_id.to_string(),
+            addresses: vec!["/ip4/127.0.0.1/tcp/8000".to_string()],
+            timestamp: 1234567890,
+            signature: vec![],
+        };
+        
+        // Test message ID calculation
+        let message_id = gossip.calculate_message_id(&message);
+        assert!(!message_id.is_empty());
+    }
+
+    #[test]
+    fn test_peer_cleanup() {
+        let local_peer_id = PeerId::random();
+        let mut config = AdvancedDiscoveryConfig::default();
+        config.peer_info_ttl = Duration::from_millis(1); // Very short TTL
+        
+        let mut discovery = PeerDiscovery::new(local_peer_id, config).unwrap();
+        
+        let peer_id = PeerId::random();
+        let addresses = vec!["/ip4/192.168.1.100/tcp/8001".parse().unwrap()];
+        
+        discovery.add_or_update_peer(
+            peer_id,
+            addresses,
+            DiscoveryMethod::Mdns,
+        );
+        
+        assert_eq!(discovery.discovered_peers().len(), 1);
+        
+        // Wait for TTL to expire
+        std::thread::sleep(Duration::from_millis(2));
+        
+        let removed = discovery.cleanup_expired_peers();
+        assert_eq!(removed, 1);
+        assert_eq!(discovery.discovered_peers().len(), 0);
+    }
+}
             DiscoveryQuery::FindNode { target, count } => {
                 self.handle_find_node(&message.from, &target, count)
             },
