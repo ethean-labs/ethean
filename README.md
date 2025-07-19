@@ -14,19 +14,19 @@
 
 </div>
 
-## 🚀 Overview
+##  Overview
 
 Panro is a high-performance, modular Ethereum Beacon Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 consensus protocol with advanced features for validators, node operators, and developers.
 
-### ⭐ Key Features
+###  Key Features
 
-- **🏗️ Modular Architecture**: Clean separation of concerns with extensible design
-- **⚡ High Performance**: Optimized for speed and efficiency with advanced caching
-- **🔒 Security First**: Memory-safe Rust implementation with comprehensive testing
-- **📊 Advanced Monitoring**: Real-time metrics, performance benchmarking, and health monitoring
-- **🌐 P2P Networking**: Robust peer-to-peer communication with bandwidth management
-- **💾 Database Optimization**: Advanced storage with indexing, caching, and backup systems
-- **🔧 Developer Friendly**: Comprehensive API, WebSocket streaming, and extensive documentationBeacon Chain Client
+- ** Modular Architecture**: Clean separation of concerns with extensible design
+- ** High Performance**: Optimized for speed and efficiency with advanced caching
+- ** Security First**: Memory-safe Rust implementation with comprehensive testing
+- ** Advanced Monitoring**: Real-time metrics, performance benchmarking, and health monitoring
+- ** P2P Networking**: Robust peer-to-peer communication with bandwidth management
+- ** Database Optimization**: Advanced storage with indexing, caching, and backup systems
+- ** Developer Friendly**: Comprehensive API, WebSocket streaming, and extensive documentationBeacon Chain Client
 
 Panro is a modern, high-performance Ethereum Beacon Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 proof-of-stake consensus mechanism with emphasis on modularity, security, and developer experience.
 
@@ -47,7 +47,7 @@ Panro is a modern, high-performance Ethereum Beacon Chain client written in Rust
 Panro implements the Ethereum Beacon Chain specification with the following key features:
 
 - **Modular Architecture**: Clean separation of concerns with well-defined module boundaries
-## 📦 Installation
+##  Installation
 
 ### Prerequisites
 
@@ -86,7 +86,7 @@ cargo build
 cargo test
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Start Beacon Node
 
@@ -117,7 +117,7 @@ panro validator --beacon-node http://localhost:5052
 panro version
 ```
 
-## 🛠️ Development
+##  Development
 
 ### Project Structure
 
@@ -167,7 +167,7 @@ cargo audit
 
 # Check for outdated dependencies
 cargo outdated
-## 🧪 Testing
+##  Testing
 
 ### Running Tests
 
@@ -277,7 +277,7 @@ fast_epoch_processing = true
 skip_signature_verification = false
 ```
 
-## 📊 Monitoring & Metrics
+##  Monitoring & Metrics
 
 ### Built-in Metrics
 
@@ -318,7 +318,7 @@ curl http://localhost:5052/eth/v1/node/version
 curl http://localhost:5052/eth/v1/node/peers
 ```
 
-## 🌐 API Usage
+##  API Usage
 
 ### REST API
 
@@ -353,7 +353,7 @@ ws.send(JSON.stringify({
 }));
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 ### Basic Configuration (`config.toml`)
 
@@ -456,7 +456,7 @@ panro cache stats
 panro cache optimize --target-size 1GB
 ```
 
-## 🔍 Debugging & Troubleshooting
+##  Debugging & Troubleshooting
 
 ### Log Analysis
 
@@ -513,7 +513,7 @@ panro database verify --repair
 panro database restore --latest-backup
 ```
 
-## 🤝 Contributing
+##  Contributing
 
 ### Development Setup
 
@@ -535,40 +535,7 @@ git commit -m "Add new feature"
 git push origin feature/new-feature
 ```
 
-### Code Standards
 
-- **Rust Style**: Follow official Rust style guidelines
-- **Documentation**: Document all public APIs
-- **Testing**: Maintain >95% test coverage
-- **Performance**: Benchmark critical paths
-- **Security**: Follow secure coding practices
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Ethereum Foundation**: For the Beacon Chain specification
-- **Rust Community**: For the excellent ecosystem
-- **Contributors**: All developers who have contributed to this project
-- **Lighthouse Team**: For inspiration and reference implementations
-
-## 📞 Support
-
-- **Documentation**: [docs.panro.io](https://docs.panro.io)
-- **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Panro/issues)
-- **Email**: support@panro.io
-
----
-
-<div align="center">
-
-**Built with ❤️ by the Panro Team**
-
-[Website](https://panro.io) • [GitHub](https://github.com/Pamenarti/Panro)
-
-</div>
 
 ```json
 {
@@ -707,25 +674,38 @@ cargo fmt
 
 ### Code Standards
 
-- Follow Rust idioms and best practices
-- Write comprehensive documentation
-- Maintain test coverage above 90%
-- Use meaningful variable and function names
-- Follow the existing code style
+- **Rust Style**: Follow official Rust style guidelines
+- **Documentation**: Document all public APIs
+- **Testing**: Maintain >95% test coverage
+- **Performance**: Benchmark critical paths
+- **Security**: Follow secure coding practices
 
-## License
+##  License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+##  Acknowledgments
 
-- Ethereum Foundation for the Beacon Chain specification
-- Rust community for excellent tooling and libraries
-- Contributors and maintainers of dependent crates
+- **Ethereum Foundation**: For the Beacon Chain specification
+- **Rust Community**: For the excellent ecosystem
+- **Contributors**: All developers who have contributed to this project
+- **Lighthouse Team**: For inspiration and reference implementations
 
-## Contact
+##  Support
 
-For questions, issues, or contributions, please visit our GitHub repository or contact the maintainers.
+- **Documentation**: [docs.panro.io](https://docs.panro.io)
+- **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Panro/issues)
+- **Email**: support@panro.io
+
+---
+
+<div align="center">
+
+**Built with ❤️ by the Panro Team**
+
+[Website](https://panro.io) • [GitHub](https://github.com/Pamenarti/Panro)
+
+</div>
 
 ---
 
