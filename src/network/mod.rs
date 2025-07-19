@@ -10,6 +10,7 @@ pub mod message_handler;
 pub mod network_config;
 pub mod bandwidth;
 pub mod protocol;
+pub mod connection_manager;
 
 use crate::types::{BeaconBlock, Attestation, Epoch, Slot};
 use serde::{Serialize, Deserialize};
@@ -39,9 +40,10 @@ use thiserror::Error;
 // Re-export main components
 pub use peer_manager::{PeerManager, PeerState, PeerScore};
 pub use gossip::{GossipService, GossipMessage};
-pub use discovery::{DiscoveryService, DiscoveryNode};
+pub use discovery::{DiscoveryService, DiscoveryNode, PeerDiscovery, AdvancedDiscoveryConfig};
 pub use message_handler::{MessageHandler, MessageResult, MessagePriority};
 pub use network_config::{NetworkConfig, PeerConfig};
+pub use connection_manager::{ConnectionPool, ConnectionInfo, ConnectionPoolConfig};
 
 /// Network errors
 #[derive(Debug, Error)]
