@@ -1,5 +1,33 @@
 # Panro - Ethereum Beacon Chain Client
 
+<div align="center">
+
+![Panro Logo](https://img.shields.io/badge/Panro-Beacon%20Chain%20Client-blue?style=for-the-badge)
+
+[![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg?style=flat-square)](https://www.rust-lang.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)]()
+
+**Production-ready Ethereum Beacon Chain client implementation in Rust**
+
+[Installation](#installation) • [Quick Start](#quick-start) • [Development](#development) • [Testing](#testing) • [Documentation](#documentation)
+
+</div>
+
+## 🚀 Overview
+
+Panro is a high-performance, modular Ethereum Beacon Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 consensus protocol with advanced features for validators, node operators, and developers.
+
+### ⭐ Key Features
+
+- **🏗️ Modular Architecture**: Clean separation of concerns with extensible design
+- **⚡ High Performance**: Optimized for speed and efficiency with advanced caching
+- **🔒 Security First**: Memory-safe Rust implementation with comprehensive testing
+- **📊 Advanced Monitoring**: Real-time metrics, performance benchmarking, and health monitoring
+- **🌐 P2P Networking**: Robust peer-to-peer communication with bandwidth management
+- **💾 Database Optimization**: Advanced storage with indexing, caching, and backup systems
+- **🔧 Developer Friendly**: Comprehensive API, WebSocket streaming, and extensive documentationBeacon Chain Client
+
 Panro is a modern, high-performance Ethereum Beacon Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 proof-of-stake consensus mechanism with emphasis on modularity, security, and developer experience.
 
 ## Table of Contents
@@ -19,159 +47,528 @@ Panro is a modern, high-performance Ethereum Beacon Chain client written in Rust
 Panro implements the Ethereum Beacon Chain specification with the following key features:
 
 - **Modular Architecture**: Clean separation of concerns with well-defined module boundaries
-- **High Performance**: Rust-based implementation with async/await patterns for optimal performance
-- **REST API**: Complete Ethereum Beacon API implementation with OpenAPI documentation
-- **Production Ready**: Comprehensive error handling, logging, and monitoring capabilities
-- **Developer Friendly**: Extensive documentation and testing coverage
-
-### Key Components
-
-- **Consensus Engine**: Full proof-of-stake consensus implementation
-- **Network Layer**: libp2p-based P2P networking with gossip protocol
-- **Storage Layer**: RocksDB-based persistent storage with state management
-- **Cryptography**: BLS signature verification and cryptographic primitives
-- **Validator Management**: Complete validator lifecycle management
-- **REST API**: Ethereum Beacon API compliant HTTP interface
-
-## Architecture
-
-### Core Modules
-
-```
-src/
-├── consensus/          # Consensus engine and fork choice
-├── network/           # P2P networking and peer management
-├── storage/           # Data persistence and state management
-├── crypto/            # Cryptographic primitives and BLS signatures
-├── types/             # Core data structures and primitives
-├── api/               # REST API implementation
-├── utils/             # Utility functions and helpers
-└── lib.rs             # Main library entry point
-```
-
-### Data Flow
-
-1. **Network Layer** receives blocks and attestations from peers
-2. **Consensus Engine** validates and processes consensus messages
-3. **Storage Layer** persists state and maintains chain history
-4. **API Layer** provides HTTP interface for external clients
-5. **Validator Management** handles validator duties and operations
-
-## Installation
+## 📦 Installation
 
 ### Prerequisites
 
-- Rust 1.70 or higher
-- Git
-- OpenSSL development libraries
+- **Rust 1.70+**: [Install Rust](https://rustup.rs/)
+- **Git**: For cloning the repository
+- **System Requirements**: 
+  - RAM: 8GB+ recommended
+  - Storage: 500GB+ SSD recommended
+  - Network: Stable internet connection
 
-### Build from Source
+### Quick Install
 
 ```bash
+# Clone the repository
 git clone https://github.com/Pamenarti/Panro.git
 cd Panro
+
+# Build with optimizations
 cargo build --release
+
+# Install binary
+cargo install --path .
 ```
 
-### Run Tests
+### Development Install
 
 ```bash
+# Clone with all dependencies
+git clone https://github.com/Pamenarti/Panro.git
+cd Panro
+
+# Install development dependencies
+cargo build
+
+# Run tests to verify installation
 cargo test
 ```
 
-## Usage
+## 🚀 Quick Start
 
-### Basic Usage
+### 1. Start Beacon Node
 
 ```bash
-# Run with default configuration
-./target/release/panro
+# Start with default configuration
+panro start
 
-# Run with custom configuration
-./target/release/panro --config config.toml
+# Start with custom configuration
+panro start --config /path/to/config.toml
 
-# Run with specific network
-./target/release/panro --network mainnet
+# Start with specific network
+panro start --network mainnet
 ```
 
-### Configuration
+### 2. Run Validator
 
-Create a `config.toml` file:
+```bash
+# Start validator client
+panro validator --keys /path/to/validator/keys
+
+# Run validator with specific beacon node
+panro validator --beacon-node http://localhost:5052
+```
+
+### 3. Check Version
+
+```bash
+panro version
+```
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+panro/
+├── src/
+│   ├── bin/           # Binary executables
+│   ├── api/           # REST API implementation
+│   ├── consensus/     # Consensus layer
+│   ├── crypto/        # Cryptographic operations
+│   ├── network/       # P2P networking
+│   ├── storage/       # Database and caching
+│   ├── types/         # Type definitions
+│   └── lib.rs         # Library root
+├── docs/              # Documentation
+├── tests/             # Integration tests
+└── examples/          # Usage examples
+```
+
+### Building from Source
+
+```bash
+# Debug build (faster compilation)
+cargo build
+
+# Release build (optimized)
+cargo build --release
+
+# Build with specific features
+cargo build --release --features "rocksdb,metrics"
+
+# Build documentation
+cargo doc --open
+```
+
+### Development Tools
+
+```bash
+# Format code
+cargo fmt
+
+# Lint code
+cargo clippy
+
+# Security audit
+cargo audit
+
+# Check for outdated dependencies
+cargo outdated
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+cargo test
+
+# Run specific test module
+cargo test consensus::
+
+# Run tests with output
+cargo test -- --nocapture
+
+# Run tests in parallel
+cargo test -- --test-threads=8
+```
+
+### Test Categories
+
+#### Unit Tests
+```bash
+# Core consensus tests
+cargo test consensus::tests
+
+# Cryptography tests
+cargo test crypto::tests
+
+# Storage tests
+cargo test storage::tests
+
+# Network tests
+cargo test network::tests
+```
+
+#### Integration Tests
+```bash
+# API integration tests
+cargo test --test api_integration
+
+# P2P network tests
+cargo test --test network_integration
+
+# Database tests
+cargo test --test storage_integration
+```
+
+#### Performance Tests
+```bash
+# Database benchmarks
+cargo test --test database_benchmark -- --ignored
+
+# Network performance tests
+cargo test --test network_performance -- --ignored
+
+# Consensus benchmarks
+cargo test --test consensus_benchmark -- --ignored
+```
+
+#### Load Tests
+```bash
+# High-load scenarios
+cargo test --test load_test -- --ignored
+
+# Stress testing
+cargo test --test stress_test -- --ignored
+```
+
+### Benchmarking
+
+```bash
+# Run all benchmarks
+cargo bench
+
+# Database performance benchmarks
+cargo run --bin benchmark -- database
+
+# Network benchmarks  
+cargo run --bin benchmark -- network
+
+# Consensus benchmarks
+cargo run --bin benchmark -- consensus
+
+# Custom benchmark with parameters
+cargo run --bin benchmark -- database --operations 10000 --concurrency 8
+```
+
+### Test Configuration
+
+Create `test-config.toml` for custom test settings:
+
+```toml
+[test]
+log_level = "debug"
+timeout_seconds = 30
+parallel_tests = true
+
+[test.database]
+use_memory_db = true
+cleanup_after_test = true
+
+[test.network]
+use_local_network = true
+mock_peers = 10
+
+[test.consensus]
+fast_epoch_processing = true
+skip_signature_verification = false
+```
+
+## 📊 Monitoring & Metrics
+
+### Built-in Metrics
+
+```bash
+# Start with metrics enabled
+panro start --metrics --metrics-port 9090
+
+# View metrics endpoint
+curl http://localhost:9090/metrics
+
+# Prometheus format metrics
+curl http://localhost:9090/metrics/prometheus
+```
+
+### Performance Monitoring
+
+```bash
+# Real-time performance monitoring
+panro monitor --live
+
+# Generate performance report
+panro monitor --report --output performance-report.json
+
+# Bandwidth monitoring
+panro monitor --bandwidth --duration 60s
+```
+
+### Health Checks
+
+```bash
+# Basic health check
+curl http://localhost:5052/eth/v1/node/health
+
+# Detailed system status
+curl http://localhost:5052/eth/v1/node/version
+
+# Peer information
+curl http://localhost:5052/eth/v1/node/peers
+```
+
+## 🌐 API Usage
+
+### REST API
+
+```bash
+# Get beacon state
+curl http://localhost:5052/eth/v2/beacon/states/head
+
+# Get block information
+curl http://localhost:5052/eth/v2/beacon/blocks/head
+
+# Submit attestation
+curl -X POST http://localhost:5052/eth/v1/beacon/pool/attestations \
+  -H "Content-Type: application/json" \
+  -d @attestation.json
+```
+
+### WebSocket Streaming
+
+```javascript
+// JavaScript example
+const ws = new WebSocket('ws://localhost:5052/ws');
+
+ws.on('message', (data) => {
+  const event = JSON.parse(data);
+  console.log('Received event:', event);
+});
+
+// Subscribe to block events
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  topics: ['block', 'attestation']
+}));
+```
+
+## 🔧 Configuration
+
+### Basic Configuration (`config.toml`)
 
 ```toml
 [network]
-listen_addr = "0.0.0.0:9000"
-discovery_port = 9000
-max_peers = 50
+listen_address = "0.0.0.0:9000"
+discovery_address = "0.0.0.0:9001"
+max_peers = 100
+target_peers = 50
+
+[database]
+path = "./data"
+cache_size_mb = 512
+enable_compression = true
 
 [api]
-bind_addr = "127.0.0.1:5052"
-enable_cors = true
-max_request_size = 1048576
+enabled = true
+address = "127.0.0.1:5052"
+cors_origins = ["*"]
 
+[logging]
+level = "info"
+format = "json"
+file = "./logs/panro.log"
+
+[metrics]
+enabled = true
+port = 9090
+```
+
+### Advanced Configuration
+
+```toml
 [consensus]
-genesis_time = 1606824000
-genesis_validators_root = "0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95"
+proposer_boost = true
+fork_choice_before_proposal = true
+prepare_payload_lookahead = 4000
 
-[storage]
-data_dir = "./data"
+[validator]
+graffiti = "Panro Validator"
+fee_recipient = "0x..."
+builder_proposals = true
+
+[database.backup]
+enabled = true
+interval_hours = 6
+max_backups = 24
+compression = true
+
+[network.bandwidth]
+max_upload_mbps = 100
+max_download_mbps = 500
+rate_limiting = true
 ```
 
-### API Usage
+## 🗄️ Database Management
 
-The REST API is available at `http://localhost:5052` by default.
-
-#### Get Genesis Information
+### Backup & Recovery
 
 ```bash
-curl http://localhost:5052/eth/v1/beacon/genesis
+# Create full backup
+panro database backup --type full --output ./backups/
+
+# Create incremental backup
+panro database backup --type incremental --base ./backups/full_backup_123456
+
+# Restore from backup
+panro database restore --backup ./backups/full_backup_123456
+
+# List available backups
+panro database list-backups
 ```
 
-#### Get Beacon State
+### Database Operations
 
 ```bash
-curl http://localhost:5052/eth/v1/beacon/states/head/root
+# Compact database
+panro database compact
+
+# Verify database integrity
+panro database verify
+
+# Export state
+panro database export --state head --output state.json
+
+# Import genesis state
+panro database import --genesis genesis.ssz
 ```
 
-#### Get Validator Duties
+### Cache Management
 
 ```bash
-curl http://localhost:5052/eth/v1/validator/duties/attester/12345
+# Clear cache
+panro cache clear
+
+# Cache statistics
+panro cache stats
+
+# Optimize cache
+panro cache optimize --target-size 1GB
 ```
 
-## API Documentation
+## 🔍 Debugging & Troubleshooting
 
-### Beacon API Endpoints
+### Log Analysis
 
-#### Genesis and Configuration
-- `GET /eth/v1/beacon/genesis` - Get genesis information
-- `GET /eth/v1/config/fork_schedule` - Get fork schedule
-- `GET /eth/v1/config/spec` - Get configuration specification
+```bash
+# View recent logs
+tail -f ./logs/panro.log
 
-#### Beacon State
-- `GET /eth/v1/beacon/states/{state_id}/root` - Get state root
-- `GET /eth/v1/beacon/states/{state_id}/fork` - Get fork information
+# Filter error logs
+grep "ERROR" ./logs/panro.log
 
-#### Validator Operations
-- `GET /eth/v1/validator/duties/attester/{epoch}` - Get attester duties
-- `GET /eth/v1/validator/duties/proposer/{epoch}` - Get proposer duties
-- `POST /eth/v1/validator/blocks` - Submit block
-- `POST /eth/v1/validator/attestations` - Submit attestations
+# Analyze performance logs
+panro logs analyze --performance --last 1h
+```
 
-#### Node Information
-- `GET /eth/v1/node/identity` - Get node identity
-- `GET /eth/v1/node/peers` - Get connected peers
-- `GET /eth/v1/node/health` - Get node health status
-- `GET /eth/v1/node/version` - Get node version
+### Debug Mode
 
-#### Debug Endpoints
-- `GET /eth/v1/debug/beacon/states/{state_id}` - Get beacon state
-- `GET /eth/v1/debug/beacon/heads` - Get beacon heads
-- `GET /eth/v1/debug/fork_choice` - Get fork choice information
+```bash
+# Start in debug mode
+RUST_LOG=debug panro start
 
-### Response Format
+# Enable specific module debugging
+RUST_LOG=panro::consensus=debug,panro::network=info panro start
 
-All API responses follow the standard format:
+# Debug with backtrace
+RUST_BACKTRACE=1 panro start
+```
+
+### Common Issues
+
+1. **Sync Issues**
+```bash
+# Check sync status
+curl http://localhost:5052/eth/v1/node/syncing
+
+# Force resync
+panro resync --from-checkpoint
+```
+
+2. **Peer Connection Problems**
+```bash
+# Check peer status
+panro network peers
+
+# Test connectivity
+panro network test-connectivity --peer-id <peer-id>
+```
+
+3. **Database Corruption**
+```bash
+# Verify database
+panro database verify --repair
+
+# Restore from backup
+panro database restore --latest-backup
+```
+
+## 🤝 Contributing
+
+### Development Setup
+
+```bash
+# Fork and clone
+git clone https://github.com/yourusername/panro.git
+cd panro
+
+# Create feature branch
+git checkout -b feature/new-feature
+
+# Make changes and test
+cargo test
+cargo clippy
+cargo fmt
+
+# Commit and push
+git commit -m "Add new feature"
+git push origin feature/new-feature
+```
+
+### Code Standards
+
+- **Rust Style**: Follow official Rust style guidelines
+- **Documentation**: Document all public APIs
+- **Testing**: Maintain >95% test coverage
+- **Performance**: Benchmark critical paths
+- **Security**: Follow secure coding practices
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Ethereum Foundation**: For the Beacon Chain specification
+- **Rust Community**: For the excellent ecosystem
+- **Contributors**: All developers who have contributed to this project
+- **Lighthouse Team**: For inspiration and reference implementations
+
+## 📞 Support
+
+- **Documentation**: [docs.panro.io](https://docs.panro.io)
+- **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Panro/issues)
+- **Email**: support@panro.io
+
+---
+
+<div align="center">
+
+**Built with ❤️ by the Panro Team**
+
+[Website](https://panro.io) • [GitHub](https://github.com/Pamenarti/Panro)
+
+</div>
 
 ```json
 {

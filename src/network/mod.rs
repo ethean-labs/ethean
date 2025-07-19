@@ -8,6 +8,8 @@ pub mod gossip;
 pub mod discovery;
 pub mod message_handler;
 pub mod network_config;
+pub mod bandwidth;
+pub mod protocol;
 
 use crate::types::{BeaconBlock, Attestation, Epoch, Slot};
 use serde::{Serialize, Deserialize};
