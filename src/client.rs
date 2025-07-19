@@ -1,11 +1,10 @@
 //! Main Panro client implementation
 
 use crate::{
-    api::ApiServer,
-    config::{Config, ApiConfig},
+    api::{ApiServer, ApiConfig},
+    config::Config,
     consensus::validator_management::{ValidatorManager, ValidatorConfig},
     storage::{StateStore, database::Database},
-    network::NetworkManager,
 };
 use std::sync::Arc;
 use tracing::{info, error};
@@ -33,20 +32,32 @@ impl PanroClient {
         
         // Create validator manager with proper config
         let validator_config = ValidatorConfig {
-            max_validators: 1000,
-            slashing_protection_enabled: true,
-            keystore_path: "./keystores".to_string(),
+            min_deposit_amount: 32_000_000_000,  // 32 ETH in Gwei
+            max_validators_per_epoch: 1000,
+            activation_delay: 4,
+            exit_delay: 256,
+            slashing_penalty_multiplier: 3,
+            inactivity_penalty_per_epoch: 1_000_000,
         };
         let validator_manager = Arc::new(ValidatorManager::new(
             validator_config,
             (*state_store).clone(),
         ));
         
+        // Create API config
+        let api_config = ApiConfig {
+            bind_addr: config.api.bind_addr,
+            max_request_size: 1024 * 1024, // 1MB
+            enable_cors: true,
+            enable_compression: true,
+            rate_limit: crate::api::RateLimitConfig::default(),
+        };
+        
         // Create API server
         let api_server = ApiServer::new(
             validator_manager,
             state_store,
-            config.api.clone(),
+            api_config,
         );
         
         Ok(Self {
