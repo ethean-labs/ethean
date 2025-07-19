@@ -2,8 +2,8 @@
 
 use crate::{
     api::ApiServer,
-    config::{Config, ValidatorConfig, ApiConfig},
-    consensus::validator_management::ValidatorManager,
+    config::{Config, ApiConfig},
+    consensus::validator_management::{ValidatorManager, ValidatorConfig},
     storage::{StateStore, database::Database},
     network::NetworkManager,
 };
@@ -26,25 +26,27 @@ impl PanroClient {
         let config = Config::default();
         
         // Create database
-        let database = Database::new();
-        
-        // Create validator manager
-        let validator_manager = Arc::new(ValidatorManager::new(
-            config.validator.clone(),
-            StateStore::new(database.clone())
-        ));
+        let database = Database::in_memory();
         
         // Create state store
         let state_store = Arc::new(StateStore::new(database));
         
-        // Create network manager
-        let network_manager = Arc::new(NetworkManager::new());
+        // Create validator manager with proper config
+        let validator_config = ValidatorConfig {
+            max_validators: 1000,
+            slashing_protection_enabled: true,
+            keystore_path: "./keystores".to_string(),
+        };
+        let validator_manager = Arc::new(ValidatorManager::new(
+            validator_config,
+            (*state_store).clone(),
+        ));
         
         // Create API server
         let api_server = ApiServer::new(
-            config.api.clone(),
+            validator_manager,
             state_store,
-            network_manager,
+            config.api.clone(),
         );
         
         Ok(Self {
