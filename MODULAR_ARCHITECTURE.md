@@ -6,7 +6,7 @@
 
 ---
 
-## 📦 CRATE STRUCTURE
+##  CRATE STRUCTURE
 
 ### Core Types (`panro-types`)
 ```
@@ -61,7 +61,7 @@
 
 ---
 
-## 🔥 MODULAR PRINCIPLES
+## MODULAR PRINCIPLES
 
 ### File Size Limits
 - **Critical modules**: < 200 lines max
@@ -83,7 +83,7 @@
 
 ---
 
-## 🚀 DEVELOPMENT WORKFLOW
+## DEVELOPMENT WORKFLOW
 
 ### Parallel Development
 ```bash
