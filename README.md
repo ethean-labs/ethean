@@ -692,7 +692,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Lighthouse Team**: For inspiration and reference implementations
 
 ##  Support
-
+- **Documentation**: [docs](./docs/)
 - **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Panro/issues)
 - **Email**: support@panro.io
 
