@@ -1,9 +1,13 @@
-//! Storage layer for Beam Chain client
+//! Storage layer for the Ethereum Beacon Chain client
 //!
-//! Provides database abstraction, state storage, block storage,
-//! checkpoint management, and migration framework.
+//! This module provides database abstractions and storage implementations
+//! for persisting blockchain data, state, and metadata.
 
 pub mod database;
+pub mod cache;
+pub mod index;
+pub mod backup;
+pub mod benchmark;
 pub mod state;
 pub mod blocks;
 pub mod checkpoints;

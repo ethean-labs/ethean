@@ -27,6 +27,13 @@ axum = { version = "0.7", features = ["ws", "tracing"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
 hyper = "1.0"
+# Cryptography and hashing
+sha2 = "0.10"
+
+# Database
+rocksdb = { version = "0.21", optional = true }
+
+# Networking and WebSocket
 tokio-tungstenite = "0.21"
 futures = "0.3"
 futures-util = "0.3"
@@ -59,6 +66,7 @@ clap = { version = "4.0", features = ["derive"] }
 
 # Testing
 proptest = "1.0"
+tempfile = "3.8"
 blstrs = "0.7.1"
 bls12_381 = "0.8.0"
 

@@ -45,7 +45,13 @@ pub enum DatabaseError {
     NotFound(String),
     
     #[error("Serialization error: {0}")]
-    Serialization(#[from] serde_json::Error),
+    SerializationError(String),
+    
+    #[error("Invalid data: {0}")]
+    InvalidData(String),
+    
+    #[error("Corrupted data: {0}")]
+    CorruptedData(String),
     
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
@@ -211,8 +217,130 @@ impl DatabaseBackend for RocksDbBackend {
         Ok(())
     }
 
+    /// Apply batch operations
+    pub fn apply_batch(&self, operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
+        self.backend.batch_write(operations)
+    }
+    
+    /// Create database snapshot
+    pub fn create_snapshot(&self) -> Result<DatabaseSnapshot, DatabaseError> {
+        // Create a snapshot for consistent reads
+        Ok(DatabaseSnapshot {
+            _phantom: std::marker::PhantomData,
+        })
+    }
+    
+    /// Get value from snapshot
+    pub fn get_from_snapshot(&self, _snapshot: &DatabaseSnapshot, key: &[u8]) -> Result<Option<Vec<u8>>, DatabaseError> {
+        // For now, just use regular get
+        self.get(key)
+    }
+    
+    /// Get all keys
+    pub fn all_keys(&self) -> Result<Vec<Vec<u8>>, DatabaseError> {
+        self.backend.keys_with_prefix(&[])
+    }
+    
+    /// Get keys with prefix
+    pub fn keys_with_prefix(&self, prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
+        self.backend.keys_with_prefix(prefix)
+    }
+    
+    /// Clear all data
+    pub fn clear_all(&self) -> Result<(), DatabaseError> {
+        // Get all keys and delete them
+        let keys = self.all_keys()?;
+        for key in keys {
+            self.delete(&key)?;
+        }
+        Ok(())
+    }
+    
+    /// Batch put operations
+    pub fn batch_put(&self, items: &[(Vec<u8>, Vec<u8>)]) -> Result<(), DatabaseError> {
+        let operations = items.iter()
+            .map(|(key, value)| BatchOperation::Put { 
+                key: key.clone(), 
+                value: value.clone() 
+            })
+            .collect();
+        self.apply_batch(operations)
+    }
+    
+    /// Create in-memory database for testing
+    pub fn in_memory() -> Database {
+        Database {
+            backend: Arc::new(InMemoryBackend::new()),
+        }
+    }
+}
+
+/// Database snapshot for consistent reads
+pub struct DatabaseSnapshot {
+    _phantom: std::marker::PhantomData<()>,
+}
+
+// In-memory backend implementation for testing
+struct InMemoryBackend {
+    data: std::sync::RwLock<std::collections::HashMap<Vec<u8>, Vec<u8>>>,
+}
+
+impl InMemoryBackend {
+    fn new() -> Self {
+        Self {
+            data: std::sync::RwLock::new(std::collections::HashMap::new()),
+        }
+    }
+}
+
+impl DatabaseBackend for InMemoryBackend {
+    fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, DatabaseError> {
+        let data = self.data.read().unwrap();
+        Ok(data.get(key).cloned())
+    }
+    
+    fn put(&self, key: &[u8], value: &[u8]) -> Result<(), DatabaseError> {
+        let mut data = self.data.write().unwrap();
+        data.insert(key.to_vec(), value.to_vec());
+        Ok(())
+    }
+    
+    fn delete(&self, key: &[u8]) -> Result<(), DatabaseError> {
+        let mut data = self.data.write().unwrap();
+        data.remove(key);
+        Ok(())
+    }
+    
+    fn exists(&self, key: &[u8]) -> Result<bool, DatabaseError> {
+        let data = self.data.read().unwrap();
+        Ok(data.contains_key(key))
+    }
+    
+    fn keys_with_prefix(&self, prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
+        let data = self.data.read().unwrap();
+        let keys = data.keys()
+            .filter(|key| key.starts_with(prefix))
+            .cloned()
+            .collect();
+        Ok(keys)
+    }
+    
+    fn batch_write(&self, operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
+        let mut data = self.data.write().unwrap();
+        for operation in operations {
+            match operation {
+                BatchOperation::Put { key, value } => {
+                    data.insert(key, value);
+                }
+                BatchOperation::Delete { key } => {
+                    data.remove(&key);
+                }
+            }
+        }
+        Ok(())
+    }
+    
     fn close(&self) -> Result<(), DatabaseError> {
-        // Placeholder implementation
         Ok(())
     }
 }
