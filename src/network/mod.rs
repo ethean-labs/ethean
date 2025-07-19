@@ -11,6 +11,7 @@ pub mod network_config;
 pub mod bandwidth;
 pub mod protocol;
 pub mod connection_manager;
+pub mod security;
 
 use crate::types::{BeaconBlock, Attestation, Epoch, Slot};
 use serde::{Serialize, Deserialize};
@@ -44,6 +45,7 @@ pub use discovery::{DiscoveryService, DiscoveryNode, PeerDiscovery, AdvancedDisc
 pub use message_handler::{MessageHandler, MessageResult, MessagePriority};
 pub use network_config::{NetworkConfig, PeerConfig};
 pub use connection_manager::{ConnectionPool, ConnectionInfo, ConnectionPoolConfig};
+pub use security::{NetworkSecurity, SecurityConfig, AuthMethod, TrustLevel};
 
 /// Network errors
 #[derive(Debug, Error)]
