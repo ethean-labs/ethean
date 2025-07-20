@@ -8,6 +8,7 @@ pub mod crypto;
 pub mod consensus;
 pub mod network;
 pub mod storage;
+pub mod integration;
 pub mod bench;
 pub mod api;
 pub mod config;
@@ -43,6 +44,9 @@ pub enum Error {
     
     #[error("Storage error: {0}")]
     Storage(String),
+    
+    #[error("Integration error: {0}")]
+    Integration(#[from] integration::IntegrationError),
     
     #[error("API error: {0}")]
     Api(String),
