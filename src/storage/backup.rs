@@ -552,7 +552,11 @@ mod tests {
         let backup_path = temp_dir.path().join("backups");
         
         // Create database and add some data
-        let db = Database::open(&db_path).unwrap();
+        let db_config = DatabaseConfig {
+            path: db_path,
+            ..Default::default()
+        };
+        let db = Database::open(&db_config).unwrap();
         db.put(b"key1", b"value1").unwrap();
         db.put(b"key2", b"value2").unwrap();
         
@@ -570,7 +574,11 @@ mod tests {
         
         // Create new database and restore
         let db2_path = temp_dir.path().join("test_db2");
-        let db2 = Database::open(&db2_path).unwrap();
+        let db2_config = DatabaseConfig {
+            path: db2_path,
+            ..Default::default()
+        };
+        let db2 = Database::open(&db2_config).unwrap();
         let backup_manager2 = BackupManager::new(
             BackupConfig {
                 backup_dir: backup_path,
