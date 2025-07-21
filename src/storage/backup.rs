@@ -56,7 +56,7 @@ pub struct BackupMetadata {
 }
 
 /// Backup type
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum BackupType {
     Full,
     Incremental { base_backup: String },

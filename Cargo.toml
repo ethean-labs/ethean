@@ -27,11 +27,8 @@ axum = { version = "0.7", features = ["ws", "tracing"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
 hyper = "1.0"
-# Cryptography and hashing
-sha2 = "0.10"
-
 # Database
-rocksdb = { version = "0.21", optional = true }
+rocksdb = { version = "0.22", optional = true }
 
 # Networking and WebSocket
 tokio-tungstenite = "0.21"
@@ -44,9 +41,6 @@ utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
 
 # Networking
 libp2p = { version = "0.53", features = ["identify", "ping", "mdns", "yamux", "noise", "tcp", "dns", "gossipsub"] }
-
-# Database
-rocksdb = "0.22"
 
 # Cryptography
 blst = "0.3"

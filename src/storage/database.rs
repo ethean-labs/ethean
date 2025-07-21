@@ -59,8 +59,8 @@ pub enum DatabaseError {
     #[error("RocksDB error: {0}")]
     RocksDb(String),
     
-    #[error("Invalid data: {0}")]
-    InvalidData(String),
+    #[error("JSON serialization error: {0}")]
+    JsonError(#[from] serde_json::Error),
 }
 
 /// Database trait for different backends
@@ -173,6 +173,7 @@ impl Database {
 pub struct RocksDbBackend {
     // Placeholder for now - would use rocksdb crate in production
     _config: DatabaseConfig,
+    backend: std::collections::HashMap<Vec<u8>, Vec<u8>>,
 }
 
 impl RocksDbBackend {
@@ -182,38 +183,79 @@ impl RocksDbBackend {
         
         Ok(Self {
             _config: config.clone(),
+            backend: std::collections::HashMap::new(),
         })
     }
 }
 
 impl DatabaseBackend for RocksDbBackend {
-    fn get(&self, _key: &[u8]) -> Result<Option<Vec<u8>>, DatabaseError> {
-        // Placeholder implementation
-        Ok(None)
+    fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, DatabaseError> {
+        Ok(self.backend.get(key).cloned())
     }
 
-    fn put(&self, _key: &[u8], _value: &[u8]) -> Result<(), DatabaseError> {
-        // Placeholder implementation
+    fn put(&self, key: &[u8], value: &[u8]) -> Result<(), DatabaseError> {
+        // Note: This is a simplified implementation. In production, we'd use proper RocksDB
+        // For now, we'll use a mutex to make it thread-safe
+        use std::sync::Mutex;
+        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
+        
+        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
+        backend.lock().unwrap().insert(key.to_vec(), value.to_vec());
         Ok(())
     }
 
-    fn delete(&self, _key: &[u8]) -> Result<(), DatabaseError> {
-        // Placeholder implementation
+    fn delete(&self, key: &[u8]) -> Result<(), DatabaseError> {
+        use std::sync::Mutex;
+        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
+        
+        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
+        backend.lock().unwrap().remove(key);
         Ok(())
     }
 
-    fn exists(&self, _key: &[u8]) -> Result<bool, DatabaseError> {
-        // Placeholder implementation
-        Ok(false)
+    fn exists(&self, key: &[u8]) -> Result<bool, DatabaseError> {
+        use std::sync::Mutex;
+        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
+        
+        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
+        Ok(backend.lock().unwrap().contains_key(key))
     }
 
-    fn keys_with_prefix(&self, _prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
-        // Placeholder implementation
-        Ok(Vec::new())
+    fn keys_with_prefix(&self, prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
+        use std::sync::Mutex;
+        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
+        
+        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
+        let keys: Vec<Vec<u8>> = backend.lock().unwrap()
+            .keys()
+            .filter(|key| key.starts_with(prefix))
+            .cloned()
+            .collect();
+        Ok(keys)
     }
 
-    fn batch_write(&self, _operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
-        // Placeholder implementation
+    fn batch_write(&self, operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
+        use std::sync::Mutex;
+        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
+        
+        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
+        let mut backend = backend.lock().unwrap();
+        
+        for operation in operations {
+            match operation {
+                BatchOperation::Put { key, value } => {
+                    backend.insert(key, value);
+                }
+                BatchOperation::Delete { key } => {
+                    backend.remove(&key);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn close(&self) -> Result<(), DatabaseError> {
+        // In a real implementation, we'd close the RocksDB instance
         Ok(())
     }
 

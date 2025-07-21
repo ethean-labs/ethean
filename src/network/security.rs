@@ -56,7 +56,7 @@ pub enum AuthMethod {
     PublicKey,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum TrustLevel {
     Unknown = 0,
     Low = 1,
