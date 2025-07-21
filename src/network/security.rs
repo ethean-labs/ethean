@@ -582,14 +582,15 @@ impl DDoSProtection {
         
         // Pattern regularity (connections at very regular intervals are suspicious)
         let mut intervals = Vec::new();
-        for window in tracker.connection_times.windows(2) {
-            let interval = window[1].duration_since(window[0]).as_millis();
+        let connection_times: Vec<_> = tracker.connection_times.iter().collect();
+        for window in connection_times.windows(2) {
+            let interval = window[1].duration_since(*window[0]).as_millis();
             intervals.push(interval);
         }
         
         let regularity_score = if intervals.len() > 1 {
             let variance = self.calculate_variance(&intervals);
-            if variance < 100 { 0.8 } else { 0.0 } // Very regular = suspicious
+            if variance < 100.0 { 0.8 } else { 0.0 } // Very regular = suspicious
         } else {
             0.0
         };

@@ -30,6 +30,13 @@ pub struct SerializablePeerId {
     pub peer_id: PeerId,
 }
 
+/// Wrapper for Instant to enable serialization
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializableInstant {
+    #[serde(with = "instant_serde")]
+    pub instant: Instant,
+}
+
 mod peer_id_serde {
     use super::*;
     use serde::{Serializer, Deserializer};
@@ -47,6 +54,26 @@ mod peer_id_serde {
     {
         let bytes = Vec::<u8>::deserialize(deserializer)?;
         PeerId::from_bytes(&bytes).map_err(serde::de::Error::custom)
+    }
+}
+
+mod instant_serde {
+    use super::*;
+    use serde::{Serializer, Deserializer};
+
+    pub fn serialize<S>(instant: &Instant, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u64(instant.elapsed().as_millis() as u64)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Instant, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let elapsed_ms = u64::deserialize(deserializer)?;
+        Ok(Instant::now() - Duration::from_millis(elapsed_ms))
     }
 }
 
@@ -79,9 +106,9 @@ pub struct DiscoveryNode {
     /// Protocol version
     pub protocol_version: String,
     /// Discovery timestamp
-    pub discovered_at: Instant,
+    pub discovered_at: SerializableInstant,
     /// Last seen timestamp
-    pub last_seen: Instant,
+    pub last_seen: SerializableInstant,
     /// Discovery method used
     pub discovery_method: DiscoveryMethod,
     /// Connection attempts
@@ -449,7 +476,7 @@ impl PeerDiscovery {
     ) {
         if let Some(peer_info) = self.discovered_peers.get_mut(&peer_id) {
             // Update existing peer
-            peer_info.last_seen = Instant::now();
+            peer_info.last_seen = SerializableInstant { instant: Instant::now() };
             
             // Add new addresses
             for addr in addresses {
@@ -464,7 +491,7 @@ impl PeerDiscovery {
                 // Remove oldest peer to make room
                 if let Some((oldest_peer, _)) = self.discovered_peers
                     .iter()
-                    .min_by_key(|(_, info)| info.last_seen)
+                    .min_by_key(|(_, info)| info.last_seen.instant)
                     .map(|(peer, info)| (*peer, info.clone()))
                 {
                     self.discovered_peers.remove(&oldest_peer);
@@ -472,13 +499,13 @@ impl PeerDiscovery {
             }
             
             let peer_info = DiscoveryNode {
-                peer_id,
+                peer_id: SerializablePeerId { peer_id },
                 addresses: addresses.clone(),
                 protocols: Vec::new(),
                 agent_version: String::new(),
                 protocol_version: String::new(),
-                discovered_at: Instant::now(),
-                last_seen: Instant::now(),
+                discovered_at: SerializableInstant { instant: Instant::now() },
+                last_seen: SerializableInstant { instant: Instant::now() },
                 discovery_method: method,
                 connection_attempts: 0,
                 successful_connections: 0,
@@ -518,7 +545,7 @@ impl PeerDiscovery {
         let mut removed = 0;
 
         self.discovered_peers.retain(|_peer_id, peer_info| {
-            if now.duration_since(peer_info.last_seen) > ttl {
+            if now.duration_since(peer_info.last_seen.instant) > ttl {
                 removed += 1;
                 false
             } else {
@@ -539,7 +566,7 @@ impl PeerDiscovery {
             peer_info.connection_attempts += 1;
             if successful {
                 peer_info.successful_connections += 1;
-                peer_info.last_seen = Instant::now();
+                peer_info.last_seen = SerializableInstant { instant: Instant::now() };
                 peer_info.reputation_score += 1; // Small reputation boost
             } else {
                 peer_info.reputation_score -= 2; // Penalty for failed connection

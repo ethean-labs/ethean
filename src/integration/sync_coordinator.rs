@@ -632,10 +632,10 @@ impl ConsistencyManager {
     ) -> Result<(), IntegrationError> {
         if let Some(check) = self.active_checks.get_mut(check_id) {
             check.status = CheckStatus::Completed;
-            check.findings = findings;
+            check.findings = findings.clone();
 
             // Check for violations
-            for finding in &check.findings {
+            for finding in &findings {
                 if finding.severity >= FindingSeverity::Error {
                     self.record_violation(finding).await?;
                 }
