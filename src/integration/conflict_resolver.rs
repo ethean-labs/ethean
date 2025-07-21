@@ -17,7 +17,34 @@ use tokio::sync::{RwLock, mpsc, oneshot};
 use tokio::time::{interval, timeout};
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
-use sha2::{Sha256, Digest};
+use sha2::Sha256;
+
+/// Wrapper for PeerId to enable serialization
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializablePeerId {
+    #[serde(with = "peer_id_serde")]
+    pub peer_id: PeerId,
+}
+
+mod peer_id_serde {
+    use super::*;
+    use serde::{Serializer, Deserializer};
+
+    pub fn serialize<S>(peer_id: &PeerId, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bytes(&peer_id.to_bytes())
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<PeerId, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let bytes = Vec::<u8>::deserialize(deserializer)?;
+        PeerId::from_bytes(&bytes).map_err(serde::de::Error::custom)
+    }
+}
 
 /// Advanced conflict resolver with multiple resolution strategies
 pub struct ConflictResolver {
@@ -97,7 +124,7 @@ pub struct VectorClockStrategy {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorClock {
     pub clock: HashMap<String, u64>,
-    pub peer_id: PeerId,
+    pub peer_id: SerializablePeerId,
     pub last_updated: SystemTime,
 }
 
