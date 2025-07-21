@@ -82,7 +82,7 @@ impl BenchmarkSuite {
     }
     
     /// Add cache layer for testing
-    pub fn with_cache(mut self, cache: Arc<RwLock<LruCache>>) -> Self {
+    pub fn with_cache(mut self, cache: Arc<RwLock<LruCache<Vec<u8>, Vec<u8>>>>) -> Self {
         self.cache = Some(cache);
         self
     }
@@ -331,7 +331,7 @@ impl BenchmarkSuite {
             }
             
             let op_start = Instant::now();
-            match self.database.batch_write(batch.into_iter().map(|(k, v)| BatchOperation::Put { key: k, value: v }).collect()) {
+            match self.database.batch_put(&batch) {
                 Ok(_) => {
                     let latency = op_start.elapsed().as_micros() as u64;
                     latencies.push(latency);
@@ -660,11 +660,7 @@ mod tests {
     async fn test_benchmark_suite() {
         let temp_dir = TempDir::new().unwrap();
         let db_path = temp_dir.path().join("bench_db");
-        let db_config = DatabaseConfig {
-            path: db_path,
-            ..Default::default()
-        };
-        let database = Arc::new(Database::open(&db_config).unwrap());
+        let database = Arc::new(Database::open(&db_path).unwrap());
         
         let config = BenchmarkConfig {
             operations_count: 100,

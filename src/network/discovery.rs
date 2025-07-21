@@ -23,33 +23,6 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::time::{interval, timeout};
 use tracing::{debug, error, info, warn};
 
-/// Wrapper for PeerId to enable serialization
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializablePeerId {
-    #[serde(with = "peer_id_serde")]
-    pub peer_id: PeerId,
-}
-
-mod peer_id_serde {
-    use super::*;
-    use serde::{Serializer, Deserializer};
-
-    pub fn serialize<S>(peer_id: &PeerId, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_bytes(&peer_id.to_bytes())
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<PeerId, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let bytes = Vec::<u8>::deserialize(deserializer)?;
-        PeerId::from_bytes(&bytes).map_err(serde::de::Error::custom)
-    }
-}
-
 /// Discovery service errors
 #[derive(Debug, thiserror::Error)]
 pub enum DiscoveryError {
@@ -69,7 +42,7 @@ pub enum DiscoveryError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveryNode {
     /// Node ID (libp2p PeerId)
-    pub peer_id: SerializablePeerId,
+    pub peer_id: PeerId,
     /// Multiaddresses for connections
     pub addresses: Vec<Multiaddr>,
     /// Supported protocols
@@ -78,10 +51,10 @@ pub struct DiscoveryNode {
     pub agent_version: String,
     /// Protocol version
     pub protocol_version: String,
-    /// Discovery timestamp (Unix timestamp)
-    pub discovered_at: u64,
-    /// Last seen timestamp (Unix timestamp)
-    pub last_seen: u64,
+    /// Discovery timestamp
+    pub discovered_at: Instant,
+    /// Last seen timestamp
+    pub last_seen: Instant,
     /// Discovery method used
     pub discovery_method: DiscoveryMethod,
     /// Connection attempts
@@ -338,7 +311,7 @@ impl PeerDiscovery {
         // Add bootstrap nodes to Kademlia
         for addr in &config.bootstrap_nodes {
             if let Some(Protocol::P2p(peer_id_hash)) = addr.iter().last() {
-                if let Ok(peer_id) = PeerId::from_multihash(peer_id_hash.into()) {
+                if let Ok(peer_id) = PeerId::from_multihash(peer_id_hash) {
                     kademlia.add_address(&peer_id, addr.clone());
                 }
             }

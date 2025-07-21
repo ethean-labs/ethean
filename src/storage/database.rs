@@ -54,13 +54,13 @@ pub enum DatabaseError {
     CorruptedData(String),
     
     #[error("IO error: {0}")]
-    IoError(String),
+    Io(#[from] std::io::Error),
     
     #[error("RocksDB error: {0}")]
     RocksDb(String),
     
-    #[error("JSON serialization error: {0}")]
-    JsonError(#[from] serde_json::Error),
+    #[error("Invalid data: {0}")]
+    InvalidData(String),
 }
 
 /// Database trait for different backends
@@ -173,98 +173,53 @@ impl Database {
 pub struct RocksDbBackend {
     // Placeholder for now - would use rocksdb crate in production
     _config: DatabaseConfig,
-    backend: std::collections::HashMap<Vec<u8>, Vec<u8>>,
 }
 
 impl RocksDbBackend {
     pub fn new(config: &DatabaseConfig) -> Result<Self, DatabaseError> {
         // Create directory if it doesn't exist
-        std::fs::create_dir_all(&config.path)
-            .map_err(|e| DatabaseError::IoError(e.to_string()))?;
+        std::fs::create_dir_all(&config.path)?;
         
         Ok(Self {
             _config: config.clone(),
-            backend: std::collections::HashMap::new(),
         })
     }
 }
 
 impl DatabaseBackend for RocksDbBackend {
-    fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, DatabaseError> {
-        use std::sync::Mutex;
-        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
-        
-        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
-        Ok(backend.lock().unwrap().get(key).cloned())
+    fn get(&self, _key: &[u8]) -> Result<Option<Vec<u8>>, DatabaseError> {
+        // Placeholder implementation
+        Ok(None)
     }
 
-    fn put(&self, key: &[u8], value: &[u8]) -> Result<(), DatabaseError> {
-        use std::sync::Mutex;
-        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
-        
-        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
-        backend.lock().unwrap().insert(key.to_vec(), value.to_vec());
+    fn put(&self, _key: &[u8], _value: &[u8]) -> Result<(), DatabaseError> {
+        // Placeholder implementation
         Ok(())
     }
 
-    fn delete(&self, key: &[u8]) -> Result<(), DatabaseError> {
-        use std::sync::Mutex;
-        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
-        
-        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
-        backend.lock().unwrap().remove(key);
+    fn delete(&self, _key: &[u8]) -> Result<(), DatabaseError> {
+        // Placeholder implementation
         Ok(())
     }
 
-    fn exists(&self, key: &[u8]) -> Result<bool, DatabaseError> {
-        use std::sync::Mutex;
-        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
-        
-        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
-        Ok(backend.lock().unwrap().contains_key(key))
+    fn exists(&self, _key: &[u8]) -> Result<bool, DatabaseError> {
+        // Placeholder implementation
+        Ok(false)
     }
 
-    fn keys_with_prefix(&self, prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
-        use std::sync::Mutex;
-        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
-        
-        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
-        let keys: Vec<Vec<u8>> = backend.lock().unwrap()
-            .keys()
-            .filter(|key| key.starts_with(prefix))
-            .cloned()
-            .collect();
-        Ok(keys)
+    fn keys_with_prefix(&self, _prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
+        // Placeholder implementation
+        Ok(Vec::new())
     }
 
-    fn batch_write(&self, operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
-        use std::sync::Mutex;
-        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
-        
-        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
-        let mut backend = backend.lock().unwrap();
-        
-        for operation in operations {
-            match operation {
-                BatchOperation::Put { key, value } => {
-                    backend.insert(key, value);
-                }
-                BatchOperation::Delete { key } => {
-                    backend.remove(&key);
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn close(&self) -> Result<(), DatabaseError> {
-        // In a real implementation, we'd close the RocksDB instance
+    fn batch_write(&self, _operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
+        // Placeholder implementation
         Ok(())
     }
 
     /// Apply batch operations
     pub fn apply_batch(&self, operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
-        self.batch_write(operations)
+        self.backend.batch_write(operations)
     }
     
     /// Create database snapshot
@@ -283,12 +238,12 @@ impl DatabaseBackend for RocksDbBackend {
     
     /// Get all keys
     pub fn all_keys(&self) -> Result<Vec<Vec<u8>>, DatabaseError> {
-        self.keys_with_prefix(&[])
+        self.backend.keys_with_prefix(&[])
     }
     
     /// Get keys with prefix
     pub fn keys_with_prefix(&self, prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
-        DatabaseBackend::keys_with_prefix(self, prefix)
+        self.backend.keys_with_prefix(prefix)
     }
     
     /// Clear all data

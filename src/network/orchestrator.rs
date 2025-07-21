@@ -68,7 +68,7 @@ pub struct OrchestratorConfig {
 }
 
 /// Network orchestrator state
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NetworkState {
     Stopped,
     Starting,
