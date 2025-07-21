@@ -78,10 +78,10 @@ pub struct DiscoveryNode {
     pub agent_version: String,
     /// Protocol version
     pub protocol_version: String,
-    /// Discovery timestamp
-    pub discovered_at: Instant,
-    /// Last seen timestamp
-    pub last_seen: Instant,
+    /// Discovery timestamp (Unix timestamp)
+    pub discovered_at: u64,
+    /// Last seen timestamp (Unix timestamp)
+    pub last_seen: u64,
     /// Discovery method used
     pub discovery_method: DiscoveryMethod,
     /// Connection attempts

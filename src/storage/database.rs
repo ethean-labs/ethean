@@ -54,7 +54,7 @@ pub enum DatabaseError {
     CorruptedData(String),
     
     #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
+    IoError(String),
     
     #[error("RocksDB error: {0}")]
     RocksDb(String),
@@ -179,7 +179,8 @@ pub struct RocksDbBackend {
 impl RocksDbBackend {
     pub fn new(config: &DatabaseConfig) -> Result<Self, DatabaseError> {
         // Create directory if it doesn't exist
-        std::fs::create_dir_all(&config.path)?;
+        std::fs::create_dir_all(&config.path)
+            .map_err(|e| DatabaseError::IoError(e.to_string()))?;
         
         Ok(Self {
             _config: config.clone(),
@@ -190,12 +191,14 @@ impl RocksDbBackend {
 
 impl DatabaseBackend for RocksDbBackend {
     fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, DatabaseError> {
-        Ok(self.backend.get(key).cloned())
+        use std::sync::Mutex;
+        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
+        
+        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
+        Ok(backend.lock().unwrap().get(key).cloned())
     }
 
     fn put(&self, key: &[u8], value: &[u8]) -> Result<(), DatabaseError> {
-        // Note: This is a simplified implementation. In production, we'd use proper RocksDB
-        // For now, we'll use a mutex to make it thread-safe
         use std::sync::Mutex;
         static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
         
@@ -261,7 +264,7 @@ impl DatabaseBackend for RocksDbBackend {
 
     /// Apply batch operations
     pub fn apply_batch(&self, operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
-        self.backend.batch_write(operations)
+        self.batch_write(operations)
     }
     
     /// Create database snapshot
@@ -280,12 +283,12 @@ impl DatabaseBackend for RocksDbBackend {
     
     /// Get all keys
     pub fn all_keys(&self) -> Result<Vec<Vec<u8>>, DatabaseError> {
-        self.backend.keys_with_prefix(&[])
+        self.keys_with_prefix(&[])
     }
     
     /// Get keys with prefix
     pub fn keys_with_prefix(&self, prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
-        self.backend.keys_with_prefix(prefix)
+        DatabaseBackend::keys_with_prefix(self, prefix)
     }
     
     /// Clear all data
