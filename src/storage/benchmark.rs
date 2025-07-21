@@ -660,7 +660,11 @@ mod tests {
     async fn test_benchmark_suite() {
         let temp_dir = TempDir::new().unwrap();
         let db_path = temp_dir.path().join("bench_db");
-        let database = Arc::new(Database::open(&db_path).unwrap());
+        let db_config = DatabaseConfig {
+            path: db_path,
+            ..Default::default()
+        };
+        let database = Arc::new(Database::open(&db_config).unwrap());
         
         let config = BenchmarkConfig {
             operations_count: 100,
