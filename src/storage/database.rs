@@ -56,9 +56,6 @@ pub enum DatabaseError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
     
-    #[error("IO error: {0}")]
-    IoError(String),
-    
     #[error("RocksDB error: {0}")]
     RocksDb(String),
     
@@ -176,6 +173,7 @@ impl Database {
 pub struct RocksDbBackend {
     // Placeholder for now - would use rocksdb crate in production
     _config: DatabaseConfig,
+    backend: std::collections::HashMap<Vec<u8>, Vec<u8>>,
 }
 
 impl RocksDbBackend {
@@ -185,17 +183,14 @@ impl RocksDbBackend {
         
         Ok(Self {
             _config: config.clone(),
+            backend: std::collections::HashMap::new(),
         })
     }
 }
 
 impl DatabaseBackend for RocksDbBackend {
     fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, DatabaseError> {
-        use std::sync::Mutex;
-        static BACKEND: std::sync::OnceLock<Mutex<std::collections::HashMap<Vec<u8>, Vec<u8>>>> = std::sync::OnceLock::new();
-        
-        let backend = BACKEND.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
-        Ok(backend.lock().unwrap().get(key).cloned())
+        Ok(self.backend.get(key).cloned())
     }
 
     fn put(&self, key: &[u8], value: &[u8]) -> Result<(), DatabaseError> {
@@ -266,7 +261,7 @@ impl DatabaseBackend for RocksDbBackend {
 
     /// Apply batch operations
     pub fn apply_batch(&self, operations: Vec<BatchOperation>) -> Result<(), DatabaseError> {
-        self.batch_write(operations)
+        self.backend.batch_write(operations)
     }
     
     /// Create database snapshot
@@ -285,7 +280,12 @@ impl DatabaseBackend for RocksDbBackend {
     
     /// Get all keys
     pub fn all_keys(&self) -> Result<Vec<Vec<u8>>, DatabaseError> {
-        self.keys_with_prefix(&[])
+        self.backend.keys_with_prefix(&[])
+    }
+    
+    /// Get keys with prefix
+    pub fn keys_with_prefix(&self, prefix: &[u8]) -> Result<Vec<Vec<u8>>, DatabaseError> {
+        self.backend.keys_with_prefix(prefix)
     }
     
     /// Clear all data

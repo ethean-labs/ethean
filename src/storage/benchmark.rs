@@ -82,7 +82,7 @@ impl BenchmarkSuite {
     }
     
     /// Add cache layer for testing
-    pub fn with_cache(mut self, cache: Arc<RwLock<LruCache>>) -> Self {
+    pub fn with_cache(mut self, cache: Arc<RwLock<LruCache<Vec<u8>, Vec<u8>>>>) -> Self {
         self.cache = Some(cache);
         self
     }
@@ -331,7 +331,7 @@ impl BenchmarkSuite {
             }
             
             let op_start = Instant::now();
-            match self.database.batch_write(batch.iter().map(|(key, value)| BatchOperation::Put { key: key.clone(), value: value.clone() }).collect()) {
+            match self.database.batch_put(&batch) {
                 Ok(_) => {
                     let latency = op_start.elapsed().as_micros() as u64;
                     latencies.push(latency);

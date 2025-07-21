@@ -155,21 +155,12 @@ pub struct ProtocolHandler {
     connections: Arc<RwLock<HashMap<String, PeerConnection>>>,
     message_sender: mpsc::UnboundedSender<(String, ProtocolMessage)>,
     message_receiver: Arc<RwLock<mpsc::UnboundedReceiver<(String, ProtocolMessage)>>>,
-    request_handlers: Arc<RwLock<HashMap<String, Box<dyn MessageHandler>>>>,
+    request_handlers: Arc<RwLock<HashMap<String, Box<dyn MessageHandler + Send + Sync>>>>,
 }
 
 /// Trait for handling specific message types
-pub trait MessageHandler: Send + Sync {
-    fn handle_message(
-        &self,
-        peer_id: &str,
-        message: ProtocolMessage,
-    ) -> Result<Option<ProtocolMessage>, ProtocolError>;
-}
-
-/// Async trait for handling specific message types
-pub trait AsyncMessageHandler: Send + Sync {
-    async fn handle_message_async(
+pub trait MessageHandler {
+    async fn handle_message(
         &self,
         peer_id: &str,
         message: ProtocolMessage,
@@ -215,7 +206,7 @@ impl ProtocolHandler {
     /// Register a message handler for specific message types
     pub async fn register_handler<H>(&self, message_type: String, handler: H)
     where
-        H: MessageHandler + 'static,
+        H: MessageHandler + Send + Sync + 'static,
     {
         let mut handlers = self.request_handlers.write().await;
         handlers.insert(message_type, Box::new(handler));
@@ -400,7 +391,7 @@ impl ProtocolHandler {
         peer_id: &str,
         message: ProtocolMessage,
         connections: &Arc<RwLock<HashMap<String, PeerConnection>>>,
-        handlers: &Arc<RwLock<HashMap<String, Box<dyn MessageHandler>>>>,
+        handlers: &Arc<RwLock<HashMap<String, Box<dyn MessageHandler + Send + Sync>>>>,
     ) -> Result<(), ProtocolError> {
         // Update last message time
         {
@@ -565,7 +556,7 @@ impl ProtocolHandler {
 pub struct BlockHandler;
 
 impl MessageHandler for BlockHandler {
-    fn handle_message(
+    async fn handle_message(
         &self,
         peer_id: &str,
         message: ProtocolMessage,

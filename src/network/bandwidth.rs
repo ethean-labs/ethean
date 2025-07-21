@@ -36,33 +36,6 @@ impl Default for BandwidthConfig {
     }
 }
 
-/// Wrapper for Instant to enable serialization
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializableInstant {
-    #[serde(with = "instant_serde")]
-    pub instant: Instant,
-}
-
-mod instant_serde {
-    use super::*;
-    use serde::{Serializer, Deserializer};
-
-    pub fn serialize<S>(instant: &Instant, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_u64(instant.elapsed().as_millis() as u64)
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Instant, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let elapsed_ms = u64::deserialize(deserializer)?;
-        Ok(Instant::now() - Duration::from_millis(elapsed_ms))
-    }
-}
-
 /// Bandwidth statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BandwidthStats {
@@ -74,7 +47,7 @@ pub struct BandwidthStats {
     pub peak_download_bps: u64,
     pub total_connections: usize,
     pub active_connections: usize,
-    pub last_reset: SerializableInstant,
+    pub last_reset: Instant,
 }
 
 impl Default for BandwidthStats {
@@ -88,7 +61,7 @@ impl Default for BandwidthStats {
             peak_download_bps: 0,
             total_connections: 0,
             active_connections: 0,
-            last_reset: SerializableInstant { instant: Instant::now() },
+            last_reset: Instant::now(),
         }
     }
 }

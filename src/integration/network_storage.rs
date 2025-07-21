@@ -540,7 +540,7 @@ impl NetworkStorageBridge {
         let start_time = Instant::now();
         
         // Check network state consistency
-        let network_stats = self.network_orchestrator.read().await.get_stats().map_err(|e| {
+        let network_stats = self.network_orchestrator.read().await.get_stats().await.map_err(|e| {
             IntegrationError::NetworkError(e)
         })?;
         
