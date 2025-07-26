@@ -564,10 +564,88 @@ impl AttestationProcessor {
             });
         }
 
-        // TODO: Add signature verification
-        // self.verify_attestation_signature(state, attestation)?;
+        // Verify attestation signature
+        self.verify_attestation_signature(state, attestation)?;
 
         Ok(())
+    }
+    
+    /// Verify attestation signature using BLS
+    fn verify_attestation_signature(
+        &self,
+        state: &BeaconState,
+        attestation: &Attestation,
+    ) -> Result<(), AttestationError> {
+        // Get committee for attestation
+        let committee = self.get_committee(
+            state,
+            attestation.data.slot,
+            attestation.data.index,
+        )?;
+        
+        // Convert attestation signature to BLS signature
+        let signature = BLSSignature {
+            point: attestation.signature.clone(),
+        };
+        
+        // Prepare message for signing (attestation data)
+        let message = self.serialize_attestation_data(&attestation.data)?;
+        
+        // Get participating validator public keys
+        let mut public_keys = Vec::new();
+        
+        // Extract participating validators from aggregation bits
+        for (i, &validator_index) in committee.validators.iter().enumerate() {
+            if i < attestation.aggregation_bits.len() && attestation.aggregation_bits[i] {
+                // Get validator public key from state
+                if let Some(validator) = state.validators.get(validator_index as usize) {
+                    let public_key = BLSPublicKey {
+                        point: validator.pubkey.clone(),
+                    };
+                    public_keys.push(public_key);
+                } else {
+                    return Err(AttestationError::InvalidCommittee { 
+                        validator: validator_index, 
+                        slot: attestation.data.slot 
+                    });
+                }
+            }
+        }
+        
+        if public_keys.is_empty() {
+            return Err(AttestationError::SignatureVerificationFailed);
+        }
+        
+        // For aggregated signatures, all validators sign the same message
+        let messages: Vec<&[u8]> = vec![&message; public_keys.len()];
+        
+        // Use BLS aggregator to verify the signature
+        let mut bls_aggregator = RealBLSAggregator::new();
+        let is_valid = bls_aggregator.verify_aggregated_signature(
+            &signature,
+            &messages,
+            &public_keys,
+        )?;
+        
+        if !is_valid {
+            return Err(AttestationError::SignatureVerificationFailed);
+        }
+        
+        Ok(())
+    }
+    
+    /// Serialize attestation data for signing
+    fn serialize_attestation_data(&self, data: &crate::types::AttestationData) -> Result<Vec<u8>, AttestationError> {
+        // Simple serialization - in production would use SSZ
+        let mut serialized = Vec::new();
+        serialized.extend_from_slice(&data.slot.to_le_bytes());
+        serialized.extend_from_slice(&data.index.to_le_bytes());
+        serialized.extend_from_slice(&data.beacon_block_root);
+        serialized.extend_from_slice(&data.source.root);
+        serialized.extend_from_slice(&data.source.epoch.to_le_bytes());
+        serialized.extend_from_slice(&data.target.root);
+        serialized.extend_from_slice(&data.target.epoch.to_le_bytes());
+        Ok(serialized)
     }
 
     /// Calculate attestation rewards for validators
