@@ -144,6 +144,73 @@ impl RealBLSAggregator {
         }
     }
     
+    /// Verify multiple signatures against multiple messages and public keys
+    pub fn verify_multiple_signatures(
+        &mut self,
+        signatures: &[BLSSignature],
+        messages: &[&[u8]],
+        public_keys: &[BLSPublicKey],
+    ) -> Result<bool, BLSError> {
+        if signatures.len() != messages.len() || signatures.len() != public_keys.len() {
+            return Err(BLSError::AggregationFailed {
+                reason: "Mismatched lengths of signatures, messages, and public keys".to_string(),
+            });
+        }
+        
+        // Verify each signature individually  
+        for (i, (signature, &message)) in signatures.iter().zip(messages.iter()).enumerate() {
+            if !self.verify_signature(signature, message, &public_keys[i])? {
+                return Ok(false);
+            }
+        }
+        
+        Ok(true)
+    }
+    
+    /// Verify an aggregated signature against multiple messages and public keys
+    pub fn verify_aggregated_signature(
+        &mut self,
+        aggregated_signature: &BLSSignature,
+        messages: &[&[u8]],
+        public_keys: &[BLSPublicKey],
+    ) -> Result<bool, BLSError> {
+        if messages.len() != public_keys.len() {
+            return Err(BLSError::AggregationFailed {
+                reason: "Mismatched lengths of messages and public keys".to_string(),
+            });
+        }
+        
+        let start_time = Instant::now();
+        
+        // Convert signature to G1 point
+        let sig_point = aggregated_signature.to_g1()?;
+        
+        // Hash all messages to G1 and aggregate with corresponding public keys
+        let mut aggregated_pairing = bls12_381::Gt::identity();
+        
+        for (&message, public_key) in messages.iter().zip(public_keys.iter()) {
+            let message_hash = self.hash_to_g1(message)?;
+            let pub_key_point = public_key.to_g2()?;
+            
+            // Add pairing e(message_hash, pubkey) to aggregation
+            let pairing_result = bls12_381::pairing(&message_hash, &pub_key_point);
+            aggregated_pairing += pairing_result;
+        }
+        
+        // Verify: e(aggregated_signature, generator) == aggregated_pairing
+        let generator_g2 = G2Affine::generator();
+        let sig_pairing = bls12_381::pairing(&sig_point, &generator_g2);
+        
+        let result = sig_pairing == aggregated_pairing;
+        
+        // Update performance stats
+        self.stats.total_verifications += 1;
+        let duration = start_time.elapsed();
+        self.update_verification_time(duration);
+        
+        Ok(result)
+    }
+    
     /// Verify a single BLS signature
     pub fn verify_signature(
         &mut self,
@@ -223,38 +290,34 @@ impl RealBLSAggregator {
         Ok(BLSSignature::from_g1(&aggregated.into()))
     }
     
-    /// Hash message to G1 curve (simplified implementation)
+    /// Hash message to G1 curve using proper hash-to-curve implementation
     fn hash_to_g1(&self, message: &[u8]) -> Result<G1Affine, BLSError> {
-        // This is a simplified hash-to-curve implementation
-        // Real implementation would use proper hash-to-curve from RFC 9380
-        
         use sha2::{Sha256, Digest};
-        let mut hasher = Sha256::new();
-        hasher.update(message);
-        hasher.update(b"BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_");
-        let hash = hasher.finalize();
+        use bls12_381::hash_to_curve::{HashToCurve, ExpandMsgXmd};
         
-        // Convert hash to scalar and multiply by generator
-        let scalar = Scalar::from_bytes_wide(&[
-            hash.as_slice(),
-            &[0u8; 32],
-        ].concat().try_into().unwrap());
+        // Use proper hash-to-curve implementation following RFC 9380
+        // Domain separator for BLS signatures on BLS12-381 G1
+        const DST: &[u8] = b"BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_NUL_";
         
-        let point = G1Projective::generator() * scalar;
+        let point = <G1Projective as HashToCurve<ExpandMsgXmd<Sha256>>>::hash_to_curve(message, DST);
         Ok(point.into())
     }
     
-    /// Perform pairing check for signature verification (simplified)
+    /// Perform pairing check for signature verification
     fn pairing_check(
         &self,
-        _sig: &G1Affine,
-        _gen: &G2Affine,
-        _msg_hash: &G1Affine,
-        _pubkey: &G2Affine,
+        sig: &G1Affine,
+        gen: &G2Affine,
+        msg_hash: &G1Affine,
+        pubkey: &G2Affine,
     ) -> Result<bool, BLSError> {
-        // Simplified implementation - always return true for now
-        // In production, would perform actual pairing check
-        Ok(true)
+        use bls12_381::pairing;
+        
+        // BLS signature verification: e(signature, generator) == e(message_hash, pubkey)
+        let pairing1 = pairing(sig, gen);
+        let pairing2 = pairing(msg_hash, pubkey);
+        
+        Ok(pairing1 == pairing2)
     }
     
     /// Get performance statistics  

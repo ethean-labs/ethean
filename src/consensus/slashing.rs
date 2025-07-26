@@ -585,10 +585,55 @@ impl SlashingDetector {
                    evidence.attestation_2.surrounds(&evidence.attestation_1))
             },
             SlashingType::DoubleProposal => {
-                // TODO: Implement block proposal slashing
-                Ok(false)
+                // Implement block proposal slashing
+                Ok(evidence.block_header_1.slot == evidence.block_header_2.slot &&
+                   evidence.block_header_1.proposer_index == evidence.block_header_2.proposer_index &&
+                   evidence.block_header_1.block_root != evidence.block_header_2.block_root)
             },
         }
+    }
+    
+    /// Process proposer slashing
+    fn process_proposer_slashing(
+        &mut self,
+        state: &mut BeaconState,
+        proposer_slashing: &ProposerSlashing,
+    ) -> Result<(), SlashingError> {
+        let validator_index = proposer_slashing.signed_header_1.message.proposer_index;
+        
+        // Verify the slashing conditions
+        if proposer_slashing.signed_header_1.message.slot != proposer_slashing.signed_header_2.message.slot {
+            return Err(SlashingError::InvalidEvidence("Headers from different slots".to_string()));
+        }
+        
+        if proposer_slashing.signed_header_1.message.proposer_index != proposer_slashing.signed_header_2.message.proposer_index {
+            return Err(SlashingError::InvalidEvidence("Headers from different proposers".to_string()));
+        }
+        
+        if proposer_slashing.signed_header_1.message == proposer_slashing.signed_header_2.message {
+            return Err(SlashingError::InvalidEvidence("Identical headers".to_string()));
+        }
+        
+        // Get validator
+        if let Some(validator) = state.validators.get_mut(validator_index as usize) {
+            if validator.slashed {
+                return Err(SlashingError::AlreadySlashed);
+            }
+            
+            // Apply slashing
+            validator.slashed = true;
+            validator.withdrawable_epoch = validator.withdrawable_epoch.max(
+                state.current_epoch(self.config.slots_per_epoch) + self.config.epochs_per_slashings_vector
+            );
+            
+            // Calculate slashing penalty
+            let penalty = validator.effective_balance / self.config.min_slashing_penalty_quotient;
+            validator.effective_balance = validator.effective_balance.saturating_sub(penalty);
+            
+            self.stats.total_proposer_slashings += 1;
+        }
+        
+        Ok(())
     }
     
     /// Get next violation from queue

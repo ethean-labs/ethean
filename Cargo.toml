@@ -45,8 +45,8 @@ utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
 # Networking
 libp2p = { version = "0.53", features = ["identify", "ping", "mdns", "yamux", "noise", "tcp", "dns", "gossipsub"] }
 
-# Database
-rocksdb = "0.22"
+# Database  
+rocksdb = { version = "0.21", optional = true }
 
 # Cryptography
 blst = "0.3"
@@ -59,10 +59,14 @@ thiserror = "1.0"
 
 # Logging
 tracing = "0.1"
+tracing-subscriber = "0.3"
 
 # Configuration
 config = "0.14"
 clap = { version = "4.0", features = ["derive"] }
+
+# UUID generation for conflict resolution
+uuid = { version = "1.0", features = ["v4"] }
 
 # Testing
 proptest = "1.0"
