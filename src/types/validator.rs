@@ -18,6 +18,8 @@ pub struct Validator {
     pub slashed: bool,
     pub activation_epoch: super::checkpoint::Epoch,
     pub exit_epoch: super::checkpoint::Epoch,
+    pub activation_eligibility_epoch: super::checkpoint::Epoch,
+    pub withdrawable_epoch: super::checkpoint::Epoch,
 }
 
 /// Set of validators
@@ -36,6 +38,8 @@ impl Validator {
             slashed: false,
             activation_epoch: u64::MAX,
             exit_epoch: u64::MAX,
+            activation_eligibility_epoch: u64::MAX,
+            withdrawable_epoch: u64::MAX,
         }
     }
 

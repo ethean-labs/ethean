@@ -23,6 +23,56 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::time::{interval, timeout};
 use tracing::{debug, error, info, warn};
 
+/// Wrapper for PeerId to enable serde serialization
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SerializablePeerId(pub PeerId);
+
+impl Serialize for SerializablePeerId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_bytes(&self.0.to_bytes())
+    }
+}
+
+impl<'de> Deserialize<'de> for SerializablePeerId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let bytes = Vec::<u8>::deserialize(deserializer)?;
+        PeerId::from_bytes(&bytes)
+            .map(SerializablePeerId)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+/// Wrapper for Instant to enable serde serialization
+#[derive(Debug, Clone)]
+pub struct SerializableInstant(pub Instant);
+
+impl Serialize for SerializableInstant {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Serialize as duration since Unix epoch
+        let duration = self.0.duration_since(Instant::now() - Duration::from_secs(1));
+        duration.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for SerializableInstant {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let duration = Duration::deserialize(deserializer)?;
+        Ok(SerializableInstant(Instant::now() + duration))
+    }
+}
+
 /// Discovery service errors
 #[derive(Debug, thiserror::Error)]
 pub enum DiscoveryError {
@@ -39,7 +89,7 @@ pub enum DiscoveryError {
 }
 
 /// Enhanced node information for advanced peer discovery
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct DiscoveryNode {
     /// Node ID (libp2p PeerId)
     pub peer_id: PeerId,
@@ -67,7 +117,7 @@ pub struct DiscoveryNode {
     pub latency: Option<Duration>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DiscoveryMethod {
     Bootstrap,
     Kademlia,
@@ -311,7 +361,7 @@ impl PeerDiscovery {
         // Add bootstrap nodes to Kademlia
         for addr in &config.bootstrap_nodes {
             if let Some(Protocol::P2p(peer_id_hash)) = addr.iter().last() {
-                if let Ok(peer_id) = PeerId::from_multihash(peer_id_hash) {
+                if let Ok(peer_id) = PeerId::from_multihash(peer_id_hash.into()) {
                     kademlia.add_address(&peer_id, addr.clone());
                 }
             }

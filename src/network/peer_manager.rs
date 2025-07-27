@@ -650,8 +650,7 @@ impl PeerManager {
     /// Create new peer manager
     pub fn new(config: PeerConfig) -> Result<Self, NetworkError> {
         let connection_pool = ConnectionPool::new(config.max_peers as usize, Duration::from_secs(30));
-        connection_pool.map(|mut pool| {
-            pool.start().unwrap(); // Start the background task
+        connection_pool.map(|pool| {
             Self {
                 max_peers: config.max_peers,
                 target_peers: config.target_peers,

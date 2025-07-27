@@ -43,6 +43,14 @@ pub struct StateTransitionConfig {
     pub genesis_time: u64,
     /// Validator activation delay
     pub activation_delay: u64,
+    /// Maximum effective balance
+    pub max_effective_balance: u64,
+    /// Minimum validator withdrawability delay
+    pub min_validator_withdrawability_delay: u64,
+    /// Maximum seed lookahead
+    pub max_seed_lookahead: u64,
+    /// Effective balance increment
+    pub effective_balance_increment: u64,
 }
 
 impl Default for StateTransitionConfig {
@@ -52,6 +60,10 @@ impl Default for StateTransitionConfig {
             seconds_per_slot: 4,  // Beam Chain 4-second slots
             genesis_time: 0,
             activation_delay: 256,
+            max_effective_balance: 32_000_000_000, // 32 ETH in gwei
+            min_validator_withdrawability_delay: 256,
+            max_seed_lookahead: 4,
+            effective_balance_increment: 1_000_000_000, // 1 ETH in gwei
         }
     }
 }
@@ -466,7 +478,7 @@ impl StateTransitionProcessor {
     fn get_total_active_balance(&self, state: &BeaconState, epoch: Epoch) -> Result<u64, StateTransitionError> {
         let mut total = 0u64;
         
-        for validator in &state.validators {
+        for validator in &state.validators.validators {
             if validator.activation_epoch <= epoch && epoch < validator.exit_epoch {
                 total = total.saturating_add(validator.effective_balance);
             }

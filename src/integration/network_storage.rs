@@ -198,7 +198,7 @@ pub struct SyncOperation {
     pub status: SyncStatus,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SyncStatus {
     Pending,
     InProgress,
