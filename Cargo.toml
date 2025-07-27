@@ -5,6 +5,7 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/panro-labs/panro"
 authors = ["Panro Team <paro@gmx.us>"]
+default-run = "panro"
 
 [[bin]]
 name = "panro"
@@ -45,12 +46,8 @@ utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
 # Networking
 libp2p = { version = "0.53", features = ["identify", "ping", "mdns", "yamux", "noise", "tcp", "dns", "gossipsub"] }
 
-# Database  
-rocksdb = { version = "0.21", optional = true }
-
 # Cryptography
 blst = "0.3"
-sha2 = "0.10"
 rand = "0.8"
 
 # Error handling
