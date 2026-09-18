@@ -699,7 +699,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Documentation**: [docs](./docs/)
 - **Docs index**: [docs/README.md](./docs/README.md)
 - **Folder READMEs and local conventions**: [docs/folder-readmes-and-local-conventions.md](./docs/folder-readmes-and-local-conventions.md)
-- **Roadmap notes (historical)**: [road-to/README.md](./road-to/README.md)
+- **Lean Consensus migration plans**: [road-to/lean-consensus-migration/README.md](./road-to/lean-consensus-migration/README.md) (active planning library; see also [road-to/README.md](./road-to/README.md))
 - **Source tree**: [src/README.md](./src/README.md)
 - **Lean Consensus tracks**: [leanroadmap.org research tracks](https://leanroadmap.org/#research-tracks)
 - **Lean Consensus R&D (full site)**: [leanroadmap.org](https://leanroadmap.org/)
