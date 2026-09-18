@@ -702,6 +702,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Roadmap notes (historical)**: [road-to/README.md](./road-to/README.md)
 - **Source tree**: [src/README.md](./src/README.md)
 - **Lean Consensus tracks**: [leanroadmap.org research tracks](https://leanroadmap.org/#research-tracks)
+- **Lean Consensus R&D (full site)**: [leanroadmap.org](https://leanroadmap.org/)
+- **How we capture that locally**: [docs/leanroadmap-local-notes.md](./docs/leanroadmap-local-notes.md)
+- **Source file size (300 lines)**: [docs/source-file-size-limit.md](./docs/source-file-size-limit.md)
 - **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Ethean/issues)
 - **Email**: support@Ethean.io
 
