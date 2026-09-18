@@ -1,0 +1,48 @@
+# Phase 02 fixture provenance
+# Workspace / primitives / profile — no large binary assets in this phase.
+
+schema = "ethean-fixture-manifest-v1"
+phase = "02"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = ["spec/fixtures/phase-00/manifest.toml"]
+
+[source]
+repository = "https://github.com/leanEthereum/leanSpec"
+generator_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+generator_tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+protocol_surface = "spec/pins/protocol-surface.toml"
+
+[workspace]
+members = [
+  "crates/primitives",
+  "crates/profile",
+  "crates/node",
+  "bin/ethean",
+]
+root_src = false
+
+[primitives_positive]
+slot_zero = 0
+epoch_from_slot_64_period_32 = 2
+hash32_zero_len = 32
+bytes52_len = 52
+
+[primitives_negative]
+slot_checked_add_overflow = "u64::MAX + 1"
+epoch_from_slot_zero_period = "ZeroDivisor"
+bytes52_wrong_len = 51
+
+[profile_positive]
+preset = "lstar_devnet"
+seconds_per_slot = 4
+fork_name = "lstar"
+
+[profile_negative]
+zero_seconds_per_slot = true
+zero_max_attestations_data = true
+zero_intervals_per_slot = true
+
+[verification]
+unit_tests = ["ethean-primitives", "ethean-profile"]
+lock_file = "spec/pins/phase-02.lock.toml"

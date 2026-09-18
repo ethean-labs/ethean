@@ -72,7 +72,7 @@ cd Ethean
 cargo build --release
 
 # Install binary
-cargo install --path .
+cargo install --path bin/ethean
 ```
 
 ### Development Install

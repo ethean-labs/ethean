@@ -1,0 +1,59 @@
+# Phase 02 lock — workspace, primitives, profile
+
+schema = "ethean-phase-lock-v1"
+phase = "02"
+phase_name = "workspace-primitives-and-profile"
+lock_status = "in_progress_workspace"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = ["spec/pins/phase-00.lock.toml", "spec/pins/phase-01.lock.toml"]
+
+[ethean.workspace]
+members = [
+  "crates/primitives",
+  "crates/profile",
+  "crates/node",
+  "bin/ethean",
+]
+package_primitives = "ethean-primitives"
+package_profile = "ethean-profile"
+package_node = "ethean-node"
+package_bin = "ethean"
+root_src_deleted = true
+nested_optimization_package_removed = true
+
+[resolved.lean_spec]
+status = "inherited"
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+
+[resolved.profile]
+preset = "lstar_devnet"
+seconds_per_slot = 4
+intervals_per_slot = 5
+milliseconds_per_slot = 4000
+milliseconds_per_interval = 800
+gossip_disparity_intervals = 1
+justification_lookback_slots = 3
+validator_registry_limit = 4096
+historical_roots_limit = 262144
+attestation_committee_count = 1
+max_attestations_data = 8
+xmss_public_key_bytes = 52
+xmss_signature_bytes = 2536
+fork_name = "lstar"
+authority = "spec/pins/protocol-surface.toml"
+
+[resolved.primitives]
+hash32 = "[u8; 32]"
+slot = "Slot(u64)"
+epoch = "Epoch(u64)"
+validator_index = "ValidatorIndex(u64)"
+bytes52 = "Bytes52"
+note = "Epoch::from_slot requires explicit slots_per_epoch; no hardcoded 32 in primitives."
+
+[unresolved]
+rust_toolchain = "TBD — do not invent rust-toolchain.toml version until rustc is available"
+lean_metrics = "OSD-009 still open"
+slots_per_epoch_in_profile = "Not on lstar ChainProfile surface yet; node callers still pass period explicitly"
+beacon_type_names = "Deferred to Phase 03 SSZ replacement"

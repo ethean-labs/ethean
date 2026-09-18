@@ -1,71 +1,48 @@
-[package]
-name = "ethean"
+[workspace]
+members = [
+    "crates/primitives",
+    "crates/profile",
+    "crates/node",
+    "bin/ethean",
+]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/Pamenarti/Ethean"
 authors = ["Ethean contributors"]
-default-run = "ethean"
+repository = "https://github.com/Pamenarti/Ethean"
 
-[[bin]]
-name = "ethean"
-path = "src/bin/main.rs"
+[workspace.dependencies]
+ethean-primitives = { path = "crates/primitives" }
+ethean-profile = { path = "crates/profile" }
+ethean-node = { path = "crates/node" }
 
-[[bin]]
-name = "benchmark"
-path = "src/bin/benchmark.rs"
-
-[dependencies]
-# Core async runtime
 tokio = { version = "1.0", features = ["full"] }
-
-# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-
-# Web framework
 axum = { version = "0.7", features = ["ws", "tracing"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
 hyper = "1.0"
-# Cryptography and hashing
 sha2 = "0.10"
-
-# Database
 rocksdb = { version = "0.21", optional = true }
-
-# Networking and WebSocket
 tokio-tungstenite = "0.21"
 futures = "0.3"
 futures-util = "0.3"
-
-# API documentation and validation
 utoipa = { version = "4.0", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
-
-# Networking
 libp2p = { version = "0.53", features = ["identify", "ping", "mdns", "yamux", "noise", "tcp", "dns", "gossipsub"] }
-
-# Cryptography
 blst = "0.3"
 rand = "0.8"
-
-# Error handling
 anyhow = "1.0"
 thiserror = "1.0"
-
-# Logging
 tracing = "0.1"
 tracing-subscriber = "0.3"
-
-# Configuration
 config = "0.14"
 clap = { version = "4.0", features = ["derive"] }
-
-# UUID generation for conflict resolution
 uuid = { version = "1.0", features = ["v4"] }
-
-# Testing
 proptest = "1.0"
 tempfile = "3.8"
 blstrs = "0.7.1"

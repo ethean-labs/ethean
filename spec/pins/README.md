@@ -37,6 +37,8 @@ Peer majority never resolves a contradiction against the frozen `leanSpec` tree 
 | File | Purpose |
 | --- | --- |
 | `phase-00.lock.toml` | Research / compatibility snapshot lock |
+| `phase-01.lock.toml` | Identity cleanup lock (inherits 00) |
+| `phase-02.lock.toml` | Workspace / primitives / profile lock (inherits 00–01) |
 | `protocol-surface.toml` | Normative constants and wire/crypto surface for implementers |
 
 ## Refresh

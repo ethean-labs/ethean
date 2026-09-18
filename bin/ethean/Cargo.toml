@@ -1,0 +1,20 @@
+[package]
+name = "ethean"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Ethean Lean Consensus Client binary"
+default-run = "ethean"
+
+[[bin]]
+name = "ethean"
+path = "src/main.rs"
+
+[dependencies]
+ethean-node = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
