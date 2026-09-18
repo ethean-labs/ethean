@@ -1,14 +1,14 @@
-# Ethean - Ethereum Beam/Lean Chain Client
+# Ethean Lean Consensus Client
 
 <div align="center">
 
-![Ethean Logo](https://img.shields.io/badge/Ethean-Lean%20Chain%20Client-blue?style=for-the-badge)
+![Ethean Logo](https://img.shields.io/badge/Ethean-Lean%20Consensus%20Client-blue?style=for-the-badge)
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg?style=flat-square)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)]()
 
-**Production-ready Ethereum Beam/Lean Chain client implementation in Rust**
+**Rust consensus client for Ethereum Lean Consensus (Beam / leanEthereum)**
 
 [Installation](#installation) • [Quick Start](#quick-start) • [Development](#development) • [Testing](#testing) • [Documentation](#documentation)
 
@@ -16,7 +16,11 @@
 
 ##  Overview
 
-Ethean is a high-performance, modular Ethereum Beam/Lean Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 consensus protocol with advanced features for validators, node operators, and developers.
+**Ethean Lean Consensus Client** implements Ethereum's Lean Consensus layer: a consensus-only client (not execution). Lean Consensus is the post-quantum rewrite of Beacon consensus — hash-based signatures (leanSig), aggregate proofs (leanMultisig / zkVMs), ~4s slots, finality in seconds (3SF, later PQ heartbeat), and a much larger validator set if the stake floor moves toward 1 ETH.
+
+Work in this repo is meant to track the [Lean Consensus research tracks](https://leanroadmap.org/#research-tracks) (Poseidon, XMSS-style multi-signatures, aggregation, formal verification, Gossipsub v2 / set reconciliation, APS, 3SF) and the pq-devnet sequence, not to freeze a 2024 mainnet Beacon clone.
+
+Existing crates may still use the historical `panro` package name; the product name is Ethean.
 
 ###  Key Features
 
@@ -693,6 +697,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ##  Support
 - **Documentation**: [docs](./docs/)
+- **Docs index**: [docs/README.md](./docs/README.md)
+- **Folder READMEs and local conventions**: [docs/folder-readmes-and-local-conventions.md](./docs/folder-readmes-and-local-conventions.md)
+- **Roadmap notes (historical)**: [road-to/README.md](./road-to/README.md)
+- **Source tree**: [src/README.md](./src/README.md)
+- **Lean Consensus tracks**: [leanroadmap.org research tracks](https://leanroadmap.org/#research-tracks)
 - **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Ethean/issues)
 - **Email**: support@Ethean.io
 
