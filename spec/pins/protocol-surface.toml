@@ -1,0 +1,88 @@
+# Normative protocol surface for post–Phase 00 implementation
+# Derived from leanSpec@0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8 (LstarSpec / lstar).
+# Authority: spec/pins/phase-00.lock.toml
+
+schema = "ethean-protocol-surface-v1"
+lean_spec_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+lean_spec_tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+
+[identity]
+spec_name = "LstarSpec"
+fork_choice = "modified_3sf_era_lstar"
+finality = "modified_3sf_mini_adjacency"
+not_in_scope = ["goldfish", "pq_heartbeat"]
+
+[time]
+seconds_per_slot = 4
+intervals_per_slot = 5
+milliseconds_per_slot = 4000
+# MILLISECONDS_PER_INTERVAL = MILLISECONDS_PER_SLOT // INTERVALS_PER_SLOT
+milliseconds_per_interval = 800
+gossip_disparity_intervals = 1
+justification_lookback_slots = 3
+citation = "src/lean_spec/spec/forks/lstar/config.py"
+
+[registry]
+validator_registry_limit = 4096
+historical_roots_limit = 262144
+attestation_committee_count = 1
+max_attestations_data = 8
+max_attestations_data_name = "MAX_ATTESTATIONS_DATA"
+citation = "src/lean_spec/spec/forks/lstar/config.py"
+
+[crypto.xmss]
+preset = "PROD_CONFIG"
+log_lifetime = 32
+dimension = 46
+base = 8
+field = "koalabear"
+hash = "poseidon"
+public_key_bytes = 52
+public_key_type = "Bytes52"
+signature_bytes = 2536
+citation = "src/lean_spec/spec/crypto/xmss/constants.py"
+
+[crypto.block_proof]
+envelope = "type2"
+signed_block_field = "proof"
+proof_type = "MultiMessageAggregate"
+covers_attestations = true
+covers_proposer = true
+citation = "src/lean_spec/spec/forks/lstar/containers/block.py"
+
+[crypto.aggregation]
+xmss_location = "lean_spec.spec.crypto.xmss"
+multisig_py_package = "lean-multisig-py"
+multisig_py_tag = "v0.0.9"
+multisig_py_commit = "39b9c397fd4d2c358f8efe2815d4fb78f0e47e67"
+
+[ssz]
+python_dependency = "eth-ssz-specs>=0.1.0,<0.2"
+containers_root = "src/lean_spec/spec/forks/lstar/containers/"
+
+[network.compression]
+gossip = "raw_snappy"
+req_resp = "framed_snappy"
+both_required = true
+
+[network.observed_protocol_ids]
+# Evidence from peer ledger / leanSpec interop helpers; confirm against fixtures in later phases.
+status = "/leanconsensus/req/status/1/ssz_snappy"
+blocks_by_root = "/leanconsensus/req/blocks_by_root/1/ssz_snappy"
+blocks_by_range = "/leanconsensus/req/blocks_by_range/1/ssz_snappy"
+topic_template = "/leanconsensus/{fork}/{message}/ssz_snappy"
+
+[fixtures]
+asset_name = "fixtures-prod-scheme.tar.gz"
+sha256 = "21d9de7056b4e658031dc09e50c0e9dc1b0206089253258ce69ecff01154d4bd"
+size_bytes = 154123448
+generator_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+manifest = "spec/fixtures/phase-00/manifest.toml"
+
+[open_for_later_phases]
+lean_metrics_pin = "unresolved"
+rust_toolchain = "TBD"
+gossip_message_id_preimage = "unresolved"
+fork_identifier_bytes = "unresolved"
+discovery = "unresolved"
