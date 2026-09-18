@@ -1,14 +1,14 @@
-# Panro - Ethereum Beacon Chain Client
+# Ethean - Ethereum Beam/Lean Chain Client
 
 <div align="center">
 
-![Panro Logo](https://img.shields.io/badge/Panro-Beacon%20Chain%20Client-blue?style=for-the-badge)
+![Ethean Logo](https://img.shields.io/badge/Ethean-Lean%20Chain%20Client-blue?style=for-the-badge)
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg?style=flat-square)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)]()
 
-**Production-ready Ethereum Beacon Chain client implementation in Rust**
+**Production-ready Ethereum Beam/Lean Chain client implementation in Rust**
 
 [Installation](#installation) • [Quick Start](#quick-start) • [Development](#development) • [Testing](#testing) • [Documentation](#documentation)
 
@@ -16,19 +16,19 @@
 
 ##  Overview
 
-Panro is a high-performance, modular Ethereum Beacon Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 consensus protocol with advanced features for validators, node operators, and developers.
+Ethean is a high-performance, modular Ethereum Beam/Lean Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 consensus protocol with advanced features for validators, node operators, and developers.
 
 ###  Key Features
 
-- ** Modular Architecture**: Clean separation of concerns with extensible design
+- ** Modular Architecture**: Beam/Lean separation of concerns with extensible design
 - ** High Performance**: Optimized for speed and efficiency with advanced caching
 - ** Security First**: Memory-safe Rust implementation with comprehensive testing
 - ** Advanced Monitoring**: Real-time metrics, performance benchmarking, and health monitoring
 - ** P2P Networking**: Robust peer-to-peer communication with bandwidth management
 - ** Database Optimization**: Advanced storage with indexing, caching, and backup systems
-- ** Developer Friendly**: Comprehensive API, WebSocket streaming, and extensive documentationBeacon Chain Client
+- ** Developer Friendly**: Comprehensive API, WebSocket streaming, and extensive documentationBeam/Lean Chain Client
 
-Panro is a modern, high-performance Ethereum Beacon Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 proof-of-stake consensus mechanism with emphasis on modularity, security, and developer experience.
+Ethean is a modern, high-performance Ethereum Beam/Lean Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 proof-of-stake consensus mechanism with emphasis on modularity, security, and developer experience.
 
 ## Table of Contents
 
@@ -44,9 +44,9 @@ Panro is a modern, high-performance Ethereum Beacon Chain client written in Rust
 
 ## Overview
 
-Panro implements the Ethereum Beacon Chain specification with the following key features:
+Ethean implements the Ethereum Beam/Lean Chain specification with the following key features:
 
-- **Modular Architecture**: Clean separation of concerns with well-defined module boundaries
+- **Modular Architecture**: Beam/Lean separation of concerns with well-defined module boundaries
 ##  Installation
 
 ### Prerequisites
@@ -62,8 +62,8 @@ Panro implements the Ethereum Beacon Chain specification with the following key 
 
 ```bash
 # Clone the repository
-git clone https://github.com/Pamenarti/Panro.git
-cd Panro
+git clone https://github.com/Pamenarti/Ethean.git
+cd Ethean
 
 # Build with optimizations
 cargo build --release
@@ -76,8 +76,8 @@ cargo install --path .
 
 ```bash
 # Clone with all dependencies
-git clone https://github.com/Pamenarti/Panro.git
-cd Panro
+git clone https://github.com/Pamenarti/Ethean.git
+cd Ethean
 
 # Install development dependencies
 cargo build
@@ -88,33 +88,33 @@ cargo test
 
 ##  Quick Start
 
-### 1. Start Beacon Node
+### 1. Start Beam/Lean Node
 
 ```bash
 # Start with default configuration
-panro start
+Ethean start
 
 # Start with custom configuration
-panro start --config /path/to/config.toml
+Ethean start --config /path/to/config.toml
 
 # Start with specific network
-panro start --network mainnet
+Ethean start --network mainnet
 ```
 
 ### 2. Run Validator
 
 ```bash
 # Start validator client
-panro validator --keys /path/to/validator/keys
+Ethean validator --keys /path/to/validator/keys
 
-# Run validator with specific beacon node
-panro validator --beacon-node http://localhost:5052
+# Run validator with specific Beam/Lean node
+Ethean validator --Beam/Lean-node http://localhost:5052
 ```
 
 ### 3. Check Version
 
 ```bash
-panro version
+Ethean version
 ```
 
 ##  Development
@@ -122,7 +122,7 @@ panro version
 ### Project Structure
 
 ```
-panro/
+Ethean/
 ├── src/
 │   ├── bin/           # Binary executables
 │   ├── api/           # REST API implementation
@@ -266,7 +266,7 @@ parallel_tests = true
 
 [test.database]
 use_memory_db = true
-cleanup_after_test = true
+Beam/Leanup_after_test = true
 
 [test.network]
 use_local_network = true
@@ -283,7 +283,7 @@ skip_signature_verification = false
 
 ```bash
 # Start with metrics enabled
-panro start --metrics --metrics-port 9090
+Ethean start --metrics --metrics-port 9090
 
 # View metrics endpoint
 curl http://localhost:9090/metrics
@@ -296,13 +296,13 @@ curl http://localhost:9090/metrics/prometheus
 
 ```bash
 # Real-time performance monitoring
-panro monitor --live
+Ethean monitor --live
 
 # Generate performance report
-panro monitor --report --output performance-report.json
+Ethean monitor --report --output performance-report.json
 
 # Bandwidth monitoring
-panro monitor --bandwidth --duration 60s
+Ethean monitor --bandwidth --duration 60s
 ```
 
 ### Health Checks
@@ -323,14 +323,14 @@ curl http://localhost:5052/eth/v1/node/peers
 ### REST API
 
 ```bash
-# Get beacon state
-curl http://localhost:5052/eth/v2/beacon/states/head
+# Get Beam/Lean state
+curl http://localhost:5052/eth/v2/Beam/Lean/states/head
 
 # Get block information
-curl http://localhost:5052/eth/v2/beacon/blocks/head
+curl http://localhost:5052/eth/v2/Beam/Lean/blocks/head
 
 # Submit attestation
-curl -X POST http://localhost:5052/eth/v1/beacon/pool/attestations \
+curl -X POST http://localhost:5052/eth/v1/Beam/Lean/pool/attestations \
   -H "Content-Type: application/json" \
   -d @attestation.json
 ```
@@ -377,7 +377,7 @@ cors_origins = ["*"]
 [logging]
 level = "info"
 format = "json"
-file = "./logs/panro.log"
+file = "./logs/Ethean.log"
 
 [metrics]
 enabled = true
@@ -393,7 +393,7 @@ fork_choice_before_proposal = true
 prepare_payload_lookahead = 4000
 
 [validator]
-graffiti = "Panro Validator"
+graffiti = "Ethean Validator"
 fee_recipient = "0x..."
 builder_proposals = true
 
@@ -415,45 +415,45 @@ rate_limiting = true
 
 ```bash
 # Create full backup
-panro database backup --type full --output ./backups/
+Ethean database backup --type full --output ./backups/
 
 # Create incremental backup
-panro database backup --type incremental --base ./backups/full_backup_123456
+Ethean database backup --type incremental --base ./backups/full_backup_123456
 
 # Restore from backup
-panro database restore --backup ./backups/full_backup_123456
+Ethean database restore --backup ./backups/full_backup_123456
 
 # List available backups
-panro database list-backups
+Ethean database list-backups
 ```
 
 ### Database Operations
 
 ```bash
 # Compact database
-panro database compact
+Ethean database compact
 
 # Verify database integrity
-panro database verify
+Ethean database verify
 
 # Export state
-panro database export --state head --output state.json
+Ethean database export --state head --output state.json
 
 # Import genesis state
-panro database import --genesis genesis.ssz
+Ethean database import --genesis genesis.ssz
 ```
 
 ### Cache Management
 
 ```bash
 # Clear cache
-panro cache clear
+Ethean cache clear
 
 # Cache statistics
-panro cache stats
+Ethean cache stats
 
 # Optimize cache
-panro cache optimize --target-size 1GB
+Ethean cache optimize --target-size 1GB
 ```
 
 ##  Debugging & Troubleshooting
@@ -462,26 +462,26 @@ panro cache optimize --target-size 1GB
 
 ```bash
 # View recent logs
-tail -f ./logs/panro.log
+tail -f ./logs/Ethean.log
 
 # Filter error logs
-grep "ERROR" ./logs/panro.log
+grep "ERROR" ./logs/Ethean.log
 
 # Analyze performance logs
-panro logs analyze --performance --last 1h
+Ethean logs analyze --performance --last 1h
 ```
 
 ### Debug Mode
 
 ```bash
 # Start in debug mode
-RUST_LOG=debug panro start
+RUST_LOG=debug Ethean start
 
 # Enable specific module debugging
-RUST_LOG=panro::consensus=debug,panro::network=info panro start
+RUST_LOG=Ethean::consensus=debug,Ethean::network=info Ethean start
 
 # Debug with backtrace
-RUST_BACKTRACE=1 panro start
+RUST_BACKTRACE=1 Ethean start
 ```
 
 ### Common Issues
@@ -492,25 +492,25 @@ RUST_BACKTRACE=1 panro start
 curl http://localhost:5052/eth/v1/node/syncing
 
 # Force resync
-panro resync --from-checkpoint
+Ethean resync --from-checkpoint
 ```
 
 2. **Peer Connection Problems**
 ```bash
 # Check peer status
-panro network peers
+Ethean network peers
 
 # Test connectivity
-panro network test-connectivity --peer-id <peer-id>
+Ethean network test-connectivity --peer-id <peer-id>
 ```
 
 3. **Database Corruption**
 ```bash
 # Verify database
-panro database verify --repair
+Ethean database verify --repair
 
 # Restore from backup
-panro database restore --latest-backup
+Ethean database restore --latest-backup
 ```
 
 ##  Contributing
@@ -519,8 +519,8 @@ panro database restore --latest-backup
 
 ```bash
 # Fork and clone
-git clone https://github.com/yourusername/panro.git
-cd panro
+git clone https://github.com/yourusername/Ethean.git
+cd Ethean
 
 # Create feature branch
 git checkout -b feature/new-feature
@@ -569,7 +569,7 @@ The project follows a modular architecture with clear separation of concerns:
 - **network/**: Handles P2P networking and peer management
 - **storage/**: Manages data persistence and state storage
 - **crypto/**: Provides cryptographic primitives and BLS operations
-- **api/**: Implements REST API with Ethereum Beacon API compliance
+- **api/**: Implements REST API with Ethereum Beam/Lean API compliance
 - **types/**: Defines core data structures and type definitions
 
 ### Adding New Features
@@ -644,7 +644,7 @@ Current test coverage includes:
 
 ## Contributing
 
-We welcome contributions to Panro. Please follow these guidelines:
+We welcome contributions to Ethean. Please follow these guidelines:
 
 1. Fork the repository
 2. Create a feature branch
@@ -656,8 +656,8 @@ We welcome contributions to Panro. Please follow these guidelines:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Pamenarti/Panro.git
-cd Panro
+git clone https://github.com/Pamenarti/Ethean.git
+cd Ethean
 
 # Install dependencies
 cargo build
@@ -686,23 +686,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ##  Acknowledgments
 
-- **Ethereum Foundation**: For the Beacon Chain specification
+- **Ethereum Foundation**: For the Beam/Lean Chain specification
 - **Rust Community**: For the excellent ecosystem
 - **Contributors**: All developers who have contributed to this project
 - **Lighthouse Team**: For inspiration and reference implementations
 
 ##  Support
 - **Documentation**: [docs](./docs/)
-- **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Panro/issues)
-- **Email**: support@panro.io
+- **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Ethean/issues)
+- **Email**: support@Ethean.io
 
 ---
 
 <div align="center">
 
-**Built with ❤️ by the Panro Team**
+**Built with ❤️ by the Ethean Team**
 
-[Website](https://panro.io) • [GitHub](https://github.com/Pamenarti/Panro)
+[Website](https://Ethean.io) • [GitHub](https://github.com/Pamenarti/Ethean)
 
 </div>
 
