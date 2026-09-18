@@ -263,34 +263,36 @@ When every source row above is closed, **delete the top-level `src/` directory**
 
 ## Examples
 
-| Baseline path | Replacement | Prerequisite | New path | Verification |
-| --- | --- | --- | --- | --- |
-| `examples/integration_example.rs` | R4 | Example compiles against public workspace crates and `ethean` binary; no legacy `src::` imports | `examples/<lean-topic>.rs` using `crates/*` public API | `rg -n -i 'panro|beam|bls|wots|src::|crate::panro|integration_example' examples` |
-| `examples/README.md` (if it references panro/legacy APIs) | R4 | README documents only current examples | Rewritten `examples/README.md` | `rg -n -i 'panro|legacy|src/' examples/README.md` |
+| Baseline path | Replacement | Prerequisite | New path | Verification | Planning status |
+| --- | --- | --- | --- | --- | --- |
+| `examples/integration_example.rs` | R4 | Beacon-era example removed during planning; Lean replacements land after public crate APIs exist | `examples/<lean-topic>.rs` using `crates/*` public API | `rg -n -i 'panro|beam|bls|wots|src::|crate::panro|integration_example' examples` | **Deleted** in planning commit `a7fa40a`; directory kept via rewritten README |
+| `examples/README.md` | R4 | README schedules Lean examples by owner phase | Rewritten `examples/README.md` | No normative panro/Beacon API claims | **Rewritten** in planning |
 
-If examples remain required, rewrite in place. Do not keep historical examples “for reference.”
+Do not keep historical examples “for reference.”
 
 ---
 
-## Old `road-to/` planning documents
+## Old `road-to/` and root planning documents
 
-Each file below is **deleted or reclassified as historical** in R5. Valid requirements must appear in `road-to/lean-consensus-migration/` before deletion.
+Each file below was required to leave the active tree once its facts lived in the migration library. Valid requirements must appear in `road-to/lean-consensus-migration/` before deletion.
 
-| Baseline path | Replacement owner | Prerequisite | New path | Verification |
-| --- | --- | --- | --- | --- |
-| `road-to/Ethean_MANIFESTO.md` | R5 | Charter and scope captured in `00-charter/` | [PROJECT_CHARTER.md](../00-charter/PROJECT_CHARTER.md), [SCOPE_AND_NON_GOALS.md](../00-charter/SCOPE_AND_NON_GOALS.md) | `rg -n 'Ethean_MANIFESTO' README.md docs road-to --glob '!lean-consensus-migration/**'` |
-| `road-to/MODULAR_ARCHITECTURE.md` | R5 | Module policy in architecture docs | [DEPENDENCY_RULES.md](../03-architecture/DEPENDENCY_RULES.md), [MODULE_SIZE_POLICY.md](../03-architecture/MODULE_SIZE_POLICY.md), [TARGET_WORKSPACE.md](../03-architecture/TARGET_WORKSPACE.md) | `rg -n 'MODULAR_ARCHITECTURE\.md' README.md docs road-to` |
-| `road-to/TECHNOLOGY_DECISION.md` | R5 | Technology choices in protocol/architecture records | `02-protocol/`, `03-architecture/`, phase decision notes | `rg -n 'TECHNOLOGY_DECISION\.md' README.md docs road-to` |
-| `road-to/WEEK5_PROGRESS_REPORT.md` | R5 | Historical only — unique metrics extracted to migration evidence | git history or classified archive | `rg -n 'WEEK5_PROGRESS_REPORT' README.md docs road-to` |
-| `road-to/WEEK6_TRANSITION_PLAN.md` | R5 | Sequencing superseded by `phases/` | [phases/README.md](../phases/README.md) | `rg -n 'WEEK6_TRANSITION_PLAN' README.md docs road-to` |
-| `road-to/phase-1-completion-summary.md` | R5 | No active README links | git history | `rg -n 'phase-1-completion-summary' README.md docs road-to` |
-| `road-to/storage-layer-progress-report.md` | R5 | Storage plan in phase 11 | [phases/11-storage-sync-and-checkpoints.md](../phases/11-storage-sync-and-checkpoints.md) | `rg -n 'storage-layer-progress-report' README.md docs road-to` |
-| `road-to/panro-roadmap-vision.md` | R5 | Product identity is Ethean Lean Consensus Client | [README.md](../README.md), charter | `rg -n -i 'panro-roadmap-vision' road-to --glob '!lean-consensus-migration/05-retirement/**'` |
-| `road-to/panro-todo-list.md` | R5 | Open work in phase register / issue tracker | `phases/`, `04-risks/RISK_REGISTER.md` | `rg -n -i 'panro-todo-list' road-to --glob '!lean-consensus-migration/05-retirement/**'` |
-| `road-to/beam-chain-client-master-plan.md` | R5 | Lean migration plan is authoritative | `lean-consensus-migration/` tree | `rg -n -i 'beam-chain-client-master-plan|beam master plan' road-to --glob '!lean-consensus-migration/05-retirement/**'` |
-| `road-to/wots-implementation-report.md` | R5 | Crypto migration in phases 07–08 | [phases/07-xmss-signer-safety.md](../phases/07-xmss-signer-safety.md) | `rg -n -i 'wots-implementation-report' road-to docs` |
-| `road-to/notlar.txt` | R5 | Valid English requirements extracted; file deleted | Current planning docs only | `Test-Path road-to/notlar.txt` → `$false` |
-| `road-to/README.md` (legacy index) | R5 | Migration root index or historical index with clear classification | [lean-consensus-migration/README.md](../README.md) | links resolve; no normative panro/beam guidance |
+**Planning retirement status (2026-09-19):** the rows in this table are **complete**. Git history is the archive. `road-to/` now contains only `README.md` and `lean-consensus-migration/`.
+
+| Baseline path | Replacement owner | Prerequisite | New path | Verification | Status |
+| --- | --- | --- | --- | --- | --- |
+| Root `Ethean_MANIFESTO.md` (and any `road-to/` copy) | R5 | Charter and scope in `00-charter/` | [PROJECT_CHARTER.md](../00-charter/PROJECT_CHARTER.md), [SCOPE_AND_NON_GOALS.md](../00-charter/SCOPE_AND_NON_GOALS.md) | `rg -n 'Ethean_MANIFESTO' README.md docs road-to --glob '!lean-consensus-migration/**'` | Deleted |
+| Root / `road-to/MODULAR_ARCHITECTURE.md` | R5 | Module policy in architecture docs | [DEPENDENCY_RULES.md](../03-architecture/DEPENDENCY_RULES.md), [MODULE_SIZE_POLICY.md](../03-architecture/MODULE_SIZE_POLICY.md), [TARGET_WORKSPACE.md](../03-architecture/TARGET_WORKSPACE.md) | `rg -n 'MODULAR_ARCHITECTURE\.md' README.md docs road-to` | Deleted |
+| Root / `road-to/TECHNOLOGY_DECISION.md` | R5 | Technology choices in protocol/architecture records | `02-protocol/`, `03-architecture/` | `rg -n 'TECHNOLOGY_DECISION\.md' README.md docs road-to` | Deleted |
+| Root / `road-to/WEEK5_PROGRESS_REPORT.md` | R5 | Historical only | git history | `rg -n 'WEEK5_PROGRESS_REPORT' README.md docs road-to` | Deleted |
+| `road-to/WEEK6_TRANSITION_PLAN.md` | R5 | Sequencing superseded by `phases/` | [phases/README.md](../phases/README.md) | `rg -n 'WEEK6_TRANSITION_PLAN' README.md docs road-to` | Deleted |
+| `road-to/phase-1-completion-summary.md` | R5 | No active README links | git history | `rg -n 'phase-1-completion-summary' README.md docs road-to` | Deleted |
+| `road-to/storage-layer-progress-report.md` | R5 | Storage plan in phase 11 | [phases/11-storage-sync-and-checkpoints.md](../phases/11-storage-sync-and-checkpoints.md) | `rg -n 'storage-layer-progress-report' README.md docs road-to` | Deleted |
+| `road-to/panro-roadmap-vision.md` | R5 | Product identity is Ethean Lean Consensus Client | [README.md](../README.md), charter | `rg -n -i 'panro-roadmap-vision' road-to --glob '!lean-consensus-migration/05-retirement/**'` | Deleted |
+| `road-to/panro-todo-list.md` | R5 | Open work in phase register | `phases/`, [RISK_REGISTER.md](../04-risks/RISK_REGISTER.md) | `rg -n -i 'panro-todo-list' road-to --glob '!lean-consensus-migration/05-retirement/**'` | Deleted |
+| `road-to/beam-chain-client-master-plan.md` | R5 | Lean migration plan is authoritative | `lean-consensus-migration/` tree | `rg -n -i 'beam-chain-client-master-plan' road-to --glob '!lean-consensus-migration/05-retirement/**'` | Deleted |
+| `road-to/wots-implementation-report.md` | R5 | Crypto migration in phases 07–08 | [phases/07-xmss-signer-safety.md](../phases/07-xmss-signer-safety.md) | `rg -n -i 'wots-implementation-report' road-to docs` | Deleted |
+| `road-to/notlar.txt` | R5 | Intent absorbed into English charter | Current planning docs only | `Test-Path road-to/notlar.txt` → `$false` | Deleted |
+| `road-to/README.md` (legacy index) | R5 | Points only at the migration library | [lean-consensus-migration/README.md](../README.md) | links resolve; no normative panro/beam guidance | Rewritten |
 
 Historical material may remain only when labeled history and compliant with [LEGACY_NAME_ALLOWLIST.md](./LEGACY_NAME_ALLOWLIST.md).
 
@@ -298,14 +300,16 @@ Historical material may remain only when labeled history and compliant with [LEG
 
 ## Old `docs/` classes (summary)
 
-Full class inventory remains in the prior register revision. R5 deletes or archives:
+These remain in-tree until their owning implementation phases rewrite or delete them. Planning did **not** rewrite product/technical docs; root and `docs/README.md` only gained links to the migration library.
+
+Deferred to Phase 13 / R5 execution (see [LEGACY_COMPONENT_MATRIX.md](../01-baseline/LEGACY_COMPONENT_MATRIX.md)):
 
 - weekly development/status reports (`docs/WEEK*.md`, sprint plans under `docs/development/`);
+- duplicate Panro/Beam roadmap copies under `docs/` (`panro-todo-list.md`, `panro-roadmap-vision.md`, `beam-chain-client-master-plan.md`, and similar);
 - legacy architecture guides (`docs/architecture.md`, `consensus.md`, `networking.md`, etc.);
-- generic backlogs (`docs/TODO_IMPLEMENT.md`, `roadmap.md`);
-- superseded convention copies now owned by Cursor rules and migration docs.
+- generic backlogs (`docs/TODO_IMPLEMENT.md`, `roadmap.md`).
 
-**Verification:** `rg -n -i 'week[- ]?[0-9]+|panro|beam[ -]?chain|\bbls\b' docs --glob '*.md' --glob '!lean-consensus-migration/**'`
+**Verification (at Phase 13 exit):** `rg -n -i 'week[- ]?[0-9]+|panro|beam[ -]?chain|\bbls\b' docs --glob '*.md'`
 
 Inspect each hit; allowlisted retirement/baseline paths only.
 

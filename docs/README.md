@@ -21,3 +21,4 @@ Planning session summaries:
 - [Observability planning](./lean-consensus-migration-observability-planning-2026-09-19.md)
 - [Phases 03–06](./lean-consensus-migration-phases-03-06-planning-2026-09-19.md)
 - [Full library completion](./lean-consensus-migration-library-complete-2026-09-19.md)
+- [Planning retirement closeout](./lean-consensus-migration-retire-legacy-2026-09-19.md)
