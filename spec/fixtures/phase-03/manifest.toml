@@ -1,0 +1,54 @@
+# Phase 03 fixture provenance
+# Canonical SSZ + Lean types — unit tests in ethean-ssz / ethean-types.
+
+schema = "ethean-fixture-manifest-v1"
+phase = "03"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = [
+  "spec/fixtures/phase-00/manifest.toml",
+  "spec/fixtures/phase-02/manifest.toml",
+]
+
+[source]
+repository = "https://github.com/leanEthereum/leanSpec"
+generator_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+generator_tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+containers = "src/lean_spec/spec/forks/lstar/containers/"
+protocol_surface = "spec/pins/protocol-surface.toml"
+
+[workspace]
+members = [
+  "crates/primitives",
+  "crates/profile",
+  "crates/ssz",
+  "crates/types",
+  "crates/node",
+  "bin/ethean",
+]
+
+[ssz_positive]
+u64_le_roundtrip = true
+offset_list_two_elements = true
+bitlist_roundtrip = true
+hash_tree_root_u64_padded = true
+bytes32_identity_chunk = true
+
+[ssz_negative]
+bitlist_over_limit = true
+buffer_too_short = "decode need checks"
+
+[types_positive]
+checkpoint_roundtrip = true
+attestation_data_roundtrip = true
+block_header_roundtrip = true
+max_attestations_data = 8
+
+[types_negative]
+xmss_signature_wrong_len = 2535
+validator_index_out_of_range = 4096
+
+[verification]
+unit_tests = ["ethean-ssz", "ethean-types"]
+lock_file = "spec/pins/phase-03.lock.toml"
+note = "Full leanSpec root vectors and malformed corpus land when rustc/fixture tooling is available on authoring host."

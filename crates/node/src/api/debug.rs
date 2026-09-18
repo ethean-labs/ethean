@@ -25,14 +25,14 @@ pub fn create_routes() -> Router<ApiState> {
 
 /// Beacon state debug response
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct BeaconStateDebugResponse {
+pub struct StateDebugResponse {
     pub execution_optimistic: bool,
     pub finalized: bool,
-    pub data: BeaconStateDebug,
+    pub data: StateDebug,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct BeaconStateDebug {
+pub struct StateDebug {
     pub genesis_time: u64,
     pub genesis_validators_root: String,
     pub slot: u64,
@@ -47,9 +47,9 @@ pub struct BeaconStateDebug {
     pub randao_mixes: Vec<String>,
     pub slashings: Vec<u64>,
     pub justification_bits: String,
-    pub previous_justified_checkpoint: CheckpointDebug,
-    pub current_justified_checkpoint: CheckpointDebug,
-    pub finalized_checkpoint: CheckpointDebug,
+    pub previous_latest_justified: CheckpointDebug,
+    pub current_latest_justified: CheckpointDebug,
+    pub latest_finalized: CheckpointDebug,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -108,8 +108,8 @@ pub struct BeaconHead {
 /// Fork choice debug response
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ForkChoiceResponse {
-    pub justified_checkpoint: CheckpointDebug,
-    pub finalized_checkpoint: CheckpointDebug,
+    pub latest_justified: CheckpointDebug,
+    pub latest_finalized: CheckpointDebug,
     pub fork_choice_nodes: Vec<ForkChoiceNode>,
 }
 
@@ -130,8 +130,8 @@ pub struct ForkChoiceNode {
 pub struct ForkChoiceNodeExtraData {
     pub justified_root: String,
     pub finalized_root: String,
-    pub unrealized_justified_checkpoint: CheckpointDebug,
-    pub unrealized_finalized_checkpoint: CheckpointDebug,
+    pub unrealized_latest_justified: CheckpointDebug,
+    pub unrealized_latest_finalized: CheckpointDebug,
 }
 
 /// GET /eth/v1/debug/beacon/states/{state_id}
@@ -143,15 +143,15 @@ pub struct ForkChoiceNodeExtraData {
         ("state_id" = String, Path, description = "State identifier")
     ),
     responses(
-        (status = 200, description = "Beacon state debug information", body = BeaconStateDebugResponse)
+        (status = 200, description = "Beacon state debug information", body = StateDebugResponse)
     )
 )]
 pub async fn get_beacon_state(
     Path(state_id): Path<String>,
     State(state): State<ApiState>,
-) -> Result<Json<BeaconStateDebugResponse>> {
+) -> Result<Json<StateDebugResponse>> {
     // Create a debug representation of the beacon state
-    let beacon_state = BeaconStateDebug {
+    let beacon_state = StateDebug {
         genesis_time: 1606824000,
         genesis_validators_root: "0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95".to_string(),
         slot: 1000,
@@ -180,21 +180,21 @@ pub async fn get_beacon_state(
         randao_mixes: vec!["0x0000000000000000000000000000000000000000000000000000000000000000".to_string(); 10],
         slashings: vec![0; 8192],
         justification_bits: "0x00".to_string(),
-        previous_justified_checkpoint: CheckpointDebug {
+        previous_latest_justified: CheckpointDebug {
             epoch: 0,
             root: "0x0000000000000000000000000000000000000000000000000000000000000000".to_string(),
         },
-        current_justified_checkpoint: CheckpointDebug {
+        current_latest_justified: CheckpointDebug {
             epoch: 0,
             root: "0x0000000000000000000000000000000000000000000000000000000000000000".to_string(),
         },
-        finalized_checkpoint: CheckpointDebug {
+        latest_finalized: CheckpointDebug {
             epoch: 0,
             root: "0x0000000000000000000000000000000000000000000000000000000000000000".to_string(),
         },
     };
 
-    let response = BeaconStateDebugResponse {
+    let response = StateDebugResponse {
         execution_optimistic: false,
         finalized: true,
         data: beacon_state,
@@ -253,11 +253,11 @@ pub async fn get_fork_choice(
             extra_data: ForkChoiceNodeExtraData {
                 justified_root: "0x1111111111111111111111111111111111111111111111111111111111111111".to_string(),
                 finalized_root: "0x2222222222222222222222222222222222222222222222222222222222222222".to_string(),
-                unrealized_justified_checkpoint: CheckpointDebug {
+                unrealized_latest_justified: CheckpointDebug {
                     epoch: 31,
                     root: "0x3333333333333333333333333333333333333333333333333333333333333333".to_string(),
                 },
-                unrealized_finalized_checkpoint: CheckpointDebug {
+                unrealized_latest_finalized: CheckpointDebug {
                     epoch: 29,
                     root: "0x4444444444444444444444444444444444444444444444444444444444444444".to_string(),
                 },
@@ -266,11 +266,11 @@ pub async fn get_fork_choice(
     ];
 
     let response = ForkChoiceResponse {
-        justified_checkpoint: CheckpointDebug {
+        latest_justified: CheckpointDebug {
             epoch: 30,
             root: "0x1111111111111111111111111111111111111111111111111111111111111111".to_string(),
         },
-        finalized_checkpoint: CheckpointDebug {
+        latest_finalized: CheckpointDebug {
             epoch: 28,
             root: "0x2222222222222222222222222222222222222222222222222222222222222222".to_string(),
         },

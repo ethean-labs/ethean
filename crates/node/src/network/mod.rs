@@ -15,8 +15,8 @@ pub mod security;
 pub mod performance;
 pub mod orchestrator;
 
-use crate::types::{BeaconBlock, Attestation, Epoch, Slot};
-use serde::{Serialize, Deserialize};
+use ethean_types::{Attestation, Block, Slot};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -91,19 +91,19 @@ pub enum NetworkError {
     RateLimitError { reason: String },
 }
 
-/// Network message types for consensus
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Network message types for consensus (no Serde on Lean containers).
+#[derive(Debug, Clone)]
 pub enum NetworkMessage {
-    /// Beacon block propagation
-    BeaconBlock(BeaconBlock),
-    /// Attestation propagation  
+    /// Block propagation
+    Block(Block),
+    /// Attestation propagation
     Attestation(Attestation),
     /// Block request/response
     BlockRequest { slot: Slot, count: u32 },
-    BlockResponse { blocks: Vec<BeaconBlock> },
+    BlockResponse { blocks: Vec<Block> },
     /// Status sync messages
     StatusRequest,
-    StatusResponse { head_slot: Slot, finalized_epoch: Epoch },
+    StatusResponse { head_slot: Slot, finalized_slot: Slot },
 }
 
 /// Peer information and scoring

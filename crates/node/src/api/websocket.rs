@@ -19,7 +19,7 @@ use tokio::sync::broadcast;
 use tracing::{info, warn, error};
 
 use super::{ApiState, error::Result};
-use crate::types::{BeaconBlock, Attestation, Slot, Epoch};
+use ethean_types::{Block, Attestation, Slot, Epoch};
 
 /// WebSocket subscription types
 #[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
@@ -33,14 +33,16 @@ pub enum SubscriptionType {
     Head,
 }
 
-/// WebSocket message types
+/// WebSocket message types (JSON wire; Lean containers are not Serde-encoded).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum WsMessage {
     Subscribe { topics: Vec<SubscriptionType> },
     Unsubscribe { topics: Vec<SubscriptionType> },
-    Block(BeaconBlock),
-    Attestation(Attestation),
+    /// Hex-encoded SSZ block bytes (or root placeholder until Phase 08 wire).
+    Block(String),
+    /// Hex-encoded attestation payload placeholder.
+    Attestation(String),
     ValidatorDuty(ValidatorDutyUpdate),
     ChainReorg(ChainReorgEvent),
     FinalizedCheckpoint(FinalizedCheckpointEvent),
@@ -105,11 +107,11 @@ pub struct HeadEvent {
 /// WebSocket event broadcaster
 #[derive(Debug, Clone)]
 pub struct EventBroadcaster {
-    block_tx: broadcast::Sender<BeaconBlock>,
+    block_tx: broadcast::Sender<Block>,
     attestation_tx: broadcast::Sender<Attestation>,
     validator_duty_tx: broadcast::Sender<ValidatorDutyUpdate>,
     chain_reorg_tx: broadcast::Sender<ChainReorgEvent>,
-    finalized_checkpoint_tx: broadcast::Sender<FinalizedCheckpointEvent>,
+    latest_finalized_tx: broadcast::Sender<FinalizedCheckpointEvent>,
     head_tx: broadcast::Sender<HeadEvent>,
 }
 
@@ -119,7 +121,7 @@ impl EventBroadcaster {
         let (attestation_tx, _) = broadcast::channel(1000);
         let (validator_duty_tx, _) = broadcast::channel(1000);
         let (chain_reorg_tx, _) = broadcast::channel(100);
-        let (finalized_checkpoint_tx, _) = broadcast::channel(100);
+        let (latest_finalized_tx, _) = broadcast::channel(100);
         let (head_tx, _) = broadcast::channel(100);
 
         Self {
@@ -127,12 +129,12 @@ impl EventBroadcaster {
             attestation_tx,
             validator_duty_tx,
             chain_reorg_tx,
-            finalized_checkpoint_tx,
+            latest_finalized_tx,
             head_tx,
         }
     }
 
-    pub fn broadcast_block(&self, block: BeaconBlock) {
+    pub fn broadcast_block(&self, block: Block) {
         if let Err(e) = self.block_tx.send(block) {
             warn!("Failed to broadcast block: {}", e);
         }
@@ -156,8 +158,8 @@ impl EventBroadcaster {
         }
     }
 
-    pub fn broadcast_finalized_checkpoint(&self, checkpoint: FinalizedCheckpointEvent) {
-        if let Err(e) = self.finalized_checkpoint_tx.send(checkpoint) {
+    pub fn broadcast_latest_finalized(&self, checkpoint: FinalizedCheckpointEvent) {
+        if let Err(e) = self.latest_finalized_tx.send(checkpoint) {
             warn!("Failed to broadcast finalized checkpoint: {}", e);
         }
     }
@@ -189,7 +191,7 @@ pub async fn websocket_handler(
 /// Event receiver wrapper for different message types
 #[derive(Debug)]
 enum EventReceiver {
-    Block(broadcast::Receiver<BeaconBlock>),
+    Block(broadcast::Receiver<Block>),
     Attestation(broadcast::Receiver<Attestation>),
     ValidatorDuty(broadcast::Receiver<ValidatorDutyUpdate>),
     ChainReorg(broadcast::Receiver<ChainReorgEvent>),
@@ -237,7 +239,7 @@ async fn handle_websocket(socket: WebSocket, state: ApiState) {
                                                 receivers.push(EventReceiver::ChainReorg(rx));
                                             }
                                             SubscriptionType::FinalizedCheckpoint => {
-                                                let rx = broadcaster.finalized_checkpoint_tx.subscribe();
+                                                let rx = broadcaster.latest_finalized_tx.subscribe();
                                                 receivers.push(EventReceiver::FinalizedCheckpoint(rx));
                                             }
                                             SubscriptionType::Head => {
@@ -372,7 +374,7 @@ mod tests {
         let mut block_rx = broadcaster.block_tx.subscribe();
         
         // Create a test block
-        let test_block = BeaconBlock::default();
+        let test_block = Block::default();
         
         // Broadcast the block
         broadcaster.broadcast_block(test_block.clone());

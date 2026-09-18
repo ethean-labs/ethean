@@ -2,6 +2,8 @@
 members = [
     "crates/primitives",
     "crates/profile",
+    "crates/ssz",
+    "crates/types",
     "crates/node",
     "bin/ethean",
 ]
@@ -17,6 +19,8 @@ repository = "https://github.com/Pamenarti/Ethean"
 [workspace.dependencies]
 ethean-primitives = { path = "crates/primitives" }
 ethean-profile = { path = "crates/profile" }
+ethean-ssz = { path = "crates/ssz" }
+ethean-types = { path = "crates/types" }
 ethean-node = { path = "crates/node" }
 
 tokio = { version = "1.0", features = ["full"] }

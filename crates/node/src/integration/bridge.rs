@@ -9,7 +9,7 @@ use crate::network::{
     PerformanceOptimizer, NetworkOrchestrator, GossipMessage
 };
 use crate::storage::{Database, StorageManager, DatabaseError, StorageConfig};
-use crate::types::{BeaconBlock, Attestation, PeerId, Slot, Epoch};
+use ethean_types::{Block, Attestation, Slot, Epoch};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};

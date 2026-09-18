@@ -7,7 +7,7 @@ use std::collections::{HashMap, BTreeMap};
 use std::sync::Arc;
 use serde::{Serialize, Deserialize};
 use tokio::sync::RwLock;
-use crate::types::{Slot, Epoch, ValidatorIndex, Root};
+use ethean_types::{Slot, Epoch, ValidatorIndex, Root};
 use crate::storage::database::{Database, DatabaseError};
 
 /// Index configuration

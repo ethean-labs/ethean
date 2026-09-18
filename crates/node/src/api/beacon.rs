@@ -5,7 +5,7 @@ use axum::{
     Router,
 };
 use crate::api::{ApiState, types::*};
-use crate::types::StateRoot;
+use ethean_types::StateRoot;
 
 pub fn create_routes() -> Router<ApiState> {
     Router::new()

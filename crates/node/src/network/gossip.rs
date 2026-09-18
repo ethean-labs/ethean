@@ -10,7 +10,7 @@ use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// Gossip message with metadata
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct GossipMessage {
     /// Message ID for deduplication
     pub message_id: String,
@@ -314,7 +314,7 @@ impl GossipService {
         // Simple size estimation (in production, use proper serialization)
         let base_size = message.topic.len() + message.message_id.len() + 8; // timestamp
         let data_size = match &message.data {
-            NetworkMessage::BeaconBlock(_) => 512 * 1024, // Rough estimate
+            NetworkMessage::Block(_) => 512 * 1024, // Rough estimate
             NetworkMessage::Attestation(_) => 128,
             NetworkMessage::BlockRequest { .. } => 64,
             NetworkMessage::BlockResponse { blocks } => blocks.len() * 512 * 1024,
@@ -358,7 +358,7 @@ impl GossipService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{BeaconBlock, Slot};
+    use ethean_types::{Block, Slot};
     
     #[test]
     fn test_gossip_message_creation() {

@@ -1,0 +1,65 @@
+# Phase 03 lock — canonical SSZ + Lean types
+
+schema = "ethean-phase-lock-v1"
+phase = "03"
+phase_name = "canonical-ssz-and-types"
+lock_status = "in_progress_types"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = [
+  "spec/pins/phase-00.lock.toml",
+  "spec/pins/phase-01.lock.toml",
+  "spec/pins/phase-02.lock.toml",
+]
+
+[resolved.lean_spec]
+status = "inherited"
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+containers = "src/lean_spec/spec/forks/lstar/containers/"
+
+[resolved.ssz]
+implementation = "ethean-ssz"
+path = "crates/ssz"
+hash = "sha2"
+note = "Ethean-owned minimal SSZ. Phase 00 Python path uses eth-ssz-specs; no ethereum_ssz / peer codec dependency."
+algorithm = "ssz-basic-uint-bool-bytes-offset-list-hash-tree-root"
+
+[resolved.types]
+package = "ethean-types"
+path = "crates/types"
+checkpoint_fields = ["root", "slot"]
+checkpoint_note = "Lean Checkpoint uses slot, not Beacon epoch"
+validator_keys = ["attestation_public_key:Bytes52", "proposal_public_key:Bytes52", "index"]
+signed_block_proof = "MultiMessageAggregate"
+no_beacon_aliases = true
+no_execution_payload = true
+
+[resolved.bounds]
+validator_registry_limit = 4096
+historical_roots_limit = 262144
+max_attestations_data = 8
+aggregated_attestations_ssz_limit = 4096
+xmss_public_key_bytes = 52
+xmss_signature_bytes = 2536
+byte_list_512_kib = 524288
+authority = "spec/pins/protocol-surface.toml"
+
+[ethean.workspace]
+members = [
+  "crates/primitives",
+  "crates/profile",
+  "crates/ssz",
+  "crates/types",
+  "crates/node",
+  "bin/ethean",
+]
+node_types_deleted = true
+package_ssz = "ethean-ssz"
+package_types = "ethean-types"
+
+[unresolved]
+rust_toolchain = "TBD — do not invent rust-toolchain.toml version"
+state_ssz_full_decode = "State::ssz_decode full offset path deferred; encode + hash_tree_root present"
+differential_fixtures = "leanSpec prod fixture roots not yet vendored byte-for-byte"
+consensus_stubs = "node consensus modules stubbed for Phase 05 transition/fork-choice"

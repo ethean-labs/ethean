@@ -40,27 +40,24 @@ impl Default for DatabaseConfig {
 pub enum DatabaseError {
     #[error("Database connection error: {0}")]
     Connection(String),
-    
+
     #[error("Key not found: {0}")]
     NotFound(String),
-    
+
     #[error("Serialization error: {0}")]
     SerializationError(String),
-    
+
     #[error("Invalid data: {0}")]
     InvalidData(String),
-    
+
     #[error("Corrupted data: {0}")]
     CorruptedData(String),
-    
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
-    
+
     #[error("RocksDB error: {0}")]
     RocksDb(String),
-    
-    #[error("Invalid data: {0}")]
-    InvalidData(String),
 }
 
 /// Database trait for different backends

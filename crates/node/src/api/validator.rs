@@ -13,7 +13,7 @@ use axum::{
 use serde::{Serialize, Deserialize};
 use utoipa::{ToSchema, IntoParams};
 
-use crate::types::{Slot, Epoch, BlockHash, Attestation};
+use ethean_types::{Slot, Epoch, BlockHash, Attestation};
 use super::ApiState;
 use super::error::{Result, Error};
 
@@ -304,27 +304,14 @@ pub async fn submit_block(
     )
 )]
 pub async fn submit_attestations(
-    State(state): State<ApiState>,
+    State(_state): State<ApiState>,
     Json(submission): Json<AttestationSubmission>,
 ) -> Result<StatusCode> {
-    tracing::info!("Received {} attestations for processing", submission.attestations.len());
-    
-    // Process attestations through consensus layer using AttestationProcessor
-    let mut attestation_processor = crate::consensus::attestation_processing::AttestationProcessor::new(
-        crate::consensus::attestation_processing::AttestationConfig::default()
+    tracing::info!(
+        "Received {} attestations (consensus processing deferred to Phase 05)",
+        submission.attestations.len()
     );
-    
-    for attestation in &submission.attestations {
-        attestation_processor.process_attestation(
-            &state,
-            attestation,
-            current_slot,
-        ).map_err(|e| {
-            tracing::error!("Failed to process attestation: {}", e);
-            StatusCode::BAD_REQUEST
-        })?;
-    }
-    
+    let _ = &submission;
     Ok(StatusCode::OK)
 }
 
@@ -379,28 +366,14 @@ pub async fn get_aggregated_attestation(
     )
 )]
 pub async fn submit_aggregate_and_proofs(
-    State(state): State<ApiState>,
+    State(_state): State<ApiState>,
     Json(aggregates): Json<Vec<AggregateAndProof>>,
 ) -> Result<StatusCode> {
-    tracing::info!("Received {} aggregate and proofs for processing", aggregates.len());
-    
-    // Process aggregate and proofs through consensus layer
-    let mut attestation_processor = crate::consensus::attestation_processing::AttestationProcessor::new(
-        crate::consensus::attestation_processing::AttestationConfig::default()
+    tracing::info!(
+        "Received {} aggregate and proofs (processing deferred to Phase 05)",
+        aggregates.len()
     );
-    
-    for aggregate_and_proof in &aggregates {
-        // Process the aggregated attestation
-        attestation_processor.process_attestation(
-            &state,
-            &aggregate_and_proof.aggregate,
-            state.slot, // Current slot
-        ).map_err(|e| {
-            tracing::error!("Failed to process aggregate attestation: {}", e);
-            StatusCode::BAD_REQUEST
-        })?;
-    }
-    
+    let _ = &aggregates;
     Ok(StatusCode::OK)
 }
 

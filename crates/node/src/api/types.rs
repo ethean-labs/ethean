@@ -140,22 +140,22 @@ pub struct BlockHeaderMessage {
 
 /// Signed beacon block
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct SignedBeaconBlock {
-    pub message: BeaconBlock,
+pub struct SignedBlock {
+    pub message: Block,
     pub signature: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct BeaconBlock {
+pub struct Block {
     pub slot: String,
     pub proposer_index: String,
     pub parent_root: String,
     pub state_root: String,
-    pub body: BeaconBlockBody,
+    pub body: BlockBody,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct BeaconBlockBody {
+pub struct BlockBody {
     pub randao_reveal: String,
     pub eth1_data: Eth1Data,
     pub graffiti: String,
@@ -177,18 +177,18 @@ pub struct Eth1Data {
 /// Proposer slashing
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProposerSlashing {
-    pub signed_header_1: SignedBeaconBlockHeader,
-    pub signed_header_2: SignedBeaconBlockHeader,
+    pub signed_header_1: SignedBlockHeader,
+    pub signed_header_2: SignedBlockHeader,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct SignedBeaconBlockHeader {
-    pub message: BeaconBlockHeader,
+pub struct SignedBlockHeader {
+    pub message: BlockHeader,
     pub signature: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct BeaconBlockHeader {
+pub struct BlockHeader {
     pub slot: String,
     pub proposer_index: String,
     pub parent_root: String,

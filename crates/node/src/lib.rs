@@ -1,9 +1,8 @@
 //! Ethean Lean Consensus Client — node library
 //!
 //! Ultra-modular Rust implementation with small, focused modules.
-//! Each module handles a single responsibility.
+//! Consensus containers live in `ethean-types` (Phase 03).
 
-pub mod types;
 pub mod crypto;
 pub mod consensus;
 pub mod network;
@@ -18,9 +17,8 @@ pub mod client;
 
 pub use ethean_primitives::{Epoch, Hash32, Slot, ValidatorIndex};
 pub use ethean_profile::{lstar_devnet, ChainProfile};
-
-pub use types::{
-    Attestation, BeaconBlock, BeaconState, Checkpoint, Validator,
+pub use ethean_types::{
+    Attestation, Block, Checkpoint, SignedBlock, State, Validator, TypesError,
 };
 
 pub use client::EtheanClient;
@@ -32,7 +30,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Types error: {0}")]
-    Types(#[from] types::Error),
+    Types(#[from] TypesError),
 
     #[error("Crypto error: {0}")]
     Crypto(String),
