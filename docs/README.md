@@ -24,5 +24,6 @@ Planning session summaries:
 - [Planning retirement closeout](./lean-consensus-migration-retire-legacy-2026-09-19.md)
 - [Phase 00 compatibility snapshot](./lean-consensus-migration-phase-00-2026-09-19.md)
 - [Phase 01 identity cleanup](./lean-consensus-migration-phase-01-identity-2026-09-19.md)
+- [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
 
 Protocol evidence tree: [`../spec/README.md`](../spec/README.md).
