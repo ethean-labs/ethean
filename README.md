@@ -20,7 +20,6 @@
 
 Work in this repo is meant to track the [Lean Consensus research tracks](https://leanroadmap.org/#research-tracks) (Poseidon, XMSS-style multi-signatures, aggregation, formal verification, Gossipsub v2 / set reconciliation, APS, 3SF) and the pq-devnet sequence, not to freeze a 2024 mainnet Beacon clone.
 
-Existing crates may still use the historical `panro` package name; the product name is Ethean.
 
 ###  Key Features
 

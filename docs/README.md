@@ -22,3 +22,6 @@ Planning session summaries:
 - [Phases 03–06](./lean-consensus-migration-phases-03-06-planning-2026-09-19.md)
 - [Full library completion](./lean-consensus-migration-library-complete-2026-09-19.md)
 - [Planning retirement closeout](./lean-consensus-migration-retire-legacy-2026-09-19.md)
+- [Phase 00 research lock](./lean-consensus-migration-phase-00-2026-09-19.md) — leanSpec pin, fixture digests, OSD-001..008 closed
+
+Protocol evidence tree: [`../spec/README.md`](../spec/README.md).
