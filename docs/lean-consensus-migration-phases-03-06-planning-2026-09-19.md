@@ -29,5 +29,5 @@ Added and refreshed English phase plan documents for the protocol foundation seg
 
 ## Planned follow-ups
 
-- Author phase documents 12 and 13 when observability and release qualification scopes are frozen.
+- Phase 12 (`12-api-observability-and-multiclient-interop.md`) and Phase 13 (`13-security-performance-and-release.md`) already exist as separate documents; the phases README now links all phases 00–13.
 - Phase 00 must close OSD-001 (`MAX_ATTESTATION_DATA`) and OSD-006 (fork-choice generation) before phases 03 and 06 implementation begins.
