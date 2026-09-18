@@ -7,3 +7,5 @@ Lean R&D capture (public pointer only): [leanroadmap-local-notes.md](./leanroadm
 Code layout: [source-file-size-limit.md](./source-file-size-limit.md) (300-line cap, split by module).
 
 Peer clients (reference, not a clone): [peer-reference-clients.md](./peer-reference-clients.md).
+
+Language: [english.md](./english.md) (all in-repo text in English).

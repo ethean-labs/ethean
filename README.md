@@ -706,6 +706,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **How we capture that locally**: [docs/leanroadmap-local-notes.md](./docs/leanroadmap-local-notes.md)
 - **Source file size (300 lines)**: [docs/source-file-size-limit.md](./docs/source-file-size-limit.md)
 - **Peer Lean clients (reference)**: [docs/peer-reference-clients.md](./docs/peer-reference-clients.md)
+- **Language (English only)**: [docs/english.md](./docs/english.md)
 - **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Ethean/issues)
 - **Email**: support@Ethean.io
 
