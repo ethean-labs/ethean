@@ -1,6 +1,6 @@
-//! Panro CLI entry point
+//! Legacy CLI entry point (prefer `bin/ethean` via default-run).
 
-use panro::{Result, Client, Config};
+use ethean::{config::Config, Result};
 use clap::{Arg, Command, ArgMatches};
 use std::path::PathBuf;
 use tracing::{info, error};
@@ -9,7 +9,7 @@ fn main() -> Result<()> {
     // Initialize tracing
     tracing_subscriber::init();
     
-    info!("🚀 Panro Beam Chain Client v{}", panro::VERSION);
+    info!("🚀 Ethean Lean Consensus Client v{}", ethean::VERSION);
     info!("📦 Modular Rust implementation starting...");
     
     // Parse CLI arguments
@@ -26,9 +26,9 @@ fn main() -> Result<()> {
 }
 
 fn build_cli() -> Command {
-    Command::new("panro")
-        .version(panro::VERSION)
-        .about("Panro Ethereum Beacon Chain Client")
+    Command::new("ethean")
+        .version(ethean::VERSION)
+        .about("Ethean Lean Consensus Client")
         .arg(
             Arg::new("config")
                 .short('c')
@@ -104,10 +104,10 @@ fn build_cli() -> Command {
                         .value_parser(clap::value_parser!(PathBuf))
                 )
                 .arg(
-                    Arg::new("beacon-node")
-                        .long("beacon-node")
+                    Arg::new("lean-node")
+                        .long("lean-node")
                         .value_name("URL")
-                        .help("Beacon node URL")
+                        .help("Lean consensus node URL")
                         .default_value("http://localhost:5052")
                 )
         )

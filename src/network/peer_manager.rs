@@ -922,9 +922,9 @@ mod tests {
     
     #[test]
     fn test_managed_peer_creation() {
-        let peer = ManagedPeer::new("test_peer".to_string(), "panro/1.0".to_string());
+        let peer = ManagedPeer::new("test_peer".to_string(), "ethean/0.1.0".to_string());
         assert_eq!(peer.info.peer_id, "test_peer");
-        assert_eq!(peer.info.user_agent, "panro/1.0");
+        assert_eq!(peer.info.user_agent, "ethean/0.1.0");
         assert_eq!(peer.state, PeerState::Connecting);
         assert_eq!(peer.score.total_score, 50);
     }
@@ -944,7 +944,7 @@ mod tests {
         let config = PeerConfig::default();
         let mut manager = PeerManager::new(config).unwrap();
         
-        let result = manager.add_peer("test_peer".to_string(), "panro/1.0".to_string());
+        let result = manager.add_peer("test_peer".to_string(), "ethean/0.1.0".to_string());
         assert!(result.is_ok());
         assert_eq!(manager.get_peer_count(), 1);
         
@@ -1067,12 +1067,12 @@ mod tests {
     fn test_connection_request_creation() {
         let request = ConnectionRequest::new(
             "test_peer".to_string(),
-            "panro/1.0".to_string(),
+            "ethean/0.1.0".to_string(),
             5
         );
         
         assert_eq!(request.peer_id, "test_peer");
-        assert_eq!(request.user_agent, "panro/1.0");
+        assert_eq!(request.user_agent, "ethean/0.1.0");
         assert_eq!(request.priority, 5);
     }
     
@@ -1170,7 +1170,7 @@ mod tests {
         let mut manager = PeerManager::new(config).unwrap();
         
         // Establish connection through peer manager
-        let result = manager.establish_connection("test_peer".to_string(), "panro/1.0".to_string()).await;
+        let result = manager.establish_connection("test_peer".to_string(), "ethean/0.1.0".to_string()).await;
         assert!(result.is_ok());
         
         // Check that peer was added
@@ -1188,7 +1188,7 @@ mod tests {
         let manager = PeerManager::new(config).unwrap();
         
         // Establish connection
-        manager.establish_connection("test_peer".to_string(), "panro/1.0".to_string()).await.unwrap();
+        manager.establish_connection("test_peer".to_string(), "ethean/0.1.0".to_string()).await.unwrap();
         
         // Update quality
         let result = manager.update_connection_quality("test_peer", ConnectionQuality::Good).await;
@@ -1206,7 +1206,7 @@ mod tests {
         let manager = PeerManager::new(config).unwrap();
         
         // Establish connection
-        manager.establish_connection("test_peer".to_string(), "panro/1.0".to_string()).await.unwrap();
+        manager.establish_connection("test_peer".to_string(), "ethean/0.1.0".to_string()).await.unwrap();
         
         // Get stats
         let stats = manager.get_connection_stats("test_peer").await;

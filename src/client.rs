@@ -1,4 +1,4 @@
-//! Main Panro client implementation
+//! Main Ethean client implementation
 
 use crate::{
     api::{ApiServer, ApiConfig},
@@ -12,14 +12,14 @@ use tracing::{info, error};
 /// Main result type for client operations
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-/// Main Panro client
-pub struct PanroClient {
+/// Main Ethean client
+pub struct EtheanClient {
     _config: Config,
     api_server: ApiServer,
 }
 
-impl PanroClient {
-    /// Create a new Panro client
+impl EtheanClient {
+    /// Create a new Ethean client
     pub async fn new() -> Result<Self> {
         // Load configuration
         let config = Config::default();
@@ -68,7 +68,7 @@ impl PanroClient {
     
     /// Start the client
     pub async fn start(self) -> Result<()> {
-        info!("Starting Panro client");
+        info!("Starting Ethean client");
         
         // Start API server
         if let Err(e) = self.api_server.start().await {

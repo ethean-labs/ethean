@@ -2,7 +2,7 @@
 //!
 //! Real-time monitoring dashboard for production deployment with
 //! comprehensive metrics collection, alerting, and performance visualization
-//! for the Panro Ethereum Beacon Chain client.
+//! for the Ethean Lean Consensus Client.
 
 use std::collections::{HashMap, VecDeque, BTreeMap};
 use std::sync::{Arc, RwLock};

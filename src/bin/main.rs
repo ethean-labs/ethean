@@ -1,8 +1,8 @@
-//! Panro Beacon Chain Client Main Binary
+//! Ethean Lean Consensus Client Main Binary
 
-use panro::{
+use ethean::{
     cli::{Cli, Command},
-    PanroClient,
+    EtheanClient,
 };
 use tracing::{info, error};
 use clap::Parser;
@@ -17,15 +17,15 @@ async fn main() -> Result<()> {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    info!("Starting Panro Beacon Chain Client v{}", env!("CARGO_PKG_VERSION"));
+    info!("Starting Ethean Lean Consensus Client v{}", env!("CARGO_PKG_VERSION"));
 
     // Parse command line arguments
     let cli = Cli::parse();
 
     match cli.command {
         Command::Start => {
-            info!("Starting beacon node");
-            let client = PanroClient::new().await?;
+            info!("Starting lean consensus node");
+            let client = EtheanClient::new().await?;
             client.start().await?;
         }
         Command::Validator => {
@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
             println!("Validator client not yet implemented");
         }
         Command::Version => {
-            println!("Panro Beacon Chain Client v{}", env!("CARGO_PKG_VERSION"));
+            println!("Ethean Lean Consensus Client v{}", env!("CARGO_PKG_VERSION"));
         }
     }
 

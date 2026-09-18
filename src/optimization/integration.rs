@@ -1,7 +1,7 @@
 //! Integration module for optimization system
 //!
 //! This module handles the integration of the advanced optimization system
-//! with the rest of the Panro Ethereum Beacon Chain client.
+//! with the rest of the Ethean Lean Consensus Client.
 
 use crate::optimization::{
     AdvancedOptimizationSystem,

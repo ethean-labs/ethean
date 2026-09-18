@@ -20,17 +20,16 @@
 
 Work in this repo is meant to track the [Lean Consensus research tracks](https://leanroadmap.org/#research-tracks) (Poseidon, XMSS-style multi-signatures, aggregation, formal verification, Gossipsub v2 / set reconciliation, APS, 3SF) and the pq-devnet sequence, not to freeze a 2024 mainnet Beacon clone.
 
-Existing crates may still use the historical `panro` package name; the product name is Ethean.
 
 ###  Key Features
 
-- ** Modular Architecture**: Beam/Lean separation of concerns with extensible design
-- ** High Performance**: Optimized for speed and efficiency with advanced caching
-- ** Security First**: Memory-safe Rust implementation with comprehensive testing
-- ** Advanced Monitoring**: Real-time metrics, performance benchmarking, and health monitoring
-- ** P2P Networking**: Robust peer-to-peer communication with bandwidth management
-- ** Database Optimization**: Advanced storage with indexing, caching, and backup systems
-- ** Developer Friendly**: Comprehensive API, WebSocket streaming, and extensive documentationBeam/Lean Chain Client
+- **Modular Architecture**: Beam/Lean separation of concerns with extensible design
+- **High Performance**: Optimized for speed and efficiency with advanced caching
+- **Security First**: Memory-safe Rust implementation with comprehensive testing
+- **Advanced Monitoring**: Real-time metrics, performance benchmarking, and health monitoring
+- **P2P Networking**: Robust peer-to-peer communication with bandwidth management
+- **Database Optimization**: Advanced storage with indexing, caching, and backup systems
+- **Developer Friendly**: Comprehensive API, WebSocket streaming, and extensive documentationBeam/Lean Chain Client
 
 Ethean is a modern, high-performance Ethereum Beam/Lean Chain client written in Rust. It provides a complete implementation of the Ethereum 2.0 proof-of-stake consensus mechanism with emphasis on modularity, security, and developer experience.
 

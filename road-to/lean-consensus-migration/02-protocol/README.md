@@ -55,18 +55,17 @@ The audited Ethean baseline was `f09b6edf6f305271c837127984489644468adda3`. It i
 
 ## Current gate status
 
-The protocol gate is **closed**. No coherent current profile has yet been proven across:
+Phase 00 (2026-09-19) **locked** `leanSpec@0b7d33ec` / `lstar`, production fixture digest, XMSS `PROD_CONFIG`, Type-2 block proof, aggregation tag `v0.0.9`, and raw/framed Snappy surfaces. See [`../../../spec/pins/phase-00.lock.toml`](../../../spec/pins/phase-00.lock.toml). OSD-001..OSD-008 are **resolved**; OSD-009 (leanMetrics) and the Ethean Rust toolchain remain **unresolved**.
 
-- a current `leanSpec` main commit and immutable fixture asset SHA-256;
-- the selected XMSS and aggregation implementation revisions;
-- exact public-key, signature, proof, field, hash, and lifetime parameters;
-- the current fork-choice/finality generation;
-- fork identity, topic grammar, message ID, Snappy, and request/response framing;
-- discovery and checkpoint trust;
+Still open before a full `frozen` profile / P1 start:
+
+- leanMetrics pin (or explicit non-parity acceptance);
+- fork identity, gossip message-ID preimage, discovery, checkpoint trust;
 - durable signer-state guarantees;
-- an exactly pinned Ethean compiler, dependency lockfile, and build image.
+- exact Ethean `rust-toolchain.toml`, dependency lockfile, and build image;
+- compatibility fingerprint computation.
 
-Observed peer values are deliberately retained as alternatives in the ledger and decision register. They are not defaults.
+Observed peer values remain alternatives in the ledger. They are not defaults.
 
 ## Non-negotiable entry rule
 

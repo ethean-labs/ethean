@@ -2,34 +2,43 @@
 
 ## Purpose
 
-The compatibility ledger is the single machine-readable input for protocol selection, startup compatibility checks, fixture provenance, and release evidence. The record below captures the current evidence state. It is intentionally non-runnable because authoritative current values have not yet been selected.
+The compatibility ledger is the single machine-readable input for protocol selection, startup compatibility checks, fixture provenance, and release evidence.
 
-`status: unresolved` is a hard gate, not a placeholder. Each unresolved field carries the observed alternatives and the evidence needed to resolve it.
+Phase 00 (2026-09-19) froze `leanSpec@0b7d33ec` and the production fixture digest. Remaining hard gates: **leanMetrics pin (OSD-009)** and **Ethean Rust toolchain (TBD)**. Secondary network identity / discovery / signer fields stay open for later phases.
+
+Authoritative lock: [`../../../spec/pins/phase-00.lock.toml`](../../../spec/pins/phase-00.lock.toml).
 
 ## Canonical machine-readable fields
 
 ```yaml
 ledger_schema: ethean-lean-compatibility-v1
 recorded_at_utc: "2026-09-19T00:00:00Z"
-profile_status: unresolved
+profile_status: phase_00_locked_with_open_gates
 profile_status_reason: >-
-  No single current leanSpec main commit, immutable fixture asset, crypto
-  generation, finality generation, and network profile has been verified
-  together.
+  leanSpec commit, lstar constants, XMSS PROD_CONFIG, Type-2 block proof,
+  aggregation tag, Snappy surfaces, and fixture digest are resolved.
+  leanMetrics (OSD-009) and Ethean rustc/toolchain remain unresolved.
+  Compatibility fingerprint stays unavailable until remaining required
+  selected fields are concrete.
 
 authority:
   lean_spec:
-    status: unresolved
+    status: resolved
     repository: https://github.com/leanEthereum/leanSpec
     tracking_branch: main
-    selected_commit: null
+    selected_commit: 0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8
+    selected_tree: 4a0a358abf0447c26ad64ad6e57fd1e59ecccafd
+    fork: lstar
+    fork_name: LstarSpec
+    commit_signature: verified_on_github
+    also_current_main_at_retrieval: true
     observed_commits:
       pq_devnet_4_note: 0c9528ac6f403f913caf6d9c450879c36d361742
       zeam_gitlink: 8b4ebbea7bb011b80aadfe4e59da2a66c1a86d54
       lantern_gitlink: 8b4ebbea7bb011b80aadfe4e59da2a66c1a86d54
       gean_fixture_source: eca701efeb5931010fe63925cd203c9ee55b2dbc
       qlean_aggregate_bound_citation: 6430aaf7cb505ec76bb1af6045ffcd3b41899e42
-    resolution_gate: current-main diff plus generated fixture review
+    resolution_gate: phase-00.lock.toml
   pq_devnet:
     status: unresolved
     selected_generation: null
@@ -39,41 +48,51 @@ authority:
       zeam: f78bcb3b097dbba723f805da5511f9a0313354b6
       lantern: 7c7c72d2d815e93f59cfcf849b6d3ffaf3a8873
   fixtures:
-    status: unresolved
-    release_identity: null
-    asset_url: null
-    asset_name: null
-    asset_size_bytes: null
-    asset_sha256: null
-    generator_commit: null
+    status: resolved
+    release_identity: "Latest production fixtures"
+    release_tag_locator: latest
+    asset_url: https://github.com/leanEthereum/leanSpec/releases/download/latest/fixtures-prod-scheme.tar.gz
+    asset_name: fixtures-prod-scheme.tar.gz
+    asset_size_bytes: 154123448
+    asset_sha256: 21d9de7056b4e658031dc09e50c0e9dc1b0206089253258ce69ecff01154d4bd
+    generator_commit: 0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8
+    target_commitish: 0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8
     generation_command: null
-    crypto_scheme: null
+    crypto_scheme: prod
     local_modifications: forbidden
     required_hash_algorithm: sha256
+    manifest: spec/fixtures/phase-00/manifest.toml
+    tarball_in_git: false
+
+ethean_planning:
+  planning_head: f82bbbb179f04e742a2321fe4d50a76eb46c36be
+  note: Separate from protocol pin.
 
 crypto:
-  status: unresolved
-  signature_repository: null
-  signature_commit: null
-  aggregation_repository: null
-  aggregation_commit: null
-  construction: null
-  field: null
-  algebraic_hash: null
-  hash_instance: null
-  dimension: null
-  winternitz_base: null
-  lifetime_log2: null
+  status: resolved
+  signature_repository: leanSpec_internal_xmss
+  signature_commit: 0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8
+  aggregation_repository: https://github.com/anshalshukla/leanMultisig-py
+  aggregation_tag: v0.0.9
+  aggregation_annotated_tag_object: 6f79724eed9a4b33690cb6d52cbe60fb455d8770
+  aggregation_commit: 39b9c397fd4d2c358f8efe2815d4fb78f0e47e67
+  construction: leanSpec_internal_xmss
+  field: koalabear
+  algebraic_hash: poseidon
+  hash_instance: poseidon_koalabear_prod_config
+  dimension: 46
+  winternitz_base: 8
+  lifetime_log2: 32
   activation_window: null
   slot_to_signature_index_rule: null
   log_inv_rate: null
-  public_key_bytes: null
-  signature_bytes: null
+  public_key_bytes: 52
+  signature_bytes: 2536
   proof_max_bytes: null
   secret_key_serialization: null
-  type1_container: null
-  type2_container: null
-  block_component_order: null
+  type1_container: not_selected
+  type2_container: MultiMessageAggregate
+  block_component_order: attestations_then_proposer_in_block_proof
   observed_generations:
     standalone_leansig_dim46:
       construction: generalized_xmss_aborting_target_sum
@@ -123,16 +142,17 @@ crypto:
     pq_devnet_4_allowed_range: [1, 4]
 
 consensus:
-  status: unresolved
-  max_attestation_data: null
-  max_validators: null
-  historical_roots_limit: null
-  slot_duration_milliseconds: null
-  intervals_per_slot: null
+  status: resolved
+  max_attestation_data: 8
+  max_attestations_data_name: MAX_ATTESTATIONS_DATA
+  max_validators: 4096
+  historical_roots_limit: 262144
+  slot_duration_milliseconds: 4000
+  intervals_per_slot: 5
   proposer_selection: null
   subnet_assignment: null
-  fork_choice: null
-  finality: null
+  fork_choice: lstar_modified_3sf_era
+  finality: lstar_modified_3sf_mini
   vote_promotion_boundary: null
   safe_target_rule: null
   tie_break_rule: null
@@ -144,17 +164,18 @@ consensus:
   observed_finality:
     peer_snapshots: modified_3sf_mini
     roadmap_direction: pq_heartbeat_goldfish
+    selected: modified_3sf_era_lstar
 
 network:
-  status: unresolved
+  status: partially_resolved
   network_name: null
   fork_identifier_bytes: null
   fork_identifier_derivation: null
-  topic_template: null
+  topic_template: /leanconsensus/{fork}/{message}/ssz_snappy
   block_topic: null
   attestation_topic: null
   aggregation_topic: null
-  gossip_compression: null
+  gossip_compression: raw_snappy
   gossip_message_id_algorithm: null
   gossip_message_id_preimage: null
   gossip_message_id_length_bytes: null
@@ -163,11 +184,11 @@ network:
   transport: null
   discovery: null
   enr_schema: null
-  status_protocol: null
-  blocks_by_root_protocol: null
-  blocks_by_range_protocol: null
-  request_compression: null
-  request_framing: null
+  status_protocol: /leanconsensus/req/status/1/ssz_snappy
+  blocks_by_root_protocol: /leanconsensus/req/blocks_by_root/1/ssz_snappy
+  blocks_by_range_protocol: /leanconsensus/req/blocks_by_range/1/ssz_snappy
+  request_compression: framed_snappy
+  request_framing: snappy_framed_with_varint_length
   response_codes: null
   stream_termination: null
   max_blocks_per_request: null
@@ -229,13 +250,16 @@ signer:
 
 toolchain:
   status: unresolved
-  ethean_rust_version: null
+  ethean_rust_version: TBD
+  rust_toolchain_toml: required_phase_01_or_later
   cargo_lock_sha256: null
   rust_target: null
   build_image_digest: null
   fixture_python_version: null
   fixture_uv_version: null
   code_generator_versions: {}
+  note: >-
+    rustc missing on Phase 00 authoring host. Do not invent a version.
   observed_peer_toolchains:
     ream:
       rust: 1.98.0
@@ -265,6 +289,19 @@ toolchain:
       edition: "2024"
       rust: unpinned_stable
 
+observability:
+  status: unresolved
+  osd: OSD-009
+  lean_metrics_commit: null
+  lean_spec_stack: prometheus-client
+  lean_spec_range: ">=0.21.0,<1"
+  fallback_until_pin: ethean_namespace_with_schema_versioning
+
+ssz:
+  status: resolved
+  python_package: eth-ssz-specs
+  version_range: ">=0.1.0,<0.2"
+
 peer_evidence:
   ream: b003b250f51c038cd5e16b8da02694ee0db1997e
   zeam: 6495beb6b1a584e41c12b3569d9a509abd906259
@@ -275,7 +312,7 @@ peer_evidence:
   peam: 6628e7a564098e592a49b9af0ad7b5dcda0a71fc
 
 compatibility_fingerprint:
-  status: unavailable_until_profile_resolved
+  status: unavailable_until_profile_fully_resolved
   algorithm: sha256
   canonicalization: rfc8785_json
   domain: ethean-lean-profile-v1
@@ -291,13 +328,13 @@ Every fixture bundle used by P1–P4 must have:
 3. final resolved HTTPS URL;
 4. byte length;
 5. lowercase SHA-256 calculated after download;
-6. fixture generation command and exact Python/`uv` versions;
+6. fixture generation command and exact Python/`uv` versions (still open for Phase 00 — digest pin is present);
 7. selected production or test crypto scheme;
 8. a statement that local modifications are absent;
-9. an extracted manifest SHA-256;
+9. an extracted manifest SHA-256 (after first verified extract in CI);
 10. CI verification before extraction and before test discovery.
 
-A GitHub release tag, `latest` URL, ETag, checksum obtained from mutable metadata, or archive filename alone is insufficient. A changed byte length or digest closes the gate.
+A GitHub release tag, `latest` URL, ETag, checksum obtained from mutable metadata, or archive filename alone is insufficient. Phase 00 pins **digest + size + generator commit**; the tag is only a download locator.
 
 ## Compatibility fingerprint
 
@@ -314,9 +351,11 @@ The fingerprint binds all consensus and wire inputs used by a binary.
 
 The digest must be embedded in the binary, emitted at startup, persisted with the database schema and signer state, included in interop logs, and published with release artifacts. It is a compatibility identity, not a substitute for a genesis root or fork digest.
 
+**Phase 00:** fingerprint remains unavailable while OSD-009, Rust toolchain, and remaining `null` network/signer/checkpoint selected fields are open.
+
 ## Acceptance rules
 
-The ledger becomes runnable only when:
+The ledger becomes fully runnable only when:
 
 - `profile_status` is `frozen`;
 - every selected field is concrete;

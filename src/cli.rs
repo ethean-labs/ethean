@@ -1,10 +1,10 @@
-//! Command-line interface for Panro
+//! Command-line interface for Ethean
 
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "panro")]
-#[command(about = "Panro Beacon Chain Client")]
+#[command(name = "ethean")]
+#[command(about = "Ethean Lean Consensus Client")]
 #[command(version = env!("CARGO_PKG_VERSION"))]
 pub struct Cli {
     #[command(subcommand)]
@@ -13,7 +13,7 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
-    /// Start the beacon node
+    /// Start the lean consensus node
     Start,
     /// Start the validator client
     Validator,

@@ -2,7 +2,7 @@
 //!
 //! Provides seamless integration between the advanced networking layer
 //! and the database storage system for real-time synchronization and
-//! optimal performance in the Ethereum Beacon Chain client.
+//! optimal performance in the Lean Consensus Client.
 
 use crate::network::{
     NetworkError, PeerDiscovery, ConnectionPool, NetworkSecurity, 

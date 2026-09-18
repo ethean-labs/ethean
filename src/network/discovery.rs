@@ -382,7 +382,7 @@ impl PeerDiscovery {
 
         // Initialize Identify protocol
         let identify = Identify::new(IdentifyConfig::new(
-            "panro/1.0.0".to_string(),
+            "ethean/0.1.0".to_string(),
             local_peer_id.to_owned().into(),
         ));
 

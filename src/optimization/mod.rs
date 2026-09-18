@@ -2,7 +2,7 @@
 //!
 //! Comprehensive optimization system combining machine learning-based
 //! performance optimization, intelligent caching, and production monitoring
-//! for the Panro Ethereum Beacon Chain client.
+//! for the Ethean Lean Consensus Client.
 
 pub mod ml_optimizer;
 pub mod intelligent_cache;

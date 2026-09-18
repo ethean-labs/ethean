@@ -1,4 +1,4 @@
-//! Storage layer for the Ethereum Beacon Chain client
+//! Storage layer for the Lean Consensus Client
 //!
 //! This module provides database abstractions and storage implementations
 //! for persisting blockchain data, state, and metadata.

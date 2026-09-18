@@ -176,7 +176,7 @@ impl MigrationManager {
     }
 }
 
-/// Built-in migrations for Panro
+/// Built-in migrations for Ethean
 pub mod builtin {
     use super::*;
 

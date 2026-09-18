@@ -272,7 +272,7 @@ pub async fn get_version(
     State(state): State<ApiState>,
 ) -> Result<Json<VersionResponse>> {
     let version_string = format!(
-        "Panro/v{}/{}",
+        "Ethean/v{}/{}",
         env!("CARGO_PKG_VERSION"),
         std::env::consts::OS
     );
@@ -386,7 +386,7 @@ mod tests {
         assert!(result.is_ok());
         
         let response = result.unwrap();
-        assert!(response.data.version.contains("Panro"));
+        assert!(response.data.version.contains("Ethean"));
     }
 
     #[tokio::test]

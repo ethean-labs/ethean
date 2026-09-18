@@ -1,0 +1,40 @@
+# Phase 00 fixture provenance
+# Do not commit fixtures-prod-scheme.tar.gz into this repository.
+
+schema = "ethean-fixture-manifest-v1"
+phase = "00"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+
+[source]
+repository = "https://github.com/leanEthereum/leanSpec"
+generator_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+generator_tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+crypto_scheme = "prod"
+release_name = "Latest production fixtures"
+release_tag = "latest"
+release_tag_role = "download_locator_only"
+target_commitish = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+
+[asset]
+name = "fixtures-prod-scheme.tar.gz"
+size_bytes = 154123448
+sha256 = "21d9de7056b4e658031dc09e50c0e9dc1b0206089253258ce69ecff01154d4bd"
+content_type = "application/gzip"
+browser_download_url = "https://github.com/leanEthereum/leanSpec/releases/download/latest/fixtures-prod-scheme.tar.gz"
+local_modifications = "forbidden"
+committed_to_git = false
+
+[sidecar]
+name = "fixtures-prod-scheme.tar.gz.sha256"
+note = "Optional GitHub sidecar; Ethean pins the archive digest in this manifest regardless."
+observed_github_digest_meta = "sha256:b2e4f51074c47bca7bc2ed0de09e864f5566412f771a015cd1973f08f2a3bb08"
+
+[verification]
+algorithm = "sha256"
+verify_before_extract = true
+verify_size_bytes = true
+reject_on_mismatch = true
+
+[usage]
+interop_readme = "tests/interop/README.md"
+lock_file = "spec/pins/phase-00.lock.toml"

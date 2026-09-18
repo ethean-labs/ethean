@@ -2,7 +2,7 @@
 //!
 //! Runs comprehensive performance benchmarks for the Beam Chain consensus implementation.
 
-use panro::bench::BeamChainBenchmark;
+use ethean::bench::BeamChainBenchmark;
 use std::env;
 
 fn main() {

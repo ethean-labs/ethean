@@ -1,0 +1,197 @@
+# Ethean Phase 00 protocol lock
+# English only. Digests and full commits are authoritative.
+# Do not treat floating tags or peer majority as pins.
+
+schema = "ethean-phase-lock-v1"
+phase = "00"
+phase_name = "research-and-compatibility-snapshot"
+lock_status = "resolved_with_open_gates"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+profile_note = """
+OSD-001..OSD-008 closed against leanSpec@0b7d33ec.
+OSD-009 (leanMetrics) and Rust toolchain remain unresolved.
+"""
+
+# ---------------------------------------------------------------------------
+# Ethean planning baseline (not a protocol pin)
+# ---------------------------------------------------------------------------
+[ethean]
+planning_head = "f82bbbb179f04e742a2321fe4d50a76eb46c36be"
+planning_head_short = "f82bbbb"
+note = "Ethean repo HEAD at Phase 00 start. Record separately from leanSpec."
+
+# ---------------------------------------------------------------------------
+# Resolved: leanSpec authority
+# ---------------------------------------------------------------------------
+[resolved.lean_spec]
+status = "resolved"
+repository = "https://github.com/leanEthereum/leanSpec"
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+tracking_branch_observed = "main"
+commit_signature = "verified_on_github"
+also_current_main_at_retrieval = true
+also_fixtures_release_target_commitish = true
+fork = "lstar"
+fork_name = "LstarSpec"
+fork_choice_generation = "modified_3sf_era"
+fork_choice_not = "goldfish_or_pq_heartbeat"
+citation_config = "src/lean_spec/spec/forks/lstar/config.py"
+citation_fork_choice = "src/lean_spec/spec/forks/lstar/fork_choice.py"
+
+# ---------------------------------------------------------------------------
+# Resolved: normative consensus constants (lstar)
+# ---------------------------------------------------------------------------
+[resolved.consensus]
+status = "resolved"
+max_attestations_data = 8
+max_attestations_data_type = "Uint8"
+max_attestations_data_note = "Plural ATTESTATIONS in leanSpec name MAX_ATTESTATIONS_DATA"
+seconds_per_slot = 4
+intervals_per_slot = 5
+validator_registry_limit = 4096
+validator_registry_limit_expression = "2**12"
+historical_roots_limit = 262144
+historical_roots_limit_expression = "2**18"
+milliseconds_per_slot = 4000
+citation = "src/lean_spec/spec/forks/lstar/config.py"
+
+# ---------------------------------------------------------------------------
+# Resolved: XMSS / crypto surface
+# ---------------------------------------------------------------------------
+[resolved.crypto]
+status = "resolved"
+construction = "leanSpec_internal_xmss"
+field = "koalabear"
+algebraic_hash = "poseidon"
+hash_note = "Poseidon over KoalaBear field elements (PROD_CONFIG)"
+public_key_bytes = 52
+public_key_ssz_type = "Bytes52"
+signature_bytes = 2536
+signature_length_source = "XmssConfig.SIGNATURE_LENGTH_BYTES for PROD_CONFIG"
+citation_constants = "src/lean_spec/spec/crypto/xmss/constants.py"
+citation_ssz_types = "src/lean_spec/spec/ssz_types.py"
+citation_validator = "src/lean_spec/spec/forks/lstar/containers/validator.py"
+
+[resolved.crypto.prod_config]
+LOG_LIFETIME = 32
+DIMENSION = 46
+BASE = 8
+Z = 8
+Q = 127
+TARGET_SUM = 200
+MAX_TRIES = 100000
+PARAMETER_LENGTH = 5
+TWEAK_LENGTH_FIELD_ELEMENTS = 2
+MESSAGE_LENGTH_FIELD_ELEMENTS = 9
+RAND_LENGTH_FIELD_ELEMENTS = 7
+HASH_LENGTH_FIELD_ELEMENTS = 8
+CAPACITY = 9
+
+# ---------------------------------------------------------------------------
+# Resolved: block proof envelope (Type-2)
+# ---------------------------------------------------------------------------
+[resolved.block_envelope]
+status = "resolved"
+envelope = "type2_multi_message_block_proof"
+signed_block_proof_type = "MultiMessageAggregate"
+covers = ["attestations", "proposer"]
+citation = "src/lean_spec/spec/forks/lstar/containers/block.py"
+aggregation_container = "src/lean_spec/spec/forks/lstar/containers/aggregation.py"
+
+# ---------------------------------------------------------------------------
+# Resolved: aggregation stack
+# ---------------------------------------------------------------------------
+[resolved.aggregation]
+status = "resolved"
+xmss = "leanSpec_internal"
+multisig_package = "lean-multisig-py"
+multisig_repository = "https://github.com/anshalshukla/leanMultisig-py"
+multisig_tag = "v0.0.9"
+multisig_annotated_tag_object = "6f79724eed9a4b33690cb6d52cbe60fb455d8770"
+multisig_commit = "39b9c397fd4d2c358f8efe2815d4fb78f0e47e67"
+multisig_pin_source = "leanSpec pyproject.toml [tool.uv.sources] lean-multisig-py git tag v0.0.9"
+leanvm_devnet5_note = "tag message references leanVM e2592df for rec_aggregation API"
+
+# ---------------------------------------------------------------------------
+# Resolved: fixtures (immutable digest pin; tag name is retrieval hint only)
+# ---------------------------------------------------------------------------
+[resolved.fixtures]
+status = "resolved"
+release_name = "Latest production fixtures"
+release_tag = "latest"
+release_tag_note = "Floating tag used only as a download locator. Pin by digest and size."
+target_commitish = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+generator_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+asset_name = "fixtures-prod-scheme.tar.gz"
+size_bytes = 154123448
+sha256 = "21d9de7056b4e658031dc09e50c0e9dc1b0206089253258ce69ecff01154d4bd"
+asset_url = "https://github.com/leanEthereum/leanSpec/releases/download/latest/fixtures-prod-scheme.tar.gz"
+sidecar_sha256_asset = "fixtures-prod-scheme.tar.gz.sha256"
+local_modifications = "forbidden"
+tarball_in_git = false
+manifest_path = "spec/fixtures/phase-00/manifest.toml"
+
+# ---------------------------------------------------------------------------
+# Resolved: networking compression surfaces
+# ---------------------------------------------------------------------------
+[resolved.network]
+status = "resolved"
+gossip_compression = "raw_snappy"
+gossip_citation = "src/lean_spec/node/networking/gossipsub/behavior.py (snappy_raw_decompress)"
+reqresp_compression = "framed_snappy"
+reqresp_citation = "src/lean_spec/node/networking/client/reqresp_client.py"
+snappy_module = "src/lean_spec/node/snappy/"
+both_surfaces_required = true
+
+# ---------------------------------------------------------------------------
+# Resolved: SSZ dependency range (Python reference stack)
+# ---------------------------------------------------------------------------
+[resolved.ssz]
+status = "resolved"
+python_package = "eth-ssz-specs"
+version_range = ">=0.1.0,<0.2"
+citation = "leanSpec pyproject.toml dependencies"
+
+# ---------------------------------------------------------------------------
+# Resolved: peer evidence commits (observations, not pins)
+# ---------------------------------------------------------------------------
+[resolved.peer_evidence]
+status = "evidence_only"
+ream = "b003b250f51c038cd5e16b8da02694ee0db1997e"
+zeam = "6495beb6b1a584e41c12b3569d9a509abd906259"
+qlean_mini = "55b6eb3c14dfee3aa1b1bb855a55be4723b7bdd0"
+ethlambda = "313b22d4aa15174b87319002d813926ab7eb6411"
+lantern = "440e34727ab3fb447de68d91a1e49be5327706e8"
+gean = "b78f6d737f4df57a72d5e230635681235fda8024"
+peam = "6628e7a564098e592a49b9af0ad7b5dcda0a71fc"
+
+# ---------------------------------------------------------------------------
+# Unresolved gates
+# ---------------------------------------------------------------------------
+[unresolved.toolchain]
+status = "unresolved"
+ethean_rust_version = "TBD"
+rust_toolchain_toml = "required_in_phase_01_or_later"
+note = """
+rustc missing on the Phase 00 authoring machine. Do not invent a Rust version.
+Phase 01+ must add an exact rust-toolchain.toml pin after a working toolchain is available.
+"""
+
+[unresolved.observability]
+status = "unresolved"
+osd = "OSD-009"
+lean_metrics_repository = null
+lean_metrics_commit = null
+lean_spec_metrics_stack = "prometheus-client"
+lean_spec_metrics_range = ">=0.21.0,<1"
+fallback_until_pin = "ethean_ namespace_with_schema_versioning"
+citation = "leanSpec pyproject.toml prometheus-client; no separate leanMetrics git pin found"
+
+[unresolved.secondary]
+gossip_message_id_preimage_order = "open"
+fork_identifier_bytes = "open"
+discovery_mechanism = "open"
+checkpoint_trust_model = "open"
+stateful_signer_durability = "open"
+compatibility_fingerprint = "unavailable_until_remaining_required_fields_frozen"

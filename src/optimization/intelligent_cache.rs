@@ -158,7 +158,7 @@ impl Default for L2CacheConfig {
             default_ttl: Duration::from_secs(3600), // 1 hour
             enable_compression: true,
             enable_persistence: true,
-            persistence_path: "/tmp/panro_l2_cache".to_string(),
+            persistence_path: "/tmp/ethean_l2_cache".to_string(),
         }
     }
 }
