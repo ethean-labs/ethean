@@ -1,6 +1,6 @@
 //! Legacy CLI entry point (prefer `bin/ethean` via default-run).
 
-use ethean::{Result, Config};
+use ethean::{config::Config, Result};
 use clap::{Arg, Command, ArgMatches};
 use std::path::PathBuf;
 use tracing::{info, error};
@@ -104,10 +104,10 @@ fn build_cli() -> Command {
                         .value_parser(clap::value_parser!(PathBuf))
                 )
                 .arg(
-                    Arg::new("beacon-node")
-                        .long("beacon-node")
+                    Arg::new("lean-node")
+                        .long("lean-node")
                         .value_name("URL")
-                        .help("Beacon node URL")
+                        .help("Lean consensus node URL")
                         .default_value("http://localhost:5052")
                 )
         )
