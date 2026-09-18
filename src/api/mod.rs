@@ -1,4 +1,4 @@
-//! REST API Server Module for Panro Beacon Chain Client
+//! REST API Server Module for Ethean Lean Consensus Client
 
 pub mod beacon;
 pub mod validator;
@@ -121,7 +121,7 @@ impl ApiServer {
 async fn health_check() -> Json<serde_json::Value> {
     Json(serde_json::json!({
         "status": "ok",
-        "service": "panro-beacon-api",
+        "service": "ethean-lean-api",
         "version": env!("CARGO_PKG_VERSION")
     }))
 }

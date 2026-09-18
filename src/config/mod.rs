@@ -1,4 +1,4 @@
-//! Configuration module for Panro
+//! Configuration module for Ethean
 
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;

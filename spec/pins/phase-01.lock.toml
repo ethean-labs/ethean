@@ -1,0 +1,31 @@
+# Ethean Phase 01 identity lock
+# Inherits protocol pins from phase-00.lock.toml. Identity surface only.
+
+schema = "ethean-phase-lock-v1"
+phase = "01"
+phase_name = "identity-and-repository-cleanup"
+lock_status = "in_progress_identity"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = "spec/pins/phase-00.lock.toml"
+
+[ethean.identity]
+product_name = "Ethean Lean Consensus Client"
+package_name = "ethean"
+default_binary = "ethean"
+client_version_string = "ethean/0.1.0"
+forbidden_active_names = ["panro", "Panro", "PANRO"]
+note = """
+Protocol containers may still use historical Beacon* type names until Phase 03.
+Those are protocol debt, not product identity. Active package/binary/CLI/log/metric
+strings must say Ethean.
+"""
+
+[resolved.lean_spec]
+status = "inherited"
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+
+[unresolved]
+rust_toolchain = "TBD — rustc not available on Phase 01 host; pin in rust-toolchain.toml before release builds"
+lean_metrics = "OSD-009 still open"
+beacon_type_names = "Deferred to Phase 03 SSZ replacement"

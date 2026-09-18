@@ -171,7 +171,7 @@ impl Default for NetworkConfig {
             enable_ipv6: false,
             network_name: "beacon-chain".to_string(),
             protocol_version: "/beam/1.0.0".to_string(),
-            client_version: "panro/1.0.0".to_string(),
+            client_version: "ethean/0.1.0".to_string(),
             peer_config: PeerConfig::default(),
             gossip_config: GossipConfig::default(),
             discovery_config: DiscoveryConfig::default(),
@@ -276,7 +276,7 @@ mod tests {
         let config = NetworkConfig::default();
         assert_eq!(config.network_name, "beacon-chain");
         assert_eq!(config.protocol_version, "/beam/1.0.0");
-        assert_eq!(config.client_version, "panro/1.0.0");
+        assert_eq!(config.client_version, "ethean/0.1.0");
         assert!(config.enable_metrics);
     }
     

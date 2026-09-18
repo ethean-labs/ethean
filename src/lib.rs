@@ -1,4 +1,4 @@
-//! Panro Beam Chain Client
+//! Ethean Lean Consensus Client
 //! 
 //! Ultra-modular Rust implementation with small, focused modules.
 //! Each module handles a single responsibility.
@@ -22,7 +22,7 @@ pub use types::{
     Attestation, Checkpoint, Slot, Epoch
 };
 
-pub use client::PanroClient;
+pub use client::EtheanClient;
 
 /// Main result type for the application
 pub type Result<T> = std::result::Result<T, Error>;

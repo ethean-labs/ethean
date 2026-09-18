@@ -1,4 +1,4 @@
-//! Core types for Panro
+//! Core types for Ethean
 //!
 //! Modular type definitions - each file handles specific types.
 
