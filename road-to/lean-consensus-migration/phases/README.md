@@ -46,8 +46,8 @@ Replace the Beacon-era `panro` prototype with one leanSpec-derived Ethean produc
 | 09 | [Validator and node duties](09-validator-and-node-duties.md) | Proposer, attester, aggregator scheduling |
 | 10 | [QUIC, gossip, and req/resp](10-quic-gossip-and-reqresp.md) | Wire protocol, validation, retrieval |
 | 11 | [Storage, sync, and checkpoints](11-storage-sync-and-checkpoints.md) | Atomic persistence, sync, checkpoint trust |
-| 12 | [Observability and fleet qualification](12-observability-and-fleet-qualification.md) | Metrics, Prometheus, multi-node analysis *(planned)* |
-| 13 | [Interop and release qualification](13-interop-and-release-qualification.md) | Mixed-client, chaos, soak, release gates *(planned)* |
+| 12 | [API, observability, and multiclient interop](12-api-observability-and-multiclient-interop.md) | Metrics, API, mixed-client interop |
+| 13 | [Security, performance, and release](13-security-performance-and-release.md) | Fuzz, chaos, soak, SBOM, legacy deletion verification |
 
 ## Critical path
 
@@ -61,7 +61,7 @@ Replace the Beacon-era `panro` prototype with one leanSpec-derived Ethean produc
 1. **Protocol foundation (00–06):** lock spec → identity → workspace → SSZ/types → genesis/clock → state transition → fork choice/finality.
 2. **Signer and aggregation (07–09):** XMSS safety → leanVM proofs → validator/node duties.
 3. **Network and persistence (10–11):** QUIC/gossip/req-resp → storage/sync/checkpoints.
-4. **Interop and release (12–13):** observability/fleet qualification → mixed-client chaos, soak, and release evidence.
+4. **Interop and release (12–13):** API/observability/multiclient interop → security, performance, and release qualification.
 
 Phases 07–09 require 00–06. Phases 10–11 require 03–09. Phases 12–13 require 03–11.
 
