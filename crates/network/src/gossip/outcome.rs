@@ -58,6 +58,20 @@ pub enum PumpEvent {
         /// Plain request body (scaffold encoding).
         payload: Vec<u8>,
     },
+    /// Remote blocks-by-range response bytes (decompressed body).
+    BlocksByRangeResponse {
+        /// Peer fingerprint.
+        peer: Hash32,
+        /// Plain response body (same length-prefixed blobs as blocks-by-root).
+        payload: Vec<u8>,
+    },
+    /// Inbound blocks-by-range request (auto-reply may already have been sent).
+    BlocksByRangeRequest {
+        /// Peer fingerprint.
+        peer: Hash32,
+        /// Plain request body (scaffold encoding).
+        payload: Vec<u8>,
+    },
     /// Anything else from the swarm.
     Other,
 }
@@ -96,6 +110,8 @@ impl PumpEvent {
             Self::StatusRequest { .. } => "status_request",
             Self::BlocksByRootResponse { .. } => "blocks_by_root_response",
             Self::BlocksByRootRequest { .. } => "blocks_by_root_request",
+            Self::BlocksByRangeResponse { .. } => "blocks_by_range_response",
+            Self::BlocksByRangeRequest { .. } => "blocks_by_range_request",
             Self::Other => "other",
         }
     }
