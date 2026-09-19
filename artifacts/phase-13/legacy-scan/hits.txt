@@ -1,0 +1,37 @@
+﻿G:\GithubProj\Ethean\crates\storage\src\db.rs:34:        if lower.contains("panro") || lower.ends_with(".json") {
+G:\GithubProj\Ethean\crates\storage\src\db.rs:119:        assert!(Database::refuse_legacy_path("/data/panro-state.json").is_err());
+G:\GithubProj\Ethean\crates\node\tests\identity.rs:9:fn package_name_is_not_panro() {
+G:\GithubProj\Ethean\crates\node\tests\identity.rs:10:    assert_ne!(env!("CARGO_PKG_NAME"), "panro");
+G:\GithubProj\Ethean\crates\storage\src\schema.rs:37:        assert!(assert_schema("panro-legacy", 1).is_err());
+G:\GithubProj\Ethean\crates\storage\src\rocks.rs:40:            open_path("/tmp/panro.db"),
+G:\GithubProj\Ethean\crates\storage\src\error.rs:26:    #[error("legacy JSON or Panro layout refused: {0}")]
+G:\GithubProj\Ethean\crates\node\src\lib.rs:3://! Replaced Beacon/Panro trees under this crate were deleted after
+G:\GithubProj\Ethean\crates\network\README.md:5:- Gossip: raw Snappy validation with ACCEPT/IGNORE/REJECT (no `/eth2/` topics)
+G:\GithubProj\Ethean\crates\network\src\gossip\validation.rs:30:    if topic.contains("/eth2/") || topic.is_empty() {
+G:\GithubProj\Ethean\crates\network\src\gossip\validation.rs:62:        let (a, _) = validate_gossip_payload("/eth2/beacon_block/ssz_snappy", &c, &mut seen);
+G:\GithubProj\Ethean\bin\ethean\tests\identity.rs:9:fn package_name_is_not_panro() {
+G:\GithubProj\Ethean\bin\ethean\tests\identity.rs:10:    assert_ne!(env!("CARGO_PKG_NAME"), "panro");
+G:\GithubProj\Ethean\tests\retirement\README.md:3:`legacy_name_scan` runs via `tools/release/legacy-scan.ps1`. Allowlist for historical Panro/Beacon mentions is `road-to/**` only.
+G:\GithubProj\Ethean\examples\README.md:7:The previous Beacon-era `integration_example.rs` was removed during migration planning. It depended on the legacy `panro` surface and is not a Lean interop example.
+G:\GithubProj\Ethean\examples\README.md:26:- No Beacon API, BLS, JSON consensus-root, or `panro` identifiers.
+G:\GithubProj\Ethean\docs\ethean-node-docs-soft-scan-2026-09-19.md:7:- Migration/planning docs may still mention `panro`/`blst` as historical evidence (allowlisted).
+G:\GithubProj\Ethean\docs\lean-consensus-migration-phase-01-identity-2026-09-19.md:9:- Root package/binary renamed from `panro` to `ethean` (`Cargo.toml`, `Cargo.lock`).
+G:\GithubProj\Ethean\docs\lean-consensus-migration-phase-01-identity-2026-09-19.md:24:rg -n -i '\bpanro\b' src Cargo.toml --glob '!road-to/**'
+G:\GithubProj\Ethean\docs\lean-consensus-migration-protocol-retirement-docs-2026-09-19.md:12:| `05-retirement/DELETION_REGISTER.md` | Expanded ÔÇö full inventory for `src/*`, `panro` Cargo.toml, examples, old `road-to/` docs, empty-dir rule |
+G:\GithubProj\Ethean\docs\lean-peer-client-research-library-2026-09-19.md:88:- package and binary identity still use `panro`;
+G:\GithubProj\Ethean\docs\master-branch-consolidation-2026-09-19.md:11:3. Merged `plan/lean-consensus-migration` into `master` (includes Phase 00 locks, Phase 01 `panro` ÔåÆ `ethean` rename, and follow-up identity cleanup).
+G:\GithubProj\Ethean\docs\storage.md:9:- Legacy path refusal for `panro` markers and `.json` consensus roots
+G:\GithubProj\Ethean\docs\security.md:7:- Soft legacy scans reject `panro`, `blst`, Beacon `/eth/v1` surfaces outside allowlisted retirement docs.
+G:\GithubProj\Ethean\docs\lean-consensus-migration-baseline-planning-2026-09-19.md:11:| `CURRENT_STATE_AUDIT.md` | Evidence-based audit of Panro/Ethean at commit `880982f`; peer commits; no-retain classification; planning boundary warning |
+G:\GithubProj\Ethean\docs\lean-consensus-migration-library-complete-2026-09-19.md:20:`road-to/README.md` now points only at this library. Superseded Panro/Beacon roadmap documents under `road-to/` were deleted after transferable facts were recorded in baseline and retirement docs. Local Turkish draft `road-to/notlar.txt` was deleted after its intent was absorbed into the English charter.
+G:\GithubProj\Ethean\docs\lean-consensus-migration-phase-01-identity-2026-09-19.md:10:- `PanroClient` ÔåÆ `EtheanClient`.
+G:\GithubProj\Ethean\docs\lean-consensus-migration-phase-11-storage-sync-2026-09-19.md:10:- Non-rewinding signer watermark; legacy Panro/JSON paths refused
+G:\GithubProj\Ethean\docs\lean-consensus-migration-retire-legacy-2026-09-19.md:11:- Superseded Panro/Beacon roadmap files (root manifesto/architecture/tech/week reports and `road-to/` copies) are deleted; Git history is the archive.
+G:\GithubProj\Ethean\docs\lean-consensus-migration-retire-legacy-2026-09-19.md:22:- Remaining `docs/` week/Panro/Beam duplicates wait for Phase 13 / R5 execution.
+G:\GithubProj\Ethean\docs\release\upgrade.md:6:4. Run schema open (`ethean-lc-d5-v1`); refuse Panro/JSON dirs.
+G:\GithubProj\Ethean\docs\lean-consensus-migration-phase-10-quic-gossip-2026-09-19.md:15:- Gossip ACCEPT/IGNORE/REJECT (rejects `/eth2/`)
+G:\GithubProj\Ethean\tools\release\legacy-scan.ps1:2:# Allowlist: road-to/** migration records only for panro/Beacon historical mentions.
+G:\GithubProj\Ethean\tools\release\legacy-scan.ps1:23:$SoftPatterns = @("panro", "Panro", "/eth2/", "NetworkManager", "mock.?gossip")
+G:\GithubProj\Ethean\tools\release\legacy-scan.ps1:23:$SoftPatterns = @("panro", "Panro", "/eth2/", "NetworkManager", "mock.?gossip")
+G:\GithubProj\Ethean\tools\release\legacy-scan.ps1:23:$SoftPatterns = @("panro", "Panro", "/eth2/", "NetworkManager", "mock.?gossip")
+G:\GithubProj\Ethean\tools\release\legacy-scan.ps1:23:$SoftPatterns = @("panro", "Panro", "/eth2/", "NetworkManager", "mock.?gossip")
