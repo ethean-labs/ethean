@@ -15,12 +15,15 @@ pub struct Cli {
 pub enum Command {
     /// Start the lean consensus node
     Start {
-        /// Number of duty ticks to run before drain (smoke or wall).
+        /// Number of duty ticks before drain (ignored with --until-signal).
         #[arg(long, default_value_t = 5)]
         ticks: u32,
         /// Sample the system wall clock (sleeps between intervals).
         #[arg(long, default_value_t = false)]
         wall_clock: bool,
+        /// Run until Ctrl-C (implies wall-clock sleeps).
+        #[arg(long, default_value_t = false)]
+        until_signal: bool,
     },
     /// Start the validator client
     Validator,
