@@ -4,6 +4,7 @@ use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::events::ChainEvent;
 use crate::gossip_decode::{content_root_for, try_decode_block};
+use crate::gossip_stf::import_decoded_block;
 use crate::shutdown::ShutdownState;
 
 /// Dispatch one command; returns the observer event.
@@ -76,8 +77,7 @@ fn ingest_gossip(
     owner.last_gossip_root = Some(content_root);
 
     if let Some(decoded) = try_decode_block(&topic, &payload) {
-        // Advance head when the gossip block extends the current tip.
-        let _ = import_block(owner, shutdown, decoded.root, decoded.parent);
+        let _ = import_decoded_block(owner, shutdown, &decoded);
     }
 
     ChainEvent::GossipIngested {
