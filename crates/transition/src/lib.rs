@@ -204,29 +204,18 @@ mod tests {
     #[test]
     fn structural_block_updates_header() {
         let mut pre = sample_state(3);
-        // Cache parent header root after filling state_root via process_slots path.
-        let parent_root = {
-            let mut s = pre.clone();
-            process_slots(&mut s, Slot::new(1)).unwrap();
-            // After slots, header still points at genesis; parent for block is that header root.
-            s.latest_block_header.hash_tree_root()
-        };
-        // Rebuild: process_slots mutates header state_root; parent_root must match post-slots header.
         process_slots(&mut pre, Slot::new(1)).unwrap();
         let parent_root = pre.latest_block_header.hash_tree_root();
-        let mut block = empty_block(1, 1 % 3, parent_root);
         // Proposer for slot 1 with 3 validators: 1 % 3 = 1
-        block.proposer_index = ValidatorIndex::new(1);
+        let mut block = empty_block(1, 1, parent_root);
 
-        // Compute expected post-state root by dry-run without state_root check.
         let mut trial = pre.clone();
-        process_block(&mut trial, &block, &ctx()).unwrap();
+        crate::block::process_block(&mut trial, &block, &ctx()).unwrap();
         block.state_root = trial.hash_tree_root().unwrap();
 
         let out = apply_block_unverified(&pre, &block, &ctx()).unwrap();
         assert_eq!(out.post_state.slot, Slot::new(1));
         assert_eq!(out.post_state.latest_block_header.slot, Slot::new(1));
         assert_eq!(out.post_state.latest_block_header.state_root, HASH32_ZERO);
-        let _ = parent_root;
     }
 }

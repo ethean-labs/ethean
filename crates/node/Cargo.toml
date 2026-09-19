@@ -17,6 +17,7 @@ ethean-profile = { workspace = true }
 ethean-ssz = { workspace = true }
 ethean-types = { workspace = true }
 ethean-genesis = { workspace = true }
+ethean-transition = { workspace = true }
 
 tokio = { workspace = true }
 serde = { workspace = true }
