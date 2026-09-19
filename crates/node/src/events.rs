@@ -21,6 +21,17 @@ pub enum ChainEvent {
         /// SHA-256 of the decompressed payload (provisional content id).
         content_root: Hash32,
     },
+    /// Local proposal planned from pool + structural transition.
+    ProposalPlanned {
+        /// `hash_tree_root` of the planned block.
+        root: Hash32,
+        /// Proposal slot.
+        slot: u64,
+        /// Number of attestations packed into the body.
+        attestations: usize,
+        /// Whether `decide_publish` allows gossiping this plan now.
+        publish_allowed: bool,
+    },
     /// Syncing flag changed on the chain owner.
     SyncingUpdated(bool),
     /// Shutdown acknowledged; no new duties.
