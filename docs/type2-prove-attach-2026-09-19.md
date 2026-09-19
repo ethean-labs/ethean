@@ -28,6 +28,6 @@ cargo test -p ethean-node --lib
 
 ## Still open
 
-- Set `LEANVM_FFI_LINKED` only after linking lean-multisig prove/verify and round-trip tests
-- Vendor/patch path for leanSig num-bigint so `leansig-backend` builds cleanly without local hacks
-- Fold proposer XMSS bytes into the Type-2 merge once leanMultisig params settle
+- Upstream leanSig `num-bigint` 0.5 so git dep works without path override
+- Set `LEANVM_FFI_LINKED` after real lean-multisig FFI symbols link
+- Embed proposer XMSS bytes into the Type-2 proof blob when leanMultisig specifies the encoding
