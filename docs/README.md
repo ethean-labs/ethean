@@ -42,6 +42,7 @@ Planning session summaries:
 - [ethean-node docs soft-scan cleanup](./ethean-node-docs-soft-scan-2026-09-19.md)
 - [Duty loop and RocksDB gate](./duty-loop-and-rocksdb-gate-2026-09-19.md)
 - [Observability, wall tick, hard BLS scan](./observability-wall-tick-hard-scan-2026-09-19.md)
+- [Wall-clock run mode and QUIC gate](./wall-clock-run-and-quic-gate-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
 
