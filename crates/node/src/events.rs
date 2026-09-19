@@ -52,6 +52,13 @@ pub enum ChainEvent {
         /// Signature wire length in bytes.
         signature_len: usize,
     },
+    /// Local Type-2 aggregate proof attached to the planned block.
+    Type2ProofAttached {
+        /// Inner block tree root.
+        root: Hash32,
+        /// Proof byte length.
+        proof_len: usize,
+    },
     /// Pending proposal was published on QuicSwarm gossip.
     ProposalPublished {
         /// Lean gossip topic string.
