@@ -61,6 +61,7 @@ Planning session summaries:
 - [Type-2 block-root binding and leanSig pin checks](./type2-block-root-leansig-pin-2026-09-19.md)
 - [Proposer binding verify before gossip](./proposer-binding-verify-before-gossip-2026-09-19.md)
 - [leanVM statement wire and process-IPC gate](./leanvm-statement-wire-ipc-gate-2026-09-19.md)
+- [Type-2 proposer Sidecar policy](./type2-proposer-sidecar-policy-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
