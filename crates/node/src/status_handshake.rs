@@ -3,7 +3,8 @@
 use crate::chain_owner::ChainOwner;
 use crate::local_status::{local_status, observe_remote_status};
 use ethean_network::{
-    blocks_by_root_for_status_gap, encode_blocks_by_root, PumpEvent, StatusSessionBook,
+    prepare_blocks_by_root_outbound, OutboundBlocksByRootRequest, PumpEvent, RequestTracker,
+    StatusSessionBook,
 };
 use ethean_network_wire::Status;
 use ethean_primitives::{Hash32, Slot};
@@ -49,14 +50,15 @@ pub fn on_pump_event(
     }
 }
 
-/// Complete a handshake with remote Status bytes and update sync + optional blocks-by-root plan.
+/// Complete a handshake with remote Status bytes and optionally stage blocks-by-root.
 pub fn complete_status_handshake(
     book: &mut StatusSessionBook,
     sync: &mut SyncStatus,
     owner: &ChainOwner,
     peer: Hash32,
     remote_bytes: &[u8],
-) -> Result<Option<Vec<u8>>, String> {
+    tracker: &mut RequestTracker,
+) -> Result<Option<OutboundBlocksByRootRequest>, String> {
     let exchange = book
         .ingest_remote(peer, remote_bytes)
         .map_err(|e| e.to_string())?;
@@ -71,9 +73,8 @@ pub fn complete_status_handshake(
         lag = sync.lag(),
         "Status handshake completed"
     );
-    let req = blocks_by_root_for_status_gap(owner.head_root, &exchange.remote)
-        .map_err(|e| e.to_string())?;
-    Ok(req.map(|r| encode_blocks_by_root(&r)))
+    prepare_blocks_by_root_outbound(peer, owner.head_root, &exchange.remote, tracker)
+        .map_err(|e| e.to_string())
 }
 
 /// Build local Status from owner + genesis root + fork segment.
