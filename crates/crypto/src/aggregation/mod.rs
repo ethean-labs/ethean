@@ -5,6 +5,7 @@
 //! (never always-true on arbitrary bytes).
 
 mod bindings;
+mod merge;
 mod prove;
 mod split;
 mod statement;
@@ -15,6 +16,7 @@ pub use bindings::{
     assert_aggregation_invariants, aggregation_fingerprint, LEANVM_REV, LOG_INV_RATE,
     MAX_PROOF_BYTES, MAX_TYPE2_COMPONENTS, PROD_AGGREGATION_FINGERPRINT,
 };
+pub use merge::{merge_type1, merge_type1_statements};
 pub use prove::{prove_type1, prove_type2};
 pub use split::{attestation_leaves_from_type2, split_type2_to_type1, Type1Leaf};
 pub use statement::{
