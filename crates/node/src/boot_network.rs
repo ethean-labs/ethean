@@ -1,8 +1,9 @@
 //! UDP listen + optional QuicSwarm bind used during client boot.
 
 use crate::network::{NodeIdentity, SwarmFacade, TransportConfig};
+use crate::network_target::NetworkTarget;
 use crate::Result;
-use tracing::info;
+use tracing::{info, warn};
 
 /// Bind the UDP facade; with `libp2p-quic`, also subscribe Lean gossip topics.
 pub async fn prepare_boot_network(
@@ -29,6 +30,49 @@ pub async fn prepare_boot_network(
         let _ = bound;
         let _ = fork_name;
         Ok((port, None))
+    }
+}
+
+/// Dial configured bootnodes on a live QuicSwarm (no-op when list empty).
+pub fn dial_bootnodes(target: &NetworkTarget, swarm: Option<&mut SwarmFacade>) {
+    if !target.has_bootnodes() {
+        match target.id {
+            crate::network_target::NetworkId::PqDevnet5 => {
+                warn!(
+                    network = target.id.as_str(),
+                    "no bootnodes configured; running pq-devnet-5 label offline (set --bootnodes, ETHEAN_BOOTNODES, or config/networks/pq-devnet-5.bootnodes)"
+                );
+            }
+            crate::network_target::NetworkId::Local => {
+                info!(network = target.id.as_str(), "local smoke; skipping mesh dial");
+            }
+        }
+        return;
+    }
+
+    #[cfg(feature = "libp2p-quic")]
+    {
+        let Some(facade) = swarm else {
+            warn!(
+                n = target.bootnodes.len(),
+                "bootnodes set but QuicSwarm missing (build with ethean-node/libp2p-quic)"
+            );
+            return;
+        };
+        for addr in &target.bootnodes {
+            match facade.dial_quic_peer(addr) {
+                Ok(()) => info!(%addr, network = target.id.as_str(), "dialed bootnode"),
+                Err(e) => warn!(%addr, error = %e, "bootnode dial failed"),
+            }
+        }
+    }
+    #[cfg(not(feature = "libp2p-quic"))]
+    {
+        let _ = swarm;
+        warn!(
+            n = target.bootnodes.len(),
+            "bootnodes set but libp2p-quic feature is off; rebuild with --features libp2p-quic"
+        );
     }
 }
 
