@@ -28,14 +28,15 @@ pub struct EtheanClient {
     profile: ChainProfile,
     genesis: State,
     clock: SlotClock,
-    owner: ChainOwner,
+    /// Owns chain mutation; workers only read snapshots / send commands.
+    pub(crate) owner: ChainOwner,
     db: Database,
     sync: SyncStatus,
     shutdown: ShutdownState,
     observability: NodeObservability,
     /// Durable libp2p QUIC facade (feature `libp2p-quic`).
     #[cfg(feature = "libp2p-quic")]
-    swarm: Option<crate::network::SwarmFacade>,
+    pub(crate) swarm: Option<crate::network::SwarmFacade>,
 }
 
 impl EtheanClient {
@@ -262,35 +263,6 @@ impl EtheanClient {
             "Ethean Lean Consensus client starting duties"
         );
         Ok(())
-    }
-
-    /// Bound libp2p QUIC facade when `libp2p-quic` is enabled and boot completed.
-    #[cfg(feature = "libp2p-quic")]
-    pub fn swarm(&self) -> Option<&crate::network::SwarmFacade> {
-        self.swarm.as_ref()
-    }
-
-    /// Mutable access for dial / event pump (gossip loop ownership).
-    #[cfg(feature = "libp2p-quic")]
-    pub fn swarm_mut(&mut self) -> Option<&mut crate::network::SwarmFacade> {
-        self.swarm.as_mut()
-    }
-
-    /// Drain a small budget of QuicSwarm events and return accepted gossip.
-    #[cfg(feature = "libp2p-quic")]
-    pub async fn pump_network(
-        &mut self,
-        max_events: u32,
-    ) -> Result<crate::swarm_pump::PumpBudgetResult> {
-        let Some(facade) = self.swarm.as_mut() else {
-            return Ok(crate::swarm_pump::PumpBudgetResult::default());
-        };
-        crate::swarm_pump::pump_swarm_budget(
-            facade,
-            max_events,
-            std::time::Duration::from_millis(2),
-        )
-        .await
     }
 
     fn finish_observability(&mut self, events: &[ChainEvent]) -> Result<()> {
