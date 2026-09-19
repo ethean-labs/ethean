@@ -71,19 +71,23 @@ mod tests {
     use super::*;
     use crate::aggregate::MultiMessageAggregate;
     use crate::block::{Block, BlockBody, BlockHeader};
-    use ethean_primitives::{Hash32, HASH32_ZERO};
+    use ethean_primitives::{Slot, ValidatorIndex, HASH32_ZERO};
 
     #[test]
     fn rejects_empty_proof() {
         let body = BlockBody::new(vec![]).unwrap();
         let header = BlockHeader {
-            slot: 1,
-            proposer_index: 0,
+            slot: Slot::new(1),
+            proposer_index: ValidatorIndex::new(0),
             parent_root: HASH32_ZERO,
             state_root: HASH32_ZERO,
             body_root: body.hash_tree_root().unwrap(),
         };
-        let block = Block { slot: 1, header, body };
+        let block = Block {
+            slot: Slot::new(1),
+            header,
+            body,
+        };
         let env = MultiMessageAggregate::default();
         assert!(type2_statement_for_block(&block, &env, HASH32_ZERO, &[]).is_err());
     }
