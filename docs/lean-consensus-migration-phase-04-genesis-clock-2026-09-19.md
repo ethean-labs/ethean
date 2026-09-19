@@ -49,3 +49,5 @@ Dependencies: `ethean-primitives`, `ethean-profile`, `ethean-types`, `ethean-ssz
 2. **`State::ssz_decode`** — full offset decode still deferred; loader rejects empty but cannot load rich SSZ genesis until Phase 05.
 3. **`fork_identifier_bytes`** — still unresolved; gossip fork digests not defined.
 4. Consensus modules may still carry other Beacon-era literals outside the Phase 04 touch set.
+5. **`ethean-node` full compile** — legacy network/storage/API modules still fail `cargo check -p ethean-node` for pre-existing reasons; Phase 04 client/clock/config wiring is in place and `ethean-genesis` / `ethean-profile` tests pass.
+6. **Workspace `rocksdb`** — removed invalid `optional = true` from `[workspace.dependencies]` so Cargo 1.98 can parse the manifest (optionality stays on the node feature).
