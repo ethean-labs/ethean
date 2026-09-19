@@ -200,21 +200,20 @@ pub mod builtin {
         }
     }
 
-    /// WOTS signature storage migration
-    pub struct WotsSignatureStorage;
+    /// XMSS signature storage migration (replaces legacy WOTS table name).
+    pub struct XmssSignatureStorage;
 
-    impl Migration for WotsSignatureStorage {
+    impl Migration for XmssSignatureStorage {
         fn version(&self) -> u64 {
             2
         }
 
         fn description(&self) -> &str {
-            "Add WOTS signature storage support"
+            "Add XMSS signature storage support"
         }
 
         fn up(&self, _database: &Database) -> Result<(), DatabaseError> {
-            // Add WOTS signature indices and storage
-            println!("Adding WOTS signature storage");
+            println!("Adding XMSS signature storage");
             Ok(())
         }
     }
@@ -242,7 +241,7 @@ pub mod builtin {
     pub fn get_builtin_migrations() -> Vec<Box<dyn Migration>> {
         vec![
             Box::new(InitialSchema),
-            Box::new(WotsSignatureStorage),
+            Box::new(XmssSignatureStorage),
             Box::new(EnhancedStateStorage),
         ]
     }
