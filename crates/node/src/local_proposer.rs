@@ -9,7 +9,7 @@ use ethean_crypto::ProductionBackend;
 use ethean_primitives::Hash32;
 use ethean_validator::{
     record_from_keygen, run_proposer, DutyTick, DutyView, InMemorySignerStore, KeyId,
-    ProposerOutcome, ProposerPlan, Signer, SigningRole,
+    ProposerOutcome, ProposerPlan, Signer, SigningDuty, SigningRole, SigningRoot,
 };
 use std::sync::Arc;
 
@@ -129,6 +129,32 @@ impl LocalProposer {
             ProposerOutcome::Failed(msg) => Err(msg),
         }
     }
+
+    /// Re-verify a proposal signature against the local key before gossip publish.
+    pub fn verify_proposal(
+        &self,
+        tick: DutyTick,
+        block_signing_root: Hash32,
+        signature: &[u8],
+    ) -> Result<(), String> {
+        let sig = ethean_crypto::Signature::try_from_slice(signature)
+            .map_err(|e| e.to_string())?;
+        let duty = SigningDuty {
+            key_id: self.key_id,
+            role: SigningRole::Proposal,
+            slot: tick.slot.get() as u32,
+            root: SigningRoot::from_bytes(block_signing_root),
+        };
+        match &self.backend {
+            ProposerBackend::Hmac(signer) => signer
+                .verify_duty(&duty, &sig)
+                .map_err(|e| e.to_string()),
+            #[cfg(feature = "leansig-backend")]
+            ProposerBackend::LeanSig(signer) => signer
+                .verify_duty(&duty, &sig)
+                .map_err(|e| e.to_string()),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -159,6 +185,11 @@ mod tests {
             .sign_proposal(tick, &view, [1u8; 32], [2u8; 32])
             .expect("sign");
         assert_eq!(sig.len(), ethean_crypto::SIGNATURE_BYTES);
+        prop.verify_proposal(tick, [2u8; 32], &sig)
+            .expect("verify binding");
+        let mut bad = sig.clone();
+        bad[0] ^= 0xff;
+        assert!(prop.verify_proposal(tick, [2u8; 32], &bad).is_err());
     }
 
     #[test]
