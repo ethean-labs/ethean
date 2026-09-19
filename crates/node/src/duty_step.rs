@@ -68,7 +68,7 @@ fn try_plan_proposal(
         return out;
     }
     let proposer = ValidatorIndex::new(tick.slot.get() % n);
-    let plan = match plan_from_pool(
+    let mut plan = match plan_from_pool(
         &owner.aggregates,
         owner.head_root,
         tick.slot,
@@ -88,6 +88,22 @@ fn try_plan_proposal(
     let publish_allowed = matches!(decide_publish(tick, tick, true), PublishDecision::Allow)
         && tick.interval == 0;
 
+    let duty_view = owner.snapshot(tick.slot, 0).duty_view;
+    if publish_allowed {
+        if let Some(local) = owner.proposer.as_mut() {
+            match local.sign_proposal(tick, &duty_view, plan.parent_root, root) {
+                Ok(sig) => {
+                    let signature_len = sig.len();
+                    plan.proposer_signature = Some(sig);
+                    out.push(ChainEvent::ProposalSigned { root, signature_len });
+                }
+                Err(_) => {
+                    // Leave unsigned; structural gossip may still proceed.
+                }
+            }
+        }
+    }
+
     owner.planned_proposal = Some(plan.clone());
     owner.planned_tick = Some(tick);
     out.push(ChainEvent::ProposalPlanned {
@@ -104,6 +120,7 @@ fn try_plan_proposal(
                 topic: gossip.topic.clone(),
                 payload_len: gossip.payload.len(),
                 has_type2_proof: gossip.has_type2_proof,
+                proposer_sig_len: gossip.proposer_sig_len,
             };
             owner.pending_block_gossip = Some(gossip);
             out.push(ready);
@@ -117,6 +134,7 @@ fn try_plan_proposal(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::local_proposer::LocalProposer;
     use ethean_primitives::{Bytes52, Slot, HASH32_ZERO};
     use ethean_profile::lstar_devnet;
     use ethean_transition::process_slots;
@@ -146,7 +164,7 @@ mod tests {
     }
 
     #[test]
-    fn plans_and_encodes_gossip_when_publish_allowed() {
+    fn plans_signs_and_encodes_gossip_when_publish_allowed() {
         let pre = sample_state(3);
         let mut advanced = pre.clone();
         process_slots(&mut advanced, Slot::new(1)).unwrap();
@@ -157,30 +175,39 @@ mod tests {
         owner.head_root = parent;
         owner.head_state = Some(pre);
         owner.profile = Some(lstar_devnet().unwrap());
+        owner.proposer = Some(LocalProposer::smoke().expect("proposer"));
         let tick = DutyTick {
             slot: Slot::new(1),
             interval: 0,
             generation: 1,
         };
         let events = try_plan_proposal(&mut owner, tick);
+        assert!(events.iter().any(|e| matches!(e, ChainEvent::ProposalSigned { .. })));
         assert!(matches!(
-            events[0],
-            ChainEvent::ProposalPlanned {
+            events.iter().find(|e| matches!(e, ChainEvent::ProposalPlanned { .. })),
+            Some(ChainEvent::ProposalPlanned {
                 publish_allowed: true,
                 attestations: 0,
                 ..
-            }
+            })
         ));
         assert!(matches!(
-            &events[1],
-            ChainEvent::ProposalGossipReady {
+            events.iter().find(|e| matches!(e, ChainEvent::ProposalGossipReady { .. })),
+            Some(ChainEvent::ProposalGossipReady {
                 has_type2_proof: false,
+                proposer_sig_len,
                 topic,
                 ..
-            } if topic.ends_with("/block/ssz_snappy")
+            }) if *proposer_sig_len == ethean_crypto::SIGNATURE_BYTES
+                && topic.ends_with("/block/ssz_snappy")
         ));
         let pending = owner.pending_block_gossip.expect("pending");
-        assert!(!pending.payload.is_empty());
-        assert_eq!(owner.planned_tick, Some(tick));
+        assert_eq!(pending.proposer_sig_len, ethean_crypto::SIGNATURE_BYTES);
+        assert!(owner
+            .planned_proposal
+            .as_ref()
+            .unwrap()
+            .proposer_signature
+            .is_some());
     }
 }
