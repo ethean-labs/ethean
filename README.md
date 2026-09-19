@@ -765,6 +765,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **How we capture that locally**: [docs/leanroadmap-local-notes.md](./docs/leanroadmap-local-notes.md)
 - **Source file size (300 lines)**: [docs/source-file-size-limit.md](./docs/source-file-size-limit.md)
 - **Peer Lean clients (reference)**: [docs/peer-reference-clients.md](./docs/peer-reference-clients.md)
+- **How Ream / ethlambda / Zeam run pq-devnets**: [docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](./docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/lean-peer-client-research-library-2026-09-19.md)
 - **Language (English only)**: [docs/english.md](./docs/english.md)
 - **Commits (per file, English)**: [docs/commit-after-each-file.md](./docs/commit-after-each-file.md)
