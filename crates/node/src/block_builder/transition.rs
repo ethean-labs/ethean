@@ -1,21 +1,139 @@
 //! Transition planning hook before proposal signing.
 
-use ethean_primitives::Hash32;
-use ethean_types::Block;
+use crate::aggregation::AggregatePool;
+use ethean_primitives::{Hash32, Slot, ValidatorIndex, HASH32_ZERO};
+use ethean_profile::ChainProfile;
+use ethean_transition::{process_block, process_slots, TransitionContext};
+use ethean_types::{Block, BlockBody, State};
+
+use super::attestations::body_from_pool;
 
 /// Planned transition inputs for computing the post-state root.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlanTransition {
     /// Parent root the block extends.
     pub parent_root: Hash32,
-    /// Block body constructed for this slot (pre-state-root).
+    /// Block with computed state root after structural transition.
     pub block: Block,
+    /// Best multi-message proof bytes from the pool (may be empty).
+    pub aggregate_proof: Vec<u8>,
 }
 
 impl PlanTransition {
-    /// Placeholder: real path calls `ethean_transition::apply_block_unverified`.
-    /// Returns the block's declared state root for binding checks in later wiring.
+    /// Block signing / tree root after state-root binding.
+    pub fn block_root(&self) -> Result<Hash32, String> {
+        self.block
+            .hash_tree_root()
+            .map_err(|e| e.to_string())
+    }
+
+    /// Declared post-state root on the planned block.
     pub fn expected_state_root(&self) -> Hash32 {
         self.block.state_root
+    }
+}
+
+/// Plan a proposal from the aggregate pool when local head state is available.
+pub fn plan_from_pool(
+    pool: &AggregatePool,
+    parent_root: Hash32,
+    slot: Slot,
+    proposer_index: ValidatorIndex,
+    pre: &State,
+    profile: ChainProfile,
+    max_attestations: usize,
+) -> Result<PlanTransition, String> {
+    let body = body_from_pool(pool, max_attestations);
+    let aggregate_proof = best_pool_proof(pool);
+    plan_with_body(parent_root, slot, proposer_index, body, aggregate_proof, pre, profile)
+}
+
+fn best_pool_proof(pool: &AggregatePool) -> Vec<u8> {
+    pool.best_entries()
+        .into_iter()
+        .map(|(_, e)| e)
+        .max_by_key(|e| e.coverage)
+        .map(|e| e.proof)
+        .unwrap_or_default()
+}
+
+fn plan_with_body(
+    parent_root: Hash32,
+    slot: Slot,
+    proposer_index: ValidatorIndex,
+    body: BlockBody,
+    aggregate_proof: Vec<u8>,
+    pre: &State,
+    profile: ChainProfile,
+) -> Result<PlanTransition, String> {
+    let mut block = Block {
+        slot,
+        proposer_index,
+        parent_root,
+        state_root: HASH32_ZERO,
+        body,
+    };
+    let ctx = TransitionContext::new(profile);
+    let mut trial = pre.clone();
+    process_slots(&mut trial, slot).map_err(|e| e.to_string())?;
+    process_block(&mut trial, &block, &ctx).map_err(|e| e.to_string())?;
+    block.state_root = trial.hash_tree_root().map_err(|e| e.to_string())?;
+    Ok(PlanTransition {
+        parent_root,
+        block,
+        aggregate_proof,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ethean_primitives::Bytes52;
+    use ethean_profile::lstar_devnet;
+    use ethean_types::{BlockHeader, Checkpoint, GenesisConfig, Validator};
+
+    fn sample_state(validators: usize) -> State {
+        let mut vals = Vec::new();
+        for i in 0..validators {
+            vals.push(
+                Validator::new(Bytes52::ZERO, Bytes52::ZERO, ValidatorIndex::new(i as u64))
+                    .unwrap(),
+            );
+        }
+        State {
+            config: GenesisConfig::new(1_700_000_000),
+            slot: Slot::ZERO,
+            latest_block_header: BlockHeader::default(),
+            latest_justified: Checkpoint::genesis(),
+            latest_finalized: Checkpoint::genesis(),
+            historical_block_hashes: Vec::new(),
+            justified_slots: Vec::new(),
+            validators: vals,
+            justifications_roots: Vec::new(),
+            justifications_validators: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn plans_empty_body_with_state_root() {
+        let pre = sample_state(3);
+        let mut advanced = pre.clone();
+        process_slots(&mut advanced, Slot::new(1)).unwrap();
+        let parent = advanced.latest_block_header.hash_tree_root();
+        let pool = AggregatePool::default();
+        let plan = plan_from_pool(
+            &pool,
+            parent,
+            Slot::new(1),
+            ValidatorIndex::new(1),
+            &pre,
+            lstar_devnet().unwrap(),
+            8,
+        )
+        .expect("plan");
+        assert_eq!(plan.parent_root, parent);
+        assert_ne!(plan.expected_state_root(), HASH32_ZERO);
+        assert!(plan.block_root().is_ok());
+        assert!(plan.aggregate_proof.is_empty());
     }
 }
