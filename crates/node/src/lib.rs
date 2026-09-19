@@ -13,6 +13,8 @@ pub mod client;
 pub mod clock;
 pub mod commands;
 pub mod crypto;
+pub mod dispatch;
+pub mod duty_loop;
 pub mod events;
 pub mod network;
 pub mod shutdown;
@@ -29,6 +31,11 @@ pub use ethean_genesis::{
 
 pub use chain_owner::{ChainOwner, ChainSnapshot};
 pub use client::EtheanClient;
+pub use commands::ChainCommand;
+pub use dispatch::apply_command;
+pub use duty_loop::{run_duty_loop, DutyLoopConfig};
+pub use events::ChainEvent;
+pub use shutdown::{ShutdownPhase, ShutdownState};
 
 /// Main result type for the application
 pub type Result<T> = std::result::Result<T, Error>;
