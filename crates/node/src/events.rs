@@ -52,6 +52,11 @@ pub enum ChainEvent {
         /// Signature wire length in bytes.
         signature_len: usize,
     },
+    /// Proposer signature re-verified against the local key before gossip encode.
+    ProposalBindingVerified {
+        /// Inner block tree root that was verified.
+        root: Hash32,
+    },
     /// Local Type-2 aggregate proof attached to the planned block.
     Type2ProofAttached {
         /// Inner block tree root.
