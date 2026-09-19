@@ -51,6 +51,7 @@ Planning session summaries:
 - [SSZ gossip decode into ImportBlock](./ssz-gossip-import-block-2026-09-19.md)
 - [Gossip attestation SSZ and structural STF](./gossip-attestation-stf-2026-09-19.md)
 - [Gossip attestation pool and verified SignedBlock STF](./gossip-attestation-pool-verified-stf-2026-09-19.md)
+- [Pool-backed block body selection](./pool-backed-block-body-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)

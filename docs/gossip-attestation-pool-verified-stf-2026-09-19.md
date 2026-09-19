@@ -33,6 +33,6 @@ cargo test -p ethean-node --lib dispatch
 
 ## Still open
 
+- Attach packed body + Type-2 proof into a real `PlanTransition` / publish path
 - Production leanVM FFI so verified proofs can accept (stub remains fail-closed)
 - leanSig clean git dep (vendor patch path still required)
-- Feeding pool best-coverage into block builder / proposer duties
