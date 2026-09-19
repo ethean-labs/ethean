@@ -92,7 +92,18 @@ impl EtheanClient {
             ) {
                 Ok(Some(blocks_req)) => {
                     facade.enqueue_blocks_outbounds(vec![blocks_req]);
-                    info!(peer0 = peer[0], "blocks-by-root staged after Status response");
+                    match facade.flush_blocks_outbox() {
+                        Ok(sent) => info!(
+                            peer0 = peer[0],
+                            sent,
+                            "blocks-by-root flushed after Status response"
+                        ),
+                        Err(e) => info!(
+                            peer0 = peer[0],
+                            error = %e,
+                            "blocks-by-root staged; flush deferred"
+                        ),
+                    }
                 }
                 Ok(None) => {
                     info!(peer0 = peer[0], "Status handshake completed; heads match");
@@ -101,6 +112,13 @@ impl EtheanClient {
                     info!(peer0 = peer[0], error = %e, "Status handshake failed");
                 }
             }
+        }
+        for (peer, payload) in &budget.blocks_by_root_responses {
+            info!(
+                peer0 = peer[0],
+                bytes = payload.len(),
+                "blocks-by-root response received (decode/ingest pending)"
+            );
         }
         Ok(())
     }
