@@ -135,6 +135,21 @@ Helpers (build + long-run):
 Paste D4 QUIC multiaddrs into `config/networks/pq-devnet-4.bootnodes` (or pass
 `--bootnodes` / `ETHEAN_BOOTNODES`) before expecting a live mesh dial.
 
+### Local private mesh (no public bootnodes)
+
+Same pattern as Ream/ethlambda: create a private 2-peer mesh for this run, write
+peer A’s dialable address to `target/local-pq-mesh/nodes.multiaddrs`, then dial it.
+
+```powershell
+.\scripts\local-pq-mesh.ps1
+```
+
+```bash
+./scripts/local-pq-mesh.sh
+```
+
+Details: [docs/local-pq-mesh-private-dial-2026-09-20.md](docs/local-pq-mesh-private-dial-2026-09-20.md).
+
 ### Join an operator mesh (pq-devnet-4)
 
 ```bash
