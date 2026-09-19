@@ -98,9 +98,25 @@ async fn bind_quic_facade(
         .and_then(|q| q.topics.as_ref())
         .map(|t| t.block.clone())
         .unwrap_or_default();
+    let peer = facade
+        .quic
+        .as_ref()
+        .map(|q| q.peer_id.to_string())
+        .unwrap_or_default();
+    let listen = facade
+        .quic
+        .as_ref()
+        .map(|q| q.listen_addr.to_string())
+        .unwrap_or_default();
+    let dialable = if peer.is_empty() || listen.is_empty() {
+        String::new()
+    } else {
+        format!("{listen}/p2p/{peer}")
+    };
     info!(
-        peer = %facade.quic.as_ref().map(|q| q.peer_id.to_string()).unwrap_or_default(),
-        listen = %facade.quic.as_ref().map(|q| q.listen_addr.to_string()).unwrap_or_default(),
+        %peer,
+        %listen,
+        %dialable,
         topic = %topic_block,
         fork_segment,
         "libp2p QuicSwarm bound with Lean gossip topics"
