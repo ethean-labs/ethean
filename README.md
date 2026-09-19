@@ -365,58 +365,94 @@ skip_signature_verification = false
 
 ##  Monitoring & Metrics
 
-`ethean start` exposes Prometheus scrape by default at `http://127.0.0.1:9100/metrics`
-(`--no-metrics` to disable). Long-run path matches Ream/ethlambda Grafana practice:
+Long-run monitoring matches Ream/ethlambda Grafana practice (head / justified /
+finalized / current slot). Prometheus scrape is **on by default**.
+
+### Process health APIs (live today)
+
+Metrics HTTP binds to `127.0.0.1:9100` unless overridden. These are the endpoints
+to check that the process is up (Lean JSON-RPC on `:5052` is **not** wired yet):
+
+| URL | Expect | Meaning |
+| --- | --- | --- |
+| [http://127.0.0.1:9100/healthz](http://127.0.0.1:9100/healthz) | `200` + `ok` | Process alive |
+| [http://127.0.0.1:9100/readyz](http://127.0.0.1:9100/readyz) | `200` + `ready` (or `503` while booting) | Storage/crypto/signer/network gates |
+| [http://127.0.0.1:9100/metrics](http://127.0.0.1:9100/metrics) | Prometheus text | Slot gauges for Grafana |
 
 ```bash
-# Terminal A — keep the node up (Ctrl-C to stop)
-ethean start --until-signal --network pq-devnet-4
-
-# Terminal B — Prometheus + Grafana
-./scripts/run-observability.sh
-# Windows: .\scripts\run-observability.ps1
+curl -s http://127.0.0.1:9100/healthz
+curl -s http://127.0.0.1:9100/readyz
+curl -s http://127.0.0.1:9100/metrics | findstr ethean_head_slot
+# Unix: curl -s http://127.0.0.1:9100/metrics | grep ethean_head_slot
 ```
 
-- Grafana: http://localhost:3000 → **Ethean Lean Clients Dashboard**
-- Prometheus: http://localhost:9090
-- Details: [docs/long-run-metrics-grafana-2026-09-20.md](./docs/long-run-metrics-grafana-2026-09-20.md), [deploy/observability/README.md](./deploy/observability/README.md)
+Useful gauges: `ethean_head_slot`, `ethean_justified_slot`, `ethean_finalized_slot`,
+`ethean_slot_current`, `ethean_peer_count`, `ethean_ready`.
+
+### Start parameters (run + scrape)
+
+| Flag | Default | Role |
+| --- | --- | --- |
+| `--network` | `pq-devnet-4` | Network label |
+| `--until-signal` | off | Long-run until Ctrl-C (use this for Grafana) |
+| `--ticks` / `--wall-clock` | smoke / off | Short runs |
+| `--bootnodes` | file/env | QUIC multiaddrs for a mesh |
+| `--fork-digest` | optional | 8-hex gossip digest |
+| `--data-dir` | none | Path-backed store |
+| `--no-metrics` | off | Disable scrape HTTP |
+| `--metrics-address` | `127.0.0.1` | Bind host |
+| `--metrics-port` | `9100` | Bind port (must match Prometheus scrape) |
+
+```bash
+# Terminal A — long-run node (Ctrl-C to stop)
+ethean start --until-signal --network pq-devnet-4
+# or: ./scripts/run-pq-devnet-4.sh   /   .\scripts\run-pq-devnet-4.ps1
+
+# Optional bind override
+ethean start --until-signal --network pq-devnet-4 \
+  --metrics-address 127.0.0.1 --metrics-port 9100
+```
+
+### Prometheus + Grafana
+
+```bash
+# Terminal B — scrape stack (needs Docker)
+./scripts/run-observability.sh
+# Windows: .\scripts\run-observability.ps1
+# or: cd deploy/observability && docker compose up -d
+```
+
+| Service | Link |
+| --- | --- |
+| Grafana (anonymous viewer) | [http://localhost:3000](http://localhost:3000) |
+| Dashboard | **Ethean Lean Clients Dashboard** (folder Ethean) |
+| Prometheus UI | [http://localhost:9090](http://localhost:9090) |
+| Prometheus targets | [http://localhost:9090/targets](http://localhost:9090/targets) (`ethean` / `ethean-localhost` → UP) |
+
+Healthy long-run: `ethean_slot_current` and `ethean_head_slot` climb; justified /
+finalized follow when a mesh + aggregator exists. Flat finalized while head climbs
+= finality stall (same failure mode Shariq caught on a 5-day Ream run).
+
+Details: [docs/long-run-metrics-grafana-2026-09-20.md](./docs/long-run-metrics-grafana-2026-09-20.md),
+[deploy/observability/README.md](./deploy/observability/README.md).
 
 There is no `ethean monitor` CLI. Do not use Beacon `/eth/v1/node/health` paths.
 
 ##  API Usage
 
-### REST API
+### Health and metrics (bound today)
 
 ```bash
-# Get Beam/Lean state
-curl http://localhost:5052/eth/v2/Beam/Lean/states/head
-
-# Get block information
-curl http://localhost:5052/eth/v2/Beam/Lean/blocks/head
-
-# Submit attestation
-curl -X POST http://localhost:5052/eth/v1/Beam/Lean/pool/attestations \
-  -H "Content-Type: application/json" \
-  -d @attestation.json
+curl -s http://127.0.0.1:9100/healthz    # process up
+curl -s http://127.0.0.1:9100/readyz    # subsystem gates
+curl -s http://127.0.0.1:9100/metrics   # Prometheus exposition
 ```
 
-### WebSocket Streaming
+### Lean REST routes (dispatch library; HTTP listener not bound yet)
 
-```javascript
-// JavaScript example
-const ws = new WebSocket('ws://localhost:5052/ws');
-
-ws.on('message', (data) => {
-  const event = JSON.parse(data);
-  console.log('Received event:', event);
-});
-
-// Subscribe to block events
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  topics: ['block', 'attestation']
-}));
-```
+Route matching lives in `ethean-rpc` under `/lean/v1/…` only (no Beacon `/eth/v1`).
+Until a listener is wired, use the metrics health URLs above for operator checks.
+In-process smoke still validates `GET /lean/v1/health` at boot.
 
 ##  Configuration
 
@@ -446,7 +482,10 @@ file = "./logs/Ethean.log"
 
 [metrics]
 enabled = true
-port = 9090
+# Scrape HTTP (Prometheus). Default bind matches ethean CLI:
+#   --metrics-address 127.0.0.1 --metrics-port 9100
+address = "127.0.0.1"
+port = 9100
 ```
 
 ### Advanced Configuration
