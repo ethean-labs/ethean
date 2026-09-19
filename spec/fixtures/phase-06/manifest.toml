@@ -1,0 +1,35 @@
+# Phase 06 fixture manifest — fork choice
+
+phase = "06"
+phase_name = "lean-fork-choice"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+lock = "spec/pins/phase-06.lock.toml"
+
+[authority]
+lean_spec_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+citation = "src/lean_spec/spec/forks/lstar/fork_choice.py"
+fork = "lstar"
+generation = "modified_3sf_lstar"
+goldfish = false
+
+[profile]
+intervals_per_slot = 5
+gossip_disparity_intervals = 1
+seconds_per_slot = 4
+
+[crate]
+name = "ethean-fork-choice"
+path = "crates/fork-choice"
+
+[tests]
+unit = [
+  "create_store + on_block chain advances head",
+  "tick promotes new→known votes",
+  "unknown parent rejected",
+  "lexicographic root tie-break deterministic",
+  "require_proofs rejects attestation data (no fake accept)",
+]
+
+[upstream_vectors]
+status = "not_vendored"
+note = "Binary leanSpec fork-choice fixture roots deferred; unit tests exercise store locally"

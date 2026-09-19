@@ -30,6 +30,7 @@ Planning session summaries:
 - [Phase 03 canonical SSZ and Lean types](./lean-consensus-migration-phase-03-ssz-types-2026-09-19.md)
 - [Phase 04 genesis and 4s slot clock](./lean-consensus-migration-phase-04-genesis-clock-2026-09-19.md)
 - [Phase 05 Lean state transition](./lean-consensus-migration-phase-05-state-transition-2026-09-19.md)
+- [Phase 06 Lean fork choice (3SF-mini / lstar)](./lean-consensus-migration-phase-06-fork-choice-2026-09-19.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
 
 Protocol evidence tree: [`../spec/README.md`](../spec/README.md).

@@ -1,0 +1,80 @@
+# Phase 06 lock — Lean fork choice (modified 3SF-mini / lstar)
+
+schema = "ethean-phase-lock-v1"
+phase = "06"
+phase_name = "lean-fork-choice"
+lock_status = "in_progress_fork_choice"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = [
+  "spec/pins/phase-00.lock.toml",
+  "spec/pins/phase-01.lock.toml",
+  "spec/pins/phase-02.lock.toml",
+  "spec/pins/phase-03.lock.toml",
+  "spec/pins/phase-04.lock.toml",
+  "spec/pins/phase-05.lock.toml",
+]
+
+[resolved.lean_spec]
+status = "inherited"
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+citation_fork_choice = "src/lean_spec/spec/forks/lstar/fork_choice.py"
+citation_store = "src/lean_spec/spec/forks/lstar/containers/store.py"
+citation_timeline = "src/lean_spec/spec/forks/lstar/timeline.py"
+
+[resolved.generation]
+name = "modified_3sf_lstar"
+goldfish = false
+note = "Phase 00 OSD-006 resolved: NOT Goldfish / PQ heartbeat"
+
+[resolved.profile]
+intervals_per_slot = 5
+gossip_disparity_intervals = 1
+seconds_per_slot = 4
+
+[resolved.fork_choice]
+package = "ethean-fork-choice"
+path = "crates/fork-choice"
+apis = [
+  "create_store",
+  "ForkChoiceStore::on_tick / tick_interval",
+  "ForkChoiceStore::on_block (post-state supplied; no STF re-run)",
+  "ForkChoiceStore::on_attestation_data (structural via STRUCTURAL opts)",
+  "head / safe_target / justified / finalized",
+  "prune_finalized_away",
+]
+vote_model = "ValidatorIndex -> AttestationData (new/known pools; simplified vs leanSpec aggregate-proof maps)"
+implemented = [
+  "create_store with state-root check",
+  "on_tick interval 0/3/4 actions (promote / safe_target)",
+  "on_block unknown-parent reject; justified advance; head update",
+  "weighted head walk from justified with known votes; lex root tie-break",
+  "safe_target with 2/3 min_score on pending votes",
+  "prune blocks finalized away; keep finalized ancestry",
+]
+deferred = [
+  "XMSS / aggregate proof verify on gossip attestations (Phase 07/08)",
+  "leanSpec attestation_signatures + SingleMessageAggregate pools (use simplified per-validator maps)",
+  "interval-2 aggregator.bundle broadcast (no networking)",
+  "upstream fork-choice fixture byte differentials",
+]
+
+[ethean.workspace]
+members = [
+  "crates/primitives",
+  "crates/profile",
+  "crates/ssz",
+  "crates/types",
+  "crates/genesis",
+  "crates/transition",
+  "crates/fork-choice",
+  "crates/node",
+  "bin/ethean",
+]
+package_fork_choice = "ethean-fork-choice"
+
+[unresolved]
+rust_toolchain = "TBD — do not invent rust-toolchain.toml version"
+fork_identifier_bytes = "open (phase-00)"
+xmss_verify = "Phase 07/08"
