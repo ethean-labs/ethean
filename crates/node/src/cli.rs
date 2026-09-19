@@ -21,7 +21,7 @@ pub enum Command {
         /// Sample the system wall clock (sleeps between intervals).
         #[arg(long, default_value_t = false)]
         wall_clock: bool,
-        /// Run until Ctrl-C (implies wall-clock sleeps).
+        /// Run until Ctrl-C (implies wall-clock sleeps). Long-run / Grafana path.
         #[arg(long, default_value_t = false)]
         until_signal: bool,
         /// Path-backed store (requires `ethean-storage/rocksdb` feature on the build).
@@ -36,6 +36,15 @@ pub enum Command {
         /// Optional 8-hex fork digest for gossip topics (overrides interim name hash).
         #[arg(long)]
         fork_digest: Option<String>,
+        /// Disable Prometheus scrape HTTP (`/metrics` is on by default at :9100).
+        #[arg(long, default_value_t = false)]
+        no_metrics: bool,
+        /// Metrics listen address (default 127.0.0.1).
+        #[arg(long, default_value = "127.0.0.1")]
+        metrics_address: String,
+        /// Metrics listen port (default 9100; matches deploy/observability scrape).
+        #[arg(long, default_value_t = 9100)]
+        metrics_port: u16,
     },
     /// Start the validator client
     Validator,

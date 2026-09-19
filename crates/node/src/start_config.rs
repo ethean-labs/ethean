@@ -1,6 +1,7 @@
 //! Start / run mode configuration for the node client.
 
 use crate::network_target::NetworkTarget;
+use std::net::SocketAddr;
 
 /// How `EtheanClient::start` drives duty ticks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,6 +31,21 @@ impl Default for RunMode {
     }
 }
 
+/// Optional Prometheus scrape listener.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MetricsListen {
+    /// Bind address (default `127.0.0.1:9100`).
+    pub addr: SocketAddr,
+}
+
+impl Default for MetricsListen {
+    fn default() -> Self {
+        Self {
+            addr: "127.0.0.1:9100".parse().expect("static addr"),
+        }
+    }
+}
+
 /// Bundle passed into client start.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StartConfig {
@@ -37,6 +53,8 @@ pub struct StartConfig {
     pub mode: RunMode,
     /// Network label + bootnodes (default pq-devnet-4).
     pub network: NetworkTarget,
+    /// When `Some`, spawn `/metrics` HTTP on this address.
+    pub metrics: Option<MetricsListen>,
 }
 
 impl Default for StartConfig {
@@ -44,6 +62,7 @@ impl Default for StartConfig {
         Self {
             mode: RunMode::default(),
             network: NetworkTarget::pq_devnet_4(),
+            metrics: Some(MetricsListen::default()),
         }
     }
 }
@@ -54,6 +73,7 @@ impl StartConfig {
         Self {
             mode: RunMode::SmokeElapsed { ticks },
             network: NetworkTarget::pq_devnet_4(),
+            metrics: Some(MetricsListen::default()),
         }
     }
 
@@ -65,6 +85,7 @@ impl StartConfig {
                 enable_sleep,
             },
             network: NetworkTarget::pq_devnet_4(),
+            metrics: Some(MetricsListen::default()),
         }
     }
 
@@ -73,12 +94,19 @@ impl StartConfig {
         Self {
             mode: RunMode::UntilSignal { enable_sleep },
             network: NetworkTarget::pq_devnet_4(),
+            metrics: Some(MetricsListen::default()),
         }
     }
 
     /// Attach a resolved network target.
     pub fn with_network(mut self, network: NetworkTarget) -> Self {
         self.network = network;
+        self
+    }
+
+    /// Enable or disable the metrics scrape listener.
+    pub fn with_metrics(mut self, metrics: Option<MetricsListen>) -> Self {
+        self.metrics = metrics;
         self
     }
 }
@@ -93,6 +121,7 @@ mod tests {
         let cfg = StartConfig::default();
         assert_eq!(cfg.mode, RunMode::SmokeElapsed { ticks: 5 });
         assert_eq!(cfg.network.id, NetworkId::PqDevnet4);
+        assert!(cfg.metrics.is_some());
     }
 
     #[test]

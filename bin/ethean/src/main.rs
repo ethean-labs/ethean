@@ -4,7 +4,7 @@ use clap::Parser;
 use ethean_crypto::FfiStatus;
 use ethean_node::{
     cli::{Cli, Command},
-    EtheanClient, NetworkTarget, StartConfig,
+    EtheanClient, MetricsListen, NetworkTarget, StartConfig,
 };
 use tracing::info;
 
@@ -30,12 +30,22 @@ async fn main() -> Result<()> {
             network,
             bootnodes,
             fork_digest,
+            no_metrics,
+            metrics_address,
+            metrics_port,
         } => {
             let network = NetworkTarget::from_cli(
                 &network,
                 bootnodes.as_deref(),
                 fork_digest.as_deref(),
             )?;
+            let metrics = !no_metrics;
+            let metrics_listen = if metrics {
+                let addr = format!("{metrics_address}:{metrics_port}").parse()?;
+                Some(MetricsListen { addr })
+            } else {
+                None
+            };
             info!(
                 ticks,
                 wall_clock,
@@ -44,6 +54,9 @@ async fn main() -> Result<()> {
                 network = network.id.as_str(),
                 bootnodes = network.bootnodes.len(),
                 fork_digest = network.fork_digest.as_deref().unwrap_or(""),
+                metrics,
+                metrics_address = metrics_address.as_str(),
+                metrics_port,
                 "Starting lean consensus node"
             );
             let client = match data_dir.as_deref() {
@@ -57,7 +70,8 @@ async fn main() -> Result<()> {
             } else {
                 StartConfig::smoke(ticks)
             }
-            .with_network(network);
+            .with_network(network)
+            .with_metrics(metrics_listen);
             client.start_with(cfg).await?;
         }
         Command::Validator => {

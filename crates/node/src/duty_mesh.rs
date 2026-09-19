@@ -40,6 +40,7 @@ impl EtheanClient {
             if let Some(ev) = self.flush_pending_event()? {
                 events.push(ev);
             }
+            let _ = self.refresh_slot_metrics();
             if enable_sleep && i + 1 < ticks {
                 let now_ms = time.unix_millis().map_err(Error::Clock)?;
                 let wait = ms_until_next_interval(&self.clock, now_ms)?;
@@ -112,6 +113,7 @@ impl EtheanClient {
         if let Some(ev) = self.flush_pending_event()? {
             step_events.push(ev);
         }
+        let _ = self.refresh_slot_metrics();
         if enable_sleep && self.shutdown.accepts_new_duties() {
             let now_ms = time.unix_millis().map_err(Error::Clock)?;
             let wait = ms_until_next_interval(&self.clock, now_ms)?;

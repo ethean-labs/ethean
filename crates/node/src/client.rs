@@ -174,7 +174,18 @@ impl EtheanClient {
 
     /// Verify schema, smoke health, run the configured duty loop, record metrics.
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
+        if let Some(ref metrics) = cfg.metrics {
+            let bound = ethean_metrics::spawn_metrics_server(
+                metrics.addr,
+                self.observability.registry.clone(),
+                self.observability.ready_flag.clone(),
+            )
+            .await
+            .map_err(|e| Error::Config(format!("metrics bind {}: {e}", metrics.addr)))?;
+            info!(%bound, "Prometheus scrape endpoint ready");
+        }
         self.boot_gates(&cfg.network).await?;
+        self.refresh_slot_metrics()?;
         #[cfg(feature = "libp2p-quic")]
         {
             self.boot_pump_status_and_gossip().await?;

@@ -108,10 +108,7 @@ impl EtheanClient {
             .iter()
             .filter(|e| matches!(e, ChainEvent::TickAccepted(_)))
             .count();
-        let head_slot = self.owner.last_tick.map(|t| t.slot.get()).unwrap_or(0);
-        self.observability
-            .record_chain(head_slot, self.sync.lag())?;
-        self.observability.refresh_ready_gauge()?;
+        self.refresh_slot_metrics()?;
         info!(
             ticks_accepted = accepted,
             events = events.len(),
