@@ -127,6 +127,39 @@ impl SwarmFacade {
         Ok(event)
     }
 
+    /// Cache local Status SSZ for inbound Status replies.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn set_local_status_bytes(&mut self, bytes: Vec<u8>) -> Result<()> {
+        let Some(swarm) = self.quic.as_mut() else {
+            return Err(NetworkError::TransportPending(
+                "bind_quic_swarm before set_local_status_bytes",
+            ));
+        };
+        swarm.set_local_status_bytes(bytes);
+        self.note_progress();
+        Ok(())
+    }
+
+    /// Flush staged Status outbox payloads over Lean Status request streams.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn flush_status_outbox(&mut self) -> Result<usize> {
+        let Some(swarm) = self.quic.as_mut() else {
+            return Err(NetworkError::TransportPending(
+                "bind_quic_swarm before flush_status_outbox",
+            ));
+        };
+        let pending = std::mem::take(&mut self.status_outbox);
+        let mut sent = 0;
+        for req in pending {
+            swarm.send_status_request(req.peer, req.payload)?;
+            sent += 1;
+        }
+        if sent > 0 {
+            self.note_progress();
+        }
+        Ok(sent)
+    }
+
     /// Stage encoded Status requests for later stream send.
     pub fn enqueue_status_outbounds(&mut self, reqs: Vec<OutboundStatusRequest>) {
         self.status_outbox.extend(reqs);
