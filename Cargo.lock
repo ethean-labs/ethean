@@ -887,6 +887,7 @@ dependencies = [
  "ethean-primitives",
  "rocksdb",
  "sha2",
+ "tempfile",
  "thiserror 1.0.69",
 ]
 
