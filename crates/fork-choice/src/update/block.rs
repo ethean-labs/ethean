@@ -57,15 +57,29 @@ impl ForkChoiceStore {
 
     fn prune_stale_votes(&mut self) {
         let finalized = self.latest_finalized;
-        self.latest_new_attestations
-            .retain(|_, data| {
-                data.head.slot > finalized.slot
-                    && self.checkpoint_is_ancestor(finalized, data.head)
-            });
-        self.latest_known_attestations
-            .retain(|_, data| {
-                data.head.slot > finalized.slot
-                    && self.checkpoint_is_ancestor(finalized, data.head)
-            });
+        let drop_new: Vec<_> = self
+            .latest_new_attestations
+            .iter()
+            .filter(|(_, data)| {
+                !(data.head.slot > finalized.slot
+                    && self.checkpoint_is_ancestor(finalized, data.head))
+            })
+            .map(|(k, _)| *k)
+            .collect();
+        for k in drop_new {
+            self.latest_new_attestations.remove(&k);
+        }
+        let drop_known: Vec<_> = self
+            .latest_known_attestations
+            .iter()
+            .filter(|(_, data)| {
+                !(data.head.slot > finalized.slot
+                    && self.checkpoint_is_ancestor(finalized, data.head))
+            })
+            .map(|(k, _)| *k)
+            .collect();
+        for k in drop_known {
+            self.latest_known_attestations.remove(&k);
+        }
     }
 }

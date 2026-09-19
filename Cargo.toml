@@ -6,6 +6,7 @@ members = [
     "crates/types",
     "crates/genesis",
     "crates/transition",
+    "crates/fork-choice",
     "crates/node",
     "bin/ethean",
 ]
@@ -25,6 +26,7 @@ ethean-ssz = { path = "crates/ssz" }
 ethean-types = { path = "crates/types" }
 ethean-genesis = { path = "crates/genesis" }
 ethean-transition = { path = "crates/transition" }
+ethean-fork-choice = { path = "crates/fork-choice" }
 ethean-node = { path = "crates/node" }
 
 tokio = { version = "1.0", features = ["full"] }

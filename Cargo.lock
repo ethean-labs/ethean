@@ -935,6 +935,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethean-fork-choice"
+version = "0.1.0"
+dependencies = [
+ "ethean-primitives",
+ "ethean-profile",
+ "ethean-ssz",
+ "ethean-transition",
+ "ethean-types",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "ethean-genesis"
 version = "0.1.0"
 dependencies = [
@@ -956,6 +968,7 @@ dependencies = [
  "blstrs",
  "clap",
  "config",
+ "ethean-fork-choice",
  "ethean-genesis",
  "ethean-primitives",
  "ethean-profile",

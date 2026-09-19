@@ -122,7 +122,7 @@ impl BLSSignature {
 
 /// Real BLS signature aggregator using blstrs
 #[derive(Debug)]
-pub struct RealBLSAggregator {
+pub struct BlsAggregator {
     /// Cache for verified signatures
     verification_cache: HashMap<(Vec<u8>, Vec<u8>), bool>, // (signature, pubkey+message) -> verified
     /// Cached public keys
@@ -133,7 +133,7 @@ pub struct RealBLSAggregator {
     start_time: Instant,
 }
 
-impl RealBLSAggregator {
+impl BlsAggregator {
     /// Create new BLS aggregator
     pub fn new() -> Self {
         Self {
@@ -391,7 +391,7 @@ impl RealBLSAggregator {
     }
 }
 
-impl Default for RealBLSAggregator {
+impl Default for BlsAggregator {
     fn default() -> Self {
         Self::new()
     }
@@ -403,7 +403,7 @@ mod tests {
     
     #[test]
     fn test_bls_aggregator_creation() {
-        let aggregator = RealBLSAggregator::new();
+        let aggregator = BlsAggregator::new();
         let stats = aggregator.get_stats();
         
         assert_eq!(stats.total_verifications, 0);
@@ -413,7 +413,7 @@ mod tests {
     
     #[test]
     fn test_signature_aggregation() {
-        let mut aggregator = RealBLSAggregator::new();
+        let mut aggregator = BlsAggregator::new();
         
         // Create some test signatures
         let sig1 = BLSSignature::from_g1(&G1Affine::generator());
@@ -428,7 +428,7 @@ mod tests {
     
     #[test]
     fn test_empty_signature_set() {
-        let mut aggregator = RealBLSAggregator::new();
+        let mut aggregator = BlsAggregator::new();
         
         let signatures = vec![];
         let result = aggregator.aggregate_signatures(&signatures);
@@ -438,7 +438,7 @@ mod tests {
     
     #[test]
     fn test_performance_tracking() {
-        let mut aggregator = RealBLSAggregator::new();
+        let mut aggregator = BlsAggregator::new();
         
         // Test signature verification performance tracking
         let sig = BLSSignature::from_g1(&G1Affine::generator());
@@ -454,7 +454,7 @@ mod tests {
     
     #[test]
     fn test_cache_functionality() {
-        let mut aggregator = RealBLSAggregator::new();
+        let mut aggregator = BlsAggregator::new();
         
         let sig = BLSSignature::from_g1(&G1Affine::generator());
         let pubkey = BLSPublicKey::from_g2(&G2Affine::generator());
@@ -471,7 +471,7 @@ mod tests {
     
     #[test]
     fn test_performance_report() {
-        let mut aggregator = RealBLSAggregator::new();
+        let mut aggregator = BlsAggregator::new();
         
         // Perform some operations
         let sig = BLSSignature::from_g1(&G1Affine::generator());

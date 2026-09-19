@@ -19,3 +19,7 @@ pub use update::create_store;
 
 pub use ethean_primitives::{Hash32, ValidatorIndex};
 pub use ethean_types::{AttestationData, Block, Checkpoint, State};
+
+#[cfg(test)]
+#[path = "tests.rs"]
+mod tests;

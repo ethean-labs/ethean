@@ -1,8 +1,6 @@
 //! Unit tests for the lstar fork-choice store.
 
-use ethean_fork_choice::{
-    create_store, ForkChoiceError, ForkChoiceOpts, ForkChoiceStore,
-};
+use crate::{create_store, ForkChoiceError, ForkChoiceOpts, ForkChoiceStore};
 use ethean_primitives::{Bytes52, Hash32, Slot, ValidatorIndex, HASH32_ZERO};
 use ethean_profile::lstar_devnet;
 use ethean_transition::{apply_block_unverified, process_slots, TransitionContext};
@@ -45,18 +43,19 @@ fn empty_block(slot: u64, proposer: u64, parent: Hash32) -> Block {
     }
 }
 
-fn anchor_store(validators: usize) -> (ForkChoiceStore, Hash32, State) {
-    let profile = lstar_devnet().unwrap();
+fn make_anchor(validators: usize) -> (State, Block) {
     let mut state = sample_state(validators);
-    // leanSpec create_store uses the anchor block's state_root = HTR(state).
-    // Use a genesis-style block at slot 0 with zero parent.
     let mut block = empty_block(0, 0, HASH32_ZERO);
     block.state_root = state.hash_tree_root().unwrap();
-    // Align header so post-state looks consistent for later transitions.
     state.latest_block_header = block.header().unwrap();
     state.latest_block_header.state_root = HASH32_ZERO;
-    // Recompute state root after header update for create_store consistency.
     block.state_root = state.hash_tree_root().unwrap();
+    (state, block)
+}
+
+fn anchor_store(validators: usize) -> (ForkChoiceStore, Hash32, State) {
+    let profile = lstar_devnet().unwrap();
+    let (state, block) = make_anchor(validators);
     let root = block.hash_tree_root().unwrap();
     let store = create_store(
         state.clone(),
@@ -83,7 +82,6 @@ fn import_child(
     ethean_transition::process_block(&mut trial, &block, &ctx()).unwrap();
     block.state_root = trial.hash_tree_root().unwrap();
     let out = apply_block_unverified(pre, &block, &ctx()).unwrap();
-    // Advance time so the block is admissible.
     let need = slot * store.intervals_per_slot;
     if store.time < need {
         store.on_tick_with(need, false).unwrap();
@@ -106,9 +104,7 @@ fn create_store_and_chain_advances_head() {
 fn unknown_parent_rejected() {
     let (mut store, _, _) = anchor_store(2);
     let orphan = empty_block(1, 0, [9u8; 32]);
-    let err = store
-        .on_block(orphan, sample_state(2))
-        .unwrap_err();
+    let err = store.on_block(orphan, sample_state(2)).unwrap_err();
     assert_eq!(err, ForkChoiceError::UnknownParent);
 }
 
@@ -127,82 +123,55 @@ fn tick_promotes_votes() {
         .unwrap();
     assert!(store.latest_known_attestations.is_empty());
     assert_eq!(store.latest_new_attestations.len(), 1);
-    // Advance into interval 4 of the next slot to trigger promotion.
-    let target = store.time + (store.intervals_per_slot - (store.time % store.intervals_per_slot));
-    // land on interval boundary then step to 4 within slot
     let slot_start = (store.time / store.intervals_per_slot + 1) * store.intervals_per_slot;
     store.on_tick_with(slot_start + 4, false).unwrap();
     assert!(store.latest_new_attestations.is_empty());
     assert_eq!(store.latest_known_attestations.len(), 1);
-    let _ = target;
 }
 
 #[test]
-fn tie_break_is_deterministic() {
+fn tie_break_prefers_lexicographically_larger_root() {
     let (mut store, anchor, state) = anchor_store(3);
-    // Build two children of the same parent with no votes — walk picks max root.
-    let (a, state_a) = import_child(&mut store, &state, 1, 1);
-    // Second child also from original parent: craft manually with same parent.
-    let parent_root = {
-        let mut advanced = state.clone();
-        process_slots(&mut advanced, Slot::new(1)).unwrap();
-        advanced.latest_block_header.hash_tree_root()
+    store.on_tick_with(store.intervals_per_slot, false).unwrap();
+
+    let mut lo_block = empty_block(1, 1, anchor);
+    lo_block.state_root = [0x01; 32];
+    let mut hi_block = empty_block(1, 2, anchor);
+    hi_block.state_root = [0xfe; 32];
+
+    let lo_root = lo_block.hash_tree_root().unwrap();
+    let hi_root = hi_block.hash_tree_root().unwrap();
+    assert_ne!(lo_root, hi_root);
+
+    let mut post = state.clone();
+    post.slot = Slot::new(1);
+    post.latest_justified = store.justified();
+    post.latest_finalized = store.finalized();
+
+    // Insert smaller root first, then larger — head must still be max root.
+    let (first, second) = if lo_root < hi_root {
+        (lo_block, hi_block)
+    } else {
+        (hi_block, lo_block)
     };
-    // Use slot 2 from state_a for a linear chain, then fork is harder.
-    // Instead: vote-free walk from justified=anchor with two children at slot 1.
-    // Remove the first child path: import a sibling by rebuilding from parent.
-    let _ = (a, state_a, parent_root, anchor);
-    // Construct sibling: same parent_root, different body via proposer index change
-    // after temporarily removing first child so we can insert a fork.
-    // Simpler approach: compare best_child logic via two equal-weight leaves.
-    let roots = [a, {
-        // Create a distinct root by hashing differently — use slot 2 child of a.
-        let (b, _) = import_child(&mut store, &store.block_states[&a].clone(), 2, 2);
-        b
-    }];
-    // With a chain anchor->a->b and no votes, head should be the tip (heavier by ancestry).
-    assert_eq!(store.head(), roots[1]);
-    // Determinism: repeated head() is stable.
+    let first_root = first.hash_tree_root().unwrap();
+    let second_root = second.hash_tree_root().unwrap();
+    store.on_block(first, post.clone()).unwrap();
+    store.on_block(second, post).unwrap();
+
+    let expected = first_root.max(second_root);
+    assert_eq!(store.head(), expected);
     assert_eq!(store.head(), store.head());
 }
 
 #[test]
 fn require_proofs_rejects_attestation_data() {
     let profile = lstar_devnet().unwrap();
-    let mut state = sample_state(1);
-    let mut block = empty_block(0, 0, HASH32_ZERO);
-    block.state_root = state.hash_tree_root().unwrap();
-    state.latest_block_header = block.header().unwrap();
-    state.latest_block_header.state_root = HASH32_ZERO;
-    block.state_root = state.hash_tree_root().unwrap();
-    let store = create_store(state, block, &profile, ForkChoiceOpts::REQUIRE_PROOFS).unwrap();
-    let mut store = store;
+    let (state, block) = make_anchor(1);
+    let mut store =
+        create_store(state, block, &profile, ForkChoiceOpts::REQUIRE_PROOFS).unwrap();
     let err = store
         .on_attestation_data(ValidatorIndex::ZERO, AttestationData::default())
         .unwrap_err();
     assert!(matches!(err, ForkChoiceError::UnsupportedSignature(_)));
-}
-
-#[test]
-fn lex_tie_break_prefers_larger_root() {
-    use ethean_fork_choice::ForkChoiceStore as _;
-    // Direct unit of the tie-break helper via equal weights.
-    let mut weights = std::collections::HashMap::new();
-    let lo = [0u8; 32];
-    let hi = [0xffu8; 32];
-    weights.insert(lo, 1u64);
-    weights.insert(hi, 1u64);
-    let children = vec![lo, hi];
-    // Re-implement selection inline to avoid exporting the helper.
-    let best = children
-        .iter()
-        .max_by_key(|r| (weights[**r], **r))
-        .copied()
-        .unwrap();
-    assert_eq!(best, hi);
-    let _ = store_ty_marker();
-}
-
-fn store_ty_marker() -> Option<ForkChoiceStore> {
-    None
 }

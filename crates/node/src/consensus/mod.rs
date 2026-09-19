@@ -1,22 +1,19 @@
-//! Consensus module surface (Lean transition).
+//! Consensus module surface (Lean transition + fork choice).
 //!
-//! Phase 05: state transition lives in `ethean-transition`. Fork choice / store
-//! (Phase 06) remain stubs here.
+//! Phase 05: state transition wrappers over `ethean-transition`.
+//! Phase 06: fork-choice store re-exported from `ethean-fork-choice`.
 
 pub mod attestation_processing;
 pub mod block_processing;
-pub mod finality;
-pub mod fork_choice;
-pub mod performance;
 pub mod slashing;
 pub mod state_transition;
 pub mod validator_management;
 
 pub use attestation_processing::*;
 pub use block_processing::*;
-pub use finality::*;
-pub use fork_choice::*;
-pub use performance::*;
+pub use ethean_fork_choice::{
+    create_store, ForkChoiceError, ForkChoiceOpts, ForkChoiceStore,
+};
 pub use slashing::*;
 pub use state_transition::*;
 pub use validator_management::*;
@@ -31,7 +28,7 @@ pub enum Error {
     InvalidBlock(String),
 
     #[error("Fork choice error: {0}")]
-    ForkChoice(String),
+    ForkChoice(#[from] ForkChoiceError),
 
     #[error("State transition error: {0}")]
     StateTransition(#[from] StateTransitionError),

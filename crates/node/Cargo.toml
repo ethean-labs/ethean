@@ -18,6 +18,7 @@ ethean-ssz = { workspace = true }
 ethean-types = { workspace = true }
 ethean-genesis = { workspace = true }
 ethean-transition = { workspace = true }
+ethean-fork-choice = { workspace = true }
 
 tokio = { workspace = true }
 serde = { workspace = true }
