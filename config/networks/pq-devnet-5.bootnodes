@@ -1,5 +1,6 @@
 # pq-devnet-5 bootnodes (QUIC multiaddrs)
 #
+# Ready path for when an operator pq-devnet-5 mesh opens.
 # One multiaddr per line. Lines starting with # are ignored.
 # leanroadmap does not publish a permanent public list; paste the
 # operator nodes.yaml / ENR-derived QUIC multiaddrs for the active run.
@@ -8,5 +9,8 @@
 # /ip4/203.0.113.10/udp/9000/quic-v1/p2p/12D3KooWExamplePeerIdReplaceMe
 #
 # Also accepted via:
-#   ethean start --bootnodes '<addr1>,<addr2>'
+#   ethean start --network pq-devnet-5 --bootnodes '<addr1>,<addr2>'
 #   ETHEAN_BOOTNODES='<addr1>,<addr2>'
+#
+# Until those multiaddrs exist, prefer the default:
+#   ethean start --network pq-devnet-4
