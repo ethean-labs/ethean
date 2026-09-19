@@ -135,18 +135,6 @@ Helpers (build + long-run):
 Paste D4 QUIC multiaddrs into `config/networks/pq-devnet-4.bootnodes` (or pass
 `--bootnodes` / `ETHEAN_BOOTNODES`) before expecting a live mesh dial.
 
-### Grafana / Prometheus (optional second terminal)
-
-`ethean start` does **not** open Grafana or Prometheus. After the node is up:
-
-```powershell
-# Requires Docker Desktop on PATH
-.\scripts\run-observability.ps1
-```
-
-Then open http://localhost:3000 and http://localhost:9090. Until then only
-http://127.0.0.1:9100/metrics works (that is the scrape target).
-
 ### Local private mesh (no public bootnodes)
 
 Same pattern as Ream/ethlambda: create a private 2-peer mesh for this run, write
@@ -380,21 +368,19 @@ skip_signature_verification = false
 Long-run monitoring matches Ream/ethlambda Grafana practice (head / justified /
 finalized / current slot).
 
-**Important:** `ethean start …` only starts the **client** and its scrape HTTP on
-**`:9100`**. It does **not** start Grafana (`:3000`) or Prometheus (`:9090`).
-Those need a **second process** (Docker Compose). Without Docker Desktop running,
-`http://localhost:3000` and `http://localhost:9090` stay blank / unreachable —
-that is expected, not a bug in `ethean start`.
+**Two layers (easy to confuse):**
 
-| What you ran | What works |
-| --- | --- |
-| `ethean start --until-signal --network pq-devnet-5` alone | [http://127.0.0.1:9100/metrics](http://127.0.0.1:9100/metrics) (and `/healthz`, `/readyz`) |
-| Same + `.\scripts\run-observability.ps1` (Docker required) | Grafana `:3000` + Prometheus `:9090` scraping `:9100` |
+| Layer | What | When |
+| --- | --- | --- |
+| Scrape HTTP (`:9100`) | Ethean exports `/metrics` `/healthz` `/readyz` | **On by default** (disable with `--no-metrics`) |
+| Prometheus UI + Grafana | Docker Compose in `deploy/observability` | Pass **`--metrics`** (or run `scripts/run-observability.*`) |
 
-### Process health APIs (live with `ethean start`)
+`ethean start --until-signal` alone does **not** open http://localhost:3000 or :9090.
+Those ports need Docker. Your process metrics at http://127.0.0.1:9100/metrics already work.
 
-Metrics HTTP binds to `127.0.0.1:9100` unless overridden. These are the endpoints
-to check that the process is up (Lean JSON-RPC on `:5052` is **not** wired yet):
+### Process health APIs (live from the binary)
+
+Metrics HTTP binds to `127.0.0.1:9100` unless overridden:
 
 | URL | Expect | Meaning |
 | --- | --- | --- |
@@ -412,41 +398,32 @@ curl -s http://127.0.0.1:9100/metrics | findstr ethean_head_slot
 Useful gauges: `ethean_head_slot`, `ethean_justified_slot`, `ethean_finalized_slot`,
 `ethean_slot_current`, `ethean_peer_count`, `ethean_ready`.
 
-### Start parameters (run + scrape)
+### Start with Grafana + Prometheus
+
+Requires **Docker Desktop** (or Docker Engine + Compose) running.
+
+```bash
+# Starts docker compose (Grafana :3000, Prometheus :9090) then the node
+ethean start --until-signal --network pq-devnet-4 --metrics
+
+# Same for the D5 ready-path label
+ethean start --until-signal --network pq-devnet-5 --metrics
+```
 
 | Flag | Default | Role |
 | --- | --- | --- |
-| `--network` | `pq-devnet-4` | Network label |
-| `--until-signal` | off | Long-run until Ctrl-C (use this for Grafana) |
-| `--ticks` / `--wall-clock` | smoke / off | Short runs |
-| `--bootnodes` | file/env | QUIC multiaddrs for a mesh |
-| `--fork-digest` | optional | 8-hex gossip digest |
-| `--data-dir` | none | Path-backed store |
-| `--no-metrics` | off | Disable scrape HTTP |
-| `--metrics-address` | `127.0.0.1` | Bind host |
+| `--metrics` | off | `docker compose up -d` for Prometheus + Grafana |
+| `--no-metrics` | off | Disable scrape HTTP on :9100 |
+| `--metrics-address` | `127.0.0.1` | Bind host for scrape |
 | `--metrics-port` | `9100` | Bind port (must match Prometheus scrape) |
+| `--until-signal` | off | Long-run until Ctrl-C |
+| `--network` | `pq-devnet-4` | Network label |
+
+Manual stack only (if you prefer not to use `--metrics`):
 
 ```bash
-# Terminal A — long-run node (Ctrl-C to stop). Metrics only on :9100.
-ethean start --until-signal --network pq-devnet-4
-# or: ethean start --until-signal --network pq-devnet-5
-# or: ./scripts/run-pq-devnet-4.sh   /   .\scripts\run-pq-devnet-4.ps1
-
-# Optional bind override
-ethean start --until-signal --network pq-devnet-4 \
-  --metrics-address 127.0.0.1 --metrics-port 9100
-```
-
-### Prometheus + Grafana (separate Docker stack)
-
-Requires **Docker Desktop** (or Docker Engine + Compose) on `PATH`. This machine’s
-blank `:3000` / `:9090` pages mean that stack was never started.
-
-```bash
-# Terminal B — scrape + UI (after Terminal A is up)
 ./scripts/run-observability.sh
-# Windows PowerShell:
-.\scripts\run-observability.ps1
+# Windows: .\scripts\run-observability.ps1
 # or: cd deploy/observability && docker compose up -d
 ```
 
@@ -456,15 +433,14 @@ blank `:3000` / `:9090` pages mean that stack was never started.
 | Dashboard | **Ethean Lean Clients Dashboard** (folder Ethean) |
 | Prometheus UI | [http://localhost:9090](http://localhost:9090) |
 | Prometheus targets | [http://localhost:9090/targets](http://localhost:9090/targets) (`ethean` / `ethean-localhost` → UP) |
+| Node scrape | [http://127.0.0.1:9100/metrics](http://127.0.0.1:9100/metrics) |
 
 Healthy long-run: `ethean_slot_current` and `ethean_head_slot` climb; justified /
 finalized follow when a mesh + aggregator exists. Flat finalized while head climbs
 = finality stall (same failure mode Shariq caught on a 5-day Ream run).
-Solo offline node: `ethean_peer_count` stays `0` and head may stay flat — wall
-`ethean_slot_current` still climbs.
 
 Details: [docs/long-run-metrics-grafana-2026-09-20.md](./docs/long-run-metrics-grafana-2026-09-20.md),
-[docs/grafana-prometheus-need-docker-2026-09-20.md](./docs/grafana-prometheus-need-docker-2026-09-20.md),
+[docs/metrics-flag-starts-grafana-prometheus-2026-09-20.md](./docs/metrics-flag-starts-grafana-prometheus-2026-09-20.md),
 [deploy/observability/README.md](./deploy/observability/README.md).
 
 There is no `ethean monitor` CLI. Do not use Beacon `/eth/v1/node/health` paths.
