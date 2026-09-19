@@ -1,5 +1,6 @@
 //! Chain owner: sole writer of transition, fork choice, and import status.
 
+use crate::aggregation::AggregatePool;
 use ethean_primitives::{Hash32, Slot};
 use ethean_profile::ChainProfile;
 use ethean_types::State;
@@ -43,6 +44,8 @@ pub struct ChainOwner {
     pub last_gossip_root: Option<Hash32>,
     /// Chain profile for structural gossip state transitions.
     pub profile: Option<ChainProfile>,
+    /// In-memory aggregate proofs from attestation / aggregation gossip.
+    pub aggregates: AggregatePool,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
 }
