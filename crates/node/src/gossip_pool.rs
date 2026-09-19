@@ -4,7 +4,9 @@ use crate::aggregation::{AggregatePool, PoolEntry, PoolKey};
 use crate::gossip_decode::try_decode_attestation;
 use ethean_crypto::{domain_digest, PROD_AGGREGATION_FINGERPRINT};
 use ethean_primitives::Hash32;
-use ethean_types::MultiMessageAggregate;
+use ethean_types::{
+    AggregatedAttestation, AggregationBits, MultiMessageAggregate, SignedAggregatedAttestation,
+};
 
 /// Profile digest shared with transition Type-2 verify.
 pub fn pool_profile_digest() -> Hash32 {
@@ -22,19 +24,69 @@ pub fn ingest_into_pool(
     topic: &str,
     payload: &[u8],
 ) -> Option<Hash32> {
-    if let Some(decoded) = try_decode_attestation(topic, payload) {
-        pool.insert_verified(
-            PoolKey {
-                profile_digest: pool_profile_digest(),
-                message_root: decoded.message_root,
-            },
-            PoolEntry {
-                proof: decoded.proof,
-                coverage: decoded.coverage,
-                inserted_slot: decoded.slot,
-            },
-        );
-        return Some(decoded.message_root);
+    if topic.contains("/attestation_") {
+        if let Ok(agg) = AggregatedAttestation::ssz_decode(payload) {
+            let message_root = agg.data.hash_tree_root();
+            let coverage = agg.aggregation_bits.bits.iter().filter(|b| **b).count() as u32;
+            pool.insert_verified(
+                PoolKey {
+                    profile_digest: pool_profile_digest(),
+                    message_root,
+                },
+                PoolEntry {
+                    proof: Vec::new(),
+                    coverage,
+                    inserted_slot: agg.data.slot.get(),
+                    attestation_ssz: agg.ssz_encode(),
+                },
+            );
+            return Some(message_root);
+        }
+        if let Ok(signed) = SignedAggregatedAttestation::ssz_decode(payload) {
+            let message_root = signed.data.hash_tree_root();
+            let coverage = signed
+                .proof
+                .participants
+                .bits
+                .iter()
+                .filter(|b| **b)
+                .count() as u32;
+            let reconstructed = AggregatedAttestation {
+                aggregation_bits: AggregationBits {
+                    bits: signed.proof.participants.bits.clone(),
+                },
+                data: signed.data.clone(),
+            };
+            pool.insert_verified(
+                PoolKey {
+                    profile_digest: pool_profile_digest(),
+                    message_root,
+                },
+                PoolEntry {
+                    proof: signed.proof.proof.clone(),
+                    coverage,
+                    inserted_slot: signed.data.slot.get(),
+                    attestation_ssz: reconstructed.ssz_encode(),
+                },
+            );
+            return Some(message_root);
+        }
+        // Fall through to generic decode path for content-only retention.
+        if let Some(decoded) = try_decode_attestation(topic, payload) {
+            pool.insert_verified(
+                PoolKey {
+                    profile_digest: pool_profile_digest(),
+                    message_root: decoded.message_root,
+                },
+                PoolEntry {
+                    proof: decoded.proof,
+                    coverage: decoded.coverage,
+                    inserted_slot: decoded.slot,
+                    attestation_ssz: Vec::new(),
+                },
+            );
+            return Some(decoded.message_root);
+        }
     }
     if topic.contains("/aggregation/") {
         if let Ok(agg) = MultiMessageAggregate::new(payload.to_vec()) {
@@ -48,6 +100,7 @@ pub fn ingest_into_pool(
                         proof: payload.to_vec(),
                         coverage: 0,
                         inserted_slot: 0,
+                        attestation_ssz: Vec::new(),
                     },
                 );
                 return Some(root);
@@ -61,7 +114,7 @@ pub fn ingest_into_pool(
 mod tests {
     use super::*;
     use ethean_primitives::Slot;
-    use ethean_types::{AggregatedAttestation, AggregationBits, AttestationData, Checkpoint};
+    use ethean_types::{AttestationData, Checkpoint};
 
     #[test]
     fn attestation_gossip_lands_in_pool() {
@@ -89,5 +142,6 @@ mod tests {
             .expect("best");
         assert_eq!(best.coverage, 2);
         assert_eq!(best.inserted_slot, 5);
+        assert_eq!(best.attestation_ssz, enc);
     }
 }
