@@ -3,10 +3,12 @@
 use crate::error::{NetworkError, Result};
 use crate::peer_manager::PeerManager;
 use crate::reqresp::RequestTracker;
-use crate::transport::{dial_quic, BoundTransport, TransportConfig};
+use crate::transport::{dial_quic, BoundTransport};
 
 #[cfg(feature = "libp2p-quic")]
 use crate::quic_swarm::QuicSwarm;
+#[cfg(feature = "libp2p-quic")]
+use crate::transport::TransportConfig;
 
 /// High-level swarm state; may hold a bound UDP listen socket and/or QUIC swarm.
 #[derive(Debug, Default)]
