@@ -2,13 +2,15 @@
 
 #![cfg(feature = "libp2p-quic")]
 
-use crate::error::{NetworkError, Result};
+use crate::error::NetworkError;
 use crate::multiaddr::parse_quic_udp;
 use crate::transport::TransportConfig;
 use libp2p::futures::StreamExt;
 use libp2p::swarm::SwarmEvent;
 use libp2p::{identity, ping, Multiaddr, PeerId, SwarmBuilder};
 use std::time::Duration;
+
+type NetResult<T> = std::result::Result<T, NetworkError>;
 
 /// Ping-only behaviour; QUIC provides security and multiplexing.
 #[derive(libp2p::swarm::NetworkBehaviour)]
@@ -36,14 +38,13 @@ impl std::fmt::Debug for QuicSwarm {
 
 impl QuicSwarm {
     /// Bind a QUIC-v1 listener (no TCP/WS listen).
-    pub async fn bind(cfg: &TransportConfig) -> Result<Self> {
+    pub async fn bind(cfg: &TransportConfig) -> NetResult<Self> {
         let keypair = identity::Keypair::generate_ed25519();
         let peer_id = keypair.public().to_peer_id();
 
         let mut swarm = SwarmBuilder::with_existing_identity(keypair)
             .with_tokio()
             .with_quic()
-            .map_err(|e| NetworkError::Handshake(format!("quic transport: {e}")))?
             .with_behaviour(|_| LeanBehaviour {
                 ping: ping::Behaviour::new(
                     ping::Config::new().with_interval(Duration::from_secs(15)),
@@ -70,7 +71,7 @@ impl QuicSwarm {
     }
 
     /// Dial `/ip4/.../udp/.../quic-v1` only.
-    pub fn dial(&mut self, multiaddr: &str) -> Result<()> {
+    pub fn dial(&mut self, multiaddr: &str) -> NetResult<()> {
         crate::transport::reject_non_quic(multiaddr)?;
         let _ = parse_quic_udp(multiaddr)?;
         let addr: Multiaddr = multiaddr
@@ -89,7 +90,7 @@ impl QuicSwarm {
 
 async fn wait_quic_listen(
     swarm: &mut libp2p::Swarm<LeanBehaviour>,
-) -> Result<Multiaddr> {
+) -> NetResult<Multiaddr> {
     loop {
         match swarm.select_next_some().await {
             SwarmEvent::NewListenAddr { address, .. } => {
@@ -111,7 +112,7 @@ mod tests {
 
     #[tokio::test]
     async fn binds_ephemeral_quic() {
-        let swarm = QuicSwarm::bind(&TransportConfig {
+        let mut swarm = QuicSwarm::bind(&TransportConfig {
             listen_port: 0,
             idle_timeout_ms: 1_000,
         })
