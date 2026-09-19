@@ -1,11 +1,14 @@
-//! Swarm event-loop facade (UDP bind + pending QUIC dial).
+//! Swarm event-loop facade (UDP bind + optional libp2p QUIC swarm).
 
 use crate::error::{NetworkError, Result};
 use crate::peer_manager::PeerManager;
 use crate::reqresp::RequestTracker;
-use crate::transport::{dial_quic, BoundTransport};
+use crate::transport::{dial_quic, BoundTransport, TransportConfig};
 
-/// High-level swarm state; may hold a bound UDP listen socket.
+#[cfg(feature = "libp2p-quic")]
+use crate::quic_swarm::QuicSwarm;
+
+/// High-level swarm state; may hold a bound UDP listen socket and/or QUIC swarm.
 #[derive(Debug, Default)]
 pub struct SwarmFacade {
     pub peers: PeerManager,
@@ -13,6 +16,9 @@ pub struct SwarmFacade {
     pub events_processed: u64,
     /// Present after [`Self::attach_transport`].
     pub transport: Option<BoundTransport>,
+    /// Present after [`Self::bind_quic_swarm`] (`libp2p-quic` feature).
+    #[cfg(feature = "libp2p-quic")]
+    pub quic: Option<QuicSwarm>,
 }
 
 impl SwarmFacade {
@@ -27,6 +33,34 @@ impl SwarmFacade {
         self.transport.is_some()
     }
 
+    /// True when a libp2p QUIC swarm is bound.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn has_quic_swarm(&self) -> bool {
+        self.quic.is_some()
+    }
+
+    /// Bind a real libp2p QUIC-v1 swarm (replaces UDP-only facade for dial).
+    #[cfg(feature = "libp2p-quic")]
+    pub async fn bind_quic_swarm(&mut self, cfg: &TransportConfig) -> Result<()> {
+        let swarm = QuicSwarm::bind(cfg).await?;
+        self.quic = Some(swarm);
+        self.note_progress();
+        Ok(())
+    }
+
+    /// Dial via the bound libp2p QUIC swarm.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn dial_quic_peer(&mut self, multiaddr: &str) -> Result<()> {
+        let Some(swarm) = self.quic.as_mut() else {
+            return Err(NetworkError::TransportPending(
+                "bind_quic_swarm before dial_quic_peer",
+            ));
+        };
+        swarm.dial(multiaddr)?;
+        self.note_progress();
+        Ok(())
+    }
+
     /// Record a tick of the (future) event loop for health.
     pub fn note_progress(&mut self) {
         self.events_processed = self.events_processed.saturating_add(1);
@@ -37,7 +71,7 @@ impl SwarmFacade {
         self.events_processed > 0
     }
 
-    /// Dial requires an attached bind; libp2p QUIC swarm still pending.
+    /// Dial without libp2p swarm: UDP bind required, then pending or feature path.
     pub fn dial_static_peer(&self, multiaddr: &str) -> Result<()> {
         let Some(bound) = self.transport.as_ref() else {
             return Err(NetworkError::TransportPending(
@@ -92,5 +126,20 @@ mod tests {
         s.attach_transport(bound);
         assert!(s.has_listen_bind());
         assert!(s.dial_static_peer("/ip4/127.0.0.1/udp/9/quic-v1").is_err());
+    }
+
+    #[cfg(feature = "libp2p-quic")]
+    #[tokio::test]
+    async fn bind_quic_enables_swarm_dial() {
+        let mut s = SwarmFacade::default();
+        s.bind_quic_swarm(&TransportConfig {
+            listen_port: 0,
+            idle_timeout_ms: 1_000,
+        })
+        .await
+        .expect("quic swarm");
+        assert!(s.has_quic_swarm());
+        assert!(s.dial_quic_peer("/ip4/127.0.0.1/tcp/9").is_err());
+        assert!(s.dial_quic_peer("/ip4/127.0.0.1/udp/9/quic-v1").is_ok());
     }
 }
