@@ -4,6 +4,7 @@ use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::events::ChainEvent;
 use crate::gossip_decode::{content_root_for, try_decode_block};
+use crate::gossip_pool::ingest_into_pool;
 use crate::gossip_stf::import_decoded_block;
 use crate::shutdown::ShutdownState;
 
@@ -75,6 +76,8 @@ fn ingest_gossip(
     }
     let content_root = content_root_for(&topic, &payload);
     owner.last_gossip_root = Some(content_root);
+
+    let _ = ingest_into_pool(&mut owner.aggregates, &topic, &payload);
 
     if let Some(decoded) = try_decode_block(&topic, &payload) {
         let _ = import_decoded_block(owner, shutdown, &decoded);
@@ -158,6 +161,7 @@ mod tests {
             ChainEvent::GossipIngested { content_root, .. } if content_root == root
         ));
         assert_eq!(owner.head_root, [0u8; 32]);
+        assert_eq!(owner.aggregates.len(), 1);
     }
 
     #[test]
@@ -192,5 +196,36 @@ mod tests {
             ev,
             ChainEvent::GossipIngested { content_root, .. } if content_root == root
         ));
+    }
+
+    #[test]
+    fn ingest_attestation_fills_aggregate_pool() {
+        use ethean_types::{AggregatedAttestation, AggregationBits, AttestationData, Checkpoint};
+
+        let mut owner = ChainOwner::new(2);
+        let mut shutdown = ShutdownState::default();
+        let agg = AggregatedAttestation {
+            aggregation_bits: AggregationBits {
+                bits: vec![true, true, false],
+            },
+            data: AttestationData {
+                slot: Slot::new(3),
+                head: Checkpoint::genesis(),
+                target: Checkpoint::genesis(),
+                source: Checkpoint::genesis(),
+            },
+        };
+        let enc = agg.ssz_encode();
+        let _ = apply_command(
+            &mut owner,
+            &mut shutdown,
+            ChainCommand::IngestGossip {
+                topic: "/leanconsensus/abcd/attestation_0/ssz_snappy".into(),
+                payload: enc,
+                peer: None,
+            },
+        );
+        assert_eq!(owner.aggregates.len(), 1);
+        assert_eq!(owner.head_root, [0u8; 32]);
     }
 }
