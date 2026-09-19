@@ -20,9 +20,9 @@ rand = { version = "0.10", optional = true }
 [features]
 # Default: fail-closed production + test helpers with real binding (never always-true).
 default = ["test-hmac", "test-aggregate"]
-# Attempt to compile/wrap leanSig PROD (may fail resolution until upstream num_bigint pin).
+# Attempt to compile/wrap leanSig PROD (needs local vendor patch until upstream num-bigint unifies).
 leansig-backend = ["dep:leansig", "dep:rand"]
-# leanVM FFI (not wired; feature exists for pin / future).
+# leanVM prove/verify surface (fail-closed stub until LEANVM_FFI_LINKED; see backend_leanvm.rs).
 leanvm-backend = []
 test-hmac = []
 test-aggregate = []
