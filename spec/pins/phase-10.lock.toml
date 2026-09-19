@@ -1,0 +1,45 @@
+# Ethean Phase 10 protocol lock
+# English only. Digests and full commits are authoritative.
+
+schema = "ethean-phase-lock-v1"
+phase = "10"
+phase_name = "quic-gossip-and-reqresp"
+lock_status = "resolved_with_open_gates"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+profile_note = """
+Wire topics, raw/framed Snappy, Status, req/resp shapes, gossip validation, and
+admission caps landed. libp2p QUIC-v1 swarm dial remains an open gate (fail closed).
+fork_identifier_bytes and message-ID preimage order still open from Phase 00.
+"""
+
+[ethean]
+planning_phase_doc = "road-to/lean-consensus-migration/phases/10-quic-gossip-and-reqresp.md"
+
+[resolved.topics]
+block = "/leanconsensus/{fork}/block/ssz_snappy"
+attestation = "/leanconsensus/{fork}/attestation_<subnet>/ssz_snappy"
+aggregation = "/leanconsensus/{fork}/aggregation/ssz_snappy"
+forbidden_dummy_fork = "12345678"
+interim_fork_segment = "sha256_prefix8_of_fork_name"
+
+[resolved.rpc]
+status = "/leanconsensus/req/status/1/ssz_snappy"
+blocks_by_root = "/leanconsensus/req/blocks_by_root/1/ssz_snappy"
+blocks_by_range = "/leanconsensus/req/blocks_by_range/1/ssz_snappy"
+max_blocks_per_request = 1024
+
+[resolved.compression]
+gossip = "raw_snappy"
+reqresp = "framed_snappy"
+max_decompressed_bytes = 2097152
+
+[resolved.crates]
+network_wire = "ethean-network-wire"
+network = "ethean-network"
+
+[open_gates]
+libp2p_quic_swarm = "fail_closed_facade"
+fork_identifier_bytes = "open_phase_00"
+gossip_message_id_preimage_order = "open_phase_00"
+discovery_enr = "open"
+soak_72h = "deferred"
