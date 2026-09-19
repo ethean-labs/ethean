@@ -28,6 +28,6 @@ cargo test -p ethean-node --lib
 
 ## Still open
 
-- Link real leanVM FFI (`LEANVM_FFI_LINKED`) and drop reliance on `test-aggregate` for smoke
-- Production leanSig backend (`leansig-backend`) for proposer keys
-- Include proposer XMSS bytes inside the Type-2 merge once leanMultisig params settle
+- Set `LEANVM_FFI_LINKED` only after linking lean-multisig prove/verify and round-trip tests
+- Vendor/patch path for leanSig num-bigint so `leansig-backend` builds cleanly without local hacks
+- Fold proposer XMSS bytes into the Type-2 merge once leanMultisig params settle
