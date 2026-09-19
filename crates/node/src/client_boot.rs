@@ -1,0 +1,114 @@
+//! Boot gates and observability finish hooks for [`EtheanClient`].
+
+use crate::client::EtheanClient;
+use crate::events::ChainEvent;
+use crate::observability::smoke_health_route;
+use crate::wall_tick::tick_from_wall;
+use crate::Result;
+use ethean_genesis::FakeTime;
+use tracing::info;
+
+impl EtheanClient {
+    pub(crate) async fn boot_gates(
+        &mut self,
+        network: &crate::network_target::NetworkTarget,
+    ) -> Result<()> {
+        self.db.verify_schema()?;
+        self.observability.mark_storage_ok();
+        self.observability.mark_signer_ok();
+        self.observability
+            .apply_ffi_status(ethean_crypto::FfiStatus::probe());
+        let leanvm_gate = ethean_crypto::LeanVmGate::probe();
+        let leansig_gate = ethean_crypto::LeanSigGate::probe();
+        info!(
+            network = network.id.as_str(),
+            bootnodes = network.bootnodes.len(),
+            fork_digest = network.fork_digest.as_deref().unwrap_or(""),
+            leanvm_feature = leanvm_gate.feature_enabled,
+            leanvm_ffi = leanvm_gate.ffi_linked,
+            leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
+            leanvm_ipc_ready = leanvm_gate.ipc_protocol_ready,
+            leanvm_pin = leanvm_gate.pinned_rev,
+            leansig_feature = leansig_gate.feature_enabled,
+            leansig_pin = leansig_gate.pinned_rev,
+            "crypto backend gate probe"
+        );
+        // Smoke crypto path is loaded even when production FFI is off.
+        self.observability.mark_crypto_ok();
+
+        let fork_segment = ethean_network_wire::fork_segment_resolve(
+            self.profile.fork_name,
+            network.fork_digest.as_deref(),
+        )
+        .map_err(|e| crate::Error::Config(format!("fork segment: {e}")))?;
+        info!(%fork_segment, "resolved gossip fork segment");
+
+        let (_port, swarm) = crate::boot_network::prepare_boot_network(&fork_segment).await?;
+        #[cfg(feature = "libp2p-quic")]
+        {
+            self.swarm = swarm;
+            crate::boot_network::dial_bootnodes(network, self.swarm.as_mut());
+        }
+        #[cfg(not(feature = "libp2p-quic"))]
+        {
+            let _ = swarm;
+            crate::boot_network::dial_bootnodes(network, None);
+        }
+
+        let genesis_root = self
+            .genesis
+            .hash_tree_root()
+            .map_err(crate::Error::Types)?;
+        let status =
+            crate::local_status::local_status(&self.owner, genesis_root, &fork_segment);
+        info!(
+            head_slot = status.head_slot,
+            finalized_slot = status.finalized_slot,
+            fork = %status.fork_segment,
+            "local Lean Status ready for peer handshake"
+        );
+        self.local_status = Some(status);
+
+        self.observability.mark_network_ok();
+
+        let health = smoke_health_route()?;
+        info!(?health, "Lean health route smoke ok");
+
+        let genesis_ms = self.clock.genesis_time_millis()?;
+        let wall = tick_from_wall(
+            &self.clock,
+            &FakeTime::new(genesis_ms),
+            self.owner.generation.max(1),
+        )?;
+        info!(
+            slot = wall.slot.get(),
+            interval = wall.interval,
+            fork = self.profile.fork_name,
+            fork_segment = %fork_segment,
+            network = network.id.as_str(),
+            ready = self.observability.readiness.is_ready(),
+            ffi_leansig = ethean_crypto::FfiStatus::probe().leansig,
+            ffi_leanvm = ethean_crypto::FfiStatus::probe().leanvm,
+            "Ethean Lean Consensus client starting duties"
+        );
+        Ok(())
+    }
+
+    pub(crate) fn finish_observability(&mut self, events: &[ChainEvent]) -> Result<()> {
+        let accepted = events
+            .iter()
+            .filter(|e| matches!(e, ChainEvent::TickAccepted(_)))
+            .count();
+        let head_slot = self.owner.last_tick.map(|t| t.slot.get()).unwrap_or(0);
+        self.observability
+            .record_chain(head_slot, self.sync.lag())?;
+        self.observability.refresh_ready_gauge()?;
+        info!(
+            ticks_accepted = accepted,
+            events = events.len(),
+            ready = self.observability.readiness.is_ready(),
+            "Duty loop finished"
+        );
+        Ok(())
+    }
+}
