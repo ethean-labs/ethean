@@ -172,6 +172,30 @@ impl EtheanClient {
         if !ingest.is_empty() {
             info!(n = ingest.len(), "Ingested gossip from boot pump");
         }
+        for (peer, payload) in &budget.status_responses {
+            let Some(facade) = self.swarm.as_mut() else {
+                break;
+            };
+            match crate::status_handshake::complete_status_handshake(
+                &mut self.status_sessions,
+                &mut self.sync,
+                &self.owner,
+                *peer,
+                payload,
+                &mut facade.requests,
+            ) {
+                Ok(Some(blocks_req)) => {
+                    facade.enqueue_blocks_outbounds(vec![blocks_req]);
+                    info!(peer0 = peer[0], "blocks-by-root staged after Status response");
+                }
+                Ok(None) => {
+                    info!(peer0 = peer[0], "Status handshake completed; heads match");
+                }
+                Err(e) => {
+                    info!(peer0 = peer[0], error = %e, "Status handshake failed");
+                }
+            }
+        }
         Ok(())
     }
 
