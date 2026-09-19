@@ -144,7 +144,18 @@ impl EtheanClient {
                     Ok(reqs) if !reqs.is_empty() => {
                         let n = reqs.len();
                         facade.enqueue_status_outbounds(reqs);
-                        info!(n, "Status outbound payloads staged for req/resp");
+                        match facade.flush_status_outbox() {
+                            Ok(sent) => info!(
+                                staged = n,
+                                sent,
+                                "Status outbound payloads flushed to req/resp"
+                            ),
+                            Err(e) => info!(
+                                staged = n,
+                                error = %e,
+                                "Status outbox staged; flush deferred"
+                            ),
+                        }
                     }
                     Ok(_) => {}
                     Err(e) => {
