@@ -41,11 +41,25 @@ even though `:9100/metrics` from the binary works.
 ### Windows: `npipe://./pipe/docker_engine` / file not found
 
 That error means the **Docker CLI is installed but the daemon is stopped**
-(Docker Desktop not running, or still starting). Fix:
+(Docker Desktop not running, still starting, or backend crash-looping). Fix:
 
-1. Start **Docker Desktop** from the Start menu.
+1. Start **Docker Desktop** from the Start menu (or
+   `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`).
 2. Wait until the tray icon reports the engine is running.
-3. Re-run `.\scripts\run-observability.ps1` (it now fails fast if the daemon is down).
+3. Re-run `.\scripts\run-observability.ps1` (it fails fast if the daemon is down).
+
+If Desktop opens but Engine never comes up, check WSL:
+
+```powershell
+wsl -l -v
+# If that fails ("cannot access the file" / similar): Admin PowerShell
+wsl --install
+# or
+wsl --update
+```
+
+Then reboot and start Docker Desktop again. Without a working WSL2 distro,
+`com.docker.backend` exits and Grafana/Prometheus never bind `:3000` / `:9090`.
 
 - Grafana: http://localhost:3000 (anonymous viewer)
 - Dashboard: **Ethean Lean Clients Dashboard**
