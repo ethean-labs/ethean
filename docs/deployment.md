@@ -15,12 +15,14 @@ Requires the workspace Rust toolchain (see `rust-toolchain.toml`). Do not use le
 ```bash
 ./target/release/ethean version
 ./target/release/ethean start
+./target/release/ethean start --ticks 3
+./target/release/ethean start --ticks 2 --wall-clock
 ```
 
-`start` loads the pinned `lstar_devnet` profile and a local smoke genesis, opens the Lean
-in-memory store schema, runs a finite duty-tick smoke loop (sync hysteresis + duty gate),
-then drains shutdown. Full gossip/QUIC and RocksDB-backed production deploy remain open gates
-(`ethean_storage::open_path` fails closed until the RocksDB bind lands).
+`start` (default) loads `lstar_devnet`, opens Lean in-memory storage, smokes `/lean/v1/health`,
+runs a finite **elapsed** duty loop, then drains. `--wall-clock` samples the system clock and
+sleeps until the next profile interval between ticks. Full gossip/QUIC swarm bind and RocksDB-backed
+production deploy remain open gates (`prepare_transport` / `open_path` fail closed; TCP/WS refused).
 
 ## Config / data
 
