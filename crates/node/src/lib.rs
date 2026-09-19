@@ -11,6 +11,8 @@ pub mod boot_network;
 pub mod chain_owner;
 pub mod cli;
 pub mod client;
+#[cfg(feature = "libp2p-quic")]
+pub mod client_swarm;
 pub mod clock;
 pub mod commands;
 pub mod crypto;
