@@ -1,0 +1,14 @@
+schema = "ethean-fixture-manifest-v1"
+phase = "13"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+status = "scaffolding"
+
+[[suites]]
+name = "release-tooling"
+authority = "tools/release"
+cases = ["repro-build", "sbom-stub", "legacy-scan"]
+
+[[suites]]
+name = "runbooks"
+authority = "docs/release"
+cases = ["gates", "upgrade", "rollback"]
