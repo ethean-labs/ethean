@@ -60,6 +60,11 @@ impl StatusSessionBook {
         self.pending.len()
     }
 
+    /// Peer fingerprints awaiting a remote Status reply.
+    pub fn pending_peers(&self) -> Vec<Hash32> {
+        self.pending.keys().copied().collect()
+    }
+
     /// Drain completed exchanges.
     pub fn take_completed(&mut self) -> Vec<StatusExchange> {
         std::mem::take(&mut self.completed)
