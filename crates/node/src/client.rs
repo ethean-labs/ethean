@@ -160,6 +160,13 @@ impl EtheanClient {
     /// Verify schema, smoke health, run the configured duty loop, record metrics.
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
         self.boot_gates().await?;
+        #[cfg(feature = "libp2p-quic")]
+        {
+            let drained = self.pump_network(8).await?;
+            if drained > 0 {
+                info!(drained, "QuicSwarm pump drained boot events");
+            }
+        }
         let events = match cfg.mode {
             RunMode::SmokeElapsed { ticks } => run_duty_loop(
                 &self.profile,
@@ -281,6 +288,20 @@ impl EtheanClient {
     #[cfg(feature = "libp2p-quic")]
     pub fn swarm_mut(&mut self) -> Option<&mut crate::network::SwarmFacade> {
         self.swarm.as_mut()
+    }
+
+    /// Drain a small budget of QuicSwarm events (non-blocking timeouts).
+    #[cfg(feature = "libp2p-quic")]
+    pub async fn pump_network(&mut self, max_events: u32) -> Result<u32> {
+        let Some(facade) = self.swarm.as_mut() else {
+            return Ok(0);
+        };
+        crate::swarm_pump::pump_swarm_budget(
+            facade,
+            max_events,
+            std::time::Duration::from_millis(2),
+        )
+        .await
     }
 
     fn finish_observability(&mut self, events: &[ChainEvent]) -> Result<()> {
