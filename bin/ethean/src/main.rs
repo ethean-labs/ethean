@@ -5,15 +5,13 @@ use ethean_node::{
     cli::{Cli, Command},
     EtheanClient,
 };
-use tracing::{error, info};
+use tracing::info;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .init();
+    tracing_subscriber::fmt::init();
 
     info!(
         "Starting Ethean Lean Consensus Client v{}",
