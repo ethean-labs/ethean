@@ -5,10 +5,14 @@ use crate::{
     clock::{clock_from_genesis, SlotClock},
     duty_loop::{run_duty_loop, DutyLoopConfig},
     events::ChainEvent,
+    observability::{smoke_health_route, NodeObservability},
     shutdown::ShutdownState,
-    Error, Result,
+    wall_tick::tick_from_wall,
+    Error, Result, VERSION,
 };
-use ethean_genesis::{local_smoke_genesis, BuiltGenesis, GenesisBuilder, GenesisError};
+use ethean_genesis::{
+    local_smoke_genesis, BuiltGenesis, FakeTime, GenesisBuilder, GenesisError,
+};
 use ethean_profile::{lstar_devnet, require_lstar_fork, ChainProfile};
 use ethean_primitives::Slot;
 use ethean_storage::Database;
@@ -25,6 +29,7 @@ pub struct EtheanClient {
     db: Database,
     sync: SyncStatus,
     shutdown: ShutdownState,
+    observability: NodeObservability,
 }
 
 impl EtheanClient {
@@ -37,6 +42,7 @@ impl EtheanClient {
 
         let clock = clock_from_genesis(&genesis, profile.clone())?;
         let db = Database::open()?;
+        let observability = NodeObservability::new(VERSION)?;
 
         info!(
             fork = profile.fork_name,
@@ -58,6 +64,7 @@ impl EtheanClient {
             db,
             sync: SyncStatus::new(Slot::new(0), Slot::new(0)),
             shutdown: ShutdownState::default(),
+            observability,
         })
     }
 
@@ -115,13 +122,37 @@ impl EtheanClient {
         &self.shutdown
     }
 
-    /// Verify schema, run a finite duty smoke loop, then stop.
+    /// Metrics / readiness view.
+    pub fn observability(&self) -> &NodeObservability {
+        &self.observability
+    }
+
+    /// Verify schema, smoke RPC health, run duty loop, record metrics.
     pub async fn start(mut self) -> Result<()> {
         self.db.verify_schema()?;
+        self.observability.mark_storage_ok();
+        self.observability.mark_crypto_ok();
+        self.observability.mark_signer_ok();
+        let health = smoke_health_route()?;
+        info!(?health, "Lean health route smoke ok");
+
+        let genesis_ms = self.clock.genesis_time_millis()?;
+        let wall = tick_from_wall(
+            &self.clock,
+            &FakeTime::new(genesis_ms),
+            self.owner.generation.max(1),
+        )?;
+        info!(
+            slot = wall.slot.get(),
+            interval = wall.interval,
+            "Wall tick at genesis boundary"
+        );
+
         info!(
             fork = self.profile.fork_name,
             syncing = self.owner.syncing,
-            "Ethean Lean Consensus client ready"
+            ready = self.observability.readiness.is_ready(),
+            "Ethean Lean Consensus client starting duty smoke"
         );
 
         let events = run_duty_loop(
@@ -135,9 +166,19 @@ impl EtheanClient {
             .iter()
             .filter(|e| matches!(e, ChainEvent::TickAccepted(_)))
             .count();
+        let head_slot = self
+            .owner
+            .last_tick
+            .map(|t| t.slot.get())
+            .unwrap_or(0);
+        self.observability
+            .record_chain(head_slot, self.sync.lag())?;
+        self.observability.refresh_ready_gauge()?;
+
         info!(
             ticks_accepted = accepted,
             events = events.len(),
+            ready = self.observability.readiness.is_ready(),
             "Duty smoke loop finished"
         );
         Ok(())
