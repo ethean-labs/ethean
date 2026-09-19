@@ -28,6 +28,10 @@ pub enum StorageError {
 
     #[error("corruption quarantined: {0}")]
     Corruption(String),
+
+    /// Durable backend not available (feature off or not wired).
+    #[error("storage backend pending: {0}")]
+    BackendPending(&'static str),
 }
 
 /// Result alias for this crate.
