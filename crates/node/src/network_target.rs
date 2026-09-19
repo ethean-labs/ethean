@@ -1,4 +1,4 @@
-//! Network target for Lean pq-devnet joins (bootnodes + label).
+//! Network target for Lean pq-devnet joins (bootnodes + label + fork digest).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -40,6 +40,8 @@ pub struct NetworkTarget {
     pub id: NetworkId,
     /// QUIC multiaddrs to dial after swarm bind.
     pub bootnodes: Vec<String>,
+    /// Optional 8-hex operator fork digest (overrides interim name hash).
+    pub fork_digest: Option<String>,
 }
 
 impl NetworkTarget {
@@ -48,11 +50,16 @@ impl NetworkTarget {
         Self {
             id: NetworkId::PqDevnet5,
             bootnodes: Vec::new(),
+            fork_digest: None,
         }
     }
 
-    /// Build from CLI network name + optional comma-separated bootnodes.
-    pub fn from_cli(network: &str, bootnodes_csv: Option<&str>) -> Result<Self, String> {
+    /// Build from CLI network name + optional bootnodes + optional fork digest.
+    pub fn from_cli(
+        network: &str,
+        bootnodes_csv: Option<&str>,
+        fork_digest: Option<&str>,
+    ) -> Result<Self, String> {
         let id = NetworkId::parse(network)?;
         let mut bootnodes = parse_bootnode_csv(bootnodes_csv.unwrap_or(""));
         if bootnodes.is_empty() {
@@ -61,9 +68,30 @@ impl NetworkTarget {
             }
         }
         if bootnodes.is_empty() && id == NetworkId::PqDevnet5 {
-            bootnodes = load_bootnodes_file(&default_bootnodes_path())?;
+            bootnodes = load_lines_file(&default_bootnodes_path())?;
         }
-        Ok(Self { id, bootnodes })
+
+        let mut digest = fork_digest
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string());
+        if digest.is_none() {
+            if let Ok(env) = std::env::var("ETHEAN_FORK_DIGEST") {
+                let t = env.trim().to_string();
+                if !t.is_empty() {
+                    digest = Some(t);
+                }
+            }
+        }
+        if digest.is_none() && id == NetworkId::PqDevnet5 {
+            digest = load_single_line_file(&default_forkdigest_path())?;
+        }
+
+        Ok(Self {
+            id,
+            bootnodes,
+            fork_digest: digest,
+        })
     }
 
     /// True when at least one dial target is configured.
@@ -84,7 +112,11 @@ fn default_bootnodes_path() -> PathBuf {
     PathBuf::from("config/networks/pq-devnet-5.bootnodes")
 }
 
-fn load_bootnodes_file(path: &Path) -> Result<Vec<String>, String> {
+fn default_forkdigest_path() -> PathBuf {
+    PathBuf::from("config/networks/pq-devnet-5.forkdigest")
+}
+
+fn load_lines_file(path: &Path) -> Result<Vec<String>, String> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -95,6 +127,11 @@ fn load_bootnodes_file(path: &Path) -> Result<Vec<String>, String> {
         .filter(|l| !l.is_empty() && !l.starts_with('#'))
         .map(|l| l.to_string())
         .collect())
+}
+
+fn load_single_line_file(path: &Path) -> Result<Option<String>, String> {
+    let lines = load_lines_file(path)?;
+    Ok(lines.into_iter().next())
 }
 
 #[cfg(test)]
@@ -113,8 +150,15 @@ mod tests {
         let t = NetworkTarget::from_cli(
             "local",
             Some("/ip4/1.2.3.4/udp/9/quic-v1, /ip4/5.6.7.8/udp/9/quic-v1"),
+            None,
         )
         .unwrap();
         assert_eq!(t.bootnodes.len(), 2);
+    }
+
+    #[test]
+    fn fork_digest_cli() {
+        let t = NetworkTarget::from_cli("local", None, Some("0xAABBCCDD")).unwrap();
+        assert_eq!(t.fork_digest.as_deref(), Some("0xAABBCCDD"));
     }
 }
