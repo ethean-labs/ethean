@@ -106,6 +106,30 @@ impl<B: CryptoBackend, S: SignerStore> Signer<B, S> {
     pub fn public_key(&self, key_id: &KeyId) -> Result<Option<PublicKey>> {
         Ok(self.store.get_key(key_id)?.map(|k| k.public_key))
     }
+
+    /// Re-verify a signature for a duty against the stored public key (fail-closed).
+    pub fn verify_duty(&self, duty: &SigningDuty, signature: &Signature) -> Result<()> {
+        let record = self
+            .store
+            .get_key(&duty.key_id)?
+            .ok_or(SignerError::KeyNotFound)?;
+        if record.role != duty.role {
+            return Err(SignerError::CrossRoleKeyUse);
+        }
+        if duty.slot < record.activation_slot
+            || duty.slot >= record.activation_slot.saturating_add(record.num_active_slots)
+        {
+            return Err(SignerError::LifetimeExhausted);
+        }
+        verify(
+            self.backend.as_ref(),
+            &record.public_key,
+            duty.slot,
+            duty.root.as_bytes(),
+            signature,
+        )
+        .map_err(|e| SignerError::Crypto(e.to_string()))
+    }
 }
 
 /// Helper to build a key record from backend keygen.
@@ -195,5 +219,22 @@ mod tests {
             root: SigningRoot::from_bytes([7u8; 32]),
         };
         assert_eq!(s.sign_duty(duty).unwrap_err(), SignerError::CrossRoleKeyUse);
+    }
+
+    #[test]
+    fn verify_duty_roundtrip() {
+        let mut s = setup();
+        let duty = SigningDuty {
+            key_id: KeyId::from_bytes([1u8; 16]),
+            role: SigningRole::Attestation,
+            slot: 3,
+            root: SigningRoot::from_bytes([5u8; 32]),
+        };
+        let sig = s.sign_duty(duty.clone()).unwrap();
+        s.verify_duty(&duty, &sig).unwrap();
+        let mut bad = sig.as_bytes().to_vec();
+        bad[0] ^= 0xff;
+        let bad_sig = Signature::try_from_slice(&bad).unwrap();
+        assert!(s.verify_duty(&duty, &bad_sig).is_err());
     }
 }
