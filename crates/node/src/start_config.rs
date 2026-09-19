@@ -35,7 +35,7 @@ impl Default for RunMode {
 pub struct StartConfig {
     /// Duty run mode.
     pub mode: RunMode,
-    /// Network label + bootnodes (default pq-devnet-5).
+    /// Network label + bootnodes (default pq-devnet-4).
     pub network: NetworkTarget,
 }
 
@@ -43,17 +43,17 @@ impl Default for StartConfig {
     fn default() -> Self {
         Self {
             mode: RunMode::default(),
-            network: NetworkTarget::pq_devnet_5(),
+            network: NetworkTarget::pq_devnet_4(),
         }
     }
 }
 
 impl StartConfig {
-    /// Smoke elapsed loop with `ticks` intervals (pq-devnet-5 label).
+    /// Smoke elapsed loop with `ticks` intervals (pq-devnet-4 label).
     pub fn smoke(ticks: u32) -> Self {
         Self {
             mode: RunMode::SmokeElapsed { ticks },
-            network: NetworkTarget::pq_devnet_5(),
+            network: NetworkTarget::pq_devnet_4(),
         }
     }
 
@@ -64,7 +64,7 @@ impl StartConfig {
                 ticks,
                 enable_sleep,
             },
-            network: NetworkTarget::pq_devnet_5(),
+            network: NetworkTarget::pq_devnet_4(),
         }
     }
 
@@ -72,7 +72,7 @@ impl StartConfig {
     pub fn until_signal(enable_sleep: bool) -> Self {
         Self {
             mode: RunMode::UntilSignal { enable_sleep },
-            network: NetworkTarget::pq_devnet_5(),
+            network: NetworkTarget::pq_devnet_4(),
         }
     }
 
@@ -89,10 +89,10 @@ mod tests {
     use crate::network_target::NetworkId;
 
     #[test]
-    fn defaults_to_smoke_five_on_pq_devnet_5() {
+    fn defaults_to_smoke_five_on_pq_devnet_4() {
         let cfg = StartConfig::default();
         assert_eq!(cfg.mode, RunMode::SmokeElapsed { ticks: 5 });
-        assert_eq!(cfg.network.id, NetworkId::PqDevnet5);
+        assert_eq!(cfg.network.id, NetworkId::PqDevnet4);
     }
 
     #[test]
@@ -101,5 +101,11 @@ mod tests {
             StartConfig::until_signal(true).mode,
             RunMode::UntilSignal { enable_sleep: true }
         ));
+    }
+
+    #[test]
+    fn with_network_keeps_pq_devnet_5_ready() {
+        let cfg = StartConfig::smoke(1).with_network(NetworkTarget::pq_devnet_5());
+        assert_eq!(cfg.network.id, NetworkId::PqDevnet5);
     }
 }
