@@ -1,0 +1,10 @@
+# pq-devnet-4 fork digest (optional)
+#
+# One 8-hex-character operator fork digest for Lean gossip topics.
+# Leave empty / commented to use the interim name-hash segment.
+# Example (replace with the active run digest):
+# aabbccdd
+#
+# Also accepted via:
+#   ethean start --network pq-devnet-4 --fork-digest aabbccdd
+#   ETHEAN_FORK_DIGEST=aabbccdd
