@@ -28,10 +28,7 @@ pub fn prove_type2(statement: &AggregateStatement) -> Result<Vec<u8>> {
 fn prove_bound(statement: &AggregateStatement) -> Result<Vec<u8>> {
     #[cfg(feature = "leanvm-backend")]
     {
-        let _ = statement;
-        Err(CryptoError::BackendUnavailable(
-            "leanvm-backend feature selected but FFI not wired; refuse fake proofs",
-        ))
+        crate::backend_leanvm::prove(statement)
     }
     #[cfg(all(not(feature = "leanvm-backend"), feature = "test-aggregate"))]
     {
