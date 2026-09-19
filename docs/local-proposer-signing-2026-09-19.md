@@ -28,6 +28,6 @@ cargo test -p ethean-node --lib
 
 ## Still open
 
-- Fold proposer sig + attestation aggregates into a real leanVM Type-2 envelope
-- Production leanSig backend (`leansig-backend` feature) instead of test-hmac smoke keys
-- leanVM FFI so non-empty Type-2 proofs verify on ingest
+- Link real leanVM FFI (`LEANVM_FFI_LINKED`) and drop reliance on `test-aggregate` for smoke
+- Production leanSig backend (`leansig-backend`) for proposer keys
+- Include proposer XMSS bytes inside the Type-2 merge once leanMultisig params settle
