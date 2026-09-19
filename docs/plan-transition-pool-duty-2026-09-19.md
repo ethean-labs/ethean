@@ -31,7 +31,6 @@ cargo test -p ethean-node --lib
 
 ## Still open
 
-- Invoke `flush_pending_block_gossip` automatically each wall tick when pending
 - XMSS/proposer signing into the Type-2 envelope (pool proof is still best-effort bytes)
 - leanVM FFI so verified gossip STF can accept non-empty proofs
 - leanSig clean git dependency
