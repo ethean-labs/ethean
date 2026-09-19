@@ -1,0 +1,16 @@
+[package]
+name = "ethean-sync"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Lean Consensus sync protocols (Phase 11)"
+
+[dependencies]
+ethean-primitives = { workspace = true }
+thiserror = { workspace = true }
+
+[lib]
+name = "ethean_sync"
+path = "src/lib.rs"
