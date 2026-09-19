@@ -17,6 +17,7 @@ use ethean_profile::{lstar_devnet, require_lstar_fork, ChainProfile};
 use ethean_storage::Database;
 use ethean_sync::SyncStatus;
 use ethean_types::State;
+use ethean_validator::SYNC_LAG_THRESHOLD_SLOTS;
 use tracing::info;
 
 /// Main Ethean Lean Consensus client.
@@ -68,7 +69,7 @@ impl EtheanClient {
             "Loaded chain profile and genesis"
         );
 
-        let mut owner = ChainOwner::new(32);
+        let mut owner = ChainOwner::new(SYNC_LAG_THRESHOLD_SLOTS);
         owner.generation = 1;
         owner.head_state = Some(genesis.clone());
         owner.profile = Some(profile.clone());
