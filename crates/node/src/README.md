@@ -1,5 +1,9 @@
 # ethean-node sources
 
-Library modules for the Ethean Lean Consensus node (Phase 02 workspace layout).
+Lean Consensus node library modules. Production binary: `bin/ethean`.
 
-The production binary is `bin/ethean`. Prefer `ethean_primitives::{Slot, Epoch, ValidatorIndex, Hash32}` and `ethean_profile::ChainProfile` over local aliases or hard-coded consensus constants.
+Active modules: `aggregation`, `block_builder`, `chain_owner`, `cli`, `client`, `clock`,
+`commands`, `crypto`, `events`, `network` (re-exports `ethean-network`), `shutdown`.
+
+Prefer `ethean_primitives` and `ethean_profile` over hard-coded consensus constants.
+Beacon-era trees under this crate were deleted after Lean crate cutovers.
