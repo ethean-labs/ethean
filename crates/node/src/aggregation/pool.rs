@@ -81,6 +81,11 @@ impl AggregatePool {
         self.entries.is_empty()
     }
 
+    /// All retained variants for a key (insertion order).
+    pub fn variants(&self, key: &PoolKey) -> Option<Vec<PoolEntry>> {
+        self.entries.get(key).map(|v| v.clone())
+    }
+
     /// Best-coverage entry per key, sorted by message root for deterministic builds.
     pub fn best_entries(&self) -> Vec<(PoolKey, PoolEntry)> {
         let mut out: Vec<(PoolKey, PoolEntry)> = self
