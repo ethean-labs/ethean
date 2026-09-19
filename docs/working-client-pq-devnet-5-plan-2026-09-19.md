@@ -22,9 +22,9 @@ pq-devnet-5 is **in progress** on [leanroadmap.org](https://leanroadmap.org/) (n
 
 ## Follow-ups
 
-- Pin genesis fork digest to leanSpec (replace interim SHA-256 fork segment)
+- ~~Pin genesis fork digest to leanSpec (replace interim SHA-256 fork segment)~~ — **override path landed** (`--fork-digest` / env / file); still need the operator/leanSpec pin value for a live run.
 - leanSig + leanVM production gates
-- Status / blocks-by-root sync against dialed peers
+- Status / blocks-by-root **stream** exchange against dialed peers (local Status + observe helpers ready)
 - Goldfish only when leanSpec for the run requires it
 
 ## How to run (summary)
