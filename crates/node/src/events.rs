@@ -14,6 +14,8 @@ pub enum ChainEvent {
     DutySuppressed { tick: DutyTick, reason: SuppressReason },
     /// Head advanced after local import.
     HeadUpdated { root: Hash32, slot: u64 },
+    /// Syncing flag changed on the chain owner.
+    SyncingUpdated(bool),
     /// Shutdown acknowledged; no new duties.
     ShutdownComplete,
 }
