@@ -18,8 +18,8 @@ pub use admission::{admit, MAX_INBOUND_PEERS, MAX_OUTBOUND_PEERS, MAX_PEERS_PER_
 pub use dial::{dial_quic_pending, probe_udp_status, UdpDialProbe};
 pub use error::{NetworkError, Result};
 pub use gossip::{
-    decode_gossip, delta_for, encode_gossip, validate_gossip_payload, GossipAction,
-    LeanGossipTopics, SCORE_ACCEPT, SCORE_IGNORE, SCORE_REJECT,
+    decode_gossip, delta_for, encode_gossip, validate_gossip_payload, GossipAction, GossipIngress,
+    LeanGossipTopics, PumpEvent, SCORE_ACCEPT, SCORE_IGNORE, SCORE_REJECT,
 };
 pub use identity::NodeIdentity;
 pub use multiaddr::{parse_quic_udp, QuicUdpAddr};
