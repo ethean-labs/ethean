@@ -18,7 +18,15 @@ tokio = { workspace = true, optional = true }
 [features]
 default = []
 # Real libp2p QUIC-v1 swarm (no TCP/WS listen path in our API).
-libp2p-quic = ["dep:libp2p", "dep:tokio", "libp2p/quic", "libp2p/tokio", "libp2p/ping", "libp2p/macros"]
+libp2p-quic = [
+    "dep:libp2p",
+    "dep:tokio",
+    "libp2p/quic",
+    "libp2p/tokio",
+    "libp2p/ping",
+    "libp2p/macros",
+    "libp2p/gossipsub",
+]
 
 [lib]
 name = "ethean_network"
