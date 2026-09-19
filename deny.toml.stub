@@ -1,0 +1,4 @@
+# deny.toml (stub)
+
+License/advisory policy for `cargo deny check` will be filled when SBOM CI is enabled.
+Until then, `tools/release/sbom.*` records the Cargo.lock fingerprint only.
