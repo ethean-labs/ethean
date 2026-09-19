@@ -17,6 +17,8 @@ mod quic_framed;
 #[cfg(feature = "libp2p-quic")]
 pub mod quic_blocks_codec;
 #[cfg(feature = "libp2p-quic")]
+pub mod quic_range_codec;
+#[cfg(feature = "libp2p-quic")]
 pub mod quic_status_codec;
 pub mod reqresp;
 pub mod swarm;
