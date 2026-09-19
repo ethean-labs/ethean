@@ -1,7 +1,7 @@
 //! Chain owner: sole writer of transition, fork choice, and import status.
 
 use crate::aggregation::AggregatePool;
-use crate::block_builder::PlanTransition;
+use crate::block_builder::{PlanTransition, ProposalGossip};
 use ethean_primitives::{Hash32, Slot};
 use ethean_profile::ChainProfile;
 use ethean_types::State;
@@ -51,6 +51,8 @@ pub struct ChainOwner {
     pub planned_proposal: Option<PlanTransition>,
     /// Tick that produced `planned_proposal`, if any.
     pub planned_tick: Option<DutyTick>,
+    /// Encoded SignedBlock waiting for network gossip publish.
+    pub pending_block_gossip: Option<ProposalGossip>,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
 }
