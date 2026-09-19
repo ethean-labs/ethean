@@ -1,17 +1,26 @@
-# Start defaults to pq-devnet-5 network label (2026-09-19)
+# Start network target notes (pq-devnet-5 ready path)
 
-## Behaviour
+Date: 2026-09-19 (superseded default: 2026-09-20)
 
-- `ethean start` defaults `--network pq-devnet-5`.
-- Bootnodes from `--bootnodes`, `ETHEAN_BOOTNODES`, or `config/networks/pq-devnet-5.bootnodes`.
-- Empty list → WARN + offline local duties (verified with `cargo run -p ethean -- start --ticks 1`).
-- Binary feature `libp2p-quic` is on by default; QuicSwarm binds and can dial when multiaddrs exist.
+## Current default (2026-09-20)
 
-## Docs
+CLI default is **`pq-devnet-4`**. See
+[default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](./default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md).
 
-- Root README Quick Start rewritten (removed Beacon/`Ethean monitor` fiction).
-- `docs/deployment.md` + working-client plan updated.
+## pq-devnet-5 ready path (still supported)
 
-## Still required for real mesh join
+- `ethean start --network pq-devnet-5`
+- Bootnodes from `--bootnodes`, `ETHEAN_BOOTNODES`, or `config/networks/pq-devnet-5.bootnodes`
+- Fork digest from `--fork-digest`, `ETHEAN_FORK_DIGEST`, or `config/networks/pq-devnet-5.forkdigest`
+- Helper: `scripts/run-pq-devnet-5.sh` / `.ps1`
+- Empty list → WARN + offline local duties under the D5 label
+
+## Historical note (2026-09-19)
+
+Earlier builds briefly defaulted `--network` to `pq-devnet-5` before it was clear
+no public D5 mesh was joinable. That default was rolled to D4; D5 code and docs
+remain as the explicit ready path.
+
+## Still required for a real D5 mesh join
 
 Operator multiaddrs + matching leanSpec fork digest + production leanSig/leanVM gates.
