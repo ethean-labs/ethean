@@ -224,6 +224,8 @@ impl EtheanClient {
         info!(
             leanvm_feature = leanvm_gate.feature_enabled,
             leanvm_ffi = leanvm_gate.ffi_linked,
+            leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
+            leanvm_ipc_ready = leanvm_gate.ipc_protocol_ready,
             leanvm_pin = leanvm_gate.pinned_rev,
             leansig_feature = leansig_gate.feature_enabled,
             leansig_pin = leansig_gate.pinned_rev,
