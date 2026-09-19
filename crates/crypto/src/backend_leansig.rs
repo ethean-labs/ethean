@@ -6,7 +6,7 @@ use leansig::signature::generalized_xmss::instantiations_aborting::lifetime_2_to
 };
 use leansig::signature::SignatureScheme;
 use rand::rngs::StdRng;
-use rand::SeedableRng;
+use rand::{RngCore, SeedableRng};
 
 use crate::error::{CryptoError, Result};
 use crate::signature::{PublicKey, Signature};
@@ -26,7 +26,9 @@ pub fn key_gen(
              (requested {num_active_epochs})"
         )));
     }
-    let mut rng = StdRng::from_os_rng();
+    let mut seed = [0u8; 32];
+    rand::rng().fill_bytes(&mut seed);
+    let mut rng = StdRng::from_seed(seed);
     let (pk, sk) = ProdScheme::key_gen(
         &mut rng,
         activation_epoch as usize,
