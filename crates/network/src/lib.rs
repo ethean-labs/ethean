@@ -24,6 +24,7 @@ pub mod quic_range_codec;
 pub mod quic_status_codec;
 pub mod reqresp;
 pub mod swarm;
+mod swarm_range;
 pub mod transport;
 
 pub use admission::{admit, MAX_INBOUND_PEERS, MAX_OUTBOUND_PEERS, MAX_PEERS_PER_IP};
