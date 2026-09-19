@@ -5,10 +5,16 @@ target
 !.github/workflows/**
 .rules
 .cursor/
-bazalinacaklar
+# Local research only — never commit or push (see .cursor/rules/12-no-research-on-github.mdc)
+bazalinacaklar/
+bazalinacaklar/**
+**/bazalinacaklar/**
 # Extra research scratch (never push peer clones or extracts)
 **/peer-repos/
 **/peer-client-library/
+**/peer-client-library/**
 **/*-link-index-*.md
+**/peer-audit*.md
 notlar.txt
+*.research.md
 

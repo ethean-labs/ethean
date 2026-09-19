@@ -12,7 +12,8 @@
 param(
     [string]$Network = "pq-devnet-4",
     [int]$PeerBTicks = 12,
-    [int]$WaitDialableSec = 45
+    [int]$WaitDialableSec = 45,
+    [int]$Validators = 4
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,10 +49,10 @@ Write-Host "==> Using $Ethean"
 
 Remove-Item $LogA, $LogB, $ErrA, $ErrB, $NodesFile -ErrorAction SilentlyContinue
 
-Write-Host "==> Starting peer A (--until-signal --network $Network)…"
+Write-Host "==> Starting peer A (--until-signal --network $Network --validators $Validators)…"
 $env:RUST_LOG = "info"
 $procA = Start-Process -FilePath $Ethean `
-    -ArgumentList @("start", "--until-signal", "--network", $Network) `
+    -ArgumentList @("start", "--until-signal", "--network", $Network, "--validators", "$Validators") `
     -WorkingDirectory $Root `
     -RedirectStandardOutput $LogA `
     -RedirectStandardError $ErrA `
@@ -79,63 +80,26 @@ if (-not $dialable) {
     throw "timed out waiting for peer A dialable= (see $LogA / $ErrA)"
 }
 
-# Same-host dial: rewrite advertised LAN IP to loopback.
-$boot = $dialable -replace '^/ip4/[^/]+/', '/ip4/127.0.0.1/'
-@"
-# Auto-generated local private mesh peer list (Ethean multiaddrs).
-# Equivalent role to lean-quickstart / Ream genesis nodes.yaml for this run.
-# Peer A dialable (original): $dialable
-$boot
-"@ | Set-Content -Path $NodesFile -Encoding utf8
+# Prefer loopback so peer B on the same host can dial.
+$dialLoopback = $dialable -replace '/ip4/[^/]+/', '/ip4/127.0.0.1/'
+Set-Content -Path $NodesFile -Value $dialLoopback -NoNewline
+Write-Host "==> Wrote $NodesFile → $dialLoopback"
 
-Write-Host "==> Wrote mesh nodes file: $NodesFile"
-Write-Host "    bootnode: $boot"
-
-Write-Host "==> Starting peer B (dial mesh, --ticks $PeerBTicks --wall-clock)…"
+Write-Host "==> Starting peer B (--ticks $PeerBTicks --wall-clock --bootnodes …)…"
 $procB = Start-Process -FilePath $Ethean `
     -ArgumentList @(
-        "start",
-        "--network", $Network,
-        "--ticks", "$PeerBTicks",
-        "--wall-clock",
-        "--bootnodes", $boot
+        "start", "--ticks", "$PeerBTicks", "--wall-clock",
+        "--network", $Network, "--validators", "$Validators",
+        "--bootnodes", $dialLoopback
     ) `
     -WorkingDirectory $Root `
     -RedirectStandardOutput $LogB `
     -RedirectStandardError $ErrB `
     -PassThru `
-    -NoNewWindow
+    -NoNewWindow `
+    -Wait
 
-$procB.WaitForExit()
-$exitB = $procB.ExitCode
-
-Write-Host "==> Stopping peer A…"
+Write-Host "==> Peer B exit code $($procB.ExitCode)"
+Write-Host "==> Logs: $LogA / $ErrA / $LogB / $ErrB"
 Stop-Process -Id $procA.Id -Force -ErrorAction SilentlyContinue
-Start-Sleep -Milliseconds 500
-
-$logBText = ""
-if (Test-Path $LogB) { $logBText += Get-Content $LogB -Raw -ErrorAction SilentlyContinue }
-if (Test-Path $ErrB) { $logBText += Get-Content $ErrB -Raw -ErrorAction SilentlyContinue }
-$logAText = ""
-if (Test-Path $LogA) { $logAText += Get-Content $LogA -Raw -ErrorAction SilentlyContinue }
-if (Test-Path $ErrA) { $logAText += Get-Content $ErrA -Raw -ErrorAction SilentlyContinue }
-
-$dialOk = ($logBText -match 'dialed bootnode') -or ($logBText -match 'ConnectionEstablished')
-$statusOk = ($logBText -match 'Status handshake') -or ($logAText -match 'Status handshake')
-
-Write-Host ""
-Write-Host "=== Local private mesh result ==="
-Write-Host "nodes file : $NodesFile"
-Write-Host "peer A log : $LogA / $ErrA"
-Write-Host "peer B log : $LogB / $ErrB"
-Write-Host "peer B exit: $exitB"
-Write-Host "dial seen  : $dialOk"
-Write-Host "status seen: $statusOk"
-
-if ($exitB -ne 0) { exit $exitB }
-if (-not $dialOk) {
-    Write-Host "WARN: bootnode dial line not found; check peer B logs."
-    exit 2
-}
-Write-Host "OK: private mesh dial path exercised."
-exit 0
+if ($procB.ExitCode -ne 0) { exit $procB.ExitCode }

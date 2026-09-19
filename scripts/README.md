@@ -31,8 +31,8 @@ Do not use a separate `install.sh` / `cargo install` step for day-to-day runs.
 
 | Script | Target | Notes |
 | --- | --- | --- |
-| `run-local-finality.sh` / `.ps1` | **Solo finality** | Recent genesis, validators, self-apply; optional `-MetricsStack` |
 | `run-pq-devnet-4.sh` / `.ps1` | **Operational default** | Long-run `--until-signal`, `/metrics` on `:9100` |
+| `run-local-finality.sh` / `.ps1` | **Solo finality** | Recent genesis, 4 validators, aggregator on |
 | `run-pq-devnet-5.sh` / `.ps1` | Ready path | Same binary; needs operator D5 multiaddrs |
 | `local-pq-mesh.sh` / `.ps1` | **Private mesh** | 2 peers; writes `target/local-pq-mesh/nodes.multiaddrs` then dials it |
 | `run-observability.sh` / `.ps1` | **Grafana + Prometheus** | Scrapes host `:9100`; UI on `:3000` / `:9090` |

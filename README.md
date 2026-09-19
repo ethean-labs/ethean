@@ -112,33 +112,35 @@ places a shim in `~/.cargo/bin`; no `install.sh` step.
 
 ### Run (default: pq-devnet-4, local finality on)
 
-Solo long-run now **advances head** (recent genesis, 4 validators, aggregator +
-self-apply). You do **not** need public bootnodes for Grafana slot panels to move.
+Solo long-run advances **head / justified / finalized** without public bootnodes
+(recent genesis, 4 validators, aggregator + local self-apply). Use `--until-signal`
+so the process stays up for Grafana.
 
 ```bash
 ethean version
+# Long-run (recommended) — Ctrl-C to stop
 ethean start --until-signal --network pq-devnet-4
-ethean start --until-signal --network pq-devnet-4 --validators 4 --metrics
-ethean start --until-signal --network pq-devnet-5   # same local finality; label only
+ethean start --until-signal --network pq-devnet-5 --validators 4
+# Short smoke
+ethean start --ticks 3
+ethean start --ticks 2 --wall-clock
+ethean start --network local
+# Opt out of local finality / aggregator if needed
+ethean start --until-signal --no-local-finality --no-aggregator
 ```
 
-Disable local finality only when joining a real operator mesh:
-
-```bash
-ethean start --until-signal --network pq-devnet-4 --no-local-finality --bootnodes '…'
-```
-
-Helpers:
+Helpers (build + long-run):
 
 ```bash
 # Unix
-./scripts/run-local-finality.sh
+./scripts/run-pq-devnet-4.sh
+./scripts/run-local-finality.sh          # same defaults; NETWORK=… VALIDATORS=…
 METRICS_STACK=1 ./scripts/run-local-finality.sh
 
 # Windows PowerShell
+.\scripts\run-pq-devnet-4.ps1
 .\scripts\run-local-finality.ps1
 .\scripts\run-local-finality.ps1 -MetricsStack
-.\scripts\run-pq-devnet-4.ps1
 ```
 
 Paste D4 QUIC multiaddrs into `config/networks/pq-devnet-4.bootnodes` (or pass
@@ -427,6 +429,9 @@ ethean start --until-signal --network pq-devnet-5 --metrics
 | `--metrics-port` | `9100` | Bind port (must match Prometheus scrape) |
 | `--until-signal` | off | Long-run until Ctrl-C |
 | `--network` | `pq-devnet-4` | Network label |
+| `--validators` | `4` | Local registry size (recent genesis) |
+| `--no-aggregator` | off | Disable aggregator role (default **on**) |
+| `--no-local-finality` | off | Disable solo head/finality advance (default **on**) |
 
 Manual stack only (if you prefer not to use `--metrics`):
 
@@ -442,17 +447,6 @@ Manual stack only (if you prefer not to use `--metrics`):
 | Dashboard | **Ethean Lean Clients Dashboard** (folder Ethean) |
 | Prometheus UI | [http://localhost:9090](http://localhost:9090) |
 | Prometheus targets | [http://localhost:9090/targets](http://localhost:9090/targets) (`ethean` / `ethean-localhost` → UP) |
-
-Docker Desktop / WSL errors (`wsl.exe` exit 1, “Sistem dosyaya erişemiyor”) mean the
-**compose stack** cannot start — not that Ethean is broken. Details:
-[docs/docker-desktop-wsl-execerror-2026-09-20.md](docs/docker-desktop-wsl-execerror-2026-09-20.md).
-Quit Docker Desktop,
-`wsl --shutdown`, start Docker again (or `wsl --update`). Meanwhile watch the node with:
-
-```bash
-curl -s http://127.0.0.1:9100/healthz
-curl -s http://127.0.0.1:9100/metrics | findstr ethean_head_slot
-```
 | Node scrape | [http://127.0.0.1:9100/metrics](http://127.0.0.1:9100/metrics) |
 
 Healthy long-run: `ethean_slot_current` and `ethean_head_slot` climb; justified /
