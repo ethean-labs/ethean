@@ -82,10 +82,17 @@ impl QuicSwarm {
             .map_err(|e| NetworkError::Handshake(format!("swarm dial: {e}")))
     }
 
-    /// Drive the swarm until the next event (tests / local run loops only).
-    #[allow(dead_code)]
-    async fn next_event(&mut self) -> SwarmEvent<LeanBehaviourEvent> {
-        self.swarm.select_next_some().await
+    /// Pump one swarm event for gossip / duty loops (opaque kind label).
+    pub async fn pump_once(&mut self) -> &'static str {
+        match self.swarm.select_next_some().await {
+            SwarmEvent::ConnectionEstablished { .. } => "connection_established",
+            SwarmEvent::ConnectionClosed { .. } => "connection_closed",
+            SwarmEvent::OutgoingConnectionError { .. } => "outgoing_error",
+            SwarmEvent::IncomingConnectionError { .. } => "incoming_error",
+            SwarmEvent::NewListenAddr { .. } => "new_listen_addr",
+            SwarmEvent::Behaviour(_) => "behaviour",
+            _ => "other",
+        }
     }
 }
 
