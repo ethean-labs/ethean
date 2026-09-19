@@ -67,6 +67,7 @@ Planning session summaries:
 - [Remote proposer sidecar verify on gossip](./remote-proposer-sidecar-verify-2026-09-19.md)
 - [Working-client pq-devnet-5 plan](./working-client-pq-devnet-5-plan-2026-09-19.md)
 - [Start pq-devnet-5 network target](./start-pq-devnet-5-network-target-2026-09-19.md)
+- [Fork digest override and local Status](./fork-digest-local-status-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
