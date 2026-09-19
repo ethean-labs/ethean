@@ -26,7 +26,10 @@ pub use multiaddr::{parse_quic_udp, QuicUdpAddr};
 pub use peer_manager::{PeerManager, PeerRecord};
 #[cfg(feature = "libp2p-quic")]
 pub use quic_swarm::QuicSwarm;
-pub use reqresp::{handle_status, RequestTracker, StatusExchange};
+pub use reqresp::{
+    blocks_by_root_for_status_gap, blocks_by_root_protocol_id, encode_blocks_by_root, handle_status,
+    RequestTracker, StatusExchange, StatusSessionBook,
+};
 pub use swarm::SwarmFacade;
 pub use transport::{
     dial_quic, prepare_transport, reject_non_quic, BoundTransport, TransportConfig,
