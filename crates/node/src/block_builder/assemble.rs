@@ -15,6 +15,8 @@ pub struct ProposalGossip {
     pub payload: Vec<u8>,
     /// Tree root of the inner block (not the signed envelope).
     pub block_root: Hash32,
+    /// Proposal slot (for blocks-by-range serve cache).
+    pub slot: u64,
     /// True when the envelope carries a non-empty pool Type-2 proof.
     pub has_type2_proof: bool,
     /// Length of the local proposer signature when present (sidecar; not in Type-2).
@@ -47,6 +49,7 @@ pub fn encode_proposal_gossip(
         topic: topics.block,
         payload,
         block_root,
+        slot: plan.block.slot.get(),
         has_type2_proof: !plan.aggregate_proof.is_empty(),
         proposer_sig_len: plan
             .proposer_signature
