@@ -19,7 +19,7 @@ ethean-types = { workspace = true }
 ethean-genesis = { workspace = true }
 ethean-transition = { workspace = true }
 ethean-fork-choice = { workspace = true }
-ethean-crypto = { workspace = true }
+ethean-crypto = { workspace = true, features = ["test-hmac"] }
 ethean-validator = { workspace = true }
 
 tokio = { workspace = true }

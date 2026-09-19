@@ -1342,6 +1342,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethean-metrics"
+version = "0.1.0"
+dependencies = [
+ "ethean-primitives",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "ethean-network"
+version = "0.1.0"
+dependencies = [
+ "ethean-network-wire",
+ "ethean-primitives",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "ethean-network-wire"
+version = "0.1.0"
+dependencies = [
+ "ethean-primitives",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "ethean-node"
 version = "0.1.0"
 dependencies = [
@@ -1352,6 +1377,7 @@ dependencies = [
  "blstrs",
  "clap",
  "config",
+ "ethean-crypto",
  "ethean-fork-choice",
  "ethean-genesis",
  "ethean-primitives",
@@ -1359,6 +1385,7 @@ dependencies = [
  "ethean-ssz",
  "ethean-transition",
  "ethean-types",
+ "ethean-validator",
  "futures",
  "futures-util",
  "hyper",
@@ -1400,10 +1427,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethean-rpc"
+version = "0.1.0"
+dependencies = [
+ "ethean-primitives",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "ethean-ssz"
 version = "0.1.0"
 dependencies = [
  "sha2",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "ethean-storage"
+version = "0.1.0"
+dependencies = [
+ "ethean-primitives",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "ethean-sync"
+version = "0.1.0"
+dependencies = [
+ "ethean-primitives",
  "thiserror 1.0.69",
 ]
 
