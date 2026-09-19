@@ -4,7 +4,7 @@ use crate::chain_owner::ChainOwner;
 use crate::gossip_decode::DecodedBlockGossip;
 use crate::shutdown::{ShutdownPhase, ShutdownState};
 use ethean_primitives::Hash32;
-use ethean_transition::{apply_block_unverified, TransitionContext};
+use ethean_transition::{apply_block, apply_block_unverified, TransitionContext};
 
 /// Outcome of attempting to import a decoded gossip block.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,11 +15,13 @@ pub enum GossipStfResult {
     RootOnly { root: Hash32 },
     /// `apply_block_unverified` updated head state and root.
     Applied { root: Hash32 },
+    /// Verified `apply_block(SignedBlock)` updated head state and root.
+    AppliedVerified { root: Hash32 },
     /// Local state present but transition failed; head unchanged.
     Rejected,
 }
 
-/// Import a decoded block: STF when possible, else root-only tip advance.
+/// Import a decoded block: verified STF when a proof is present, else structural.
 pub fn import_decoded_block(
     owner: &mut ChainOwner,
     shutdown: &ShutdownState,
@@ -40,6 +42,21 @@ pub fn import_decoded_block(
     };
 
     let ctx = TransitionContext::new(profile);
+    if let Some(signed) = &decoded.signed {
+        if !signed.proof.proof.is_empty() {
+            return match apply_block(&pre, signed, &ctx) {
+                Ok(out) => {
+                    owner.head_state = Some(out.post_state);
+                    owner.head_root = decoded.root;
+                    GossipStfResult::AppliedVerified {
+                        root: decoded.root,
+                    }
+                }
+                Err(_) => GossipStfResult::Rejected,
+            };
+        }
+    }
+
     match apply_block_unverified(&pre, &decoded.block, &ctx) {
         Ok(out) => {
             owner.head_state = Some(out.post_state);
@@ -117,6 +134,7 @@ mod tests {
             root,
             parent: parent_root,
             block,
+            signed: None,
         };
         assert_eq!(
             import_decoded_block(&mut owner, &shutdown, &decoded),
@@ -143,11 +161,49 @@ mod tests {
             root,
             parent: [1u8; 32],
             block,
+            signed: None,
         };
         assert_eq!(
             import_decoded_block(&mut owner, &shutdown, &decoded),
             GossipStfResult::RootOnly { root }
         );
         assert!(owner.head_state.is_none());
+    }
+
+    #[test]
+    fn rejects_signed_block_with_bad_proof_when_state_present() {
+        use ethean_types::{MultiMessageAggregate, SignedBlock};
+
+        let pre = sample_state(2);
+        let mut owner = ChainOwner::new(2);
+        owner.head_root = [1u8; 32];
+        owner.head_state = Some(pre);
+        owner.profile = Some(lstar_devnet().unwrap());
+        let shutdown = ShutdownState::default();
+        let block = Block {
+            slot: Slot::new(1),
+            proposer_index: ValidatorIndex::new(0),
+            parent_root: [1u8; 32],
+            state_root: [7u8; 32],
+            body: BlockBody::default(),
+        };
+        let root = block.hash_tree_root().unwrap();
+        let signed = SignedBlock {
+            block: block.clone(),
+            proof: MultiMessageAggregate {
+                proof: vec![1, 2, 3, 4],
+            },
+        };
+        let decoded = DecodedBlockGossip {
+            root,
+            parent: [1u8; 32],
+            block,
+            signed: Some(signed),
+        };
+        assert_eq!(
+            import_decoded_block(&mut owner, &shutdown, &decoded),
+            GossipStfResult::Rejected
+        );
+        assert_eq!(owner.head_root, [1u8; 32]);
     }
 }
