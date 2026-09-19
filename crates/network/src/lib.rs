@@ -42,9 +42,10 @@ pub use reqresp::{
     blocks_by_range_for_status_gap, blocks_by_range_protocol_id, blocks_by_root_for_roots,
     blocks_by_root_for_status_gap, blocks_by_root_protocol_id, decode_blocks_by_range,
     decode_blocks_by_root_response, encode_blocks_by_range, encode_blocks_by_root,
-    encode_blocks_by_root_response, handle_status, prepare_blocks_by_root_for_roots,
-    prepare_blocks_by_root_outbound, prepare_status_outbounds, OutboundBlocksByRootRequest,
-    OutboundStatusRequest, RequestId, RequestTracker, StatusExchange, StatusSessionBook,
+    encode_blocks_by_root_response, handle_status, prepare_blocks_by_range_outbound,
+    prepare_blocks_by_root_for_roots, prepare_blocks_by_root_outbound, prepare_status_outbounds,
+    OutboundBlocksByRangeRequest, OutboundBlocksByRootRequest, OutboundStatusRequest, RequestId,
+    RequestTracker, StatusExchange, StatusSessionBook,
 };
 pub use swarm::SwarmFacade;
 pub use transport::{
