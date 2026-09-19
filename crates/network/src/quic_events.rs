@@ -95,6 +95,53 @@ impl QuicSwarm {
             .send_response(channel, payload);
     }
 
+    pub(crate) fn handle_blocks_by_range_event(
+        &mut self,
+        ev: request_response::Event<Vec<u8>, Vec<u8>>,
+    ) -> PumpEvent {
+        match ev {
+            request_response::Event::Message { peer, message } => match message {
+                request_response::Message::Request {
+                    request, channel, ..
+                } => {
+                    self.reply_blocks_by_range(&request, channel);
+                    PumpEvent::BlocksByRangeRequest {
+                        peer: peer_fingerprint(&peer),
+                        payload: request,
+                    }
+                }
+                request_response::Message::Response { response, .. } => {
+                    PumpEvent::BlocksByRangeResponse {
+                        peer: peer_fingerprint(&peer),
+                        payload: response,
+                    }
+                }
+            },
+            _ => PumpEvent::Behaviour,
+        }
+    }
+
+    pub(crate) fn reply_blocks_by_range(
+        &mut self,
+        request: &[u8],
+        channel: ResponseChannel<Vec<u8>>,
+    ) {
+        let blocks = match crate::reqresp::decode_blocks_by_range(request) {
+            Ok(req) => collect_slot_range(&self.blocks_by_slot, req.start_slot, req.count, req.step),
+            Err(_) => Vec::new(),
+        };
+        let payload = crate::reqresp::encode_blocks_by_root_response(&blocks).unwrap_or_else(|_| {
+            let mut empty = Vec::with_capacity(4);
+            empty.extend_from_slice(&0u32.to_le_bytes());
+            empty
+        });
+        let _ = self
+            .swarm
+            .behaviour_mut()
+            .blocks_by_range
+            .send_response(channel, payload);
+    }
+
     pub(crate) fn handle_gossip_event(&mut self, ev: gossipsub::Event) -> PumpEvent {
         match ev {
             gossipsub::Event::Message {
@@ -166,4 +213,23 @@ fn decode_root_list(input: &[u8]) -> Vec<Hash32> {
         off += 32;
     }
     roots
+}
+
+/// Collect cached block bodies for start..start+count*step (missing slots skipped).
+fn collect_slot_range(
+    by_slot: &std::collections::HashMap<u64, Vec<u8>>,
+    start: u64,
+    count: u64,
+    step: u64,
+) -> Vec<Vec<u8>> {
+    let step = step.max(1);
+    let mut out = Vec::new();
+    let mut slot = start;
+    for _ in 0..count {
+        if let Some(bytes) = by_slot.get(&slot) {
+            out.push(bytes.clone());
+        }
+        slot = slot.saturating_add(step);
+    }
+    out
 }
