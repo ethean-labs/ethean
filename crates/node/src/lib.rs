@@ -5,6 +5,7 @@
 
 pub mod crypto;
 pub mod consensus;
+pub mod aggregation;
 pub mod network;
 pub mod storage;
 pub mod integration;
