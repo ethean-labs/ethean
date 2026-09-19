@@ -18,6 +18,8 @@ pub struct PumpBudgetResult {
     pub status_responses: Vec<(ethean_primitives::Hash32, Vec<u8>)>,
     /// Decompressed blocks-by-root response payloads keyed by peer fingerprint.
     pub blocks_by_root_responses: Vec<(ethean_primitives::Hash32, Vec<u8>)>,
+    /// Decompressed blocks-by-range response payloads keyed by peer fingerprint.
+    pub blocks_by_range_responses: Vec<(ethean_primitives::Hash32, Vec<u8>)>,
 }
 
 /// Result of flushing a pending local block proposal to gossip.
@@ -52,6 +54,9 @@ pub async fn pump_swarm_budget(
                 if let crate::network::PumpEvent::BlocksByRootResponse { peer, payload } = &event {
                     out.blocks_by_root_responses.push((*peer, payload.clone()));
                 }
+                if let crate::network::PumpEvent::BlocksByRangeResponse { peer, payload } = &event {
+                    out.blocks_by_range_responses.push((*peer, payload.clone()));
+                }
                 if let Some(g) = event.gossip() {
                     if g.action == GossipAction::Accept && g.plain.is_some() {
                         out.accepted.push(g.clone());
@@ -81,6 +86,11 @@ pub fn publish_pending_block(
     match facade.publish_gossip(&gossip.topic, &compressed) {
         Ok(()) => {
             let _ = facade.put_block_bytes(gossip.block_root, gossip.payload.clone());
+            let _ = facade.put_block_at_slot(
+                gossip.slot,
+                gossip.block_root,
+                gossip.payload.clone(),
+            );
             Ok(Some(PublishedBlock {
                 topic: gossip.topic,
                 payload_len: gossip.payload.len(),
