@@ -1,0 +1,49 @@
+# Ethean Phase 13 protocol lock
+# English only. Digests and full commits are authoritative.
+
+schema = "ethean-phase-lock-v1"
+phase = "13"
+phase_name = "security-performance-and-release"
+lock_status = "resolved_with_open_gates"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+profile_note = """
+Release tooling, upgrade/rollback runbooks, legacy-name scan harness, and gate
+checklists landed. Full fuzz/chaos/soak campaigns and SBOM signing remain open
+gates before targeted-devnet promotion. Toolchain pinned to rustc 1.98.1 on the
+authoring host (plan cited 1.97.1; pin follows the installed compiler).
+"""
+
+[ethean]
+planning_phase_doc = "road-to/lean-consensus-migration/phases/13-security-performance-and-release.md"
+
+[resolved.toolchain]
+rustc = "1.98.1"
+rust_toolchain_toml = "rust-toolchain.toml"
+citation = "rustc --version on Phase 13 authoring host"
+
+[resolved.release]
+schema_id = "ethean-lc-d5-v1"
+metrics_schema = "ethean-metrics-v1"
+artifact_layout = "artifacts/phase-13/"
+promotion_sequence = [
+  "offline_vectors",
+  "single_node_no_signing",
+  "isolated_signing",
+  "homogeneous_multi_node",
+  "mixed_client_multi_node",
+  "adversarial_staging",
+  "targeted_devnet",
+]
+
+[resolved.gates]
+security_doc = "road-to/lean-consensus-migration/04-risks/SECURITY_GATES.md"
+performance_doc = "road-to/lean-consensus-migration/04-risks/PERFORMANCE_BUDGETS.md"
+deletion_register = "road-to/lean-consensus-migration/05-retirement/DELETION_REGISTER.md"
+
+[open_gates]
+full_fuzz_campaign = "deferred"
+chaos_soak_campaigns = "deferred"
+sbom_signing = "deferred"
+repro_two_builder_verify = "deferred"
+targeted_devnet_promotion = "deferred"
+ethean_node_full_compile = "pre_existing_debt"
