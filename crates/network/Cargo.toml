@@ -12,6 +12,13 @@ ethean-primitives = { workspace = true }
 ethean-network-wire = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
+libp2p = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+
+[features]
+default = []
+# Real libp2p QUIC-v1 swarm (no TCP/WS listen path in our API).
+libp2p-quic = ["dep:libp2p", "dep:tokio", "libp2p/quic", "libp2p/tokio", "libp2p/ping", "libp2p/macros"]
 
 [lib]
 name = "ethean_network"
