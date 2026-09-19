@@ -7,7 +7,8 @@
 # Exit 0 when libclang.dll is found and INCLUDE is set (or already usable).
 # Exit 1 when libclang is missing. Exit 2 when stdarg.h cannot be located.
 
-$ErrorActionPreference = "Stop"
+# Avoid `$ErrorActionPreference = Stop` so callers can dot-source before cargo
+# (cargo writes progress to stderr and Stop would abort the parent shell).
 
 function Find-LibClangDir {
   $candidates = @(
