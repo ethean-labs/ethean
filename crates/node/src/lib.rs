@@ -22,6 +22,8 @@ pub mod observability;
 pub mod shutdown;
 pub mod signal_loop;
 pub mod start_config;
+#[cfg(feature = "libp2p-quic")]
+pub mod swarm_pump;
 pub mod wall_loop;
 pub mod wall_tick;
 
