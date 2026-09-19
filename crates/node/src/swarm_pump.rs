@@ -16,6 +16,8 @@ pub struct PumpBudgetResult {
     pub connected_peers: Vec<ethean_primitives::Hash32>,
     /// Decompressed Status response payloads keyed by peer fingerprint.
     pub status_responses: Vec<(ethean_primitives::Hash32, Vec<u8>)>,
+    /// Decompressed blocks-by-root response payloads keyed by peer fingerprint.
+    pub blocks_by_root_responses: Vec<(ethean_primitives::Hash32, Vec<u8>)>,
 }
 
 /// Result of flushing a pending local block proposal to gossip.
@@ -46,6 +48,9 @@ pub async fn pump_swarm_budget(
                 }
                 if let crate::network::PumpEvent::StatusResponse { peer, payload } = &event {
                     out.status_responses.push((*peer, payload.clone()));
+                }
+                if let crate::network::PumpEvent::BlocksByRootResponse { peer, payload } = &event {
+                    out.blocks_by_root_responses.push((*peer, payload.clone()));
                 }
                 if let Some(g) = event.gossip() {
                     if g.action == GossipAction::Accept && g.plain.is_some() {
