@@ -110,8 +110,10 @@ impl EtheanClient {
             &mut self.sync,
         )?;
         #[cfg(feature = "libp2p-quic")]
-        if let Some(ev) = self.flush_pending_event()? {
-            step_events.push(ev);
+        {
+            if let Some(ev) = self.flush_pending_event()? {
+                step_events.push(ev);
+            }
         }
         let _ = self.refresh_slot_metrics();
         if enable_sleep && self.shutdown.accepts_new_duties() {

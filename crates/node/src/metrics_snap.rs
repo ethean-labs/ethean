@@ -2,7 +2,7 @@
 
 use crate::client::EtheanClient;
 use crate::Result;
-use ethean_genesis::{SystemTimeSource, TimeSource};
+use ethean_genesis::SystemTimeSource;
 use tracing::debug;
 
 impl EtheanClient {
