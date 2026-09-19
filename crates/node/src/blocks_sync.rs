@@ -60,12 +60,19 @@ pub fn ingest_blocks_by_root_response(
             continue;
         };
         if let Some(facade) = swarm.as_deref_mut() {
-            let _ = facade.put_block_bytes(decoded.root, blob.clone());
-            let _ = facade.put_block_at_slot(
-                decoded.block.slot.get(),
-                decoded.root,
-                blob.clone(),
-            );
+            #[cfg(feature = "libp2p-quic")]
+            {
+                let _ = facade.put_block_bytes(decoded.root, blob.clone());
+                let _ = facade.put_block_at_slot(
+                    decoded.block.slot.get(),
+                    decoded.root,
+                    blob.clone(),
+                );
+            }
+            #[cfg(not(feature = "libp2p-quic"))]
+            {
+                let _ = facade;
+            }
         }
         owner.last_gossip_root = Some(decoded.root);
         out.events.push(ChainEvent::GossipIngested {
