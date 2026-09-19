@@ -4,6 +4,7 @@ members = [
     "crates/profile",
     "crates/ssz",
     "crates/types",
+    "crates/genesis",
     "crates/node",
     "bin/ethean",
 ]
@@ -21,6 +22,7 @@ ethean-primitives = { path = "crates/primitives" }
 ethean-profile = { path = "crates/profile" }
 ethean-ssz = { path = "crates/ssz" }
 ethean-types = { path = "crates/types" }
+ethean-genesis = { path = "crates/genesis" }
 ethean-node = { path = "crates/node" }
 
 tokio = { version = "1.0", features = ["full"] }

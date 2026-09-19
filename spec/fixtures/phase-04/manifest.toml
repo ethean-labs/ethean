@@ -1,0 +1,57 @@
+# Phase 04 fixture provenance
+# Genesis builder/clock unit tests in ethean-genesis; upstream root vectors pending.
+
+schema = "ethean-fixture-manifest-v1"
+phase = "04"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = [
+  "spec/fixtures/phase-00/manifest.toml",
+  "spec/fixtures/phase-02/manifest.toml",
+  "spec/fixtures/phase-03/manifest.toml",
+]
+
+[source]
+repository = "https://github.com/leanEthereum/leanSpec"
+generator_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+generator_tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+protocol_surface = "spec/pins/protocol-surface.toml"
+lock_file = "spec/pins/phase-04.lock.toml"
+
+[workspace]
+members = [
+  "crates/primitives",
+  "crates/profile",
+  "crates/ssz",
+  "crates/types",
+  "crates/genesis",
+  "crates/node",
+  "bin/ethean",
+]
+
+[clock_positive]
+seconds_per_slot = 4
+milliseconds_per_slot = 4000
+boundary_tests = "ethean-genesis clock unit tests"
+fake_time = true
+pre_genesis = true
+
+[genesis_positive]
+builder_slot_zero = true
+validator_index_equals_position = true
+hash_tree_root_computed = true
+
+[genesis_negative]
+empty_network_validators = "rejected"
+empty_ssz_bytes = "rejected"
+full_ssz_decode = "deferred — TruncatedOrEmpty / Types until Phase 05"
+
+[upstream_fixtures]
+status = "pending"
+asset = "fixtures-prod-scheme.tar.gz"
+sha256 = "21d9de7056b4e658031dc09e50c0e9dc1b0206089253258ce69ecff01154d4bd"
+note = "Full upstream genesis fixture differential may be pending if archive not vendored"
+
+[verification]
+unit_tests = ["ethean-genesis", "ethean-profile"]
+lock_file = "spec/pins/phase-04.lock.toml"

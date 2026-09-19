@@ -64,13 +64,14 @@ impl StateStorage for StateStore {
         match self.database.get(&key)? {
             None => Ok(None),
             Some(bytes) => {
-                // Full State SSZ decode is incomplete; empty payload → default.
                 if bytes.is_empty() {
-                    return Ok(Some(State::default()));
+                    return Err(DatabaseError::SerializationError(
+                        "empty state payload; refuse State::default as genesis".into(),
+                    ));
                 }
                 State::ssz_decode(&bytes)
                     .map(Some)
-                    .or_else(|_| Ok(Some(State::default())))
+                    .map_err(|e| DatabaseError::SerializationError(e.to_string()))
             }
         }
     }

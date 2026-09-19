@@ -95,9 +95,7 @@ impl Default for DiscoveryConfig {
         Self {
             enabled: true,
             bootstrap_nodes: vec![
-                // Ethereum mainnet bootstrap nodes
-                "/ip4/18.138.108.67/tcp/9000/p2p/16Uiu2HAm7Qwe19vz9WzD2Mxn7fXd1vgHHp4iccuyq7TxwRXoAGfc".to_string(),
-                "/ip4/52.59.65.77/tcp/9000/p2p/16Uiu2HAm2ZjWqw5PUu8gRMEojEHCNUjpYYwRbRVa1b8G6yPHFUh6".to_string(),
+                // Lean bootnodes are operational; no Ethereum mainnet enr/multiaddr pin.
             ],
             port: 9000,
             discovery_interval: Duration::from_secs(30),

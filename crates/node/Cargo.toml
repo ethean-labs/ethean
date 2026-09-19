@@ -16,6 +16,7 @@ ethean-primitives = { workspace = true }
 ethean-profile = { workspace = true }
 ethean-ssz = { workspace = true }
 ethean-types = { workspace = true }
+ethean-genesis = { workspace = true }
 
 tokio = { workspace = true }
 serde = { workspace = true }

@@ -38,6 +38,9 @@ pub enum ProfileError {
     #[error("fork_name must be non-empty")]
     EmptyForkName,
 
+    #[error("fork_name mismatch: expected {expected}, got {got}")]
+    ForkNameMismatch { expected: &'static str, got: String },
+
     #[error("milliseconds_per_slot must equal seconds_per_slot * 1000")]
     InconsistentSlotMilliseconds,
 

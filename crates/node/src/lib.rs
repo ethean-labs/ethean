@@ -14,11 +14,16 @@ pub mod config;
 pub mod utils;
 pub mod cli;
 pub mod client;
+pub mod clock;
 
 pub use ethean_primitives::{Epoch, Hash32, Slot, ValidatorIndex};
-pub use ethean_profile::{lstar_devnet, ChainProfile};
+pub use ethean_profile::{lstar_devnet, ChainProfile, ForkId};
 pub use ethean_types::{
-    Attestation, Block, Checkpoint, SignedBlock, State, Validator, TypesError,
+    Attestation, Block, Checkpoint, SignedBlock, State, TypesError, Validator,
+};
+pub use ethean_genesis::{
+    load_genesis_ssz, local_smoke_genesis, BuiltGenesis, ClockError, FakeTime, GenesisBuilder,
+    GenesisError, SlotClock, SystemTimeSource, TimeSource,
 };
 
 pub use client::EtheanClient;
@@ -55,6 +60,9 @@ pub enum Error {
 
     #[error("Profile error: {0}")]
     Profile(#[from] ethean_profile::ProfileError),
+
+    #[error("Genesis error: {0}")]
+    Genesis(#[from] ethean_genesis::GenesisError),
 }
 
 /// Version information

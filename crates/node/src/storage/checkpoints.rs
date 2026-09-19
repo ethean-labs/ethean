@@ -74,9 +74,13 @@ impl CheckpointStore for CheckpointManager {
             None => Ok(None),
             Some(bytes) => {
                 if bytes.is_empty() {
-                    return Ok(Some(State::default()));
+                    return Err(DatabaseError::SerializationError(
+                        "empty checkpoint state; refuse State::default".into(),
+                    ));
                 }
-                Ok(Some(State::ssz_decode(&bytes).unwrap_or_default()))
+                State::ssz_decode(&bytes)
+                    .map(Some)
+                    .map_err(|e| DatabaseError::SerializationError(e.to_string()))
             }
         }
     }

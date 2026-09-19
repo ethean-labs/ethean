@@ -1,0 +1,15 @@
+[package]
+name = "ethean-genesis"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Deterministic Lean genesis builder, loader, and injectable slot clock"
+
+[dependencies]
+ethean-primitives = { workspace = true }
+ethean-profile = { workspace = true }
+ethean-types = { workspace = true }
+ethean-ssz = { workspace = true }
+thiserror = { workspace = true }

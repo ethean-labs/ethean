@@ -1,0 +1,64 @@
+# Phase 04 lock — genesis authority and 4s slot clock
+
+schema = "ethean-phase-lock-v1"
+phase = "04"
+phase_name = "genesis-presets-and-clock"
+lock_status = "in_progress_genesis_clock"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = [
+  "spec/pins/phase-00.lock.toml",
+  "spec/pins/phase-01.lock.toml",
+  "spec/pins/phase-02.lock.toml",
+  "spec/pins/phase-03.lock.toml",
+]
+
+[resolved.lean_spec]
+status = "inherited"
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+citation_config = "src/lean_spec/spec/forks/lstar/config.py"
+citation_genesis = "src/lean_spec/spec/forks/lstar/containers/ (GenesisConfig.genesis_time Uint64 seconds)"
+
+[resolved.timing]
+status = "inherited"
+seconds_per_slot = 4
+intervals_per_slot = 5
+milliseconds_per_slot = 4000
+milliseconds_per_interval = 800
+genesis_time_unit = "unix_seconds"
+clock_note = "SlotClock converts genesis_time_secs to ms via checked_mul(1000)"
+
+[resolved.genesis]
+package = "ethean-genesis"
+path = "crates/genesis"
+builder = "GenesisBuilder"
+loader = "load_genesis_ssz"
+clock = "SlotClock + TimeSource (FakeTime / SystemTimeSource)"
+network_startup = "explicit GenesisBuilder or loaded State; no State::default as genesis"
+allow_empty_validators = "tests only via allow_empty_for_tests"
+
+[resolved.profile_extensions]
+fork_id = "ForkId.fork_name() only"
+fork_identifier_bytes = "unresolved — inherited from phase-00; do not invent 4-byte digest"
+limits = "ProfileLimits / limits_of"
+pinned_toml = "crates/profile/profiles/pinned.toml"
+
+[ethean.workspace]
+members = [
+  "crates/primitives",
+  "crates/profile",
+  "crates/ssz",
+  "crates/types",
+  "crates/genesis",
+  "crates/node",
+  "bin/ethean",
+]
+package_genesis = "ethean-genesis"
+
+[unresolved]
+rust_toolchain = "TBD — do not invent rust-toolchain.toml version"
+fork_identifier_bytes = "open (phase-00)"
+state_ssz_full_decode = "State::ssz_decode full offset path still deferred; loader rejects empty/default fallback"
+lean_spec_genesis_fixture_root = "prod fixture tarball not vendored; byte-level genesis root differential pending"
+upstream_genesis_bytes = "pending archive under spec/fixtures when host can store fixtures-prod-scheme.tar.gz"

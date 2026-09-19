@@ -1,0 +1,32 @@
+# Pinned lstar_devnet profile values (Phase 00 / Phase 04)
+# Authority: leanSpec@0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8
+# Citation: src/lean_spec/spec/forks/lstar/config.py
+# Data file only — runtime construction remains in preset.rs / ChainProfile.
+
+schema = "ethean-profile-pinned-v1"
+fork_name = "lstar"
+lean_spec_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+lean_spec_tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+
+[timing]
+seconds_per_slot = 4
+intervals_per_slot = 5
+milliseconds_per_slot = 4000
+milliseconds_per_interval = 800
+gossip_disparity_intervals = 1
+justification_lookback_slots = 3
+
+[bounds]
+validator_registry_limit = 4096
+historical_roots_limit = 262144
+attestation_committee_count = 1
+max_attestations_data = 8
+
+[crypto]
+xmss_public_key_bytes = 52
+xmss_signature_bytes = 2536
+
+[unresolved]
+# Phase 00 gate — do not invent a 4-byte fork digest here.
+fork_identifier_bytes = "open"
+note = "ForkId exposes fork_name() only until Phase 00 resolves digest derivation."
