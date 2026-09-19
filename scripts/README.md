@@ -33,13 +33,31 @@ Do not use a separate `install.sh` / `cargo install` step for day-to-day runs.
 | --- | --- | --- |
 | `run-pq-devnet-4.sh` / `.ps1` | **Operational default** | Uses `config/networks/pq-devnet-4.bootnodes` |
 | `run-pq-devnet-5.sh` / `.ps1` | Ready path | Same binary; needs operator D5 multiaddrs |
+| `local-pq-mesh.sh` / `.ps1` | **Private mesh** | 2 peers; writes `target/local-pq-mesh/nodes.multiaddrs` then dials it |
 
 ```bash
 # Unix
 ./scripts/run-pq-devnet-4.sh
 ./scripts/run-pq-devnet-5.sh --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
+./scripts/local-pq-mesh.sh
 
 # Windows PowerShell
 .\scripts\run-pq-devnet-4.ps1
 .\scripts\run-pq-devnet-5.ps1 --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
+.\scripts\local-pq-mesh.ps1
+```
+
+### Local private mesh (Ream-style)
+
+There is no public pq-devnet bootnode list. Like Ream/ethlambda, exercise P2P by
+creating a private mesh for this run:
+
+1. Peer A starts with `--until-signal` and logs `dialable=…`
+2. Script writes that multiaddr to `target/local-pq-mesh/nodes.multiaddrs`
+   (Ethean equivalent of lean-quickstart `nodes.yaml`)
+3. Peer B dials that file via `--bootnodes`
+
+```powershell
+.\scripts\local-pq-mesh.ps1
+.\scripts\local-pq-mesh.ps1 -Network pq-devnet-4 -PeerBTicks 15
 ```
