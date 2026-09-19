@@ -1,6 +1,6 @@
 //! UDP listen + optional QuicSwarm bind used during client boot.
 
-use crate::network::{BoundTransport, NodeIdentity, SwarmFacade, TransportConfig};
+use crate::network::{NodeIdentity, SwarmFacade, TransportConfig};
 use crate::Result;
 use tracing::info;
 
@@ -33,7 +33,10 @@ pub async fn prepare_boot_network(
 }
 
 #[cfg(feature = "libp2p-quic")]
-async fn bind_quic_facade(bound: BoundTransport, fork_name: &str) -> Result<SwarmFacade> {
+async fn bind_quic_facade(
+    bound: crate::network::BoundTransport,
+    fork_name: &str,
+) -> Result<SwarmFacade> {
     let mut facade = SwarmFacade::default();
     facade.attach_transport(bound);
     facade
