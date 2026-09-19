@@ -61,6 +61,31 @@ wsl --update
 Then reboot and start Docker Desktop again. Without a working WSL2 distro,
 `com.docker.backend` exits and Grafana/Prometheus never bind `:3000` / `:9090`.
 
+### Windows: HTTP 500 on `dockerDesktopLinuxEngine/_ping`
+
+```text
+request returned 500 Internal Server Error for API route and version
+http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/_ping
+```
+
+The CLI and Desktop UI are present; the **Linux engine is not**. Docker is
+proxying `_ping` with HTTP 500 because WSL2 cannot create a VM. Typical host
+log: `HCS_E_HYPERV_NOT_INSTALLED` / `HypervisorPresent = False`.
+
+Fix (elevated PowerShell), then **reboot**:
+
+```powershell
+wsl.exe --install --no-distribution
+dism.exe /Online /Enable-Feature /FeatureName:VirtualMachinePlatform /All /NoRestart
+```
+
+Enable CPU virtualization in firmware if it is off. After reboot, start Docker
+Desktop, wait until Engine is **Running**, confirm `docker info` has a Server
+section, then re-run `--metrics` or `.\scripts\run-observability.ps1`.
+
+`--metrics` is best-effort: the node still serves `:9100/metrics` while Grafana
+stays down.
+
 - Grafana: http://localhost:3000 (anonymous viewer)
 - Dashboard: **Ethean Lean Clients Dashboard**
 - Prometheus: http://localhost:9090
