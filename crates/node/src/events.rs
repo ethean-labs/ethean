@@ -32,6 +32,17 @@ pub enum ChainEvent {
         /// Whether `decide_publish` allows gossiping this plan now.
         publish_allowed: bool,
     },
+    /// SignedBlock SSZ ready for `/block/` gossip (publish window open).
+    ProposalGossipReady {
+        /// Inner block tree root.
+        root: Hash32,
+        /// Lean gossip topic string.
+        topic: String,
+        /// Encoded payload length in bytes.
+        payload_len: usize,
+        /// True when the envelope carries a non-empty Type-2 proof.
+        has_type2_proof: bool,
+    },
     /// Syncing flag changed on the chain owner.
     SyncingUpdated(bool),
     /// Shutdown acknowledged; no new duties.
