@@ -1,6 +1,7 @@
 //! Non-blocking QuicSwarm event pump helpers (feature `libp2p-quic`).
 
-use crate::network::{GossipIngress, GossipAction, SwarmFacade};
+use crate::chain_owner::ChainOwner;
+use crate::network::{encode_gossip, GossipAction, GossipIngress, SwarmFacade};
 use crate::{Error, Result};
 use std::time::Duration;
 
@@ -11,6 +12,17 @@ pub struct PumpBudgetResult {
     pub drained: u32,
     /// ACCEPT gossip messages with decompressed payloads.
     pub accepted: Vec<GossipIngress>,
+}
+
+/// Result of flushing a pending local block proposal to gossip.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublishedBlock {
+    /// Topic that received the publish.
+    pub topic: String,
+    /// Uncompressed SSZ payload length.
+    pub payload_len: usize,
+    /// Whether the envelope carried a Type-2 proof.
+    pub has_type2_proof: bool,
 }
 
 /// Drain up to `max_events` swarm events without blocking longer than `idle`.
@@ -37,6 +49,33 @@ pub async fn pump_swarm_budget(
     Ok(out)
 }
 
+/// Snappy-compress and publish `owner.pending_block_gossip`, clearing it on success.
+pub fn publish_pending_block(
+    facade: &mut SwarmFacade,
+    owner: &mut ChainOwner,
+) -> Result<Option<PublishedBlock>> {
+    let Some(gossip) = owner.pending_block_gossip.take() else {
+        return Ok(None);
+    };
+    let compressed = encode_gossip(&gossip.payload).map_err(|e| {
+        Error::Network(ethean_network::NetworkError::Handshake(format!(
+            "snappy encode: {e}"
+        )))
+    })?;
+    match facade.publish_gossip(&gossip.topic, &compressed) {
+        Ok(()) => Ok(Some(PublishedBlock {
+            topic: gossip.topic,
+            payload_len: gossip.payload.len(),
+            has_type2_proof: gossip.has_type2_proof,
+        })),
+        Err(e) => {
+            // Restore so a later flush can retry.
+            owner.pending_block_gossip = Some(gossip);
+            Err(Error::Network(e))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -57,5 +96,24 @@ mod tests {
             .expect("pump");
         assert!(r.drained <= 3);
         assert!(r.accepted.is_empty());
+    }
+
+    #[tokio::test]
+    async fn publish_pending_none_when_empty() {
+        let mut facade = SwarmFacade::default();
+        facade
+            .bind_quic_swarm_for_fork(
+                &TransportConfig {
+                    listen_port: 0,
+                    idle_timeout_ms: 1_000,
+                },
+                "lstar",
+            )
+            .await
+            .expect("bind");
+        let mut owner = ChainOwner::new(2);
+        assert!(publish_pending_block(&mut facade, &mut owner)
+            .expect("flush")
+            .is_none());
     }
 }
