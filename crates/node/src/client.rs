@@ -219,6 +219,13 @@ impl EtheanClient {
         self.observability.mark_signer_ok();
         self.observability
             .apply_ffi_status(ethean_crypto::FfiStatus::probe());
+        let leanvm_gate = ethean_crypto::LeanVmGate::probe();
+        info!(
+            leanvm_feature = leanvm_gate.feature_enabled,
+            leanvm_ffi = leanvm_gate.ffi_linked,
+            leanvm_pin = leanvm_gate.pinned_rev,
+            "leanVM gate probe"
+        );
         // Smoke crypto path is loaded even when production FFI is off.
         self.observability.mark_crypto_ok();
 
