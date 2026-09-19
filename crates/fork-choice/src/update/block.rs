@@ -1,0 +1,71 @@
+//! Block import into the fork-choice store.
+
+use ethean_types::{Block, State};
+
+use crate::error::ForkChoiceError;
+use crate::prune::prune_finalized_away;
+use crate::store::ForkChoiceStore;
+
+impl ForkChoiceStore {
+    /// Accept a block with a caller-supplied post-state (no STF re-run).
+    pub fn on_block(&mut self, block: Block, post_state: State) -> Result<(), ForkChoiceError> {
+        let block_root = block
+            .hash_tree_root()
+            .map_err(|e| ForkChoiceError::Types(e.to_string()))?;
+
+        if self.blocks.contains_key(&block_root) {
+            return Ok(());
+        }
+
+        let previous_finalized_slot = self.latest_finalized.slot;
+
+        if !self.block_states.contains_key(&block.parent_root) {
+            return Err(ForkChoiceError::UnknownParent);
+        }
+
+        let parent_state = &self.block_states[&block.parent_root];
+        if block.slot.get().saturating_sub(parent_state.slot.get()) > self.historical_roots_limit
+        {
+            return Err(ForkChoiceError::BlockSlotGapTooLarge);
+        }
+        let current_slot = self.current_slot();
+        if block.slot.get() > current_slot + 1 {
+            return Err(ForkChoiceError::BlockTooFarInFuture);
+        }
+
+        let attestations = &block.body.attestations;
+        let mut seen = std::collections::HashSet::new();
+        for att in attestations {
+            let root = att.data.hash_tree_root();
+            if !seen.insert(root) {
+                return Err(ForkChoiceError::DuplicateAttestationData);
+            }
+        }
+
+        self.latest_justified = self.latest_justified.advance_to(post_state.latest_justified);
+        self.blocks.insert(block_root, block);
+        self.block_states.insert(block_root, post_state);
+
+        self.update_head()?;
+
+        if self.latest_finalized.slot > previous_finalized_slot {
+            prune_finalized_away(self);
+            self.prune_stale_votes();
+        }
+        Ok(())
+    }
+
+    fn prune_stale_votes(&mut self) {
+        let finalized = self.latest_finalized;
+        self.latest_new_attestations
+            .retain(|_, data| {
+                data.head.slot > finalized.slot
+                    && self.checkpoint_is_ancestor(finalized, data.head)
+            });
+        self.latest_known_attestations
+            .retain(|_, data| {
+                data.head.slot > finalized.slot
+                    && self.checkpoint_is_ancestor(finalized, data.head)
+            });
+    }
+}
