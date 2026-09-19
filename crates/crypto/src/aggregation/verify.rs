@@ -34,12 +34,22 @@ pub fn verify_type2(statement: &AggregateStatement, proof: &[u8]) -> Result<()> 
 }
 
 fn verify_bound_proof(statement: &AggregateStatement, proof: &[u8]) -> Result<()> {
-    #[cfg(feature = "leanvm-backend")]
+    #[cfg(all(feature = "leanvm-backend", feature = "test-aggregate"))]
     {
-        match crate::backend_leanvm::verify(statement, proof)? {
+        if crate::backend_leanvm::LEANVM_FFI_LINKED {
+            return match crate::backend_leanvm::verify(statement, proof)? {
+                true => Ok(()),
+                false => Err(CryptoError::VerificationFailed),
+            };
+        }
+        return verify_test_aggregate(statement, proof);
+    }
+    #[cfg(all(feature = "leanvm-backend", not(feature = "test-aggregate")))]
+    {
+        return match crate::backend_leanvm::verify(statement, proof)? {
             true => Ok(()),
             false => Err(CryptoError::VerificationFailed),
-        }
+        };
     }
     #[cfg(all(not(feature = "leanvm-backend"), feature = "test-aggregate"))]
     {
