@@ -1,27 +1,16 @@
-//! Cryptography module for Beam Chain
+//! Node crypto surface — Lean XMSS via `ethean-crypto` (Phase 07).
 //!
-//! Contains WOTS, BLS, Poseidon hash implementations.
+//! Legacy BLS / local WOTS modules are removed from production paths.
 
-pub mod bls;
-pub mod wots;
-pub mod hash;
+pub use ethean_crypto::{
+    assert_prod_invariants, domain_digest, key_gen, prod_fingerprint, sign, signature_hash,
+    signing_root_digest, verify, verify_bool, CryptoBackend, CryptoError, Digest32,
+    ProductionBackend, PublicKey, SecretKeyMaterial, Signature, MESSAGE_BYTES, PUBLIC_KEY_BYTES,
+    SIGNATURE_BYTES,
+};
 
-// Re-export main BLS types for convenience
-pub use bls::{BlsAggregator, BLSSignature, BLSPublicKey, BLSError, BLSStats};
+#[cfg(any(test, feature = "test-hmac"))]
+pub use ethean_crypto::TestHmacBackend;
 
-/// Crypto result type
-pub type Result<T> = std::result::Result<T, Error>;
-
-/// Crypto errors
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Invalid signature")]
-    InvalidSignature,
-    
-    #[error("Key generation failed")]
-    KeyGeneration,
-}
-
-// Placeholder exports
-pub use bls::BlsSignature;
-pub use wots::WotsSignature;
+/// Crypto result type (node-local alias).
+pub type Result<T> = std::result::Result<T, CryptoError>;

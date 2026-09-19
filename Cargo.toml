@@ -4,12 +4,18 @@ members = [
     "crates/profile",
     "crates/ssz",
     "crates/types",
+    "crates/crypto",
     "crates/genesis",
     "crates/transition",
     "crates/fork-choice",
-    "crates/crypto",
+    "crates/storage",
+    "crates/network-wire",
+    "crates/network",
+    "crates/sync",
     "crates/validator",
     "crates/node",
+    "crates/rpc",
+    "crates/metrics",
     "bin/ethean",
 ]
 resolver = "2"
@@ -26,12 +32,18 @@ ethean-primitives = { path = "crates/primitives" }
 ethean-profile = { path = "crates/profile" }
 ethean-ssz = { path = "crates/ssz" }
 ethean-types = { path = "crates/types" }
+ethean-crypto = { path = "crates/crypto" }
 ethean-genesis = { path = "crates/genesis" }
 ethean-transition = { path = "crates/transition" }
 ethean-fork-choice = { path = "crates/fork-choice" }
-ethean-crypto = { path = "crates/crypto" }
+ethean-storage = { path = "crates/storage" }
+ethean-network-wire = { path = "crates/network-wire" }
+ethean-network = { path = "crates/network" }
+ethean-sync = { path = "crates/sync" }
 ethean-validator = { path = "crates/validator" }
 ethean-node = { path = "crates/node" }
+ethean-rpc = { path = "crates/rpc" }
+ethean-metrics = { path = "crates/metrics" }
 
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
