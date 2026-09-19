@@ -707,6 +707,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Peer Lean clients (reference)**: [docs/peer-reference-clients.md](./docs/peer-reference-clients.md)
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/lean-peer-client-research-library-2026-09-19.md)
 - **Language (English only)**: [docs/english.md](./docs/english.md)
+- **Commits (per file, English)**: [docs/commit-after-each-file.md](./docs/commit-after-each-file.md)
 - **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Ethean/issues)
 - **Email**: support@Ethean.io
 
