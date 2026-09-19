@@ -1,26 +1,40 @@
 //! Non-blocking QuicSwarm event pump helpers (feature `libp2p-quic`).
 
-use crate::network::SwarmFacade;
+use crate::network::{GossipIngress, GossipAction, SwarmFacade};
 use crate::{Error, Result};
 use std::time::Duration;
+
+/// Outcome of a bounded pump: count drained plus accepted gossip payloads.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct PumpBudgetResult {
+    /// Events drained from the swarm.
+    pub drained: u32,
+    /// ACCEPT gossip messages with decompressed payloads.
+    pub accepted: Vec<GossipIngress>,
+}
 
 /// Drain up to `max_events` swarm events without blocking longer than `idle`.
 pub async fn pump_swarm_budget(
     facade: &mut SwarmFacade,
     max_events: u32,
     idle: Duration,
-) -> Result<u32> {
-    let mut drained = 0u32;
+) -> Result<PumpBudgetResult> {
+    let mut out = PumpBudgetResult::default();
     for _ in 0..max_events {
         match tokio::time::timeout(idle, facade.pump_quic_once()).await {
-            Ok(Ok(_kind)) => {
-                drained = drained.saturating_add(1);
+            Ok(Ok(event)) => {
+                out.drained = out.drained.saturating_add(1);
+                if let Some(g) = event.gossip() {
+                    if g.action == GossipAction::Accept && g.plain.is_some() {
+                        out.accepted.push(g.clone());
+                    }
+                }
             }
             Ok(Err(e)) => return Err(Error::Network(e)),
             Err(_) => break,
         }
     }
-    Ok(drained)
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -38,9 +52,10 @@ mod tests {
             })
             .await
             .expect("bind");
-        let n = pump_swarm_budget(&mut facade, 3, Duration::from_millis(5))
+        let r = pump_swarm_budget(&mut facade, 3, Duration::from_millis(5))
             .await
             .expect("pump");
-        assert!(n <= 3);
+        assert!(r.drained <= 3);
+        assert!(r.accepted.is_empty());
     }
 }
