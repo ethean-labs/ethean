@@ -30,6 +30,20 @@ pub enum PumpEvent {
     GossipUnsubscribed,
     /// Behaviour event other than classified gossip.
     Behaviour,
+    /// Remote Status response bytes (decompressed SSZ).
+    StatusResponse {
+        /// Peer fingerprint.
+        peer: Hash32,
+        /// Plain Status SSZ bytes.
+        payload: Vec<u8>,
+    },
+    /// Inbound Status request received (auto-reply may already have been sent).
+    StatusRequest {
+        /// Peer fingerprint.
+        peer: Hash32,
+        /// Plain Status SSZ bytes from the peer.
+        payload: Vec<u8>,
+    },
     /// Anything else from the swarm.
     Other,
 }
@@ -64,6 +78,8 @@ impl PumpEvent {
             Self::GossipSubscribed => "gossip_subscribed",
             Self::GossipUnsubscribed => "gossip_unsubscribed",
             Self::Behaviour => "behaviour",
+            Self::StatusResponse { .. } => "status_response",
+            Self::StatusRequest { .. } => "status_request",
             Self::Other => "other",
         }
     }
@@ -72,6 +88,14 @@ impl PumpEvent {
     pub fn gossip(&self) -> Option<&GossipIngress> {
         match self {
             Self::Gossip(g) => Some(g),
+            _ => None,
+        }
+    }
+
+    /// Status response payload when present.
+    pub fn status_response(&self) -> Option<(Hash32, &[u8])> {
+        match self {
+            Self::StatusResponse { peer, payload } => Some((*peer, payload.as_slice())),
             _ => None,
         }
     }
