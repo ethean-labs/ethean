@@ -40,11 +40,15 @@ pub fn ensure_stack() -> Result<(), String> {
     };
 
     if !status.success() {
-        return Err(format!(
-            "`docker compose up -d` failed in {} (exit {:?})",
-            dir.display(),
-            status.code()
-        ));
+        warn!(
+            exit = ?status.code(),
+            "docker compose failed — often Docker Desktop/WSL (wsl.exe exit 1, \
+             'Sistem dosyaya erişemiyor'). Ethean keeps running; scrape \
+             http://127.0.0.1:9100/metrics without Grafana. Fix: restart Docker Desktop, \
+             or `wsl --update` / enable Virtual Machine Platform; or skip --metrics \
+             and use curl on :9100 only."
+        );
+        return Ok(());
     }
 
     info!("Grafana http://localhost:3000  Prometheus http://localhost:9090");

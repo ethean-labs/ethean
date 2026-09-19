@@ -442,6 +442,15 @@ Manual stack only (if you prefer not to use `--metrics`):
 | Dashboard | **Ethean Lean Clients Dashboard** (folder Ethean) |
 | Prometheus UI | [http://localhost:9090](http://localhost:9090) |
 | Prometheus targets | [http://localhost:9090/targets](http://localhost:9090/targets) (`ethean` / `ethean-localhost` → UP) |
+
+Docker Desktop / WSL errors (`wsl.exe` exit 1, “Sistem dosyaya erişemiyor”) mean the
+**compose stack** cannot start — not that Ethean is broken. Quit Docker Desktop,
+`wsl --shutdown`, start Docker again (or `wsl --update`). Meanwhile watch the node with:
+
+```bash
+curl -s http://127.0.0.1:9100/healthz
+curl -s http://127.0.0.1:9100/metrics | findstr ethean_head_slot
+```
 | Node scrape | [http://127.0.0.1:9100/metrics](http://127.0.0.1:9100/metrics) |
 
 Healthy long-run: `ethean_slot_current` and `ethean_head_slot` climb; justified /
