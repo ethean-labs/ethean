@@ -1,12 +1,13 @@
-//! QUIC transport facade (not yet bound to libp2p).
+//! QUIC/UDP transport bind (swarm protocol still separate).
 
 use crate::error::{NetworkError, Result};
 use crate::identity::NodeIdentity;
+use std::net::UdpSocket;
 
 /// Desired listen configuration for QUIC-v1 / UDP.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TransportConfig {
-    /// UDP listen port.
+    /// UDP listen port (`0` = OS ephemeral, allowed for tests).
     pub listen_port: u16,
     /// Idle timeout milliseconds.
     pub idle_timeout_ms: u64,
@@ -19,6 +20,17 @@ impl Default for TransportConfig {
             idle_timeout_ms: 30_000,
         }
     }
+}
+
+/// UDP socket held after a successful listen bind (pre-libp2p QUIC swarm).
+#[derive(Debug)]
+pub struct BoundTransport {
+    /// Bound UDP socket (non-blocking).
+    pub socket: UdpSocket,
+    /// Local port actually bound.
+    pub listen_port: u16,
+    /// Node identity fingerprint used for this bind.
+    pub identity: NodeIdentity,
 }
 
 /// Refuse TCP / WebSocket multiaddrs; Lean networking is QUIC/UDP only.
@@ -36,23 +48,42 @@ pub fn reject_non_quic(multiaddr: &str) -> Result<()> {
     Ok(())
 }
 
-/// Build marker proving identity + config are present; real dial is Phase open gate.
-pub fn prepare_transport(identity: &NodeIdentity, cfg: &TransportConfig) -> Result<()> {
+/// Bind a UDP listen socket for QUIC-v1; does not start a libp2p swarm.
+pub fn prepare_transport(
+    identity: &NodeIdentity,
+    cfg: &TransportConfig,
+) -> Result<BoundTransport> {
     if identity.fingerprint == [0u8; 32] {
         return Err(NetworkError::Handshake(
             "empty node identity fingerprint refused".into(),
         ));
     }
-    if cfg.listen_port == 0 {
-        return Err(NetworkError::Handshake(
-            "listen_port 0 refused".into(),
-        ));
-    }
-    // Listen string check used by callers before dial.
     let listen = format!("/ip4/0.0.0.0/udp/{}/quic-v1", cfg.listen_port);
     reject_non_quic(&listen)?;
+
+    let socket = UdpSocket::bind(("0.0.0.0", cfg.listen_port)).map_err(|e| {
+        NetworkError::Handshake(format!("UDP bind failed on port {}: {e}", cfg.listen_port))
+    })?;
+    socket
+        .set_nonblocking(true)
+        .map_err(|e| NetworkError::Handshake(format!("set_nonblocking: {e}")))?;
+    let listen_port = socket
+        .local_addr()
+        .map(|a| a.port())
+        .map_err(|e| NetworkError::Handshake(format!("local_addr: {e}")))?;
+
+    Ok(BoundTransport {
+        socket,
+        listen_port,
+        identity: identity.clone(),
+    })
+}
+
+/// Dial remains pending until libp2p QUIC swarm wiring lands.
+pub fn dial_quic(_bound: &BoundTransport, multiaddr: &str) -> Result<()> {
+    reject_non_quic(multiaddr)?;
     Err(NetworkError::TransportPending(
-        "libp2p QUIC-v1 swarm not wired; refuse simulated TCP/WS fallback",
+        "libp2p QUIC-v1 dial/swarm not wired; UDP listen bind only",
     ))
 }
 
@@ -68,9 +99,14 @@ mod tests {
     }
 
     #[test]
-    fn prepare_pending_after_checks() {
+    fn prepare_binds_ephemeral_udp() {
         let id = NodeIdentity::from_seed(b"ethean");
-        let err = prepare_transport(&id, &TransportConfig::default()).unwrap_err();
-        assert!(matches!(err, NetworkError::TransportPending(_)));
+        let cfg = TransportConfig {
+            listen_port: 0,
+            idle_timeout_ms: 1_000,
+        };
+        let bound = prepare_transport(&id, &cfg).expect("bind");
+        assert_ne!(bound.listen_port, 0);
+        assert!(dial_quic(&bound, "/ip4/127.0.0.1/udp/1/quic-v1").is_err());
     }
 }
