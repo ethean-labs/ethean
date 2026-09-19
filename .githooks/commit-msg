@@ -1,0 +1,20 @@
+#!/bin/sh
+# Strip Cursor / agent attribution trailers so commits stay under the human identity.
+MSG_FILE=$1
+[ -n "$MSG_FILE" ] && [ -f "$MSG_FILE" ] || exit 0
+
+TMP=${MSG_FILE}.strip.$$
+# Drop common Cursor / agent footers Cursor injects into Agent commits.
+grep -viE \
+  -e '^[[:space:]]*Co-authored-by:[[:space:]]*Cursor' \
+  -e '^[[:space:]]*Co-authored-by:.*cursoragent@cursor\.com' \
+  -e '^[[:space:]]*Co-authored-by:.*@cursor\.com' \
+  -e '^[[:space:]]*Made-with:[[:space:]]*Cursor' \
+  -e '^[[:space:]]*Made with Cursor' \
+  "$MSG_FILE" > "$TMP" || {
+  rm -f "$TMP"
+  exit 0
+}
+
+mv "$TMP" "$MSG_FILE"
+exit 0
