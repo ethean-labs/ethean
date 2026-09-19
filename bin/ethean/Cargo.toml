@@ -14,6 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 ethean-node = { workspace = true }
+ethean-crypto = { workspace = true }
 clap = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
