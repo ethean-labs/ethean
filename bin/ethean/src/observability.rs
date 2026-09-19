@@ -21,17 +21,23 @@ pub fn ensure_stack() -> Result<(), String> {
         "starting Prometheus + Grafana via docker compose (--metrics)"
     );
 
-    let status = Command::new("docker")
+    let status = match Command::new("docker")
         .args(["compose", "up", "-d"])
         .current_dir(&dir)
         .status()
-        .map_err(|e| {
-            format!(
-                "failed to run `docker compose` in {}: {e} \
-                 (install Docker Desktop, then retry with --metrics)",
-                dir.display()
-            )
-        })?;
+    {
+        Ok(s) => s,
+        Err(e) => {
+            warn!(
+                error = %e,
+                "Docker CLI not found — Grafana :3000 and Prometheus :9090 will stay blank. \
+                 Install and start Docker Desktop, then re-run with --metrics \
+                 (or .\\scripts\\run-observability.ps1). Port change is not needed; \
+                 only :9100 is from ethean itself."
+            );
+            return Ok(());
+        }
+    };
 
     if !status.success() {
         return Err(format!(
