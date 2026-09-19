@@ -1,0 +1,14 @@
+schema = "ethean-fixture-manifest-v1"
+phase = "11"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+status = "local_unit_coverage"
+
+[[suites]]
+name = "storage"
+authority = "crates/storage"
+cases = ["schema", "put_get", "legacy_refuse", "watermark", "orphan_metadata", "prune_protect"]
+
+[[suites]]
+name = "sync"
+authority = "crates/sync"
+cases = ["hysteresis", "parent_dedupe", "range_split", "checkpoint_structure", "trust_pin"]
