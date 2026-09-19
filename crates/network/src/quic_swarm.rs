@@ -82,8 +82,8 @@ impl QuicSwarm {
             .map_err(|e| NetworkError::Handshake(format!("swarm dial: {e}")))
     }
 
-    /// Drive the swarm until the next event (for tests / run loops).
-    pub async fn next_event(&mut self) -> SwarmEvent<LeanBehaviourEvent> {
+    /// Drive the swarm until the next event (crate-local run loops / tests).
+    pub(crate) async fn next_event(&mut self) -> SwarmEvent<LeanBehaviourEvent> {
         self.swarm.select_next_some().await
     }
 }
