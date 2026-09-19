@@ -74,6 +74,7 @@ Planning session summaries:
 - [Ream empty lean_peers.yaml (no public D4 bootnodes)](./ream-empty-lean-peers-bootnodes-2026-09-20.md)
 - [How Ream connects without public bootnodes](./how-ream-connects-without-public-bootnodes-2026-09-20.md)
 - [How Ream, ethlambda, and Zeam run pq-devnets](./peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
+- [Peer fixed genesis vs Ethean solo restart](./peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md)
 - [Recommended test baseline (Ream ops + ethlambda)](./recommend-test-baseline-ream-ethlambda-2026-09-20.md)
 - [Long-run metrics + Grafana (pq-devnet-4)](./long-run-metrics-grafana-2026-09-20.md)
 - [Local finality solo long-run](./local-finality-solo-long-run-2026-09-20.md)
