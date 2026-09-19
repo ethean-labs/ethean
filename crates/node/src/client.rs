@@ -7,6 +7,8 @@ use crate::{
     events::ChainEvent,
     observability::{smoke_health_route, NodeObservability},
     shutdown::ShutdownState,
+    start_config::{RunMode, StartConfig},
+    wall_loop::{run_wall_duty_loop, WallLoopConfig},
     wall_tick::tick_from_wall,
     Error, Result, VERSION,
 };
@@ -127,8 +129,46 @@ impl EtheanClient {
         &self.observability
     }
 
-    /// Verify schema, smoke RPC health, run duty loop, record metrics.
-    pub async fn start(mut self) -> Result<()> {
+    /// Default smoke start (`StartConfig::default()`).
+    pub async fn start(self) -> Result<()> {
+        self.start_with(StartConfig::default()).await
+    }
+
+    /// Verify schema, smoke health, run the configured duty loop, record metrics.
+    pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
+        self.boot_gates()?;
+        let events = match cfg.mode {
+            RunMode::SmokeElapsed { ticks } => run_duty_loop(
+                &self.profile,
+                &mut self.owner,
+                &mut self.shutdown,
+                &mut self.sync,
+                DutyLoopConfig {
+                    max_ticks: ticks,
+                    start_elapsed_ms: 0,
+                },
+            ),
+            RunMode::WallClock {
+                ticks,
+                enable_sleep,
+            } => {
+                run_wall_duty_loop(
+                    &self.clock,
+                    &mut self.owner,
+                    &mut self.shutdown,
+                    &mut self.sync,
+                    WallLoopConfig {
+                        max_ticks: ticks,
+                        enable_sleep,
+                    },
+                )
+                .await?
+            }
+        };
+        self.finish_observability(&events)
+    }
+
+    fn boot_gates(&mut self) -> Result<()> {
         self.db.verify_schema()?;
         self.observability.mark_storage_ok();
         self.observability.mark_crypto_ok();
@@ -145,41 +185,27 @@ impl EtheanClient {
         info!(
             slot = wall.slot.get(),
             interval = wall.interval,
-            "Wall tick at genesis boundary"
-        );
-
-        info!(
             fork = self.profile.fork_name,
-            syncing = self.owner.syncing,
             ready = self.observability.readiness.is_ready(),
-            "Ethean Lean Consensus client starting duty smoke"
+            "Ethean Lean Consensus client starting duties"
         );
+        Ok(())
+    }
 
-        let events = run_duty_loop(
-            &self.profile,
-            &mut self.owner,
-            &mut self.shutdown,
-            &mut self.sync,
-            DutyLoopConfig::default(),
-        );
+    fn finish_observability(&mut self, events: &[ChainEvent]) -> Result<()> {
         let accepted = events
             .iter()
             .filter(|e| matches!(e, ChainEvent::TickAccepted(_)))
             .count();
-        let head_slot = self
-            .owner
-            .last_tick
-            .map(|t| t.slot.get())
-            .unwrap_or(0);
+        let head_slot = self.owner.last_tick.map(|t| t.slot.get()).unwrap_or(0);
         self.observability
             .record_chain(head_slot, self.sync.lag())?;
         self.observability.refresh_ready_gauge()?;
-
         info!(
             ticks_accepted = accepted,
             events = events.len(),
             ready = self.observability.readiness.is_ready(),
-            "Duty smoke loop finished"
+            "Duty loop finished"
         );
         Ok(())
     }
