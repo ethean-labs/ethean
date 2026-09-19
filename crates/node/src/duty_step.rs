@@ -1,6 +1,8 @@
 //! Shared single-step wall duty application (no sleep).
 
-use crate::block_builder::{decide_publish, plan_from_pool, PublishDecision};
+use crate::block_builder::{
+    decide_publish, encode_proposal_gossip, plan_from_pool, PublishDecision,
+};
 use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::dispatch::apply_command;
@@ -42,51 +44,74 @@ pub fn apply_wall_step(
         let snap = owner.snapshot(tick.slot, lag);
         if let Err(reason) = evaluate_gate(&snap.duty_view) {
             events.push(ChainEvent::DutySuppressed { tick, reason });
-        } else if let Some(ev) = try_plan_proposal(owner, tick) {
-            events.push(ev);
+        } else {
+            events.extend(try_plan_proposal(owner, tick));
         }
     }
     Ok(events)
 }
 
-fn try_plan_proposal(owner: &mut ChainOwner, tick: ethean_validator::DutyTick) -> Option<ChainEvent> {
+fn try_plan_proposal(
+    owner: &mut ChainOwner,
+    tick: ethean_validator::DutyTick,
+) -> Vec<ChainEvent> {
+    let mut out = Vec::new();
     let min_slot = tick.slot.get().saturating_sub(owner.max_head_lag_slots);
     owner.aggregates.prune_before(min_slot);
 
     let (pre, profile) = match (owner.head_state.clone(), owner.profile.clone()) {
         (Some(s), Some(p)) => (s, p),
-        _ => return None,
+        _ => return out,
     };
     let n = pre.validators.len() as u64;
     if n == 0 {
-        return None;
+        return out;
     }
     let proposer = ValidatorIndex::new(tick.slot.get() % n);
-    let plan = plan_from_pool(
+    let plan = match plan_from_pool(
         &owner.aggregates,
         owner.head_root,
         tick.slot,
         proposer,
         &pre,
-        profile,
+        profile.clone(),
         16,
-    )
-    .ok()?;
-    let root = plan.block_root().ok()?;
+    ) {
+        Ok(p) => p,
+        Err(_) => return out,
+    };
+    let root = match plan.block_root() {
+        Ok(r) => r,
+        Err(_) => return out,
+    };
     let attestations = plan.block.body.attestations.len();
-    let publish_allowed = matches!(
-        decide_publish(tick, tick, true),
-        PublishDecision::Allow
-    ) && tick.interval == 0;
+    let publish_allowed = matches!(decide_publish(tick, tick, true), PublishDecision::Allow)
+        && tick.interval == 0;
 
-    owner.planned_proposal = Some(plan);
+    owner.planned_proposal = Some(plan.clone());
     owner.planned_tick = Some(tick);
-    Some(ChainEvent::ProposalPlanned {
+    out.push(ChainEvent::ProposalPlanned {
         root,
         slot: tick.slot.get(),
         attestations,
         publish_allowed,
-    })
+    });
+
+    if publish_allowed {
+        if let Ok(gossip) = encode_proposal_gossip(&plan, profile.fork_name) {
+            let ready = ChainEvent::ProposalGossipReady {
+                root: gossip.block_root,
+                topic: gossip.topic.clone(),
+                payload_len: gossip.payload.len(),
+                has_type2_proof: gossip.has_type2_proof,
+            };
+            owner.pending_block_gossip = Some(gossip);
+            out.push(ready);
+        }
+    } else {
+        owner.pending_block_gossip = None;
+    }
+    out
 }
 
 #[cfg(test)]
@@ -121,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn plans_proposal_when_head_state_ready() {
+    fn plans_and_encodes_gossip_when_publish_allowed() {
         let pre = sample_state(3);
         let mut advanced = pre.clone();
         process_slots(&mut advanced, Slot::new(1)).unwrap();
@@ -137,16 +162,25 @@ mod tests {
             interval: 0,
             generation: 1,
         };
-        let ev = try_plan_proposal(&mut owner, tick).expect("plan event");
+        let events = try_plan_proposal(&mut owner, tick);
         assert!(matches!(
-            ev,
+            events[0],
             ChainEvent::ProposalPlanned {
                 publish_allowed: true,
                 attestations: 0,
                 ..
             }
         ));
-        assert!(owner.planned_proposal.is_some());
+        assert!(matches!(
+            &events[1],
+            ChainEvent::ProposalGossipReady {
+                has_type2_proof: false,
+                topic,
+                ..
+            } if topic.ends_with("/block/ssz_snappy")
+        ));
+        let pending = owner.pending_block_gossip.expect("pending");
+        assert!(!pending.payload.is_empty());
         assert_eq!(owner.planned_tick, Some(tick));
     }
 }
