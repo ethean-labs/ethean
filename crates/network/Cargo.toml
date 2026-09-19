@@ -26,6 +26,7 @@ libp2p-quic = [
     "libp2p/ping",
     "libp2p/macros",
     "libp2p/gossipsub",
+    "libp2p/request-response",
 ]
 
 [lib]
