@@ -68,11 +68,11 @@ Ethean implements the Ethereum Beam/Lean Chain specification with the following 
 git clone https://github.com/Pamenarti/Ethean.git
 cd Ethean
 
-# Build with optimizations
-cargo build --release
+# Build (also publishes an `ethean` shim into ~/.cargo/bin)
+cargo build -p ethean --release
 
-# Install binary
-cargo install --path bin/ethean
+# From any directory (Cargo bin must be on PATH):
+ethean version
 ```
 
 ### Development Install
@@ -82,8 +82,8 @@ cargo install --path bin/ethean
 git clone https://github.com/Pamenarti/Ethean.git
 cd Ethean
 
-# Install development dependencies
-cargo build
+# Debug build also refreshes the PATH shim
+cargo build -p ethean
 
 # Run tests to verify installation
 cargo test
@@ -101,30 +101,33 @@ Without `--bootnodes` / `ETHEAN_BOOTNODES` / `config/networks/pq-devnet-5.bootno
 cargo build -p ethean --release
 ```
 
+After that build, the command is `ethean` (Windows and Linux). The build script
+places a shim in `~/.cargo/bin`; no `install.sh` step.
+
 ### Run (local / offline pq-devnet-5 label)
 
 ```bash
-./target/release/ethean version
-./target/release/ethean start
-./target/release/ethean start --ticks 3
-./target/release/ethean start --ticks 2 --wall-clock
-./target/release/ethean start --until-signal
-./target/release/ethean start --network local
+ethean version
+ethean start
+ethean start --ticks 3
+ethean start --ticks 2 --wall-clock
+ethean start --until-signal
+ethean start --network local
 ```
 
 ### Join an operator mesh (when you have multiaddrs)
 
 ```bash
 # Paste operator QUIC multiaddrs into the file, or pass them on the CLI:
-./target/release/ethean start --until-signal --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
+ethean start --until-signal --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
 
 # Match operator gossip digest when they publish one (8 hex chars):
-./target/release/ethean start --until-signal --fork-digest aabbccdd --bootnodes '…'
+ethean start --until-signal --fork-digest aabbccdd --bootnodes '…'
 
 # Or:
 #   set ETHEAN_BOOTNODES=/ip4/…/udp/…/quic-v1/p2p/…
 #   edit config/networks/pq-devnet-5.bootnodes
-./target/release/ethean start --until-signal --network pq-devnet-5
+ethean start --until-signal --network pq-devnet-5
 ```
 
 ### What you will see
@@ -133,12 +136,12 @@ cargo build -p ethean --release
 - There is **no** `ethean monitor` subcommand and no Grafana UI in this binary yet.
 - Health surface used internally: Lean `/lean/v1/…` (not Beacon `/eth/v1`).
 
-More detail: [docs/deployment.md](docs/deployment.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](docs/working-client-pq-devnet-5-plan-2026-09-19.md), [docs/pq-devnet-5-research-refresh-2026-09-19.md](docs/pq-devnet-5-research-refresh-2026-09-19.md), [docs/blocks-by-range-quic-stream-2026-09-19.md](docs/blocks-by-range-quic-stream-2026-09-19.md).
+More detail: [docs/deployment.md](docs/deployment.md), [docs/ethean-path-command-after-build-2026-09-20.md](docs/ethean-path-command-after-build-2026-09-20.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](docs/working-client-pq-devnet-5-plan-2026-09-19.md), [docs/pq-devnet-5-research-refresh-2026-09-19.md](docs/pq-devnet-5-research-refresh-2026-09-19.md), [docs/blocks-by-range-quic-stream-2026-09-19.md](docs/blocks-by-range-quic-stream-2026-09-19.md).
 
 ### Validator stub
 
 ```bash
-./target/release/ethean validator
+ethean validator
 ```
 
 Reports leanSig / leanVM gate status (fail-closed until production backends link).
@@ -310,7 +313,7 @@ Provisioned Grafana / Prometheus (`deploy/observability/`) is still planning-onl
 
 ```bash
 # Long-running node (Ctrl-C to stop); watch the terminal for dial + duty logs
-./target/release/ethean start --until-signal --network pq-devnet-5
+ethean start --until-signal --network pq-devnet-5
 ```
 
 There is no `ethean monitor` CLI. Do not use Beacon `/eth/v1/node/health` paths.
