@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod error;
+pub mod fork_id;
 pub mod limits;
 pub mod message_id;
 pub mod reqresp;
@@ -11,6 +12,7 @@ pub mod status;
 pub mod topics;
 
 pub use error::{Result, WireError};
+pub use fork_id::{fork_identifier_bytes, fork_segment_hex};
 pub use limits::{
     MAX_BLOCKS_PER_REQUEST, MAX_COMPRESSED_GOSSIP_BYTES, MAX_DECOMPRESSED_BYTES,
     MAX_SNAPPY_EXPANSION_RATIO, MAX_STREAMS_PER_PEER, STATUS_TIMEOUT_MS,
