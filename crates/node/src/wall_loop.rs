@@ -80,13 +80,14 @@ mod tests {
     use ethean_primitives::Slot;
     use ethean_profile::lstar_devnet;
     use ethean_types::State;
+    use ethean_validator::SYNC_LAG_THRESHOLD_SLOTS;
 
     #[tokio::test]
     async fn wall_loop_no_sleep_completes() {
         let profile = lstar_devnet().unwrap();
         let built = local_smoke_genesis(1_700_000_000).unwrap();
         let clock = SlotClock::new(built.state.genesis_time(), profile).unwrap();
-        let mut owner = ChainOwner::new(32);
+        let mut owner = ChainOwner::new(SYNC_LAG_THRESHOLD_SLOTS);
         owner.generation = 1;
         owner.head_state = Some(State::default());
         let mut shutdown = ShutdownState::default();
