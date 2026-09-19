@@ -29,6 +29,32 @@ pub struct LeanVmGate {
     pub ffi_linked: bool,
 }
 
+/// Detailed leanSig gate (compile feature + recorded upstream pin).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LeanSigGate {
+    /// Upstream leanSig git rev pin.
+    pub pinned_rev: &'static str,
+    /// Cargo feature `leansig-backend` compiled in.
+    pub feature_enabled: bool,
+}
+
+impl LeanSigGate {
+    /// Probe this build.
+    pub fn probe() -> Self {
+        Self {
+            pinned_rev: crate::xmss::LEANSIG_REV,
+            feature_enabled: cfg!(feature = "leansig-backend"),
+        }
+    }
+
+    /// True when the production XMSS backend is compiled in.
+    ///
+    /// Does not guarantee the git dep resolves without the local num-bigint vendor patch.
+    pub fn ready(self) -> bool {
+        self.feature_enabled
+    }
+}
+
 impl LeanVmGate {
     /// Probe this build.
     pub fn probe() -> Self {
@@ -97,6 +123,9 @@ mod tests {
         let g = LeanVmGate::probe();
         assert!(!g.ready());
         assert_eq!(g.pinned_rev.len(), 40);
+        let s = LeanSigGate::probe();
+        assert_eq!(s.pinned_rev.len(), 40);
+        assert!(!s.ready());
     }
 
     #[cfg(feature = "leanvm-backend")]
