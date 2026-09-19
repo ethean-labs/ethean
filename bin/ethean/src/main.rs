@@ -3,7 +3,7 @@
 use clap::Parser;
 use ethean_node::{
     cli::{Cli, Command},
-    EtheanClient,
+    EtheanClient, StartConfig,
 };
 use tracing::info;
 
@@ -21,10 +21,15 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Start => {
-            info!("Starting lean consensus node");
+        Command::Start { ticks, wall_clock } => {
+            info!(ticks, wall_clock, "Starting lean consensus node");
             let client = EtheanClient::new().await?;
-            client.start().await?;
+            let cfg = if wall_clock {
+                StartConfig::wall(ticks, true)
+            } else {
+                StartConfig::smoke(ticks)
+            };
+            client.start_with(cfg).await?;
         }
         Command::Validator => {
             info!("Starting validator client");
