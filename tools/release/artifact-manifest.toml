@@ -1,0 +1,19 @@
+schema = "ethean-release-artifact-v1"
+phase = "13"
+product = "ethean-lean-consensus-client"
+
+[required_fields]
+source_commit = "git rev-parse HEAD"
+cargo_lock_sha256 = "sha256 of Cargo.lock"
+rustc_version = "rustc --version"
+builder_digest = "container image digest when CI provides one"
+protocol_pins = "spec/pins/*.lock.toml"
+sbom_hash = "artifacts/phase-13/sbom/*"
+test_evidence = "summaries under artifacts/phase-13/"
+signature = "detached signature over the manifest (release signing policy)"
+
+[forbidden_features]
+mock_crypto_accept = true
+beacon_eth_v1_routes = true
+tcp_ws_consensus_transport = true
+json_consensus_identity = true
