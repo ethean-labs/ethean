@@ -30,6 +30,9 @@ if ($patched -eq $text) {
 }
 
 Write-Host ""
-Write-Host "Next: point ethean-crypto at the path (local only, do not commit):"
-Write-Host '  leansig = { path = "bazalinacaklar/leanSig-patched", package = "leansig", optional = true }'
+Write-Host "Verified path (from repo root, local only — do not commit Cargo.toml change):"
+Write-Host '  In crates/crypto/Cargo.toml temporarily replace the git leansig dep with:'
+Write-Host '  leansig = { path = "../../bazalinacaklar/leanSig-patched", package = "leansig", optional = true }'
 Write-Host "Then: cargo check -p ethean-crypto --features leansig-backend"
+Write-Host "Restore the git dep before committing. Keep rand 0.10 on ethean-crypto."
+Write-Host "Upstream still needs num-bigint 0.5 alignment with Plonky3 before git dep works alone."
