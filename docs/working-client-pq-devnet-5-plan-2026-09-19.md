@@ -24,13 +24,14 @@ pq-devnet-5 is **in progress** on [leanroadmap.org](https://leanroadmap.org/) (n
 
 - ~~Pin genesis fork digest to leanSpec (replace interim SHA-256 fork segment)~~ — **override path landed** (`--fork-digest` / env / file); still need the operator/leanSpec pin value for a live run.
 - leanSig + leanVM production gates
-- Status / blocks-by-root **stream** exchange against dialed peers — session book + outbox staging landed; libp2p request_response wire still open
+- Status / blocks-by-root **stream** exchange — Status request_response wire + boot flush landed; response ingest + blocks-by-root stream still open
 - Goldfish only when leanSpec for the run requires it
 
 ## Sprint landings (Status sync)
 
 5. Boot stores local Status, queues `StatusSessionBook`, stages Status/blocks outboxes
 6. See [status-handshake-outbox-2026-09-19.md](./status-handshake-outbox-2026-09-19.md)
+7. QuicSwarm Status request_response send/receive — [quic-status-reqresp-wire-2026-09-19.md](./quic-status-reqresp-wire-2026-09-19.md)
 
 ## How to run (summary)
 
