@@ -33,6 +33,21 @@ impl PeerManager {
         }
     }
 
+    /// Ensure the peer exists, then apply a score delta.
+    pub fn ensure_and_feedback(&mut self, peer_id: Hash32, delta: i32) {
+        self.peers.entry(peer_id).or_insert(PeerRecord {
+            peer_id,
+            score: 0,
+            claimed_head_slot: 0,
+        });
+        self.apply_feedback(&peer_id, delta);
+    }
+
+    /// Read current score when the peer is known.
+    pub fn score_of(&self, peer_id: &Hash32) -> Option<i32> {
+        self.peers.get(peer_id).map(|p| p.score)
+    }
+
     /// Remove peer on disconnect.
     pub fn remove(&mut self, peer_id: &Hash32) {
         self.peers.remove(peer_id);
@@ -65,4 +80,15 @@ mod tests {
         pm.apply_feedback(&id, -10);
         assert_eq!(pm.peers.get(&id).unwrap().score, -10);
     }
+
+    #[test]
+    fn ensure_creates_then_scores() {
+        let mut pm = PeerManager::default();
+        let id = [3u8; 32];
+        pm.ensure_and_feedback(id, SCORE_REJECT_PLACEHOLDER);
+        assert_eq!(pm.score_of(&id), Some(-25));
+    }
 }
+
+// Local alias so the test does not depend on gossip scoring imports.
+const SCORE_REJECT_PLACEHOLDER: i32 = -25;
