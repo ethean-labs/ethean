@@ -7,6 +7,8 @@ members = [
     "crates/genesis",
     "crates/transition",
     "crates/fork-choice",
+    "crates/crypto",
+    "crates/validator",
     "crates/node",
     "bin/ethean",
 ]
@@ -27,6 +29,8 @@ ethean-types = { path = "crates/types" }
 ethean-genesis = { path = "crates/genesis" }
 ethean-transition = { path = "crates/transition" }
 ethean-fork-choice = { path = "crates/fork-choice" }
+ethean-crypto = { path = "crates/crypto" }
+ethean-validator = { path = "crates/validator" }
 ethean-node = { path = "crates/node" }
 
 tokio = { version = "1.0", features = ["full"] }
@@ -48,7 +52,7 @@ blst = "0.3"
 rand = "0.8"
 anyhow = "1.0"
 thiserror = "1.0"
-tracing = "0.1"
+tracing = "0.1.44"
 tracing-subscriber = "0.3"
 config = "0.14"
 clap = { version = "4.0", features = ["derive"] }

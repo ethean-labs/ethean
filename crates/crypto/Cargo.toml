@@ -12,12 +12,14 @@ ethean-primitives = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 serde = { workspace = true, optional = true }
+# Optional: pinned leanSig. Disabled by default — see docs for Plonky3/num_bigint compile blocker.
 leansig = { git = "https://github.com/leanEthereum/leanSig", rev = "15cbdd43ec8525aa43fea2f42cafc5ed366084ae", package = "leansig", optional = true }
-rand = { workspace = true, optional = true }
+rand = { version = "0.8", optional = true }
 
 [features]
-default = ["leansig-backend"]
+# Default: fail-closed production backend + test-hmac for local/unit verify (real, not always-true).
+default = ["test-hmac"]
+# Attempt to compile/wrap leanSig PROD (may fail resolution until upstream num_bigint pin).
 leansig-backend = ["dep:leansig", "dep:rand"]
+test-hmac = []
 serde = ["dep:serde"]
-
-[dev-dependencies]
