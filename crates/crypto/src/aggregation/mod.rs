@@ -6,6 +6,7 @@
 
 mod bindings;
 mod prove;
+mod split;
 mod statement;
 mod statement_wire;
 mod verify;
@@ -15,6 +16,7 @@ pub use bindings::{
     MAX_PROOF_BYTES, MAX_TYPE2_COMPONENTS, PROD_AGGREGATION_FINGERPRINT,
 };
 pub use prove::{prove_type1, prove_type2};
+pub use split::{attestation_leaves_from_type2, split_type2_to_type1, Type1Leaf};
 pub use statement::{
     AggregateStatement, ParticipantSet, ProofKind, Type2ComponentRef, MAX_PARTICIPANTS,
 };
