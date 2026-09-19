@@ -23,12 +23,10 @@ pub fn apply_command(
             }
         }
         ChainCommand::ImportBlock { root, parent } => {
-            if !shutdown.accepts_new_duties() && shutdown.phase() != crate::shutdown::ShutdownPhase::Draining
-            {
+            if shutdown.phase() == crate::shutdown::ShutdownPhase::Stopped {
                 return ChainEvent::ShutdownComplete;
             }
             if parent != owner.head_root {
-                // Stale parent: no head advance (still emit for observability).
                 return ChainEvent::HeadUpdated {
                     root: owner.head_root,
                     slot: owner.last_tick.map(|t| t.slot.get()).unwrap_or(0),
@@ -42,11 +40,7 @@ pub fn apply_command(
         }
         ChainCommand::SetSyncing(syncing) => {
             owner.syncing = syncing;
-            ChainEvent::TickDuplicate(ethean_validator::DutyTick {
-                slot: ethean_primitives::Slot::new(0),
-                interval: 0,
-                generation: owner.generation,
-            })
+            ChainEvent::SyncingUpdated(syncing)
         }
         ChainCommand::Shutdown => {
             shutdown.begin_drain();
