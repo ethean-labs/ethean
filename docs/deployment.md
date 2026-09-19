@@ -27,9 +27,12 @@ listen for the QUIC facade, smokes `/lean/v1/health`, runs a finite **elapsed** 
 drains. `--wall-clock` samples the system clock between ticks. `--until-signal` runs until Ctrl-C.
 `--data-dir` uses `ethean_storage::open_path` (requires a build with `ethean-storage/rocksdb`).
 
-UDP Status path probes are available via `probe_udp_status` (reachability only). libp2p QUIC-v1
-swarm dial and leanSig/leanVM FFI remain fail-closed until those backends link. For RocksDB on
-Windows, run `tools/release/check-libclang.ps1` then set `LIBCLANG_PATH`.
+UDP Status path probes are available via `probe_udp_status` (reachability only).
+Enable `ethean-network/libp2p-quic` (or `ethean-node/libp2p-quic`) for `QuicSwarm` /
+`SwarmFacade::bind_quic_swarm` + `dial_quic_peer`. leanSig links via a local vendor
+patch (`tools/release/vendor-leansig-bigint-fix.ps1`); leanVM FFI is still fail-closed.
+For RocksDB on Windows, dot-source `tools/release/check-libclang.ps1` (sets
+`LIBCLANG_PATH` and `INCLUDE` for MSVC/WinSDK), then build with `ethean-storage/rocksdb`.
 
 ## Config / data
 
