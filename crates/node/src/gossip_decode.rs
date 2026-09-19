@@ -15,6 +15,23 @@ pub struct DecodedBlockGossip {
     pub parent: Hash32,
     /// Decoded block body used for structural transition.
     pub block: Block,
+    /// Present when the payload was a `SignedBlock` envelope.
+    pub signed: Option<SignedBlock>,
+}
+
+/// Attestation-subnet gossip retained for the aggregate pool.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecodedAttestationGossip {
+    /// Content id for ingest events (aggregate HTR or data root).
+    pub content_root: Hash32,
+    /// Attestation-data tree root (pool message key).
+    pub message_root: Hash32,
+    /// Attestation data slot.
+    pub slot: u64,
+    /// Participation / coverage count.
+    pub coverage: u32,
+    /// Proof bytes when a signed aggregate is present.
+    pub proof: Vec<u8>,
 }
 
 /// Try to decode a `/block/` topic payload as `SignedBlock` or bare `Block`.
@@ -27,7 +44,8 @@ pub fn try_decode_block(topic: &str, payload: &[u8]) -> Option<DecodedBlockGossi
         return Some(DecodedBlockGossip {
             root,
             parent: signed.block.parent_root,
-            block: signed.block,
+            block: signed.block.clone(),
+            signed: Some(signed),
         });
     }
     if let Ok(block) = Block::ssz_decode(payload) {
@@ -36,6 +54,44 @@ pub fn try_decode_block(topic: &str, payload: &[u8]) -> Option<DecodedBlockGossi
             root,
             parent: block.parent_root,
             block,
+            signed: None,
+        });
+    }
+    None
+}
+
+/// Decode `/attestation_*/` gossip into pool-ready fields.
+pub fn try_decode_attestation(topic: &str, payload: &[u8]) -> Option<DecodedAttestationGossip> {
+    if !topic.contains("/attestation_") {
+        return None;
+    }
+    // Prefer unsigned aggregated shape first; signed envelopes can false-positive decode.
+    if let Ok(agg) = AggregatedAttestation::ssz_decode(payload) {
+        let content_root = agg.hash_tree_root().ok()?;
+        let coverage = agg.aggregation_bits.bits.iter().filter(|b| **b).count() as u32;
+        return Some(DecodedAttestationGossip {
+            content_root,
+            message_root: agg.data.hash_tree_root(),
+            slot: agg.data.slot.get(),
+            coverage,
+            proof: Vec::new(),
+        });
+    }
+    if let Ok(signed) = SignedAggregatedAttestation::ssz_decode(payload) {
+        let message_root = signed.data.hash_tree_root();
+        let coverage = signed
+            .proof
+            .participants
+            .bits
+            .iter()
+            .filter(|b| **b)
+            .count() as u32;
+        return Some(DecodedAttestationGossip {
+            content_root: message_root,
+            message_root,
+            slot: signed.data.slot.get(),
+            coverage,
+            proof: signed.proof.proof.clone(),
         });
     }
     None
@@ -43,17 +99,7 @@ pub fn try_decode_block(topic: &str, payload: &[u8]) -> Option<DecodedBlockGossi
 
 /// Tree root for `/attestation_*/` gossip (aggregated or signed).
 pub fn try_decode_attestation_root(topic: &str, payload: &[u8]) -> Option<Hash32> {
-    if !topic.contains("/attestation_") {
-        return None;
-    }
-    // Prefer unsigned aggregated shape first; signed envelopes can false-positive decode.
-    if let Ok(agg) = AggregatedAttestation::ssz_decode(payload) {
-        return agg.hash_tree_root().ok();
-    }
-    if let Ok(signed) = SignedAggregatedAttestation::ssz_decode(payload) {
-        return Some(signed.data.hash_tree_root());
-    }
-    None
+    try_decode_attestation(topic, payload).map(|d| d.content_root)
 }
 
 /// Prefer SSZ tree roots; otherwise domain-separated SHA-256 of bytes.
@@ -105,6 +151,7 @@ mod tests {
         let d = try_decode_block(topic, &enc).expect("decode");
         assert_eq!(d.parent, [1u8; 32]);
         assert_eq!(d.root, block.hash_tree_root().unwrap());
+        assert!(d.signed.is_none());
         assert_eq!(content_root_for(topic, &enc), d.root);
     }
 
@@ -123,10 +170,11 @@ mod tests {
         };
         let enc = agg.ssz_encode();
         let topic = "/leanconsensus/abcd/attestation_0/ssz_snappy";
-        let root = try_decode_attestation_root(topic, &enc).expect("att root");
-        let decoded = AggregatedAttestation::ssz_decode(&enc).expect("decode");
-        assert_eq!(root, decoded.hash_tree_root().unwrap());
-        assert_eq!(content_root_for(topic, &enc), root);
+        let decoded = try_decode_attestation(topic, &enc).expect("att");
+        assert_eq!(decoded.coverage, 2);
+        assert_eq!(decoded.content_root, agg.hash_tree_root().unwrap());
+        assert_eq!(decoded.message_root, agg.data.hash_tree_root());
+        assert_eq!(content_root_for(topic, &enc), decoded.content_root);
     }
 
     #[test]
