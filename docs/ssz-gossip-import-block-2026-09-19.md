@@ -22,6 +22,5 @@ pwsh tools/release/check-leansig-vendor.ps1
 
 ## Still open
 
-- Attestation-subnet SSZ into duty/pool paths
-- Full state transition on gossip import (currently root-only head advance)
+- Attestation-subnet SSZ into duty/pool paths; verified SignedBlock STF
 - leanSig git dep / leanVM FFI
