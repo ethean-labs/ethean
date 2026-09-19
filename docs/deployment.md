@@ -10,6 +10,11 @@ cargo build -p ethean --release
 
 Requires the workspace Rust toolchain (see `rust-toolchain.toml`). The binary enables `libp2p-quic` by default so bootnode dials work.
 
+Each build of `bin/ethean` refreshes a PATH shim in `~/.cargo/bin` (`ethean` on
+Unix, `ethean.cmd` on Windows) so the client runs as `ethean …` with no
+`install.sh` / `cargo install` step. Cargo's `bin` directory must be on `PATH`
+(rustup usually configures this).
+
 ## Network target
 
 Default `--network` is **`pq-devnet-5`** (leanroadmap generation: planned / in progress).
@@ -28,17 +33,16 @@ Peer baseline for this generation: **Zeam** and **Ream** (static bootnodes / `de
 ## Run
 
 ```bash
-./target/release/ethean version
-./target/release/ethean start
-./target/release/ethean start --ticks 3
-./target/release/ethean start --ticks 2 --wall-clock
-./target/release/ethean start --until-signal
-./target/release/ethean start --until-signal --bootnodes '<quic-multiaddr>'
-./target/release/ethean start --network local
-./target/release/ethean start --data-dir ./ethean-data
-./target/release/ethean validator
+ethean version
+ethean start
+ethean start --ticks 3
+ethean start --ticks 2 --wall-clock
+ethean start --until-signal
+ethean start --until-signal --bootnodes '<quic-multiaddr>'
+ethean start --network local
+ethean start --data-dir ./ethean-data
+ethean validator
 ```
-
 `start` loads `lstar_devnet`, opens Lean in-memory storage (or `--data-dir` RocksDB when built with that feature), binds UDP/QUIC, smokes `/lean/v1/health`, dials bootnodes when present, then runs the duty loop.
 
 ## Monitor appearance
