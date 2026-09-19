@@ -58,6 +58,15 @@ impl QuicSwarm {
         Self::bind_inner(cfg, Some(topics)).await
     }
 
+    /// Bind using an already-resolved fork segment (operator digest hex).
+    pub async fn bind_for_fork_segment(
+        cfg: &TransportConfig,
+        fork_segment: &str,
+    ) -> NetResult<Self> {
+        let topics = LeanGossipTopics::from_fork_segment(fork_segment)?;
+        Self::bind_inner(cfg, Some(topics)).await
+    }
+
     async fn bind_inner(cfg: &TransportConfig, topics: Option<LeanGossipTopics>) -> NetResult<Self> {
         let keypair = identity::Keypair::generate_ed25519();
         let peer_id = keypair.public().to_peer_id();
