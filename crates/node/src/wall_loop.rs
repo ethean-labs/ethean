@@ -3,13 +3,13 @@
 use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::dispatch::apply_command;
+use crate::duty_step::apply_wall_step;
 use crate::events::ChainEvent;
 use crate::shutdown::ShutdownState;
-use crate::wall_tick::{ms_until_next_interval, tick_from_wall};
+use crate::wall_tick::ms_until_next_interval;
 use crate::{Error, Result};
 use ethean_genesis::{SlotClock, SystemTimeSource, TimeSource};
 use ethean_sync::SyncStatus;
-use ethean_validator::evaluate_gate;
 use std::time::Duration;
 use tracing::debug;
 
@@ -31,7 +31,7 @@ impl Default for WallLoopConfig {
     }
 }
 
-/// Drive duties from the system wall clock.
+/// Drive duties from the system wall clock for a fixed tick budget.
 pub async fn run_wall_duty_loop(
     clock: &SlotClock,
     owner: &mut ChainOwner,
@@ -40,34 +40,13 @@ pub async fn run_wall_duty_loop(
     cfg: WallLoopConfig,
 ) -> Result<Vec<ChainEvent>> {
     let mut events = Vec::new();
-    let generation = owner.generation.max(1);
     let time = SystemTimeSource;
 
     for i in 0..cfg.max_ticks {
         if !shutdown.accepts_new_duties() {
             break;
         }
-
-        let tick = tick_from_wall(clock, &time, generation)?;
-        sync.observe(tick.slot, tick.slot);
-        let syncing = !sync.duties_allowed();
-        events.push(apply_command(
-            owner,
-            shutdown,
-            ChainCommand::SetSyncing(syncing),
-        ));
-
-        let accepted = apply_command(owner, shutdown, ChainCommand::Tick(tick));
-        let was_accepted = matches!(accepted, ChainEvent::TickAccepted(_));
-        events.push(accepted);
-
-        if was_accepted {
-            let lag = sync.lag();
-            let snap = owner.snapshot(tick.slot, lag);
-            if let Err(reason) = evaluate_gate(&snap.duty_view) {
-                events.push(ChainEvent::DutySuppressed { tick, reason });
-            }
-        }
+        events.extend(apply_wall_step(clock, owner, shutdown, sync)?);
 
         if cfg.enable_sleep && i + 1 < cfg.max_ticks {
             let now_ms = time.unix_millis().map_err(Error::Clock)?;
