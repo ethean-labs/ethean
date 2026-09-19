@@ -33,6 +33,9 @@ pub enum Command {
         /// Comma-separated QUIC multiaddrs (overrides file/env when set).
         #[arg(long)]
         bootnodes: Option<String>,
+        /// Optional 8-hex fork digest for gossip topics (overrides interim name hash).
+        #[arg(long)]
+        fork_digest: Option<String>,
     },
     /// Start the validator client
     Validator,
