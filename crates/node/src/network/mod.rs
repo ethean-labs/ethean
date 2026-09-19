@@ -5,11 +5,12 @@
 pub use ethean_network::{
     admit, blocks_by_root_for_status_gap, blocks_by_root_protocol_id, decode_gossip, delta_for,
     dial_quic, dial_quic_pending, encode_blocks_by_root, encode_gossip, handle_status,
-    parse_quic_udp, prepare_transport, probe_udp_status, reject_non_quic, validate_gossip_payload,
-    BoundTransport, GossipAction, GossipIngress, LeanGossipTopics, NetworkError, NodeIdentity,
-    PeerManager, PeerRecord, PumpEvent, QuicUdpAddr, RequestTracker, Result, StatusExchange,
-    StatusSessionBook, SwarmFacade, TransportConfig, UdpDialProbe, MAX_INBOUND_PEERS,
-    MAX_OUTBOUND_PEERS, MAX_PEERS_PER_IP, SCORE_ACCEPT, SCORE_IGNORE, SCORE_REJECT,
+    parse_quic_udp, prepare_status_outbounds, prepare_transport, probe_udp_status,
+    reject_non_quic, validate_gossip_payload, BoundTransport, GossipAction, GossipIngress,
+    LeanGossipTopics, NetworkError, NodeIdentity, OutboundStatusRequest, PeerManager, PeerRecord,
+    PumpEvent, QuicUdpAddr, RequestId, RequestTracker, Result, StatusExchange, StatusSessionBook,
+    SwarmFacade, TransportConfig, UdpDialProbe, MAX_INBOUND_PEERS, MAX_OUTBOUND_PEERS,
+    MAX_PEERS_PER_IP, SCORE_ACCEPT, SCORE_IGNORE, SCORE_REJECT,
 };
 
 #[cfg(feature = "libp2p-quic")]
