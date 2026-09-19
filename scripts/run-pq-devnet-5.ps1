@@ -2,4 +2,4 @@
 $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
 cargo build -p ethean --release
-ethean start --until-signal --network pq-devnet-5 @args
+ethean start --until-signal --network pq-devnet-5 --metrics @args
