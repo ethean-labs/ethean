@@ -136,6 +136,22 @@ impl EtheanClient {
                     "Status handshakes queued for connected peers"
                 );
             }
+            if let Some(facade) = self.swarm.as_mut() {
+                match ethean_network::prepare_status_outbounds(
+                    &self.status_sessions,
+                    &mut facade.requests,
+                ) {
+                    Ok(reqs) if !reqs.is_empty() => {
+                        let n = reqs.len();
+                        facade.enqueue_status_outbounds(reqs);
+                        info!(n, "Status outbound payloads staged for req/resp");
+                    }
+                    Ok(_) => {}
+                    Err(e) => {
+                        info!(error = %e, "failed to stage Status outbounds");
+                    }
+                }
+            }
         }
         let ingest = crate::gossip_ingest::ingest_accepted(
             &mut self.owner,
