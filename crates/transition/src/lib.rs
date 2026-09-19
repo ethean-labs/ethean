@@ -14,12 +14,14 @@ mod operation;
 mod opts;
 mod outcome;
 mod slot;
+mod type2_statement;
 
 pub use context::TransitionContext;
 pub use error::TransitionError;
 pub use opts::TransitionOpts;
 pub use outcome::TransitionOutcome;
 pub use slot::process_slots;
+pub use type2_statement::type2_statement_for_block;
 
 pub use block::{process_block, process_block_header};
 pub use operation::{
@@ -83,34 +85,7 @@ pub fn apply_block(
             "block aggregate proof is empty".into(),
         ));
     }
-    let body_root = signed
-        .block
-        .body
-        .hash_tree_root()
-        .map_err(|e| TransitionError::Types(e.to_string()))?;
-    let profile = ethean_crypto::domain_digest(
-        b"ethean-transition/v1/agg-profile",
-        ethean_crypto::PROD_AGGREGATION_FINGERPRINT.as_bytes(),
-    );
-    let mut components = Vec::with_capacity(1 + signed.block.body.attestations.len());
-    components.push(ethean_crypto::Type2ComponentRef {
-        message_root: body_root,
-        slot: signed.block.slot.get(),
-    });
-    for att in &signed.block.body.attestations {
-        components.push(ethean_crypto::Type2ComponentRef {
-            message_root: att.data.hash_tree_root(),
-            slot: signed.block.slot.get(),
-        });
-    }
-    let statement = ethean_crypto::AggregateStatement {
-        kind: ethean_crypto::ProofKind::Type2,
-        profile_digest: profile,
-        message_root: body_root,
-        slot: signed.block.slot.get(),
-        participants: ethean_crypto::ParticipantSet::empty(),
-        components,
-    };
+    let statement = type2_statement_for_block(&signed.block)?;
     match ethean_crypto::verify_type2(&statement, &signed.proof.proof) {
         Ok(()) => apply_block_unverified(pre, &signed.block, ctx),
         Err(ethean_crypto::CryptoError::BackendUnavailable(msg)) => {
