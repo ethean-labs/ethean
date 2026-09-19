@@ -3,13 +3,23 @@
 use crate::chain_owner::ChainOwner;
 use crate::local_status::{local_status, observe_remote_status};
 use ethean_network::{
-    prepare_blocks_by_root_outbound, OutboundBlocksByRootRequest, PumpEvent, RequestTracker,
+    prepare_blocks_by_range_outbound, prepare_blocks_by_root_outbound,
+    OutboundBlocksByRangeRequest, OutboundBlocksByRootRequest, PumpEvent, RequestTracker,
     StatusSessionBook,
 };
 use ethean_network_wire::Status;
 use ethean_primitives::{Hash32, Slot};
 use ethean_sync::SyncStatus;
 use tracing::info;
+
+/// Blocks fetch requests staged after a successful Status handshake.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct StatusSyncOutbounds {
+    /// Immediate head catch-up via blocks-by-root (when heads differ).
+    pub blocks_by_root: Option<OutboundBlocksByRootRequest>,
+    /// Deep slot catch-up via blocks-by-range (when remote head slot is ahead).
+    pub blocks_by_range: Option<OutboundBlocksByRangeRequest>,
+}
 
 /// Queue Status handshakes for connected peer fingerprints.
 pub fn queue_peers(
@@ -50,7 +60,7 @@ pub fn on_pump_event(
     }
 }
 
-/// Complete a handshake with remote Status bytes and optionally stage blocks-by-root.
+/// Complete a handshake with remote Status bytes and stage block sync requests.
 pub fn complete_status_handshake(
     book: &mut StatusSessionBook,
     sync: &mut SyncStatus,
@@ -58,7 +68,7 @@ pub fn complete_status_handshake(
     peer: Hash32,
     remote_bytes: &[u8],
     tracker: &mut RequestTracker,
-) -> Result<Option<OutboundBlocksByRootRequest>, String> {
+) -> Result<StatusSyncOutbounds, String> {
     let exchange = book
         .ingest_remote(peer, remote_bytes)
         .map_err(|e| e.to_string())?;
@@ -73,8 +83,24 @@ pub fn complete_status_handshake(
         lag = sync.lag(),
         "Status handshake completed"
     );
-    prepare_blocks_by_root_outbound(peer, owner.head_root, &exchange.remote, tracker)
-        .map_err(|e| e.to_string())
+    let blocks_by_root = prepare_blocks_by_root_outbound(
+        peer,
+        owner.head_root,
+        &exchange.remote,
+        tracker,
+    )
+    .map_err(|e| e.to_string())?;
+    let blocks_by_range = prepare_blocks_by_range_outbound(
+        peer,
+        local_head.get(),
+        &exchange.remote,
+        tracker,
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(StatusSyncOutbounds {
+        blocks_by_root,
+        blocks_by_range,
+    })
 }
 
 /// Build local Status from owner + genesis root + fork segment.
