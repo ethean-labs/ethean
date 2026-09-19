@@ -76,6 +76,7 @@ Planning session summaries:
 - [Blocks-by-root request_response wire](./blocks-by-root-reqresp-wire-2026-09-19.md)
 - [Blocks-by-root SignedBlock ingest](./blocks-by-root-signedblock-ingest-2026-09-19.md)
 - [Blocks-by-root multi-hop parent catch-up](./blocks-by-root-multihop-catchup-2026-09-19.md)
+- [Type-2 structural split and pool reseed](./type2-structural-split-pool-reseed-2026-09-19.md)
 - [pq-devnet-5 client run verification](./pq-devnet-5-client-run-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
