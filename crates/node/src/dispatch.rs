@@ -3,8 +3,8 @@
 use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::events::ChainEvent;
+use crate::gossip_decode::{content_root_for, try_decode_block};
 use crate::shutdown::ShutdownState;
-use sha2::{Digest, Sha256};
 
 /// Dispatch one command; returns the observer event.
 pub fn apply_command(
@@ -23,37 +23,12 @@ pub fn apply_command(
                 ChainEvent::TickDuplicate(tick)
             }
         }
-        ChainCommand::ImportBlock { root, parent } => {
-            if shutdown.phase() == crate::shutdown::ShutdownPhase::Stopped {
-                return ChainEvent::ShutdownComplete;
-            }
-            if parent != owner.head_root {
-                return ChainEvent::HeadUpdated {
-                    root: owner.head_root,
-                    slot: owner.last_tick.map(|t| t.slot.get()).unwrap_or(0),
-                };
-            }
-            owner.head_root = root;
-            ChainEvent::HeadUpdated {
-                root,
-                slot: owner.last_tick.map(|t| t.slot.get()).unwrap_or(0),
-            }
-        }
+        ChainCommand::ImportBlock { root, parent } => import_block(owner, shutdown, root, parent),
         ChainCommand::IngestGossip {
             topic,
             payload,
             peer: _,
-        } => {
-            if shutdown.phase() == crate::shutdown::ShutdownPhase::Stopped {
-                return ChainEvent::ShutdownComplete;
-            }
-            let content_root = content_root(&payload);
-            owner.last_gossip_root = Some(content_root);
-            ChainEvent::GossipIngested {
-                topic,
-                content_root,
-            }
-        }
+        } => ingest_gossip(owner, shutdown, topic, payload),
         ChainCommand::SetSyncing(syncing) => {
             owner.syncing = syncing;
             ChainEvent::SyncingUpdated(syncing)
@@ -66,14 +41,49 @@ pub fn apply_command(
     }
 }
 
-fn content_root(payload: &[u8]) -> [u8; 32] {
-    let mut hasher = Sha256::new();
-    hasher.update(b"ethean-gossip-ingest-v1");
-    hasher.update(payload);
-    let dig = hasher.finalize();
-    let mut out = [0u8; 32];
-    out.copy_from_slice(&dig);
-    out
+fn import_block(
+    owner: &mut ChainOwner,
+    shutdown: &ShutdownState,
+    root: ethean_primitives::Hash32,
+    parent: ethean_primitives::Hash32,
+) -> ChainEvent {
+    if shutdown.phase() == crate::shutdown::ShutdownPhase::Stopped {
+        return ChainEvent::ShutdownComplete;
+    }
+    if parent != owner.head_root {
+        return ChainEvent::HeadUpdated {
+            root: owner.head_root,
+            slot: owner.last_tick.map(|t| t.slot.get()).unwrap_or(0),
+        };
+    }
+    owner.head_root = root;
+    ChainEvent::HeadUpdated {
+        root,
+        slot: owner.last_tick.map(|t| t.slot.get()).unwrap_or(0),
+    }
+}
+
+fn ingest_gossip(
+    owner: &mut ChainOwner,
+    shutdown: &ShutdownState,
+    topic: String,
+    payload: Vec<u8>,
+) -> ChainEvent {
+    if shutdown.phase() == crate::shutdown::ShutdownPhase::Stopped {
+        return ChainEvent::ShutdownComplete;
+    }
+    let content_root = content_root_for(&topic, &payload);
+    owner.last_gossip_root = Some(content_root);
+
+    if let Some(decoded) = try_decode_block(&topic, &payload) {
+        // Advance head when the gossip block extends the current tip.
+        let _ = import_block(owner, shutdown, decoded.root, decoded.parent);
+    }
+
+    ChainEvent::GossipIngested {
+        topic,
+        content_root,
+    }
 }
 
 #[cfg(test)]
@@ -137,12 +147,47 @@ mod tests {
             &mut owner,
             &mut shutdown,
             ChainCommand::IngestGossip {
-                topic: "/leanconsensus/x/block/ssz_snappy".into(),
+                topic: "/leanconsensus/x/aggregation/ssz_snappy".into(),
                 payload: b"block-bytes".to_vec(),
                 peer: None,
             },
         );
         let root = owner.last_gossip_root.expect("root");
+        assert!(matches!(
+            ev,
+            ChainEvent::GossipIngested { content_root, .. } if content_root == root
+        ));
+        assert_eq!(owner.head_root, [0u8; 32]);
+    }
+
+    #[test]
+    fn ingest_block_advances_head_when_parent_matches() {
+        use ethean_primitives::{Slot, ValidatorIndex};
+        use ethean_types::{Block, BlockBody};
+
+        let mut owner = ChainOwner::new(2);
+        owner.head_root = [1u8; 32];
+        let mut shutdown = ShutdownState::default();
+        let block = Block {
+            slot: Slot::new(4),
+            proposer_index: ValidatorIndex::new(0),
+            parent_root: [1u8; 32],
+            state_root: [7u8; 32],
+            body: BlockBody::default(),
+        };
+        let enc = block.ssz_encode().unwrap();
+        let root = block.hash_tree_root().unwrap();
+        let ev = apply_command(
+            &mut owner,
+            &mut shutdown,
+            ChainCommand::IngestGossip {
+                topic: "/leanconsensus/abcd/block/ssz_snappy".into(),
+                payload: enc,
+                peer: None,
+            },
+        );
+        assert_eq!(owner.head_root, root);
+        assert_eq!(owner.last_gossip_root, Some(root));
         assert!(matches!(
             ev,
             ChainEvent::GossipIngested { content_root, .. } if content_root == root
