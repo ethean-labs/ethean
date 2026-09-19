@@ -1,0 +1,43 @@
+# Ethean Phase 09 protocol lock
+# English only. Digests and full commits are authoritative.
+
+schema = "ethean-phase-lock-v1"
+phase = "09"
+phase_name = "validator-and-node-duties"
+lock_status = "resolved_with_open_gates"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+profile_note = """
+Duty gate, (slot,interval,generation) scheduler, attester/proposer/aggregator flows,
+and ChainOwner snapshots landed. Gossip publish and full block build wiring remain Phase 10+.
+"""
+
+[ethean]
+planning_phase_doc = "road-to/lean-consensus-migration/phases/09-validator-and-node-duties.md"
+
+[resolved.timing]
+milliseconds_per_slot = 4000
+intervals_per_slot = 5
+milliseconds_per_interval = 800
+citation = "ethean-profile lstar_devnet / leanSpec INTERVALS_PER_SLOT"
+
+[resolved.duties]
+gate = "ethean-validator/duty_gate"
+scheduler = "ethean-validator/scheduler"
+attester = "ethean-validator/attester"
+proposer = "ethean-validator/proposer"
+aggregator = "ethean-validator/aggregator"
+chain_owner = "ethean-node/chain_owner"
+duplicate_tick = "dedupe_via_should_process"
+stale_result = "reject_on_generation_or_parent_mismatch"
+proposal_interval = 0
+
+[resolved.signer_binding]
+attestation_role = "SigningRole::Attestation"
+proposal_role = "SigningRole::Proposal"
+reserve_before_sign = true
+
+[open_gates]
+gossip_publish = "phase_10"
+full_block_builder_transition = "deferred_integration"
+multi_node_duty_interop = "deferred"
+twenty_four_hour_soak = "deferred"
