@@ -48,6 +48,32 @@ impl SwarmFacade {
         Ok(())
     }
 
+    /// Bind QUIC and subscribe to Lean gossip topics for `fork_name`.
+    #[cfg(feature = "libp2p-quic")]
+    pub async fn bind_quic_swarm_for_fork(
+        &mut self,
+        cfg: &TransportConfig,
+        fork_name: &str,
+    ) -> Result<()> {
+        let swarm = QuicSwarm::bind_for_fork(cfg, fork_name).await?;
+        self.quic = Some(swarm);
+        self.note_progress();
+        Ok(())
+    }
+
+    /// Publish compressed gossip on a Lean topic via the bound swarm.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn publish_gossip(&mut self, topic: &str, compressed: &[u8]) -> Result<()> {
+        let Some(swarm) = self.quic.as_mut() else {
+            return Err(NetworkError::TransportPending(
+                "bind_quic_swarm before publish_gossip",
+            ));
+        };
+        swarm.publish_gossip(topic, compressed)?;
+        self.note_progress();
+        Ok(())
+    }
+
     /// Dial via the bound libp2p QUIC swarm.
     #[cfg(feature = "libp2p-quic")]
     pub fn dial_quic_peer(&mut self, multiaddr: &str) -> Result<()> {
