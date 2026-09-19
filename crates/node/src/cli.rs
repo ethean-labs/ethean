@@ -27,6 +27,12 @@ pub enum Command {
         /// Path-backed store (requires `ethean-storage/rocksdb` feature on the build).
         #[arg(long)]
         data_dir: Option<String>,
+        /// Network label (default: pq-devnet-5). Use `local` for explicit smoke-only.
+        #[arg(long, default_value = "pq-devnet-5")]
+        network: String,
+        /// Comma-separated QUIC multiaddrs (overrides file/env when set).
+        #[arg(long)]
+        bootnodes: Option<String>,
     },
     /// Start the validator client
     Validator,
