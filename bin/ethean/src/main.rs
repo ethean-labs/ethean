@@ -21,10 +21,16 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Start { ticks, wall_clock } => {
-            info!(ticks, wall_clock, "Starting lean consensus node");
+        Command::Start {
+            ticks,
+            wall_clock,
+            until_signal,
+        } => {
+            info!(ticks, wall_clock, until_signal, "Starting lean consensus node");
             let client = EtheanClient::new().await?;
-            let cfg = if wall_clock {
+            let cfg = if until_signal {
+                StartConfig::until_signal(true)
+            } else if wall_clock {
                 StartConfig::wall(ticks, true)
             } else {
                 StartConfig::smoke(ticks)
