@@ -73,6 +73,7 @@ Planning session summaries:
 - [Fork digest override and local Status](./fork-digest-local-status-2026-09-19.md)
 - [Status handshake outboxes (Status + blocks-by-root staging)](./status-handshake-outbox-2026-09-19.md)
 - [QuicSwarm Status request_response wire](./quic-status-reqresp-wire-2026-09-19.md)
+- [Blocks-by-root request_response wire](./blocks-by-root-reqresp-wire-2026-09-19.md)
 - [pq-devnet-5 client run verification](./pq-devnet-5-client-run-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
