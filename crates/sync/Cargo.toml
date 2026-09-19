@@ -9,6 +9,7 @@ description = "Lean Consensus sync protocols (Phase 11)"
 
 [dependencies]
 ethean-primitives = { workspace = true }
+ethean-network-wire = { workspace = true }
 thiserror = { workspace = true }
 
 [lib]
