@@ -38,6 +38,15 @@ docker compose up -d
 Requires Docker Desktop (or Engine + Compose). Without it, `:3000` / `:9090` stay down
 even though `:9100/metrics` from the binary works.
 
+### Windows: `npipe://./pipe/docker_engine` / file not found
+
+That error means the **Docker CLI is installed but the daemon is stopped**
+(Docker Desktop not running, or still starting). Fix:
+
+1. Start **Docker Desktop** from the Start menu.
+2. Wait until the tray icon reports the engine is running.
+3. Re-run `.\scripts\run-observability.ps1` (it now fails fast if the daemon is down).
+
 - Grafana: http://localhost:3000 (anonymous viewer)
 - Dashboard: **Ethean Lean Clients Dashboard**
 - Prometheus: http://localhost:9090
