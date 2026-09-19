@@ -53,6 +53,7 @@ Planning session summaries:
 - [Gossip attestation pool and verified SignedBlock STF](./gossip-attestation-pool-verified-stf-2026-09-19.md)
 - [Pool-backed block body selection](./pool-backed-block-body-2026-09-19.md)
 - [PlanTransition from pool on duty ticks](./plan-transition-pool-duty-2026-09-19.md)
+- [SignedBlock assemble and gossip publish](./signed-block-gossip-publish-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
