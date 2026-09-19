@@ -28,7 +28,8 @@ pub use peer_manager::{PeerManager, PeerRecord};
 pub use quic_swarm::QuicSwarm;
 pub use reqresp::{
     blocks_by_root_for_status_gap, blocks_by_root_protocol_id, encode_blocks_by_root, handle_status,
-    RequestTracker, StatusExchange, StatusSessionBook,
+    prepare_status_outbounds, OutboundStatusRequest, RequestId, RequestTracker, StatusExchange,
+    StatusSessionBook,
 };
 pub use swarm::SwarmFacade;
 pub use transport::{
