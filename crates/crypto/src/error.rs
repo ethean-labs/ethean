@@ -32,6 +32,9 @@ pub enum CryptoError {
     #[error("aggregate API deferred to Phase 08")]
     AggregateDeferred,
 
+    #[error("invalid aggregate statement or proof: {0}")]
+    InvalidAggregate(String),
+
     #[error("parameter fingerprint mismatch")]
     FingerprintMismatch,
 }
