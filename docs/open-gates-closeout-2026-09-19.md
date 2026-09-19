@@ -40,4 +40,4 @@ cargo test -p ethean-network --features libp2p-quic --lib
 1. Commit-clean leanSig **git** dep (upstream still on `num-bigint` 0.4) — committed
    patch + `check-leansig-vendor.ps1`  
 2. leanVM FFI / process prover link (`LEANVM_FFI_LINKED`, lean-multisig workspace)  
-3. Full state transition on gossip block import (SSZ root + head advance landed; attestations deferred)
+3. Attestation pool wiring + verified `apply_block(SignedBlock)` when Type-2 proofs arrive
