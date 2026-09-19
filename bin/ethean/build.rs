@@ -36,10 +36,7 @@ fn publish_path_shim() -> io::Result<()> {
         write_unix_shim(&cargo_bin, &workspace)?;
     }
 
-    println!(
-        "cargo:warning=ethean PATH shim ready at {} (run: ethean version)",
-        cargo_bin.display()
-    );
+    // Quiet on success: cargo:warning= shows as a rustc warning and looks like failure.
     Ok(())
 }
 
