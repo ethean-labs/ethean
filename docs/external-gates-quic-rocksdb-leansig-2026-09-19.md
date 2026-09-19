@@ -7,7 +7,8 @@ Follow-up after open-gates closeout: close or narrow the three external blockers
 - `QuicSwarm` binds QUIC-v1 only (`libp2p` 0.54 + `with_quic`).
 - `SwarmFacade::bind_quic_swarm` / `dial_quic_peer` wire the swarm into the facade.
 - Feature: `ethean-network/libp2p-quic` (forwarded by `ethean-node/libp2p-quic`).
-- Verified: `cargo test -p ethean-network --features libp2p-quic --lib binds_ephemeral_quic`
+- Node `boot_gates` probes `SwarmFacade::bind_quic_swarm` when the feature is on.
+- Verified: `cargo test -p ethean-network --features libp2p-quic --lib` (17 tests)
 - UDP `BoundTransport` + `probe_udp_status` remain for path checks without libp2p.
 
 ## LLVM / libclang / RocksDB
