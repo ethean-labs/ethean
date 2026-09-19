@@ -89,17 +89,25 @@ impl SwarmFacade {
         Ok(())
     }
 
-    /// Pump one libp2p event when a QuicSwarm is bound.
+    /// Pump one libp2p event when a QuicSwarm is bound; apply peer score deltas.
     #[cfg(feature = "libp2p-quic")]
-    pub async fn pump_quic_once(&mut self) -> Result<&'static str> {
+    pub async fn pump_quic_once(&mut self) -> Result<crate::gossip::PumpEvent> {
         let Some(swarm) = self.quic.as_mut() else {
             return Err(NetworkError::TransportPending(
                 "bind_quic_swarm before pump_quic_once",
             ));
         };
-        let kind = swarm.pump_once().await;
+        let event = swarm.pump_once().await;
+        if let Some(g) = event.gossip() {
+            let delta = crate::gossip::delta_for(g.action);
+            if delta != 0 {
+                if let Some(peer) = g.peer {
+                    self.peers.ensure_and_feedback(peer, delta);
+                }
+            }
+        }
         self.note_progress();
-        Ok(kind)
+        Ok(event)
     }
 
     /// Record a tick of the (future) event loop for health.
