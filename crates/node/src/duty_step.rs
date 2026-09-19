@@ -96,13 +96,24 @@ fn try_plan_proposal(
     }
 
     let duty_view = owner.snapshot(tick.slot, 0).duty_view;
+    let mut binding_ok = true;
     if publish_allowed {
         if let Some(local) = owner.proposer.as_mut() {
             match local.sign_proposal(tick, &duty_view, plan.parent_root, root) {
                 Ok(sig) => {
                     let signature_len = sig.len();
-                    plan.proposer_signature = Some(sig);
-                    out.push(ChainEvent::ProposalSigned { root, signature_len });
+                    match local.verify_proposal(tick, root, &sig) {
+                        Ok(()) => {
+                            plan.proposer_signature = Some(sig);
+                            out.push(ChainEvent::ProposalSigned { root, signature_len });
+                            out.push(ChainEvent::ProposalBindingVerified { root });
+                        }
+                        Err(_) => {
+                            // Fail closed: never gossip a signature that does not verify.
+                            binding_ok = false;
+                            plan.proposer_signature = None;
+                        }
+                    }
                 }
                 Err(_) => {
                     // Leave unsigned; structural gossip may still proceed.
@@ -120,7 +131,7 @@ fn try_plan_proposal(
         publish_allowed,
     });
 
-    if publish_allowed {
+    if publish_allowed && binding_ok {
         if let Ok(gossip) = encode_proposal_gossip(&plan, profile.fork_name) {
             let ready = ChainEvent::ProposalGossipReady {
                 root: gossip.block_root,
@@ -193,6 +204,9 @@ mod tests {
             .iter()
             .any(|e| matches!(e, ChainEvent::Type2ProofAttached { .. })));
         assert!(events.iter().any(|e| matches!(e, ChainEvent::ProposalSigned { .. })));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, ChainEvent::ProposalBindingVerified { .. })));
         assert!(matches!(
             events.iter().find(|e| matches!(e, ChainEvent::ProposalPlanned { .. })),
             Some(ChainEvent::ProposalPlanned {
