@@ -229,42 +229,15 @@ impl EtheanClient {
         // Smoke crypto path is loaded even when production FFI is off.
         self.observability.mark_crypto_ok();
 
-        let identity = crate::network::NodeIdentity::from_seed(b"ethean-local");
-        let bound = crate::network::prepare_transport(
-            &identity,
-            &crate::network::TransportConfig {
-                listen_port: 0,
-                idle_timeout_ms: 30_000,
-            },
-        )?;
-        info!(port = bound.listen_port, "UDP listen bind for QUIC facade");
-
+        let (_port, swarm) =
+            crate::boot_network::prepare_boot_network(&self.profile.fork_name).await?;
         #[cfg(feature = "libp2p-quic")]
         {
-            let mut facade = crate::network::SwarmFacade::default();
-            facade.attach_transport(bound);
-            facade
-                .bind_quic_swarm_for_fork(
-                    &crate::network::TransportConfig {
-                        listen_port: 0,
-                        idle_timeout_ms: 30_000,
-                    },
-                    &self.profile.fork_name,
-                )
-                .await?;
-            let topic_block = facade
-                .quic
-                .as_ref()
-                .and_then(|q| q.topics.as_ref())
-                .map(|t| t.block.clone())
-                .unwrap_or_default();
-            info!(
-                peer = %facade.quic.as_ref().map(|q| q.peer_id.to_string()).unwrap_or_default(),
-                listen = %facade.quic.as_ref().map(|q| q.listen_addr.to_string()).unwrap_or_default(),
-                topic = %topic_block,
-                "libp2p QuicSwarm bound with Lean gossip topics"
-            );
-            self.swarm = Some(facade);
+            self.swarm = swarm;
+        }
+        #[cfg(not(feature = "libp2p-quic"))]
+        {
+            let _ = swarm;
         }
 
         self.observability.mark_network_ok();
