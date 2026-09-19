@@ -59,6 +59,7 @@ Planning session summaries:
 - [Type-2 prove attach on proposal path](./type2-prove-attach-2026-09-19.md)
 - [leanVM gate and leanSig proposer features](./leanvm-gate-leansig-proposer-2026-09-19.md)
 - [Type-2 block-root binding and leanSig pin checks](./type2-block-root-leansig-pin-2026-09-19.md)
+- [Proposer binding verify before gossip](./proposer-binding-verify-before-gossip-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
