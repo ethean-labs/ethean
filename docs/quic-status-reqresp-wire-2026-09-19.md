@@ -18,6 +18,7 @@ Pump events include `StatusRequest` / `StatusResponse` with decompressed SSZ.
 ## Still open
 
 - Completing handshakes from `StatusResponse` into `complete_status_handshake`
-  during the duty loop (ingest + blocks-by-root flush).
+  during longer duty-loop pumps (boot path now completes when a response arrives
+  in the same boot budget).
 - Blocks-by-root still stages on the facade outbox only; no stream codec yet.
 - Operator bootnodes + fork digest still required for a live pq-devnet-5 join.
