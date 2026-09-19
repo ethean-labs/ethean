@@ -85,11 +85,12 @@ mod tests {
     use ethean_primitives::Slot;
     use ethean_profile::lstar_devnet;
     use ethean_types::State;
+    use ethean_validator::SYNC_LAG_THRESHOLD_SLOTS;
 
     #[test]
     fn smoke_loop_accepts_ticks_then_shuts_down() {
         let profile = lstar_devnet().expect("lstar");
-        let mut owner = ChainOwner::new(32);
+        let mut owner = ChainOwner::new(SYNC_LAG_THRESHOLD_SLOTS);
         owner.generation = 1;
         owner.head_state = Some(State::default());
         let mut shutdown = ShutdownState::default();
