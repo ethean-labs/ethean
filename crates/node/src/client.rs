@@ -1,42 +1,38 @@
-//! Main Ethean client implementation
+//! Lean Consensus client shell: profile, genesis, chain owner, sync status.
 
 use crate::{
-    api::{ApiConfig, ApiServer},
+    chain_owner::ChainOwner,
     clock::{clock_from_genesis, SlotClock},
-    config::Config,
-    consensus::validator_management::{ValidatorConfig, ValidatorManager},
-    storage::{database::Database, StateStore},
+    Error, Result,
 };
 use ethean_genesis::{local_smoke_genesis, BuiltGenesis, GenesisBuilder, GenesisError};
 use ethean_profile::{lstar_devnet, require_lstar_fork, ChainProfile};
+use ethean_primitives::Slot;
+use ethean_storage::Database;
+use ethean_sync::SyncStatus;
 use ethean_types::State;
-use std::sync::Arc;
-use tracing::{error, info};
+use tracing::info;
 
-/// Main result type for client operations
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
-
-/// Main Ethean client
+/// Main Ethean Lean Consensus client.
 pub struct EtheanClient {
-    _config: Config,
-    _profile: ChainProfile,
-    _genesis: State,
-    _clock: SlotClock,
-    api_server: ApiServer,
+    profile: ChainProfile,
+    genesis: State,
+    clock: SlotClock,
+    owner: ChainOwner,
+    db: Database,
+    sync: SyncStatus,
 }
 
 impl EtheanClient {
     /// Start with an explicit pinned profile and verified genesis state.
-    ///
-    /// Does **not** use `State::default()` as network genesis.
     pub async fn with_genesis(profile: ChainProfile, genesis: State) -> Result<Self> {
         require_lstar_fork(&profile)?;
         if genesis.validators.is_empty() {
-            return Err(Box::new(GenesisError::EmptyValidators));
+            return Err(Error::Genesis(GenesisError::EmptyValidators));
         }
 
         let clock = clock_from_genesis(&genesis, profile.clone())?;
-        let config = Config::default();
+        let db = Database::open()?;
 
         info!(
             fork = profile.fork_name,
@@ -46,33 +42,13 @@ impl EtheanClient {
             "Loaded chain profile and genesis"
         );
 
-        let database = Database::in_memory();
-        let state_store = Arc::new(StateStore::new(database));
-
-        let validator_config = ValidatorConfig {
-            max_validators: profile.validator_registry_limit,
-        };
-        let validator_manager = Arc::new(ValidatorManager::new(
-            validator_config,
-            (*state_store).clone(),
-        ));
-
-        let api_config = ApiConfig {
-            bind_addr: config.api.bind_addr,
-            max_request_size: 1024 * 1024,
-            enable_cors: true,
-            enable_compression: true,
-            rate_limit: crate::api::RateLimitConfig::default(),
-        };
-
-        let api_server = ApiServer::new(validator_manager, state_store, api_config);
-
         Ok(Self {
-            _config: config,
-            _profile: profile,
-            _genesis: genesis,
-            _clock: clock,
-            api_server,
+            profile,
+            genesis,
+            clock,
+            owner: ChainOwner::new(32),
+            db,
+            sync: SyncStatus::new(Slot::new(0), Slot::new(0)),
         })
     }
 
@@ -90,15 +66,49 @@ impl EtheanClient {
         Self::with_genesis(profile, built.state).await
     }
 
-    /// Start the client
+    /// Access the chain owner (sole writer of head/sync flags).
+    pub fn owner(&self) -> &ChainOwner {
+        &self.owner
+    }
+
+    /// Mutable chain owner for command application.
+    pub fn owner_mut(&mut self) -> &mut ChainOwner {
+        &mut self.owner
+    }
+
+    /// Pinned profile.
+    pub fn profile(&self) -> &ChainProfile {
+        &self.profile
+    }
+
+    /// Genesis state.
+    pub fn genesis(&self) -> &State {
+        &self.genesis
+    }
+
+    /// Slot clock.
+    pub fn clock(&self) -> &SlotClock {
+        &self.clock
+    }
+
+    /// Durable store handle.
+    pub fn db(&self) -> &Database {
+        &self.db
+    }
+
+    /// Sync status view.
+    pub fn sync(&self) -> &SyncStatus {
+        &self.sync
+    }
+
+    /// Smoke start: verify schema and log readiness (no Beacon HTTP).
     pub async fn start(self) -> Result<()> {
-        info!("Starting Ethean client");
-
-        if let Err(e) = self.api_server.start().await {
-            error!("Failed to start API server: {}", e);
-            return Err(e);
-        }
-
+        self.db.verify_schema()?;
+        info!(
+            fork = self.profile.fork_name,
+            syncing = self.owner.syncing,
+            "Ethean Lean Consensus client ready"
+        );
         Ok(())
     }
 }
