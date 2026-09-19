@@ -48,31 +48,16 @@ ethean-metrics = { path = "crates/metrics" }
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-axum = { version = "0.7", features = ["ws", "tracing"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
-hyper = "1.0"
 sha2 = "0.10"
 rocksdb = "0.21"
-tokio-tungstenite = "0.21"
 futures = "0.3"
-futures-util = "0.3"
-utoipa = { version = "4.0", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
-libp2p = { version = "0.53", features = ["identify", "ping", "mdns", "yamux", "noise", "tcp", "dns", "gossipsub"] }
-blst = "0.3"
 rand = "0.8"
 anyhow = "1.0"
 thiserror = "1.0"
 tracing = "0.1.44"
 tracing-subscriber = "0.3"
-config = "0.14"
 clap = { version = "4.0", features = ["derive"] }
-uuid = { version = "1.0", features = ["v4"] }
-proptest = "1.0"
 tempfile = "3.8"
-blstrs = "0.7.1"
-bls12_381 = "0.8.0"
 
 [profile.release]
 lto = true
