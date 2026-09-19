@@ -566,14 +566,17 @@ Errors are returned in the following format:
 
 ### Project Structure
 
-The project follows a modular architecture with clear separation of concerns:
+Workspace layout (Lean migration):
 
-- **consensus/**: Implements proof-of-stake consensus logic
-- **network/**: Handles P2P networking and peer management
-- **storage/**: Manages data persistence and state storage
-- **crypto/**: Provides cryptographic primitives and BLS operations
-- **api/**: Implements REST API with Ethereum Beam/Lean API compliance
-- **types/**: Defines core data structures and type definitions
+- `crates/` — library crates (`primitives` … `metrics`; see [`crates/README.md`](crates/README.md))
+- `bin/ethean` — node binary
+- `spec/` — phase locks and fixtures
+- `docs/` — migration notes
+- `artifacts/`, `scripts/`, `tools/` — evidence, helpers, utilities
+- `tests/{interop,security,recovery}/` — cross-crate suites
+- `road-to/` — migration planning library
+
+Legacy Beacon-shaped modules under `crates/node` are being replaced phase by phase.
 
 ### Adding New Features
 
