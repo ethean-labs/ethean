@@ -44,6 +44,20 @@ pub enum PumpEvent {
         /// Plain Status SSZ bytes from the peer.
         payload: Vec<u8>,
     },
+    /// Remote blocks-by-root response bytes (decompressed body).
+    BlocksByRootResponse {
+        /// Peer fingerprint.
+        peer: Hash32,
+        /// Plain response body (scaffold encoding).
+        payload: Vec<u8>,
+    },
+    /// Inbound blocks-by-root request (auto-reply may already have been sent).
+    BlocksByRootRequest {
+        /// Peer fingerprint.
+        peer: Hash32,
+        /// Plain request body (scaffold encoding).
+        payload: Vec<u8>,
+    },
     /// Anything else from the swarm.
     Other,
 }
@@ -80,6 +94,8 @@ impl PumpEvent {
             Self::Behaviour => "behaviour",
             Self::StatusResponse { .. } => "status_response",
             Self::StatusRequest { .. } => "status_request",
+            Self::BlocksByRootResponse { .. } => "blocks_by_root_response",
+            Self::BlocksByRootRequest { .. } => "blocks_by_root_request",
             Self::Other => "other",
         }
     }
