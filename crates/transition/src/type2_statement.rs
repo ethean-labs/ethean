@@ -9,16 +9,24 @@ use ethean_types::Block;
 use crate::error::TransitionError;
 
 /// Build the Type-2 statement that [`crate::apply_block`] verifies against.
+///
+/// Components (ordered):
+/// 1. block body root
+/// 2. each attestation-data root
+/// 3. full block tree root (same binding the local proposer XMSS signs)
 pub fn type2_statement_for_block(block: &Block) -> Result<AggregateStatement, TransitionError> {
     let body_root = block
         .body
+        .hash_tree_root()
+        .map_err(|e| TransitionError::Types(e.to_string()))?;
+    let block_root = block
         .hash_tree_root()
         .map_err(|e| TransitionError::Types(e.to_string()))?;
     let profile = domain_digest(
         b"ethean-transition/v1/agg-profile",
         PROD_AGGREGATION_FINGERPRINT.as_bytes(),
     );
-    let mut components = Vec::with_capacity(1 + block.body.attestations.len());
+    let mut components = Vec::with_capacity(2 + block.body.attestations.len());
     components.push(Type2ComponentRef {
         message_root: body_root,
         slot: block.slot.get(),
@@ -29,6 +37,10 @@ pub fn type2_statement_for_block(block: &Block) -> Result<AggregateStatement, Tr
             slot: block.slot.get(),
         });
     }
+    components.push(Type2ComponentRef {
+        message_root: block_root,
+        slot: block.slot.get(),
+    });
     Ok(AggregateStatement {
         kind: ProofKind::Type2,
         profile_digest: profile,
@@ -56,7 +68,9 @@ mod tests {
         };
         let s = type2_statement_for_block(&block).unwrap();
         assert_eq!(s.kind, ProofKind::Type2);
-        assert_eq!(s.components.len(), 1);
+        assert_eq!(s.components.len(), 2);
         assert_eq!(s.slot, 3);
+        assert_eq!(s.components[0].message_root, block.body.hash_tree_root().unwrap());
+        assert_eq!(s.components[1].message_root, block.hash_tree_root().unwrap());
     }
 }
