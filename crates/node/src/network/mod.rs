@@ -10,3 +10,6 @@ pub use ethean_network::{
     MAX_INBOUND_PEERS, MAX_OUTBOUND_PEERS, MAX_PEERS_PER_IP, SCORE_ACCEPT, SCORE_IGNORE,
     SCORE_REJECT,
 };
+
+#[cfg(feature = "libp2p-quic")]
+pub use ethean_network::QuicSwarm;
