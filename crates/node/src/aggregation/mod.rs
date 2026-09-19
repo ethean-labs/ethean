@@ -4,12 +4,14 @@ mod budget;
 mod pool;
 mod recovery;
 mod selection;
+mod type2_split;
 mod worker;
 
 pub use budget::{AggregationBudget, BudgetExhausted};
 pub use pool::{AggregatePool, PoolEntry, PoolKey};
 pub use recovery::discard_partial_proof;
 pub use selection::{select_coverage, SelectionPolicy};
+pub use type2_split::{seed_pool_from_signed_block, Type2SplitSeed};
 pub use worker::{ProverJob, ProverOutcome, ProverWorker};
 
 /// Module status for observability.
