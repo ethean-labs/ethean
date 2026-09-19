@@ -1,6 +1,5 @@
 //! Aggregate proof verification (cheap checks then fail-closed leanVM).
 
-use crate::aggregation::bindings::LEANVM_REV;
 use crate::aggregation::statement::{check_proof_len, AggregateStatement};
 use crate::error::{CryptoError, Result};
 use crate::hash::domain_digest;
@@ -48,7 +47,8 @@ fn verify_bound_proof(statement: &AggregateStatement, proof: &[u8]) -> Result<()
     }
     #[cfg(all(not(feature = "leanvm-backend"), not(feature = "test-aggregate")))]
     {
-        let _ = (statement, proof, LEANVM_REV);
+        let _ = statement;
+        let _ = proof;
         Err(CryptoError::BackendUnavailable(
             "leanVM production backend unavailable; refuse always-true aggregate verify",
         ))

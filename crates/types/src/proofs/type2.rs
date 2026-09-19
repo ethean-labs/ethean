@@ -70,22 +70,17 @@ pub fn type2_statement_for_block(
 mod tests {
     use super::*;
     use crate::aggregate::MultiMessageAggregate;
-    use crate::block::{Block, BlockBody, BlockHeader};
+    use crate::block::{Block, BlockBody};
     use ethean_primitives::{Slot, ValidatorIndex, HASH32_ZERO};
 
     #[test]
     fn rejects_empty_proof() {
         let body = BlockBody::new(vec![]).unwrap();
-        let header = BlockHeader {
+        let block = Block {
             slot: Slot::new(1),
             proposer_index: ValidatorIndex::new(0),
             parent_root: HASH32_ZERO,
             state_root: HASH32_ZERO,
-            body_root: body.hash_tree_root().unwrap(),
-        };
-        let block = Block {
-            slot: Slot::new(1),
-            header,
             body,
         };
         let env = MultiMessageAggregate::default();
