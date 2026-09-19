@@ -14,23 +14,20 @@ pub enum BackendGap {
 pub struct FfiStatus {
     /// leanSig XMSS PROD path.
     pub leansig: bool,
-    /// leanVM aggregate prove/verify path.
+    /// leanVM aggregate prove/verify path (true only when FFI symbols are linked).
     pub leanvm: bool,
 }
 
 impl FfiStatus {
-    /// Probe compile-time features (never claims ready without a wired backend).
+    /// Probe compile-time features and link flags (never claims leanVM without FFI).
     pub fn probe() -> Self {
         Self {
             leansig: cfg!(feature = "leansig-backend"),
-            leanvm: cfg!(feature = "leanvm-backend"),
+            leanvm: leanvm_ready(),
         }
     }
 
-    /// True only when both production backends are feature-selected.
-    ///
-    /// Even then, runtime may still fail closed if FFI symbols are missing;
-    /// callers must treat verify/sign errors as authoritative.
+    /// True only when both production backends can serve requests.
     pub fn both_selected(&self) -> bool {
         self.leansig && self.leanvm
     }
@@ -48,6 +45,17 @@ impl FfiStatus {
     }
 }
 
+fn leanvm_ready() -> bool {
+    #[cfg(feature = "leanvm-backend")]
+    {
+        crate::backend_leanvm::LEANVM_FFI_LINKED
+    }
+    #[cfg(not(feature = "leanvm-backend"))]
+    {
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -55,8 +63,15 @@ mod tests {
     #[test]
     fn default_build_reports_gaps() {
         let s = FfiStatus::probe();
-        // Default workspace features keep production backends off.
         assert!(!s.both_selected());
         assert!(!s.gaps().is_empty());
+        assert!(!s.leanvm);
+    }
+
+    #[cfg(feature = "leanvm-backend")]
+    #[test]
+    fn leanvm_feature_alone_is_not_ready() {
+        assert!(!crate::backend_leanvm::LEANVM_FFI_LINKED);
+        assert!(!FfiStatus::probe().leanvm);
     }
 }
