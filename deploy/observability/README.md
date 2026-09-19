@@ -31,6 +31,17 @@ docker compose up -d
 - Dashboard: **Ethean Lean Clients Dashboard**
 - Prometheus: http://localhost:9090
 
+## Health check URLs
+
+| URL | Expect |
+| --- | --- |
+| http://127.0.0.1:9100/healthz | `200` + `ok` |
+| http://127.0.0.1:9100/readyz | `200` / `503` |
+| http://127.0.0.1:9100/metrics | Prometheus text |
+| http://localhost:3000 | Grafana |
+| http://localhost:9090 | Prometheus |
+| http://localhost:9090/targets | scrape UP |
+
 ## What healthy long-run looks like
 
 Like the Ream/ethlambda Grafana panels:
