@@ -85,10 +85,7 @@ mod tests {
     fn ensure_creates_then_scores() {
         let mut pm = PeerManager::default();
         let id = [3u8; 32];
-        pm.ensure_and_feedback(id, SCORE_REJECT_PLACEHOLDER);
+        pm.ensure_and_feedback(id, -25);
         assert_eq!(pm.score_of(&id), Some(-25));
     }
 }
-
-// Local alias so the test does not depend on gossip scoring imports.
-const SCORE_REJECT_PLACEHOLDER: i32 = -25;
