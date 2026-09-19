@@ -5,9 +5,9 @@ use crate::network_target::NetworkTarget;
 use crate::Result;
 use tracing::{info, warn};
 
-/// Bind the UDP facade; with `libp2p-quic`, also subscribe Lean gossip topics.
+/// Bind the UDP facade; with `libp2p-quic`, subscribe using a resolved fork segment.
 pub async fn prepare_boot_network(
-    fork_name: &str,
+    fork_segment: &str,
 ) -> Result<(u16, Option<SwarmFacade>)> {
     let identity = NodeIdentity::from_seed(b"ethean-local");
     let bound = crate::network::prepare_transport(
@@ -18,17 +18,17 @@ pub async fn prepare_boot_network(
         },
     )?;
     let port = bound.listen_port;
-    info!(port, "UDP listen bind for QUIC facade");
+    info!(port, fork_segment, "UDP listen bind for QUIC facade");
 
     #[cfg(feature = "libp2p-quic")]
     {
-        let facade = bind_quic_facade(bound, fork_name).await?;
+        let facade = bind_quic_facade(bound, fork_segment).await?;
         return Ok((port, Some(facade)));
     }
     #[cfg(not(feature = "libp2p-quic"))]
     {
         let _ = bound;
-        let _ = fork_name;
+        let _ = fork_segment;
         Ok((port, None))
     }
 }
@@ -79,17 +79,17 @@ pub fn dial_bootnodes(target: &NetworkTarget, swarm: Option<&mut SwarmFacade>) {
 #[cfg(feature = "libp2p-quic")]
 async fn bind_quic_facade(
     bound: crate::network::BoundTransport,
-    fork_name: &str,
+    fork_segment: &str,
 ) -> Result<SwarmFacade> {
     let mut facade = SwarmFacade::default();
     facade.attach_transport(bound);
     facade
-        .bind_quic_swarm_for_fork(
+        .bind_quic_swarm_for_fork_segment(
             &TransportConfig {
                 listen_port: 0,
                 idle_timeout_ms: 30_000,
             },
-            fork_name,
+            fork_segment,
         )
         .await?;
     let topic_block = facade
@@ -102,6 +102,7 @@ async fn bind_quic_facade(
         peer = %facade.quic.as_ref().map(|q| q.peer_id.to_string()).unwrap_or_default(),
         listen = %facade.quic.as_ref().map(|q| q.listen_addr.to_string()).unwrap_or_default(),
         topic = %topic_block,
+        fork_segment,
         "libp2p QuicSwarm bound with Lean gossip topics"
     );
     Ok(facade)
