@@ -21,9 +21,10 @@ pub mod xmss;
 
 pub use aggregation::{
     aggregation_fingerprint, assert_aggregation_invariants, attestation_leaves_from_type2,
-    prove_type1, prove_type2, split_type2_to_type1, verify_statement_shape, verify_type1,
-    verify_type2, AggregateStatement, ParticipantSet, ProofKind, Type1Leaf, Type2ComponentRef,
-    LEANVM_REV, LOG_INV_RATE, MAX_PROOF_BYTES, PROD_AGGREGATION_FINGERPRINT,
+    merge_type1, merge_type1_statements, prove_type1, prove_type2, split_type2_to_type1,
+    verify_statement_shape, verify_type1, verify_type2, AggregateStatement, ParticipantSet,
+    ProofKind, Type1Leaf, Type2ComponentRef, LEANVM_REV, LOG_INV_RATE, MAX_PROOF_BYTES,
+    PROD_AGGREGATION_FINGERPRINT,
 };
 pub use backend::{CryptoBackend, ProductionBackend, SecretKeyMaterial};
 #[cfg(any(test, feature = "test-hmac"))]
