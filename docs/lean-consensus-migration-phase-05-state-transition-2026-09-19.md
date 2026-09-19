@@ -35,8 +35,8 @@ removed from the transition path. Fork choice and finality gadgets remain Phase 
 
 **Deferred:** XMSS/aggregate proof verify; fork-choice store; gossip attestation intake; upstream binary fixture differentials.
 
-## Artifacts
+## Extra fix
 
-- `spec/pins/phase-05.lock.toml`
-- `spec/fixtures/phase-05/`
-- Local notes: `bazalinacaklar/phase-05-state-transition.md`
+`ethean-ssz` `merkleize` now uses virtual zero-subtree padding so
+`State::hash_tree_root` (large justification bitlist limits) stays usable from
+`process_slots` without allocating millions of zero chunks.
