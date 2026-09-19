@@ -29,8 +29,13 @@ async fn main() -> Result<()> {
             data_dir,
             network,
             bootnodes,
+            fork_digest,
         } => {
-            let network = NetworkTarget::from_cli(&network, bootnodes.as_deref())?;
+            let network = NetworkTarget::from_cli(
+                &network,
+                bootnodes.as_deref(),
+                fork_digest.as_deref(),
+            )?;
             info!(
                 ticks,
                 wall_clock,
@@ -38,6 +43,7 @@ async fn main() -> Result<()> {
                 ?data_dir,
                 network = network.id.as_str(),
                 bootnodes = network.bootnodes.len(),
+                fork_digest = network.fork_digest.as_deref().unwrap_or(""),
                 "Starting lean consensus node"
             );
             let client = match data_dir.as_deref() {
