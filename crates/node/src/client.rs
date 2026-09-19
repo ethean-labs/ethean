@@ -108,35 +108,54 @@ impl EtheanClient {
         Self::with_genesis(profile, state).await
     }
 
-    /// Local smoke start: recent genesis + `validator_count` zero-key validators.
-    pub async fn with_local_devnet(validator_count: usize) -> Result<Self> {
-        let profile = lstar_devnet()?;
-        let built = crate::local_genesis::local_devnet_genesis(
-            validator_count,
-            profile.seconds_per_slot,
-        )?;
-        Self::with_genesis(profile, built.state).await
+    /// Local smoke start: recent multi-validator genesis (4 validators).
+    pub async fn new() -> Result<Self> {
+        Self::with_local_roles(crate::start_config::LocalRoles::default()).await
     }
 
-    /// Local smoke start: `lstar_devnet` + recent 4-validator genesis.
-    pub async fn new() -> Result<Self> {
-        Self::with_local_devnet(4).await
+    /// Recent genesis sized by [`LocalRoles::validators`].
+    pub async fn with_local_roles(roles: crate::start_config::LocalRoles) -> Result<Self> {
+        let profile = lstar_devnet()?;
+        let built = crate::local_genesis::local_devnet_genesis(
+            roles.validators,
+            profile.seconds_per_slot,
+        )?;
+        let mut client = Self::with_genesis(profile, built.state).await?;
+        client.apply_local_roles(roles);
+        Ok(client)
+    }
+
+    /// Apply aggregator / local-finality flags after construction.
+    pub fn apply_local_roles(&mut self, roles: crate::start_config::LocalRoles) {
+        self.owner.is_aggregator = roles.is_aggregator;
+        self.owner.local_finality = roles.local_finality;
+        info!(
+            validators = roles.validators,
+            is_aggregator = roles.is_aggregator,
+            local_finality = roles.local_finality,
+            "local roles applied"
+        );
     }
 
     /// Smoke genesis with a path-backed store (`ethean_storage::open_path`).
     pub async fn open_data_dir(path: &str) -> Result<Self> {
-        Self::open_data_dir_validators(path, 4).await
+        Self::open_data_dir_with_roles(path, crate::start_config::LocalRoles::default()).await
     }
 
-    /// Path-backed store with an explicit validator registry size.
-    pub async fn open_data_dir_validators(path: &str, validator_count: usize) -> Result<Self> {
+    /// Path-backed store with explicit local roles / validator count.
+    pub async fn open_data_dir_with_roles(
+        path: &str,
+        roles: crate::start_config::LocalRoles,
+    ) -> Result<Self> {
         let profile = lstar_devnet()?;
         let built = crate::local_genesis::local_devnet_genesis(
-            validator_count,
+            roles.validators,
             profile.seconds_per_slot,
         )?;
         let db = ethean_storage::open_path(path)?;
-        Self::with_genesis_store(profile, built.state, db).await
+        let mut client = Self::with_genesis_store(profile, built.state, db).await?;
+        client.apply_local_roles(roles);
+        Ok(client)
     }
 
     /// Access the chain owner (sole writer of head/sync flags).
@@ -191,14 +210,7 @@ impl EtheanClient {
 
     /// Verify schema, smoke health, run the configured duty loop, record metrics.
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
-        self.owner.is_aggregator = cfg.is_aggregator;
-        self.owner.local_finality = cfg.local_finality;
-        info!(
-            validators = self.genesis.validators.len(),
-            is_aggregator = cfg.is_aggregator,
-            local_finality = cfg.local_finality,
-            "local finality / aggregator roles"
-        );
+        self.apply_local_roles(cfg.roles);
         if let Some(ref metrics) = cfg.metrics {
             let bound = ethean_metrics::spawn_metrics_server(
                 metrics.addr,

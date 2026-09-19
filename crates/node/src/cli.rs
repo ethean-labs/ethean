@@ -36,16 +36,18 @@ pub enum Command {
         /// Optional 8-hex fork digest for gossip topics (overrides interim name hash).
         #[arg(long)]
         fork_digest: Option<String>,
-        /// Local genesis validator count (default 4). Recent genesis time so slots start near zero.
+        /// Local registry size (recent genesis; default 4 for finality smoke).
         #[arg(long, default_value_t = 4)]
         validators: usize,
-        /// Disable aggregator role (on by default for local finality smoke).
+        /// Act as Lean aggregator (collect/inject aggregates). Default on.
         #[arg(long, default_value_t = false)]
         no_aggregator: bool,
-        /// Disable local finality / self-apply (on by default so solo runs advance head).
+        /// Self-apply proposals + full-registry votes so solo head/finality advances.
+        /// Default on (disable with --no-local-finality).
         #[arg(long, default_value_t = false)]
         no_local_finality: bool,
         /// Start Prometheus (:9090) + Grafana (:3000) via Docker Compose.
+        /// Scrape HTTP on :9100 stays on unless `--no-metrics` is set.
         #[arg(long, default_value_t = false)]
         metrics: bool,
         /// Disable Prometheus scrape HTTP (`/metrics` is on by default at :9100).
