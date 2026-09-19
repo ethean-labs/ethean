@@ -12,9 +12,10 @@ ethean-primitives = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 serde = { workspace = true, optional = true }
-# Optional: pinned leanSig. Disabled by default — see docs for Plonky3/num_bigint compile blocker.
-leansig = { git = "https://github.com/leanEthereum/leanSig", rev = "15cbdd43ec8525aa43fea2f42cafc5ed366084ae", package = "leansig", optional = true }
-rand = { version = "0.8", optional = true }
+# Optional: pinned leanSig (Devnet 4). Default off — see tools/release/vendor-leansig-bigint-fix.ps1
+# for the local num-bigint 0.5 patch required until upstream unifies with Plonky3.
+leansig = { git = "https://github.com/leanEthereum/leanSig", rev = "c08a3bae74b0d85379cab72dcbefa4091546ecbb", package = "leansig", optional = true }
+rand = { version = "0.10", optional = true }
 
 [features]
 # Default: fail-closed production + test helpers with real binding (never always-true).
