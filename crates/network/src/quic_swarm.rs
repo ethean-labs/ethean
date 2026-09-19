@@ -1,27 +1,29 @@
-//! Optional libp2p QUIC-v1 swarm with Lean gossipsub mesh (feature `libp2p-quic`).
+//! Optional libp2p QUIC-v1 swarm with Lean gossipsub + Status req/resp.
 
 #![cfg(feature = "libp2p-quic")]
 
 use crate::error::NetworkError;
-use crate::gossip::{GossipAction, GossipIngress, LeanGossipTopics, PumpEvent};
+use crate::gossip::{LeanGossipTopics, PumpEvent};
 use crate::multiaddr::parse_quic_udp;
+use crate::quic_status_codec::{status_behaviour, StatusCodec};
 use crate::transport::TransportConfig;
 use ethean_primitives::Hash32;
 use libp2p::futures::StreamExt;
 use libp2p::gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode};
+use libp2p::request_response;
 use libp2p::swarm::SwarmEvent;
 use libp2p::{identity, ping, Multiaddr, PeerId, SwarmBuilder};
-use sha2::{Digest, Sha256};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 type NetResult<T> = std::result::Result<T, NetworkError>;
 
-/// Ping + gossipsub; QUIC provides security and multiplexing.
+/// Ping + gossipsub + Lean Status request_response.
 #[derive(libp2p::swarm::NetworkBehaviour)]
-struct LeanBehaviour {
-    ping: ping::Behaviour,
-    gossipsub: gossipsub::Behaviour,
+pub(crate) struct LeanBehaviour {
+    pub(crate) ping: ping::Behaviour,
+    pub(crate) gossipsub: gossipsub::Behaviour,
+    pub(crate) status: request_response::Behaviour<StatusCodec>,
 }
 
 /// libp2p swarm listening on QUIC-v1 (UDP).
@@ -32,8 +34,12 @@ pub struct QuicSwarm {
     pub listen_addr: Multiaddr,
     /// Subscribed Lean mesh topics (if any).
     pub topics: Option<LeanGossipTopics>,
-    swarm: libp2p::Swarm<LeanBehaviour>,
-    seen_ids: HashSet<ethean_primitives::Hash32>,
+    pub(crate) swarm: libp2p::Swarm<LeanBehaviour>,
+    pub(crate) seen_ids: HashSet<Hash32>,
+    /// Fingerprint → PeerId for Status outbound sends.
+    pub(crate) peers: HashMap<Hash32, PeerId>,
+    /// Local Status SSZ used to answer inbound Status requests.
+    pub(crate) local_status: Option<Vec<u8>>,
 }
 
 impl std::fmt::Debug for QuicSwarm {
@@ -80,6 +86,7 @@ impl QuicSwarm {
                     ping::Config::new().with_interval(Duration::from_secs(15)),
                 ),
                 gossipsub,
+                status: status_behaviour(),
             })
             .map_err(|e| NetworkError::Handshake(format!("behaviour: {e}")))?
             .build();
@@ -104,7 +111,14 @@ impl QuicSwarm {
             topics,
             swarm,
             seen_ids: HashSet::new(),
+            peers: HashMap::new(),
+            local_status: None,
         })
+    }
+
+    /// Cache local Status SSZ for inbound Status replies.
+    pub fn set_local_status_bytes(&mut self, bytes: Vec<u8>) {
+        self.local_status = Some(bytes);
     }
 
     /// Dial `/ip4/.../udp/.../quic-v1` only.
@@ -131,64 +145,43 @@ impl QuicSwarm {
         Ok(())
     }
 
+    /// Send a Status request to a connected peer fingerprint.
+    pub fn send_status_request(&mut self, peer: Hash32, payload: Vec<u8>) -> NetResult<()> {
+        let Some(peer_id) = self.peers.get(&peer).copied() else {
+            return Err(NetworkError::Handshake(
+                "peer not connected for Status request".into(),
+            ));
+        };
+        let _ = self
+            .swarm
+            .behaviour_mut()
+            .status
+            .send_request(&peer_id, payload);
+        Ok(())
+    }
+
     /// Pump one swarm event; validates inbound gossip against Lean rules.
     pub async fn pump_once(&mut self) -> PumpEvent {
         match self.swarm.select_next_some().await {
             SwarmEvent::ConnectionEstablished { peer_id, .. } => {
-                PumpEvent::ConnectionEstablished {
-                    peer: Some(peer_fingerprint(&peer_id)),
-                }
+                let peer = self.remember_peer(peer_id);
+                PumpEvent::ConnectionEstablished { peer: Some(peer) }
             }
-            SwarmEvent::ConnectionClosed { peer_id, .. } => PumpEvent::ConnectionClosed {
-                peer: Some(peer_fingerprint(&peer_id)),
-            },
+            SwarmEvent::ConnectionClosed { peer_id, .. } => {
+                let peer = self.forget_peer(&peer_id);
+                PumpEvent::ConnectionClosed { peer: Some(peer) }
+            }
             SwarmEvent::OutgoingConnectionError { .. } => PumpEvent::OutgoingError,
             SwarmEvent::IncomingConnectionError { .. } => PumpEvent::IncomingError,
             SwarmEvent::NewListenAddr { .. } => PumpEvent::NewListenAddr,
             SwarmEvent::Behaviour(LeanBehaviourEvent::Gossipsub(ev)) => {
                 self.handle_gossip_event(ev)
             }
+            SwarmEvent::Behaviour(LeanBehaviourEvent::Status(ev)) => self.handle_status_event(ev),
             SwarmEvent::Behaviour(_) => PumpEvent::Behaviour,
             _ => PumpEvent::Other,
         }
     }
-
-    fn handle_gossip_event(&mut self, ev: gossipsub::Event) -> PumpEvent {
-        match ev {
-            gossipsub::Event::Message {
-                propagation_source,
-                message,
-                ..
-            } => {
-                let topic = message.topic.to_string();
-                let peer = Some(peer_fingerprint(&propagation_source));
-                let (action, plain) =
-                    crate::gossip::validate_gossip_payload(&topic, &message.data, &mut self.seen_ids);
-                let plain = match action {
-                    GossipAction::Accept => plain,
-                    _ => None,
-                };
-                PumpEvent::Gossip(GossipIngress {
-                    action,
-                    topic,
-                    peer,
-                    plain,
-                })
-            }
-            gossipsub::Event::Subscribed { .. } => PumpEvent::GossipSubscribed,
-            gossipsub::Event::Unsubscribed { .. } => PumpEvent::GossipUnsubscribed,
-            _ => PumpEvent::Other,
-        }
-    }
-}
-
-fn peer_fingerprint(peer: &PeerId) -> Hash32 {
-    let mut hasher = Sha256::new();
-    hasher.update(peer.to_bytes());
-    let dig = hasher.finalize();
-    let mut out = [0u8; 32];
-    out.copy_from_slice(&dig);
-    out
 }
 
 fn build_gossipsub(keypair: &identity::Keypair) -> NetResult<gossipsub::Behaviour> {
@@ -216,9 +209,7 @@ fn subscribe_all(
     Ok(())
 }
 
-async fn wait_quic_listen(
-    swarm: &mut libp2p::Swarm<LeanBehaviour>,
-) -> NetResult<Multiaddr> {
+async fn wait_quic_listen(swarm: &mut libp2p::Swarm<LeanBehaviour>) -> NetResult<Multiaddr> {
     loop {
         match swarm.select_next_some().await {
             SwarmEvent::NewListenAddr { address, .. } => {
