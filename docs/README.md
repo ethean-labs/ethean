@@ -16,6 +16,8 @@ Git: [commit-after-each-file.md](./commit-after-each-file.md) (English commit af
 
 No AI / Cursor attribution: [no-ai-git-attribution-2026-09-19.md](./no-ai-git-attribution-2026-09-19.md) (no Cursor co-author trailers or emails in commits/PRs).
 
+Unpublished Cursor trailer scrub: [scrub-unpublished-cursor-trailers-2026-09-19.md](./scrub-unpublished-cursor-trailers-2026-09-19.md).
+
 Active migration planning library: [../road-to/lean-consensus-migration/README.md](../road-to/lean-consensus-migration/README.md) (charter, baseline, protocol pins, architecture, risks, retirement, observability, phases 00–13).
 
 Planning session summaries:
