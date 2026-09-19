@@ -17,6 +17,8 @@ pub struct DecodedBlockGossip {
     pub block: Block,
     /// Present when the payload was a `SignedBlock` envelope.
     pub signed: Option<SignedBlock>,
+    /// Optional proposer XMSS sidecar (not part of `SignedBlock.proof`).
+    pub proposer_signature: Option<Vec<u8>>,
 }
 
 /// Attestation-subnet gossip retained for the aggregate pool.
@@ -46,6 +48,7 @@ pub fn try_decode_block(topic: &str, payload: &[u8]) -> Option<DecodedBlockGossi
             parent: signed.block.parent_root,
             block: signed.block.clone(),
             signed: Some(signed),
+            proposer_signature: None,
         });
     }
     if let Ok(block) = Block::ssz_decode(payload) {
@@ -55,6 +58,7 @@ pub fn try_decode_block(topic: &str, payload: &[u8]) -> Option<DecodedBlockGossi
             parent: block.parent_root,
             block,
             signed: None,
+            proposer_signature: None,
         });
     }
     None
