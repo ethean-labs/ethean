@@ -33,3 +33,10 @@ ethean start --until-signal --network pq-devnet-4 --metrics
 ```
 
 Watch http://127.0.0.1:9100/metrics for `ethean_head_slot` climbing.
+
+Empty-mesh gossip publish (`InsufficientPeers`) is a soft skip under local
+finality so the duty loop stays up — see
+[local-finality-insufficient-peers-soft-skip-2026-09-20.md](local-finality-insufficient-peers-soft-skip-2026-09-20.md).
+
+Grafana still needs a healthy Docker Desktop/WSL; without it use `:9100` only —
+[docker-desktop-wsl-execerror-2026-09-20.md](docker-desktop-wsl-execerror-2026-09-20.md).
