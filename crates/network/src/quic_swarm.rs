@@ -5,6 +5,7 @@
 use crate::error::NetworkError;
 use crate::gossip::{LeanGossipTopics, PumpEvent};
 use crate::multiaddr::parse_quic_udp;
+use crate::quic_blocks_codec::{blocks_by_root_behaviour, BlocksByRootCodec};
 use crate::quic_status_codec::{status_behaviour, StatusCodec};
 use crate::transport::TransportConfig;
 use ethean_primitives::Hash32;
@@ -18,12 +19,13 @@ use std::time::Duration;
 
 type NetResult<T> = std::result::Result<T, NetworkError>;
 
-/// Ping + gossipsub + Lean Status request_response.
+/// Ping + gossipsub + Lean Status / blocks-by-root request_response.
 #[derive(libp2p::swarm::NetworkBehaviour)]
 pub(crate) struct LeanBehaviour {
     pub(crate) ping: ping::Behaviour,
     pub(crate) gossipsub: gossipsub::Behaviour,
     pub(crate) status: request_response::Behaviour<StatusCodec>,
+    pub(crate) blocks_by_root: request_response::Behaviour<BlocksByRootCodec>,
 }
 
 /// libp2p swarm listening on QUIC-v1 (UDP).
@@ -40,6 +42,8 @@ pub struct QuicSwarm {
     pub(crate) peers: HashMap<Hash32, PeerId>,
     /// Local Status SSZ used to answer inbound Status requests.
     pub(crate) local_status: Option<Vec<u8>>,
+    /// Signed-block bytes keyed by root for inbound blocks-by-root replies.
+    pub(crate) blocks_by_root: HashMap<Hash32, Vec<u8>>,
 }
 
 impl std::fmt::Debug for QuicSwarm {
@@ -87,6 +91,7 @@ impl QuicSwarm {
                 ),
                 gossipsub,
                 status: status_behaviour(),
+                blocks_by_root: blocks_by_root_behaviour(),
             })
             .map_err(|e| NetworkError::Handshake(format!("behaviour: {e}")))?
             .build();
@@ -113,12 +118,18 @@ impl QuicSwarm {
             seen_ids: HashSet::new(),
             peers: HashMap::new(),
             local_status: None,
+            blocks_by_root: HashMap::new(),
         })
     }
 
     /// Cache local Status SSZ for inbound Status replies.
     pub fn set_local_status_bytes(&mut self, bytes: Vec<u8>) {
-        self.local_status = Some(bytes);
+        self.local_status.replace(bytes);
+    }
+
+    /// Insert or replace a block body served on inbound blocks-by-root.
+    pub fn put_block_bytes(&mut self, root: Hash32, bytes: Vec<u8>) {
+        self.blocks_by_root.insert(root, bytes);
     }
 
     /// Dial `/ip4/.../udp/.../quic-v1` only.
@@ -160,6 +171,25 @@ impl QuicSwarm {
         Ok(())
     }
 
+    /// Send a blocks-by-root request to a connected peer fingerprint.
+    pub fn send_blocks_by_root_request(
+        &mut self,
+        peer: Hash32,
+        payload: Vec<u8>,
+    ) -> NetResult<()> {
+        let Some(peer_id) = self.peers.get(&peer).copied() else {
+            return Err(NetworkError::Handshake(
+                "peer not connected for blocks-by-root request".into(),
+            ));
+        };
+        let _ = self
+            .swarm
+            .behaviour_mut()
+            .blocks_by_root
+            .send_request(&peer_id, payload);
+        Ok(())
+    }
+
     /// Pump one swarm event; validates inbound gossip against Lean rules.
     pub async fn pump_once(&mut self) -> PumpEvent {
         match self.swarm.select_next_some().await {
@@ -178,6 +208,9 @@ impl QuicSwarm {
                 self.handle_gossip_event(ev)
             }
             SwarmEvent::Behaviour(LeanBehaviourEvent::Status(ev)) => self.handle_status_event(ev),
+            SwarmEvent::Behaviour(LeanBehaviourEvent::BlocksByRoot(ev)) => {
+                self.handle_blocks_by_root_event(ev)
+            }
             SwarmEvent::Behaviour(_) => PumpEvent::Behaviour,
             _ => PumpEvent::Other,
         }
