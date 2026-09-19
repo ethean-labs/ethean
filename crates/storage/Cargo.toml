@@ -11,6 +11,11 @@ description = "Lean Consensus durable storage contracts (Phase 11)"
 ethean-primitives = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
+rocksdb = { workspace = true, optional = true }
+
+[features]
+default = []
+rocksdb = ["dep:rocksdb"]
 
 [lib]
 name = "ethean_storage"
