@@ -39,7 +39,7 @@ pub fn try_attach_type2_proof(plan: &mut PlanTransition) -> Type2ProveResult {
 
 /// True when crypto reports leanVM FFI ready (never claims test-aggregate as production).
 pub fn production_type2_ready() -> bool {
-    ethean_crypto::FfiStatus::probe().leanvm
+    ethean_crypto::LeanVmGate::probe().ready()
 }
 
 /// Map a crypto error into skip vs hard failure for callers that care.
