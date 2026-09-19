@@ -36,10 +36,10 @@ pub fn verify_type2(statement: &AggregateStatement, proof: &[u8]) -> Result<()> 
 fn verify_bound_proof(statement: &AggregateStatement, proof: &[u8]) -> Result<()> {
     #[cfg(feature = "leanvm-backend")]
     {
-        let _ = (statement, proof);
-        return Err(CryptoError::BackendUnavailable(
-            "leanvm-backend feature selected but FFI not wired; refuse fake accept",
-        ));
+        match crate::backend_leanvm::verify(statement, proof)? {
+            true => Ok(()),
+            false => Err(CryptoError::VerificationFailed),
+        }
     }
     #[cfg(all(not(feature = "leanvm-backend"), feature = "test-aggregate"))]
     {
