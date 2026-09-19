@@ -1,87 +1,8 @@
-//! QuicSwarm accessors and duty-loop flush hooks for [`EtheanClient`].
+//! QuicSwarm accessors and boot-time network pump for [`EtheanClient`].
 
 use crate::client::EtheanClient;
-use crate::events::ChainEvent;
-use crate::signal_loop::run_until_signal;
-use crate::wall_loop::{run_wall_duty_loop, WallLoopConfig};
 use crate::Result;
-
-impl EtheanClient {
-    /// Wall-clock duty loop that flushes pending block gossip after each tick.
-    pub(crate) async fn run_wall_with_flush(
-        &mut self,
-        ticks: u32,
-        enable_sleep: bool,
-    ) -> Result<Vec<ChainEvent>> {
-        let cfg = WallLoopConfig {
-            max_ticks: ticks,
-            enable_sleep,
-        };
-        #[cfg(feature = "libp2p-quic")]
-        {
-            let swarm = &mut self.swarm;
-            return run_wall_duty_loop(
-                &self.clock,
-                &mut self.owner,
-                &mut self.shutdown,
-                &mut self.sync,
-                cfg,
-                |owner| match swarm.as_mut() {
-                    Some(facade) => crate::swarm_pump::flush_pending_event(facade, owner),
-                    None => Ok(None),
-                },
-            )
-            .await;
-        }
-        #[cfg(not(feature = "libp2p-quic"))]
-        {
-            run_wall_duty_loop(
-                &self.clock,
-                &mut self.owner,
-                &mut self.shutdown,
-                &mut self.sync,
-                cfg,
-                |_| Ok(None),
-            )
-            .await
-        }
-    }
-
-    /// Until-signal duty loop that flushes pending block gossip after each tick.
-    pub(crate) async fn run_until_signal_with_flush(
-        &mut self,
-        enable_sleep: bool,
-    ) -> Result<Vec<ChainEvent>> {
-        #[cfg(feature = "libp2p-quic")]
-        {
-            let swarm = &mut self.swarm;
-            return run_until_signal(
-                &self.clock,
-                &mut self.owner,
-                &mut self.shutdown,
-                &mut self.sync,
-                enable_sleep,
-                |owner| match swarm.as_mut() {
-                    Some(facade) => crate::swarm_pump::flush_pending_event(facade, owner),
-                    None => Ok(None),
-                },
-            )
-            .await;
-        }
-        #[cfg(not(feature = "libp2p-quic"))]
-        {
-            run_until_signal(
-                &self.clock,
-                &mut self.owner,
-                &mut self.shutdown,
-                &mut self.sync,
-                enable_sleep,
-                |_| Ok(None),
-            )
-            .await
-        }
-    }
-}
+use tracing::info;
 
 #[cfg(feature = "libp2p-quic")]
 impl EtheanClient {
@@ -118,91 +39,11 @@ impl EtheanClient {
 
     /// Boot-time pump: wait longer so local dials can establish before Status staging.
     pub(crate) async fn boot_pump_status_and_gossip(&mut self) -> Result<()> {
-        use tracing::info;
-        // Dial is async; give the QUIC handshake a real window after bootnodes.
-        let budget = self
-            .pump_network_idle(64, std::time::Duration::from_millis(50))
+        let drained = self
+            .apply_network_budget(64, std::time::Duration::from_millis(50))
             .await?;
-        if budget.drained > 0 {
-            info!(
-                drained = budget.drained,
-                accepted = budget.accepted.len(),
-                connected = budget.connected_peers.len(),
-                "QuicSwarm pump drained boot events"
-            );
-        }
-        if let Some(local) = self.local_status.clone() {
-            let queued = crate::status_handshake::queue_peers(
-                &mut self.status_sessions,
-                &local,
-                &budget.connected_peers,
-            );
-            if queued > 0 {
-                info!(
-                    queued,
-                    pending = self.status_sessions.pending_len(),
-                    "Status handshakes queued for connected peers"
-                );
-            }
-            if let Some(facade) = self.swarm.as_mut() {
-                match ethean_network::prepare_status_outbounds(
-                    &self.status_sessions,
-                    &mut facade.requests,
-                ) {
-                    Ok(reqs) if !reqs.is_empty() => {
-                        let n = reqs.len();
-                        facade.enqueue_status_outbounds(reqs);
-                        match facade.flush_status_outbox() {
-                            Ok(sent) => info!(
-                                staged = n,
-                                sent,
-                                "Status outbound payloads flushed to req/resp"
-                            ),
-                            Err(e) => info!(
-                                staged = n,
-                                error = %e,
-                                "Status outbox staged; flush deferred"
-                            ),
-                        }
-                    }
-                    Ok(_) => {}
-                    Err(e) => {
-                        info!(error = %e, "failed to stage Status outbounds");
-                    }
-                }
-            }
-        }
-        let ingest = crate::gossip_ingest::ingest_accepted(
-            &mut self.owner,
-            &mut self.shutdown,
-            &budget.accepted,
-        );
-        if !ingest.is_empty() {
-            info!(n = ingest.len(), "Ingested gossip from boot pump");
-        }
-        for (peer, payload) in &budget.status_responses {
-            let Some(facade) = self.swarm.as_mut() else {
-                break;
-            };
-            match crate::status_handshake::complete_status_handshake(
-                &mut self.status_sessions,
-                &mut self.sync,
-                &self.owner,
-                *peer,
-                payload,
-                &mut facade.requests,
-            ) {
-                Ok(Some(blocks_req)) => {
-                    facade.enqueue_blocks_outbounds(vec![blocks_req]);
-                    info!(peer0 = peer[0], "blocks-by-root staged after Status response");
-                }
-                Ok(None) => {
-                    info!(peer0 = peer[0], "Status handshake completed; heads match");
-                }
-                Err(e) => {
-                    info!(peer0 = peer[0], error = %e, "Status handshake failed");
-                }
-            }
+        if drained > 0 {
+            info!(drained, "QuicSwarm pump drained boot events");
         }
         Ok(())
     }
