@@ -1,7 +1,34 @@
 # Start Prometheus + Grafana for Ethean long-run metrics (Windows).
 $ErrorActionPreference = "Stop"
+
+function Assert-DockerReady {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        throw @"
+Docker CLI not found in PATH.
+Install Docker Desktop, then reopen this terminal.
+"@
+    }
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $null = & docker info 2>&1
+    $exit = $LASTEXITCODE
+    $ErrorActionPreference = $prev
+    if ($exit -ne 0) {
+        throw @"
+Docker daemon is not running (cannot reach npipe://./pipe/docker_engine).
+Start Docker Desktop, wait until it says Engine running, then re-run:
+  .\scripts\run-observability.ps1
+"@
+    }
+}
+
+Assert-DockerReady
 Set-Location (Join-Path $PSScriptRoot "..\deploy\observability")
-docker compose up -d
+& docker compose up -d
+if ($LASTEXITCODE -ne 0) {
+    throw "docker compose up -d failed (exit $LASTEXITCODE)."
+}
+
 Write-Host "Waiting for Prometheus..."
 $ok = $false
 for ($i = 0; $i -lt 30; $i++) {
