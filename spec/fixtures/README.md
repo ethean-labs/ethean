@@ -17,5 +17,7 @@ This tree holds **provenance manifests** for upstream fixture archives used by c
 | [phase-00/](./phase-00/) | Phase 00 production-scheme fixture lock |
 | [phase-02/](./phase-02/) | Workspace / primitives / profile |
 | [phase-03/](./phase-03/) | Canonical SSZ + Lean types |
+| [phase-04/](./phase-04/) | Genesis + 4s slot clock |
+| [phase-05/](./phase-05/) | Lean state transition |
 
-See also [`../pins/phase-00.lock.toml`](../pins/phase-00.lock.toml), [`../pins/phase-03.lock.toml`](../pins/phase-03.lock.toml), and [`../../tests/interop/README.md`](../../tests/interop/README.md).
+See also [`../pins/phase-00.lock.toml`](../pins/phase-00.lock.toml), [`../pins/phase-03.lock.toml`](../pins/phase-03.lock.toml), [`../pins/phase-05.lock.toml`](../pins/phase-05.lock.toml), and [`../../tests/interop/README.md`](../../tests/interop/README.md).

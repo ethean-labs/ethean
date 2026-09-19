@@ -48,14 +48,35 @@ pub fn hash_tree_root_bytes(bytes: &[u8]) -> Root {
     merkleize(&chunks, next_power_of_two(chunks.len()))
 }
 
+/// Root of an all-zero merkle tree with exactly `leaf_count` leaves (`leaf_count` is a power of two).
+fn zero_merkle_root(leaf_count: usize) -> Root {
+    debug_assert!(leaf_count.is_power_of_two() && leaf_count > 0);
+    let mut h = ZERO_CHUNK;
+    let mut n = 1usize;
+    while n < leaf_count {
+        h = hash_nodes(&h, &h);
+        n *= 2;
+    }
+    h
+}
+
 /// Merkleize `chunks`, padding with zero hashes up to `limit` (power of two).
+///
+/// Uses virtual zero-subtree padding so large SSZ limits (e.g. justification bitlists)
+/// do not allocate `limit` chunks.
 pub fn merkleize(chunks: &[Root], limit: usize) -> Root {
     debug_assert!(limit.is_power_of_two() || limit == 0);
     if limit == 0 {
         return ZERO_CHUNK;
     }
-    let mut layer: Vec<Root> = chunks.to_vec();
-    layer.resize(limit, ZERO_CHUNK);
+    if chunks.is_empty() {
+        return zero_merkle_root(limit);
+    }
+
+    let mut width = chunks.len().next_power_of_two().max(1);
+    let mut layer = chunks.to_vec();
+    layer.resize(width, ZERO_CHUNK);
+
     while layer.len() > 1 {
         let mut next = Vec::with_capacity(layer.len() / 2);
         for pair in layer.chunks(2) {
@@ -63,7 +84,14 @@ pub fn merkleize(chunks: &[Root], limit: usize) -> Root {
         }
         layer = next;
     }
-    layer[0]
+    let mut root = layer[0];
+
+    while width < limit {
+        let zero_side = zero_merkle_root(width);
+        root = hash_nodes(&root, &zero_side);
+        width = width.saturating_mul(2);
+    }
+    root
 }
 
 /// Mix a merkleized list root with its length (SSZ list / bitlist length mixin).
@@ -156,5 +184,29 @@ mod tests {
     fn bytes32_is_identity_chunk() {
         let bytes = [7u8; 32];
         assert_eq!(hash_tree_root_bytes(&bytes), bytes);
+    }
+
+    #[test]
+    fn large_empty_bitlist_is_fast() {
+        // JustificationValidators limit is ~2^30 bits → millions of leaf chunks if materialised.
+        let root = hash_tree_root_bitlist(&[], 1_073_741_824).unwrap();
+        assert_ne!(root, ZERO_CHUNK); // length mixin
+    }
+
+    #[test]
+    fn merkleize_matches_naive_small() {
+        let chunks = [hash_tree_root_u64(1), hash_tree_root_u64(2)];
+        let efficient = merkleize(&chunks, 8);
+        // Manual: pad to 8 then fold
+        let mut layer = chunks.to_vec();
+        layer.resize(8, ZERO_CHUNK);
+        while layer.len() > 1 {
+            let mut next = Vec::new();
+            for pair in layer.chunks(2) {
+                next.push(hash_nodes(&pair[0], &pair[1]));
+            }
+            layer = next;
+        }
+        assert_eq!(efficient, layer[0]);
     }
 }

@@ -22,9 +22,12 @@ pub use opts::TransitionOpts;
 pub use outcome::TransitionOutcome;
 pub use slot::process_slots;
 
-use ethean_types::{Block, SignedBlock, State};
+pub use block::{process_block, process_block_header};
+pub use operation::{
+    check_attestation_data_structure, distinct_attestation_data_count, process_attestations,
+};
 
-use block::process_block;
+use ethean_types::{Block, SignedBlock, State};
 
 /// Full state transition: advance slots to `block.slot`, process block, check state root.
 ///
@@ -203,13 +206,16 @@ mod tests {
 
     #[test]
     fn structural_block_updates_header() {
-        let mut pre = sample_state(3);
-        process_slots(&mut pre, Slot::new(1)).unwrap();
-        let parent_root = pre.latest_block_header.hash_tree_root();
+        let pre = sample_state(3);
+        // Parent root is hash_tree_root of the header after process_slots fills state_root.
+        let mut advanced = pre.clone();
+        process_slots(&mut advanced, Slot::new(1)).unwrap();
+        let parent_root = advanced.latest_block_header.hash_tree_root();
         // Proposer for slot 1 with 3 validators: 1 % 3 = 1
         let mut block = empty_block(1, 1, parent_root);
 
         let mut trial = pre.clone();
+        process_slots(&mut trial, Slot::new(1)).unwrap();
         crate::block::process_block(&mut trial, &block, &ctx()).unwrap();
         block.state_root = trial.hash_tree_root().unwrap();
 

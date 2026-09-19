@@ -44,7 +44,9 @@ mod tests {
         let f = Slot::new(10);
         assert!(is_justifiable_after(Slot::new(10), f));
         assert!(is_justifiable_after(Slot::new(15), f));
-        assert!(!is_justifiable_after(Slot::new(16), f));
+        // delta=6 is pronic; delta=7 is neither window/square/pronic
+        assert!(is_justifiable_after(Slot::new(16), f));
+        assert!(!is_justifiable_after(Slot::new(17), f));
     }
 
     #[test]

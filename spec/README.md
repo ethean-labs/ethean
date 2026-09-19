@@ -11,11 +11,13 @@ Tracked protocol evidence for the Lean Consensus migration. These paths are plan
 | [pins/phase-02.lock.toml](./pins/phase-02.lock.toml) | Phase 02 workspace / primitives / profile |
 | [pins/phase-03.lock.toml](./pins/phase-03.lock.toml) | Phase 03 SSZ + Lean types |
 | [pins/phase-04.lock.toml](./pins/phase-04.lock.toml) | Phase 04 genesis + 4s slot clock |
+| [pins/phase-05.lock.toml](./pins/phase-05.lock.toml) | Phase 05 Lean state transition |
 | [pins/protocol-surface.toml](./pins/protocol-surface.toml) | Normative constants and surfaces for later phases |
 | [fixtures/README.md](./fixtures/README.md) | Fixture provenance policy |
 | [fixtures/phase-00/](./fixtures/phase-00/) | Phase 00 fixture manifest (digests only; no tarball in git) |
 | [fixtures/phase-03/](./fixtures/phase-03/) | Phase 03 SSZ/types fixture manifest |
 | [fixtures/phase-04/](./fixtures/phase-04/) | Phase 04 genesis/clock fixture manifest |
+| [fixtures/phase-05/](./fixtures/phase-05/) | Phase 05 state-transition fixture manifest |
 
 ## Related
 
