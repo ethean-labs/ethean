@@ -141,11 +141,9 @@ pub fn decode_bitlist(input: &[u8], limit: usize) -> Result<Vec<bool>, SszError>
     if last == 0 {
         return Err(SszError::InvalidBitlist);
     }
+    // Highest set bit in the last byte is the delimiter (inclusive length).
     let msb = 7 - last.leading_zeros() as usize;
-    let total_bits = (input.len() - 1) * 8 + msb;
-    if total_bits == 0 {
-        return Err(SszError::InvalidBitlist);
-    }
+    let total_bits = (input.len() - 1) * 8 + msb + 1;
     let data_bits = total_bits - 1;
     if data_bits > limit {
         return Err(SszError::ListTooLong {
@@ -206,9 +204,16 @@ mod tests {
 
     #[test]
     fn roundtrip_bitlist() {
-        let bits = vec![true, false, true];
-        let enc = encode_bitlist(&bits);
-        assert_eq!(decode_bitlist(&enc, 8).unwrap(), bits);
+        for bits in [
+            vec![],
+            vec![true],
+            vec![true, true],
+            vec![true, false, true],
+            vec![false, true, true, false, true],
+        ] {
+            let enc = encode_bitlist(&bits);
+            assert_eq!(decode_bitlist(&enc, 64).unwrap(), bits);
+        }
     }
 
     #[test]
