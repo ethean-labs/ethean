@@ -61,6 +61,19 @@ impl SwarmFacade {
         Ok(())
     }
 
+    /// Pump one libp2p event when a QuicSwarm is bound.
+    #[cfg(feature = "libp2p-quic")]
+    pub async fn pump_quic_once(&mut self) -> Result<&'static str> {
+        let Some(swarm) = self.quic.as_mut() else {
+            return Err(NetworkError::TransportPending(
+                "bind_quic_swarm before pump_quic_once",
+            ));
+        };
+        let kind = swarm.pump_once().await;
+        self.note_progress();
+        Ok(kind)
+    }
+
     /// Record a tick of the (future) event loop for health.
     pub fn note_progress(&mut self) {
         self.events_processed = self.events_processed.saturating_add(1);
