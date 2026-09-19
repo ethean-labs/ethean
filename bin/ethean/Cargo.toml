@@ -19,3 +19,9 @@ clap = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+[features]
+# Default enables QUIC so `ethean start --bootnodes …` can dial pq-devnet peers.
+default = ["libp2p-quic"]
+libp2p-quic = ["ethean-node/libp2p-quic"]
+
