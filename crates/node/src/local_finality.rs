@@ -73,6 +73,39 @@ pub fn apply_planned_locally(
     Ok(root)
 }
 
+/// After a successful local self-apply, advance justified/finalized with a
+/// one-slot lag so Grafana panels climb without a multi-peer mesh.
+///
+/// This is a **local smoke** shortcut (not production 3SF-mini networking).
+pub fn promote_local_checkpoints(owner: &mut ChainOwner, applied_root: Hash32) {
+    let Some(state) = owner.head_state.as_mut() else {
+        return;
+    };
+    let head = Checkpoint {
+        root: applied_root,
+        slot: state.slot,
+    };
+    if head.slot.get() <= state.latest_justified.slot.get() {
+        return;
+    }
+    let prev_just = state.latest_justified;
+    if prev_just.slot.get() > state.latest_finalized.slot.get() {
+        state.latest_finalized = prev_just;
+    }
+    state.latest_justified = head;
+    info!(
+        justified = state.latest_justified.slot.get(),
+        finalized = state.latest_finalized.slot.get(),
+        "local finality promoted checkpoints"
+    );
+    // Mutating justified/finalized changes the state root; reseal so the next
+    // proposal's parent_root matches `hash_tree_root(latest_block_header)`.
+    if let Ok(sr) = state.hash_tree_root() {
+        state.latest_block_header.state_root = sr;
+    }
+    owner.head_root = state.latest_block_header.hash_tree_root();
+}
+
 /// When aggregating locally, attach a full-registry vote to the planned body.
 pub fn inject_local_aggregate(owner: &mut ChainOwner, plan: &mut PlanTransition) {
     let Some(state) = owner.head_state.as_ref() else {
@@ -171,5 +204,7 @@ mod tests {
         let root = apply_planned_locally(&mut owner, &plan).unwrap();
         assert_ne!(root, HASH32_ZERO);
         assert_eq!(owner.head_state.as_ref().unwrap().slot.get(), 1);
+        promote_local_checkpoints(&mut owner, root);
+        assert!(owner.head_state.as_ref().unwrap().latest_justified.slot.get() >= 1);
     }
 }

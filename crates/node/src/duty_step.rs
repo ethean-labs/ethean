@@ -79,7 +79,15 @@ fn try_plan_proposal(
         16,
     ) {
         Ok(p) => p,
-        Err(_) => return out,
+        Err(e) => {
+            tracing::debug!(
+                error = %e,
+                slot = tick.slot.get(),
+                head_slot = pre.slot.get(),
+                "proposal plan skipped"
+            );
+            return out;
+        }
     };
 
     if owner.local_finality || owner.is_aggregator {
@@ -90,8 +98,13 @@ fn try_plan_proposal(
     }
 
     let attestations = plan.block.body.attestations.len();
+    // Interval 0 is the normal publish window. Local-finality also allows the
+    // first tick of a strictly future slot so solo runs do not stall if the
+    // wall sampler skips interval 0 after a long sleep.
+    let future_slot = tick.slot.get() > pre.slot.get();
     let publish_allowed = matches!(decide_publish(tick, tick, true), PublishDecision::Allow)
-        && tick.interval == 0;
+        && future_slot
+        && (tick.interval == 0 || owner.local_finality);
 
     if publish_allowed {
         if let Type2ProveResult::Attached { proof_len } = try_attach_type2_proof(&mut plan) {
@@ -150,30 +163,35 @@ fn try_plan_proposal(
             owner.pending_block_gossip = Some(gossip);
             out.push(ready);
         }
-        // Proposer self-import so solo / local-finality runs advance head without peers.
-        if owner.local_finality {
-            match crate::local_finality::apply_planned_locally(owner, &plan) {
-                Ok(applied) => {
-                    tracing::info!(
-                        slot = tick.slot.get(),
-                        root = %format!("{:02x}{:02x}…", applied[0], applied[1]),
-                        finalized = owner
-                            .head_state
-                            .as_ref()
-                            .map(|s| s.latest_finalized.slot.get())
-                            .unwrap_or(0),
-                        justified = owner
-                            .head_state
-                            .as_ref()
-                            .map(|s| s.latest_justified.slot.get())
-                            .unwrap_or(0),
-                        "local finality applied proposal to head"
-                    );
-                }
-                Err(e) => tracing::warn!(error = %e, "local finality apply failed"),
+    } else if !owner.local_finality {
+        owner.pending_block_gossip = None;
+    }
+
+    // Proposer self-import so solo / local-finality runs advance head without peers.
+    // Allowed even when binding fails (unsigned local smoke).
+    if publish_allowed && owner.local_finality {
+        match crate::local_finality::apply_planned_locally(owner, &plan) {
+            Ok(applied) => {
+                crate::local_finality::promote_local_checkpoints(owner, applied);
+                tracing::info!(
+                    slot = tick.slot.get(),
+                    root = %format!("{:02x}{:02x}…", applied[0], applied[1]),
+                    finalized = owner
+                        .head_state
+                        .as_ref()
+                        .map(|s| s.latest_finalized.slot.get())
+                        .unwrap_or(0),
+                    justified = owner
+                        .head_state
+                        .as_ref()
+                        .map(|s| s.latest_justified.slot.get())
+                        .unwrap_or(0),
+                    "local finality applied proposal to head"
+                );
             }
+            Err(e) => tracing::warn!(error = %e, "local finality apply failed"),
         }
-    } else {
+    } else if !publish_allowed {
         owner.pending_block_gossip = None;
     }
     out
