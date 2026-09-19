@@ -8,9 +8,24 @@ Ethean Lean Consensus Client binary: `ethean` (`bin/ethean`).
 cargo build -p ethean --release
 ```
 
-Requires the workspace Rust toolchain (see `rust-toolchain.toml`). Do not use legacy Beacon package names or BLS crates.
+Requires the workspace Rust toolchain (see `rust-toolchain.toml`). The binary enables `libp2p-quic` by default so bootnode dials work.
 
-## Run (smoke)
+## Network target
+
+Default `--network` is **`pq-devnet-5`** (leanroadmap generation: planned / in progress).
+That label alone does **not** attach to a public mesh. Supply QUIC multiaddrs:
+
+| Source | Example |
+| --- | --- |
+| CLI | `--bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'` |
+| Env | `ETHEAN_BOOTNODES=…` |
+| File | `config/networks/pq-devnet-5.bootnodes` |
+
+Empty bootnodes → offline local duties with a clear warning log.
+
+Peer baseline for this generation: **Zeam** and **Ream** (static bootnodes / `devnet5`). **Peam** is older. **Beam** is historical naming only.
+
+## Run
 
 ```bash
 ./target/release/ethean version
@@ -18,21 +33,17 @@ Requires the workspace Rust toolchain (see `rust-toolchain.toml`). Do not use le
 ./target/release/ethean start --ticks 3
 ./target/release/ethean start --ticks 2 --wall-clock
 ./target/release/ethean start --until-signal
+./target/release/ethean start --until-signal --bootnodes '<quic-multiaddr>'
+./target/release/ethean start --network local
 ./target/release/ethean start --data-dir ./ethean-data
 ./target/release/ethean validator
 ```
 
-`start` (default) loads `lstar_devnet`, opens Lean in-memory storage, binds an ephemeral UDP
-listen for the QUIC facade, smokes `/lean/v1/health`, runs a finite **elapsed** duty loop, then
-drains. `--wall-clock` samples the system clock between ticks. `--until-signal` runs until Ctrl-C.
-`--data-dir` uses `ethean_storage::open_path` (requires a build with `ethean-storage/rocksdb`).
+`start` loads `lstar_devnet`, opens Lean in-memory storage (or `--data-dir` RocksDB when built with that feature), binds UDP/QUIC, smokes `/lean/v1/health`, dials bootnodes when present, then runs the duty loop.
 
-UDP Status path probes are available via `probe_udp_status` (reachability only).
-Enable `ethean-network/libp2p-quic` (or `ethean-node/libp2p-quic`) for `QuicSwarm` /
-`SwarmFacade::bind_quic_swarm` + `dial_quic_peer`. leanSig links via a local vendor
-patch (`tools/release/vendor-leansig-bigint-fix.ps1`); leanVM FFI is still fail-closed.
-For RocksDB on Windows, dot-source `tools/release/check-libclang.ps1` (sets
-`LIBCLANG_PATH` and `INCLUDE` for MSVC/WinSDK), then build with `ethean-storage/rocksdb`.
+## Monitor appearance
+
+Terminal tracing only (network label, dials, crypto gates, ticks). No `ethean monitor` subcommand yet.
 
 ## Config / data
 
@@ -42,8 +53,4 @@ For RocksDB on Windows, dot-source `tools/release/check-libclang.ps1` (sets
 
 ## Release tooling
 
-See [release/README.md](./release/README.md) for upgrade/rollback gates and soft legacy scan scripts under `tools/release/`.
-
-## Docker
-
-Container images and compose samples that referenced the retired Beacon binary are withdrawn. Recreate images against `bin/ethean` after QUIC and durable storage gates close.
+See [release/README.md](./release/README.md). Working-client plan: [working-client-pq-devnet-5-plan-2026-09-19.md](./working-client-pq-devnet-5-plan-2026-09-19.md).
