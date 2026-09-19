@@ -1,7 +1,5 @@
 //! Non-blocking QuicSwarm event pump helpers (feature `libp2p-quic`).
 
-#![cfg(feature = "libp2p-quic")]
-
 use crate::network::SwarmFacade;
 use crate::{Error, Result};
 use std::time::Duration;
@@ -43,7 +41,6 @@ mod tests {
         let n = pump_swarm_budget(&mut facade, 3, Duration::from_millis(5))
             .await
             .expect("pump");
-        // Fresh bind may still emit listen-addr leftovers or sit idle.
         assert!(n <= 3);
     }
 }
