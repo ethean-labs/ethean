@@ -75,6 +75,7 @@ Planning session summaries:
 - [How Ream connects without public bootnodes](./how-ream-connects-without-public-bootnodes-2026-09-20.md)
 - [How Ream, ethlambda, and Zeam run pq-devnets](./peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
 - [Recommended test baseline (Ream ops + ethlambda)](./recommend-test-baseline-ream-ethlambda-2026-09-20.md)
+- [Long-run metrics + Grafana (pq-devnet-4)](./long-run-metrics-grafana-2026-09-20.md)
 - [Local private PQ mesh (dial generated nodes)](./local-pq-mesh-private-dial-2026-09-20.md)
 - [Fork digest override and local Status](./fork-digest-local-status-2026-09-19.md)
 - [Status handshake outboxes (Status + blocks-by-root staging)](./status-handshake-outbox-2026-09-19.md)

@@ -31,9 +31,10 @@ Do not use a separate `install.sh` / `cargo install` step for day-to-day runs.
 
 | Script | Target | Notes |
 | --- | --- | --- |
-| `run-pq-devnet-4.sh` / `.ps1` | **Operational default** | Uses `config/networks/pq-devnet-4.bootnodes` |
+| `run-pq-devnet-4.sh` / `.ps1` | **Operational default** | Long-run `--until-signal`, `/metrics` on `:9100` |
 | `run-pq-devnet-5.sh` / `.ps1` | Ready path | Same binary; needs operator D5 multiaddrs |
 | `local-pq-mesh.sh` / `.ps1` | **Private mesh** | 2 peers; writes `target/local-pq-mesh/nodes.multiaddrs` then dials it |
+| `run-observability.sh` / `.ps1` | **Grafana + Prometheus** | Scrapes host `:9100`; UI on `:3000` / `:9090` |
 
 ```bash
 # Unix
@@ -45,7 +46,11 @@ Do not use a separate `install.sh` / `cargo install` step for day-to-day runs.
 .\scripts\run-pq-devnet-4.ps1
 .\scripts\run-pq-devnet-5.ps1 --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
 .\scripts\local-pq-mesh.ps1
+.\scripts\run-observability.ps1
 ```
+
+Grafana: http://localhost:3000 — dashboard **Ethean Lean Clients Dashboard**.
+See [deploy/observability/README.md](../deploy/observability/README.md).
 
 ### Local private mesh (Ream-style)
 
