@@ -38,6 +38,8 @@ pub struct ChainOwner {
     pub head_state: Option<State>,
     /// Syncing flag from sync subsystem.
     pub syncing: bool,
+    /// Last ingested gossip content root (provisional until SSZ import).
+    pub last_gossip_root: Option<Hash32>,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
 }
