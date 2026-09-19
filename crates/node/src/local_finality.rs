@@ -2,7 +2,7 @@
 
 use crate::block_builder::PlanTransition;
 use crate::chain_owner::ChainOwner;
-use ethean_primitives::{Hash32, Slot, HASH32_ZERO};
+use ethean_primitives::{Hash32, HASH32_ZERO};
 use ethean_transition::{apply_block_unverified, TransitionContext};
 use ethean_types::{
     AggregatedAttestation, AggregationBits, AttestationData, BlockBody, Checkpoint, State,

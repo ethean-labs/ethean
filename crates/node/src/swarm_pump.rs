@@ -98,6 +98,27 @@ pub fn publish_pending_block(
             }))
         }
         Err(e) => {
+            let soft = owner.local_finality
+                && matches!(&e, ethean_network::NetworkError::Handshake(msg)
+                    if msg.contains("InsufficientPeers"));
+            if soft {
+                // Solo local-finality already applied the block to head; no mesh yet.
+                tracing::debug!(
+                    error = %e,
+                    "gossip publish skipped (no peers); local head already updated"
+                );
+                let _ = facade.put_block_bytes(gossip.block_root, gossip.payload.clone());
+                let _ = facade.put_block_at_slot(
+                    gossip.slot,
+                    gossip.block_root,
+                    gossip.payload.clone(),
+                );
+                return Ok(Some(PublishedBlock {
+                    topic: gossip.topic,
+                    payload_len: gossip.payload.len(),
+                    has_type2_proof: gossip.has_type2_proof,
+                }));
+            }
             // Restore so a later flush can retry.
             owner.pending_block_gossip = Some(gossip);
             Err(Error::Network(e))
