@@ -7,9 +7,7 @@ use crate::{
     events::ChainEvent,
     observability::{smoke_health_route, NodeObservability},
     shutdown::ShutdownState,
-    signal_loop::run_until_signal,
     start_config::{RunMode, StartConfig},
-    wall_loop::{run_wall_duty_loop, WallLoopConfig},
     wall_tick::tick_from_wall,
     Error, Result, VERSION,
 };
@@ -27,12 +25,12 @@ use tracing::info;
 pub struct EtheanClient {
     profile: ChainProfile,
     genesis: State,
-    clock: SlotClock,
+    pub(crate) clock: SlotClock,
     /// Owns chain mutation; workers only read snapshots / send commands.
     pub(crate) owner: ChainOwner,
     db: Database,
-    sync: SyncStatus,
-    shutdown: ShutdownState,
+    pub(crate) sync: SyncStatus,
+    pub(crate) shutdown: ShutdownState,
     observability: NodeObservability,
     /// Durable libp2p QUIC facade (feature `libp2p-quic`).
     #[cfg(feature = "libp2p-quic")]
@@ -196,27 +194,10 @@ impl EtheanClient {
                 ticks,
                 enable_sleep,
             } => {
-                run_wall_duty_loop(
-                    &self.clock,
-                    &mut self.owner,
-                    &mut self.shutdown,
-                    &mut self.sync,
-                    WallLoopConfig {
-                        max_ticks: ticks,
-                        enable_sleep,
-                    },
-                )
-                .await?
+                self.run_wall_with_flush(ticks, enable_sleep).await?
             }
             RunMode::UntilSignal { enable_sleep } => {
-                run_until_signal(
-                    &self.clock,
-                    &mut self.owner,
-                    &mut self.shutdown,
-                    &mut self.sync,
-                    enable_sleep,
-                )
-                .await?
+                self.run_until_signal_with_flush(enable_sleep).await?
             }
         };
         self.finish_observability(&events)
