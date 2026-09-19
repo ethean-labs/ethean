@@ -123,24 +123,10 @@ impl AggregateStatement {
 
     /// Deterministic digest of the statement (public-input binding).
     pub fn digest(&self) -> [u8; 32] {
-        let mut buf = Vec::with_capacity(128 + self.participants.as_slice().len() * 4);
-        buf.push(match self.kind {
-            ProofKind::Type1 => 1,
-            ProofKind::Type2 => 2,
-        });
-        buf.extend_from_slice(&self.profile_digest);
-        buf.extend_from_slice(&self.message_root);
-        buf.extend_from_slice(&self.slot.to_le_bytes());
-        buf.extend_from_slice(&(self.participants.as_slice().len() as u32).to_le_bytes());
-        for idx in self.participants.as_slice() {
-            buf.extend_from_slice(&idx.to_le_bytes());
-        }
-        buf.extend_from_slice(&(self.components.len() as u32).to_le_bytes());
-        for c in &self.components {
-            buf.extend_from_slice(&c.message_root);
-            buf.extend_from_slice(&c.slot.to_le_bytes());
-        }
-        domain_digest(b"ethean-crypto/v1/aggregate-statement", &buf)
+        domain_digest(
+            b"ethean-crypto/v1/aggregate-statement",
+            &self.encode_wire(),
+        )
     }
 }
 

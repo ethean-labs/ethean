@@ -7,6 +7,7 @@
 mod bindings;
 mod prove;
 mod statement;
+mod statement_wire;
 mod verify;
 
 pub use bindings::{
