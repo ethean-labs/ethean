@@ -25,8 +25,12 @@ pub struct LeanVmGate {
     pub pinned_rev: &'static str,
     /// Cargo feature `leanvm-backend` compiled in.
     pub feature_enabled: bool,
-    /// `LEANVM_FFI_LINKED` is true.
+    /// `LEANVM_FFI_LINKED` is true (in-process symbols).
     pub ffi_linked: bool,
+    /// `ETHEAN_LEANVM_PROVER` points at an existing file.
+    pub ipc_binary_present: bool,
+    /// Framed process IPC protocol is implemented.
+    pub ipc_protocol_ready: bool,
 }
 
 /// Detailed leanSig gate (compile feature + recorded upstream pin).
@@ -58,6 +62,7 @@ impl LeanSigGate {
 impl LeanVmGate {
     /// Probe this build.
     pub fn probe() -> Self {
+        let ipc = crate::leanvm_ipc::LeanVmIpcStatus::probe();
         #[cfg(feature = "leanvm-backend")]
         {
             let s = crate::backend_leanvm::LeanVmLinkStatus::probe();
@@ -65,6 +70,8 @@ impl LeanVmGate {
                 pinned_rev: s.pinned_rev,
                 feature_enabled: s.feature_enabled,
                 ffi_linked: s.ffi_linked,
+                ipc_binary_present: ipc.binary_present,
+                ipc_protocol_ready: ipc.protocol_ready,
             }
         }
         #[cfg(not(feature = "leanvm-backend"))]
@@ -73,13 +80,20 @@ impl LeanVmGate {
                 pinned_rev: crate::aggregation::LEANVM_REV,
                 feature_enabled: false,
                 ffi_linked: false,
+                ipc_binary_present: ipc.binary_present,
+                ipc_protocol_ready: ipc.protocol_ready,
             }
         }
     }
 
-    /// Production prove/verify may run only when feature + FFI are both true.
+    /// Production prove/verify may run when in-process FFI or process IPC is ready.
     pub fn ready(self) -> bool {
-        self.feature_enabled && self.ffi_linked
+        self.feature_enabled && (self.ffi_linked || self.ipc_ready())
+    }
+
+    /// Process-isolated prover path is fully wired.
+    pub fn ipc_ready(self) -> bool {
+        self.ipc_binary_present && self.ipc_protocol_ready
     }
 }
 
