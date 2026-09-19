@@ -17,9 +17,12 @@ leansig = { git = "https://github.com/leanEthereum/leanSig", rev = "15cbdd43ec85
 rand = { version = "0.8", optional = true }
 
 [features]
-# Default: fail-closed production backend + test-hmac for local/unit verify (real, not always-true).
-default = ["test-hmac"]
+# Default: fail-closed production + test helpers with real binding (never always-true).
+default = ["test-hmac", "test-aggregate"]
 # Attempt to compile/wrap leanSig PROD (may fail resolution until upstream num_bigint pin).
 leansig-backend = ["dep:leansig", "dep:rand"]
+# leanVM FFI (not wired; feature exists for pin / future).
+leanvm-backend = []
 test-hmac = []
+test-aggregate = []
 serde = ["dep:serde"]
