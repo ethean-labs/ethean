@@ -42,3 +42,5 @@ tempfile = { workspace = true }
 
 [features]
 default = []
+# Forward optional libp2p QUIC swarm from ethean-network.
+libp2p-quic = ["ethean-network/libp2p-quic"]
