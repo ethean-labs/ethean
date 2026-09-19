@@ -91,34 +91,54 @@ cargo test
 
 ##  Quick Start
 
-### 1. Start Beam/Lean Node
+Binary name is `ethean` (crate `ethean`). Default network label is **`pq-devnet-5`**.
+leanroadmap lists that generation as **in progress**; there is no permanent public bootnode list.
+Without `--bootnodes` / `ETHEAN_BOOTNODES` / `config/networks/pq-devnet-5.bootnodes`, the node runs **offline** under that label (local smoke duties).
+
+### Build
 
 ```bash
-# Start with default configuration
-Ethean start
-
-# Start with custom configuration
-Ethean start --config /path/to/config.toml
-
-# Start with specific network
-Ethean start --network mainnet
+cargo build -p ethean --release
 ```
 
-### 2. Run Validator
+### Run (local / offline pq-devnet-5 label)
 
 ```bash
-# Start validator client
-Ethean validator --keys /path/to/validator/keys
-
-# Run validator with specific Beam/Lean node
-Ethean validator --Beam/Lean-node http://localhost:5052
+./target/release/ethean version
+./target/release/ethean start
+./target/release/ethean start --ticks 3
+./target/release/ethean start --ticks 2 --wall-clock
+./target/release/ethean start --until-signal
+./target/release/ethean start --network local
 ```
 
-### 3. Check Version
+### Join an operator mesh (when you have multiaddrs)
 
 ```bash
-Ethean version
+# Paste operator QUIC multiaddrs into the file, or pass them on the CLI:
+./target/release/ethean start --until-signal --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
+
+# Or:
+#   set ETHEAN_BOOTNODES=/ip4/…/udp/…/quic-v1/p2p/…
+#   edit config/networks/pq-devnet-5.bootnodes
+./target/release/ethean start --until-signal --network pq-devnet-5
 ```
+
+### What you will see
+
+- Terminal **tracing** logs: network label, bootnode dials (or offline warning), crypto gates, `/lean/v1/health` smoke, duty ticks.
+- There is **no** `ethean monitor` subcommand and no Grafana UI in this binary yet.
+- Health surface used internally: Lean `/lean/v1/…` (not Beacon `/eth/v1`).
+
+More detail: [docs/deployment.md](docs/deployment.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](docs/working-client-pq-devnet-5-plan-2026-09-19.md).
+
+### Validator stub
+
+```bash
+./target/release/ethean validator
+```
+
+Reports leanSig / leanVM gate status (fail-closed until production backends link).
 
 ##  Development
 
@@ -282,44 +302,15 @@ skip_signature_verification = false
 
 ##  Monitoring & Metrics
 
-### Built-in Metrics
+Default `start` prints tracing logs and smokes Lean `/lean/v1/health` in-process.
+Provisioned Grafana / Prometheus (`deploy/observability/`) is still planning-only; see `road-to/lean-consensus-migration/06-observability/`.
 
 ```bash
-# Start with metrics enabled
-Ethean start --metrics --metrics-port 9090
-
-# View metrics endpoint
-curl http://localhost:9090/metrics
-
-# Prometheus format metrics
-curl http://localhost:9090/metrics/prometheus
+# Long-running node (Ctrl-C to stop); watch the terminal for dial + duty logs
+./target/release/ethean start --until-signal --network pq-devnet-5
 ```
 
-### Performance Monitoring
-
-```bash
-# Real-time performance monitoring
-Ethean monitor --live
-
-# Generate performance report
-Ethean monitor --report --output performance-report.json
-
-# Bandwidth monitoring
-Ethean monitor --bandwidth --duration 60s
-```
-
-### Health Checks
-
-```bash
-# Basic health check
-curl http://localhost:5052/eth/v1/node/health
-
-# Detailed system status
-curl http://localhost:5052/eth/v1/node/version
-
-# Peer information
-curl http://localhost:5052/eth/v1/node/peers
-```
+There is no `ethean monitor` CLI. Do not use Beacon `/eth/v1/node/health` paths.
 
 ##  API Usage
 
