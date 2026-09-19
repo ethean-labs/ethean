@@ -1,5 +1,8 @@
 target
-.github
+# Keep Cursor/local agent config out of git; allow CI workflows.
+.github/*
+!.github/workflows/
+!.github/workflows/**
 .rules
 .cursor/
 bazalinacaklar
