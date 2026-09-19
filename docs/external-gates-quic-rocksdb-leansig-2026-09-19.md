@@ -7,8 +7,9 @@ Follow-up after open-gates closeout: close or narrow the three external blockers
 - `QuicSwarm` binds QUIC-v1 only (`libp2p` 0.54 + `with_quic`).
 - `SwarmFacade::bind_quic_swarm` / `dial_quic_peer` wire the swarm into the facade.
 - Feature: `ethean-network/libp2p-quic` (forwarded by `ethean-node/libp2p-quic`).
-- Node `boot_gates` probes `SwarmFacade::bind_quic_swarm` when the feature is on.
-- Verified: `cargo test -p ethean-network --features libp2p-quic --lib` (17 tests)
+- Node `boot_gates` binds and **retains** `SwarmFacade` on `EtheanClient` when the feature is on.
+- `pump_once` / `pump_quic_once` ready for gossip event loops (topic handlers still open).
+- Verified: `cargo test -p ethean-network --features libp2p-quic --lib` (17+ tests)
 - UDP `BoundTransport` + `probe_udp_status` remain for path checks without libp2p.
 
 ## LLVM / libclang / RocksDB
@@ -23,9 +24,9 @@ Follow-up after open-gates closeout: close or narrow the three external blockers
 
 - leanSig pin `c08a3bae…` + `rand 0.10`; wrapper seeds `StdRng` from `rand::rng()`.
 - Git dep alone still fails on `num-bigint` 0.4 vs Plonky3 0.5.
-- Local vendor: `tools/release/vendor-leansig-bigint-fix.ps1` → path override
-  (do not commit) → `cargo check -p ethean-crypto --features leansig-backend` OK.
-- `leanvm-backend` remains a compile-time stub; prove/verify fail closed.
+- Committed overlay: `vendor/leansig/num-bigint-0.5.patch` + vendor script.
+- Local vendor path → `cargo check -p ethean-crypto --features leansig-backend` OK.
+- `backend_leanvm` stub (`LEANVM_FFI_LINKED = false`); `FfiStatus.leanvm` stays honest.
 
 ## Commands
 
