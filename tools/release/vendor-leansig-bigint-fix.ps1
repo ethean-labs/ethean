@@ -1,12 +1,17 @@
 # Vendor leanSig with num-bigint 0.5 to unblock Plonky3 (local only)
 
 # leanSig pins num-bigint 0.4 while unpinned Plonky3 pulls 0.5 — BigUint types clash.
-# This script clones into bazalinacaklar/ (gitignored) and patches Cargo.toml.
+# This script clones into bazalinacaklar/ (gitignored) and applies vendor/leansig/num-bigint-0.5.patch.
 
 $ErrorActionPreference = "Stop"
 $Root = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $Dest = Join-Path $Root "bazalinacaklar\leanSig-patched"
 $Rev = "c08a3bae74b0d85379cab72dcbefa4091546ecbb"
+$Patch = Join-Path $Root "vendor\leansig\num-bigint-0.5.patch"
+
+if (-not (Test-Path $Patch)) {
+  Write-Error "Missing patch file: $Patch"
+}
 
 if (Test-Path $Dest) {
   Write-Host "Removing existing $Dest"
@@ -17,16 +22,28 @@ git clone --depth 1 https://github.com/leanEthereum/leanSig.git $Dest
 Push-Location $Dest
 git fetch --depth 1 origin $Rev
 git checkout $Rev
+# Prefer git apply; fall back to line replace if apply fails on CRLF hosts.
+$applied = $false
+git apply --whitespace=nowarn $Patch 2>$null
+if ($LASTEXITCODE -eq 0) {
+  $applied = $true
+  Write-Host "Applied $Patch via git apply"
+} else {
+  $toml = Join-Path $Dest "Cargo.toml"
+  $text = Get-Content -Raw $toml
+  $patched = $text -replace 'num-bigint\s*=\s*"0\.4[^"]*"', 'num-bigint = "0.5"'
+  if ($patched -eq $text) {
+    Pop-Location
+    Write-Error "Failed to apply num-bigint patch"
+  }
+  Set-Content -Path $toml -Value $patched -NoNewline
+  $applied = $true
+  Write-Host "Patched num-bigint -> 0.5 via regex fallback"
+}
 Pop-Location
 
-$toml = Join-Path $Dest "Cargo.toml"
-$text = Get-Content -Raw $toml
-$patched = $text -replace 'num-bigint\s*=\s*"0\.4[^"]*"', 'num-bigint = "0.5"'
-if ($patched -eq $text) {
-  Write-Host "WARNING: num-bigint line not patched; check Cargo.toml manually"
-} else {
-  Set-Content -Path $toml -Value $patched -NoNewline
-  Write-Host "Patched num-bigint -> 0.5 in $toml"
+if (-not $applied) {
+  Write-Error "leanSig vendor patch did not apply"
 }
 
 Write-Host ""
