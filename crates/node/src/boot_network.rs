@@ -37,6 +37,12 @@ pub async fn prepare_boot_network(
 pub fn dial_bootnodes(target: &NetworkTarget, swarm: Option<&mut SwarmFacade>) {
     if !target.has_bootnodes() {
         match target.id {
+            crate::network_target::NetworkId::PqDevnet4 => {
+                warn!(
+                    network = target.id.as_str(),
+                    "no bootnodes configured; running pq-devnet-4 offline (set --bootnodes, ETHEAN_BOOTNODES, or config/networks/pq-devnet-4.bootnodes)"
+                );
+            }
             crate::network_target::NetworkId::PqDevnet5 => {
                 warn!(
                     network = target.id.as_str(),
