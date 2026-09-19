@@ -1,12 +1,7 @@
-//! Generalized XMSS PROD_CONFIG surface.
+//! XMSS configuration and scheme helpers.
 
 pub mod config;
 pub mod scheme;
 
-pub use config::{
-    assert_prod_invariants, BASE, CAPACITY, CONSTRUCTION, DIMENSION, HASH_LENGTH_FIELD_ELEMENTS,
-    LEANSIG_REV, LOG_LIFETIME, MAX_TRIES, MESSAGE_BYTES, MESSAGE_LENGTH_FIELD_ELEMENTS,
-    PARAMETER_LENGTH, PROD_FINGERPRINT, PUBLIC_KEY_BYTES, Q, RAND_LENGTH_FIELD_ELEMENTS,
-    SIGNATURE_BYTES, TARGET_SUM, TWEAK_LENGTH_FIELD_ELEMENTS, Z,
-};
-pub use scheme::{key_gen, prod_fingerprint, sign, verify_bool};
+pub use config::*;
+pub use scheme::*;

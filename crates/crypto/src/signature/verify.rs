@@ -24,7 +24,7 @@ pub fn verify(
 mod tests {
     use super::*;
     use crate::backend::TestHmacBackend;
-    use crate::xmss::scheme::{key_gen, sign};
+    use crate::{key_gen, sign};
 
     #[test]
     fn test_backend_roundtrip() {

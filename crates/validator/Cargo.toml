@@ -1,0 +1,19 @@
+[package]
+name = "ethean-validator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Lean Consensus validator signer safety for Ethean"
+
+[dependencies]
+ethean-crypto = { workspace = true, features = ["test-hmac"] }
+ethean-primitives = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+sha2 = { workspace = true }
+
+[lib]
+name = "ethean_validator"
+path = "src/lib.rs"
