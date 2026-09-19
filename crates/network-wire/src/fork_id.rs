@@ -34,6 +34,27 @@ pub fn fork_segment_hex(fork_name: &str) -> Result<String> {
     ))
 }
 
+/// Resolve the gossip/req fork segment: operator override hex wins over interim name hash.
+///
+/// `override_hex` must be exactly 8 hex chars (4 bytes), optional `0x` prefix; not the dummy id.
+pub fn fork_segment_resolve(fork_name: &str, override_hex: Option<&str>) -> Result<String> {
+    if let Some(raw) = override_hex {
+        let hex = raw.trim().trim_start_matches("0x").to_ascii_lowercase();
+        if hex.len() != 8 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err(WireError::InvalidTopic(format!(
+                "fork digest override must be 8 hex chars, got '{raw}'"
+            )));
+        }
+        if hex == FORBIDDEN_DUMMY_FORK {
+            return Err(WireError::InvalidTopic(
+                "fork digest override is the forbidden dummy".into(),
+            ));
+        }
+        return Ok(hex);
+    }
+    fork_segment_hex(fork_name)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -49,5 +70,18 @@ mod tests {
     #[test]
     fn rejects_empty() {
         assert!(fork_identifier_bytes("").is_err());
+    }
+
+    #[test]
+    fn override_wins() {
+        let interim = fork_segment_hex("lstar").unwrap();
+        let over = fork_segment_resolve("lstar", Some("0xAABBCCDD")).unwrap();
+        assert_eq!(over, "aabbccdd");
+        assert_ne!(over, interim);
+    }
+
+    #[test]
+    fn rejects_dummy_override() {
+        assert!(fork_segment_resolve("lstar", Some("12345678")).is_err());
     }
 }
