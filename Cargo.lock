@@ -746,6 +746,7 @@ name = "ethean"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "ethean-crypto",
  "ethean-node",
  "tokio",
  "tracing",
