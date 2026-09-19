@@ -20,6 +20,7 @@ pub mod duty_step;
 pub mod events;
 pub mod gossip_decode;
 pub mod gossip_ingest;
+pub mod gossip_stf;
 pub mod network;
 pub mod observability;
 pub mod shutdown;
