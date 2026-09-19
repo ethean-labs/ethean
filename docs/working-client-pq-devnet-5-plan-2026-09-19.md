@@ -26,6 +26,8 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 ## Follow-ups (D5-focused)
 
 - Fork digest override landed; still need the operator/leanSpec pin value for a live run.
+- Sync-lag duty gate: **`SYNC_LAG_THRESHOLD_SLOTS = 4`** on live ChainOwner ([sync-lag-threshold-2026-09-19.md](./sync-lag-threshold-2026-09-19.md)).
+- Blocks-by-range request encode scaffold landed; QuicSwarm stream still open ([blocks-by-range-scaffold-2026-09-19.md](./blocks-by-range-scaffold-2026-09-19.md)).
 - leanSig + leanVM production gates: **Type-1 merge API + pool coalesce landed** ([type1-recursive-merge-2026-09-19.md](./type1-recursive-merge-2026-09-19.md)); structural Type-2 split reseed landed; leanVM SNARK prove/split and leanSig production still open.
 - Status / blocks-by-root — wire + SignedBlock ingest + **multi-hop parent catch-up** landed ([blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md)); BlocksByRange still open.
 - Decode/validate D5 block body: single Type-2 proof + re-agg cache from split.
@@ -43,6 +45,8 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 11. Multi-hop parent catch-up — [blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md)
 12. Type-2 structural split / pool reseed — [type2-structural-split-pool-reseed-2026-09-19.md](./type2-structural-split-pool-reseed-2026-09-19.md)
 13. Type-1 recursive merge — [type1-recursive-merge-2026-09-19.md](./type1-recursive-merge-2026-09-19.md)
+14. Sync-lag threshold — [sync-lag-threshold-2026-09-19.md](./sync-lag-threshold-2026-09-19.md)
+15. Blocks-by-range scaffold — [blocks-by-range-scaffold-2026-09-19.md](./blocks-by-range-scaffold-2026-09-19.md)
 
 ## How to run (summary)
 
