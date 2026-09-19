@@ -1,7 +1,7 @@
 //! Ethean Lean Consensus Client — node library (Lean modules only).
 //!
-//! Legacy Panro/Beacon trees under `src/{api,bench,config,consensus,...}`
-//! remain on disk for the deletion register but are not compiled.
+//! Replaced Beacon/Panro trees under this crate were deleted after
+//! `ethean-*` crate cutovers (api, consensus, legacy network/storage, …).
 
 #![forbid(unsafe_code)]
 
