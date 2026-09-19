@@ -22,6 +22,7 @@ ethean-fork-choice = { workspace = true }
 ethean-crypto = { workspace = true, features = ["test-hmac"] }
 ethean-validator = { workspace = true }
 ethean-network = { workspace = true }
+ethean-network-wire = { workspace = true }
 ethean-storage = { workspace = true }
 ethean-sync = { workspace = true }
 ethean-rpc = { workspace = true }

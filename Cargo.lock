@@ -1109,6 +1109,7 @@ dependencies = [
  "ethean-genesis",
  "ethean-metrics",
  "ethean-network",
+ "ethean-network-wire",
  "ethean-primitives",
  "ethean-profile",
  "ethean-rpc",
