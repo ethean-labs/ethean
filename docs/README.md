@@ -71,6 +71,7 @@ Planning session summaries:
 - [pq-devnet-5 research refresh (status + links)](./pq-devnet-5-research-refresh-2026-09-19.md)
 - [Start pq-devnet-5 network target](./start-pq-devnet-5-network-target-2026-09-19.md)
 - [Default network pq-devnet-4 (keep D5 ready)](./default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md)
+- [Ream empty lean_peers.yaml (no public D4 bootnodes)](./ream-empty-lean-peers-bootnodes-2026-09-20.md)
 - [Fork digest override and local Status](./fork-digest-local-status-2026-09-19.md)
 - [Status handshake outboxes (Status + blocks-by-root staging)](./status-handshake-outbox-2026-09-19.md)
 - [QuicSwarm Status request_response wire](./quic-status-reqresp-wire-2026-09-19.md)
