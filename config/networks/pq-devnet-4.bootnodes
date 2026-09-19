@@ -1,11 +1,21 @@
 # pq-devnet-4 bootnodes (QUIC multiaddrs)
 #
-# Operational run target while pq-devnet-5 has no public always-on mesh.
-# One multiaddr per line. Lines starting with # are ignored.
+# There is NO permanent public bootnode list in Ream (or on leanroadmap).
+# Ream's Lean default file is empty:
+#   https://github.com/ReamLabs/ream/blob/master/crates/networking/p2p/resources/lean_peers.yaml
+# Ream joins a mesh the same way we do: operator / lean-quickstart
+#   genesis/nodes.yaml  →  ENRs or QUIC multiaddrs for that run.
 #
-# Paste operator / lean-quickstart nodes.yaml ENR-derived QUIC multiaddrs
-# for the active pq-devnet-4 interop run, for example:
+# Without entries below, `ethean start --network pq-devnet-4` is an
+# intentional offline smoke (QuicSwarm binds, duty loop runs). That is OK.
+#
+# To dial a live mesh, paste one multiaddr per line, for example:
 # /ip4/203.0.113.10/udp/9000/quic-v1/p2p/12D3KooWExamplePeerIdReplaceMe
+#
+# Sources for real addrs (when an interop run is up):
+#   - lean-quickstart genesis/nodes.yaml (convert ENR → /ip4/…/udp/…/quic-v1/p2p/…)
+#   - Telegram / operator paste for that pq-devnet-4 session
+#   - Local two-process mesh: use peer A's logged dialable=… (127.0.0.1)
 #
 # Also accepted via:
 #   ethean start --network pq-devnet-4 --bootnodes '<addr1>,<addr2>'
