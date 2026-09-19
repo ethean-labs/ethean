@@ -134,8 +134,14 @@ impl QuicSwarm {
     /// Pump one swarm event; validates inbound gossip against Lean rules.
     pub async fn pump_once(&mut self) -> PumpEvent {
         match self.swarm.select_next_some().await {
-            SwarmEvent::ConnectionEstablished { .. } => PumpEvent::ConnectionEstablished,
-            SwarmEvent::ConnectionClosed { .. } => PumpEvent::ConnectionClosed,
+            SwarmEvent::ConnectionEstablished { peer_id, .. } => {
+                PumpEvent::ConnectionEstablished {
+                    peer: Some(peer_fingerprint(&peer_id)),
+                }
+            }
+            SwarmEvent::ConnectionClosed { peer_id, .. } => PumpEvent::ConnectionClosed {
+                peer: Some(peer_fingerprint(&peer_id)),
+            },
             SwarmEvent::OutgoingConnectionError { .. } => PumpEvent::OutgoingError,
             SwarmEvent::IncomingConnectionError { .. } => PumpEvent::IncomingError,
             SwarmEvent::NewListenAddr { .. } => PumpEvent::NewListenAddr,
