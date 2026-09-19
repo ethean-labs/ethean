@@ -1,7 +1,87 @@
-//! QuicSwarm accessors and gossip flush for [`EtheanClient`].
+//! QuicSwarm accessors and duty-loop flush hooks for [`EtheanClient`].
 
 use crate::client::EtheanClient;
+use crate::events::ChainEvent;
+use crate::signal_loop::run_until_signal;
+use crate::wall_loop::{run_wall_duty_loop, WallLoopConfig};
 use crate::Result;
+
+impl EtheanClient {
+    /// Wall-clock duty loop that flushes pending block gossip after each tick.
+    pub(crate) async fn run_wall_with_flush(
+        &mut self,
+        ticks: u32,
+        enable_sleep: bool,
+    ) -> Result<Vec<ChainEvent>> {
+        let cfg = WallLoopConfig {
+            max_ticks: ticks,
+            enable_sleep,
+        };
+        #[cfg(feature = "libp2p-quic")]
+        {
+            let swarm = &mut self.swarm;
+            return run_wall_duty_loop(
+                &self.clock,
+                &mut self.owner,
+                &mut self.shutdown,
+                &mut self.sync,
+                cfg,
+                |owner| match swarm.as_mut() {
+                    Some(facade) => crate::swarm_pump::flush_pending_event(facade, owner),
+                    None => Ok(None),
+                },
+            )
+            .await;
+        }
+        #[cfg(not(feature = "libp2p-quic"))]
+        {
+            run_wall_duty_loop(
+                &self.clock,
+                &mut self.owner,
+                &mut self.shutdown,
+                &mut self.sync,
+                cfg,
+                |_| Ok(None),
+            )
+            .await
+        }
+    }
+
+    /// Until-signal duty loop that flushes pending block gossip after each tick.
+    pub(crate) async fn run_until_signal_with_flush(
+        &mut self,
+        enable_sleep: bool,
+    ) -> Result<Vec<ChainEvent>> {
+        #[cfg(feature = "libp2p-quic")]
+        {
+            let swarm = &mut self.swarm;
+            return run_until_signal(
+                &self.clock,
+                &mut self.owner,
+                &mut self.shutdown,
+                &mut self.sync,
+                enable_sleep,
+                |owner| match swarm.as_mut() {
+                    Some(facade) => crate::swarm_pump::flush_pending_event(facade, owner),
+                    None => Ok(None),
+                },
+            )
+            .await;
+        }
+        #[cfg(not(feature = "libp2p-quic"))]
+        {
+            run_until_signal(
+                &self.clock,
+                &mut self.owner,
+                &mut self.shutdown,
+                &mut self.sync,
+                enable_sleep,
+                |_| Ok(None),
+            )
+            .await
+        }
+    }
+}
 
 #[cfg(feature = "libp2p-quic")]
 impl EtheanClient {
