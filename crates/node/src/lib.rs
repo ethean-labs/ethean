@@ -11,6 +11,7 @@ pub mod boot_network;
 pub mod chain_owner;
 pub mod cli;
 pub mod client;
+pub mod client_boot;
 pub mod client_swarm;
 pub mod clock;
 pub mod commands;
@@ -31,6 +32,7 @@ pub mod observability;
 pub mod shutdown;
 pub mod signal_loop;
 pub mod start_config;
+pub mod status_handshake;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump;
 pub mod wall_loop;
