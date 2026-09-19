@@ -70,6 +70,15 @@ impl EtheanClient {
         owner.generation = 1;
         owner.head_state = Some(genesis.clone());
         owner.profile = Some(profile.clone());
+        match crate::local_proposer::LocalProposer::smoke() {
+            Ok(prop) => {
+                owner.proposer = Some(prop);
+                info!("Local smoke proposer key loaded (test-hmac)");
+            }
+            Err(e) => {
+                info!(error = %e, "Local proposer unavailable; proposals stay unsigned");
+            }
+        }
 
         Ok(Self {
             profile,
