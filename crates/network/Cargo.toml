@@ -14,6 +14,8 @@ thiserror = { workspace = true }
 sha2 = { workspace = true }
 libp2p = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+async-trait = { version = "0.1", optional = true }
 
 [features]
 default = []
@@ -21,6 +23,8 @@ default = []
 libp2p-quic = [
     "dep:libp2p",
     "dep:tokio",
+    "dep:futures",
+    "dep:async-trait",
     "libp2p/quic",
     "libp2p/tokio",
     "libp2p/ping",
