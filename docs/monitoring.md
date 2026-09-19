@@ -12,10 +12,15 @@ Metrics prefix: `ethean_` (`ethean-metrics`).
 
 Disable with `--no-metrics`. Bind: `--metrics-address` / `--metrics-port`.
 
-## Long-run
+`ethean start` does **not** bind Grafana (`:3000`) or Prometheus (`:9090`).
+
+## Long-run (two terminals)
 
 ```text
+# A — node (scrape on :9100)
 ethean start --network pq-devnet-4 --until-signal
+
+# B — UI stack (requires Docker Desktop)
 .\scripts\run-observability.ps1
 ```
 
@@ -26,5 +31,6 @@ ethean start --network pq-devnet-4 --until-signal
 Lean JSON-RPC HTTP on `:5052` is not bound yet; operator health checks use the
 metrics URLs above. In-process smoke still validates `GET /lean/v1/health`.
 
-See root [README.md](../README.md#monitoring--metrics) and
-[long-run-metrics-grafana-2026-09-20.md](./long-run-metrics-grafana-2026-09-20.md).
+See root [README.md](../README.md#monitoring--metrics),
+[grafana-prometheus-need-docker-2026-09-20.md](./grafana-prometheus-need-docker-2026-09-20.md),
+and [long-run-metrics-grafana-2026-09-20.md](./long-run-metrics-grafana-2026-09-20.md).
