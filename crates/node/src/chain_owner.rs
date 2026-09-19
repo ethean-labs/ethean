@@ -61,6 +61,10 @@ pub struct ChainOwner {
     pub sync_orphans: SyncOrphanCache,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
+    /// Collect/prove aggregates (Lean aggregator role).
+    pub is_aggregator: bool,
+    /// Self-apply proposals + inject full-registry votes for local finality smoke.
+    pub local_finality: bool,
 }
 
 impl Default for ChainOwner {
@@ -80,6 +84,8 @@ impl Default for ChainOwner {
             proposer: None,
             sync_orphans: SyncOrphanCache::default(),
             max_head_lag_slots: 0,
+            is_aggregator: false,
+            local_finality: false,
         }
     }
 }

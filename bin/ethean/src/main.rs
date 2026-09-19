@@ -32,6 +32,9 @@ async fn main() -> Result<()> {
             network,
             bootnodes,
             fork_digest,
+            validators,
+            no_aggregator,
+            no_local_finality,
             metrics,
             no_metrics,
             metrics_address,
@@ -43,15 +46,12 @@ async fn main() -> Result<()> {
                 fork_digest.as_deref(),
             )?;
             let scrape = !no_metrics;
+            let is_aggregator = !no_aggregator;
+            let finality = !no_local_finality;
             if metrics {
                 if let Err(e) = observability::ensure_stack() {
                     warn!(error = %e, "observability stack not started; node continues");
                 }
-            } else {
-                info!(
-                    "Prometheus/Grafana UI not started (pass --metrics to docker-compose \
-                     deploy/observability, or run scripts/run-observability.*)"
-                );
             }
             let metrics_listen = if scrape {
                 let addr = format!("{metrics_address}:{metrics_port}").parse()?;
@@ -66,16 +66,22 @@ async fn main() -> Result<()> {
                 ?data_dir,
                 network = network.id.as_str(),
                 bootnodes = network.bootnodes.len(),
-                fork_digest = network.fork_digest.as_deref().unwrap_or(""),
+                validators,
+                is_aggregator,
+                local_finality = finality,
                 metrics_stack = metrics,
                 scrape,
-                metrics_address = metrics_address.as_str(),
-                metrics_port,
                 "Starting lean consensus node"
             );
+            if network.bootnodes.is_empty() && !finality {
+                warn!(
+                    "no bootnodes and local finality disabled — head will stay at genesis \
+                     (pass --local-finality or --bootnodes / use scripts/local-pq-mesh.*)"
+                );
+            }
             let client = match data_dir.as_deref() {
-                Some(path) => EtheanClient::open_data_dir(path).await?,
-                None => EtheanClient::new().await?,
+                Some(path) => EtheanClient::open_data_dir_validators(path, validators).await?,
+                None => EtheanClient::with_local_devnet(validators).await?,
             };
             let cfg = if until_signal {
                 StartConfig::until_signal(true)
@@ -85,7 +91,9 @@ async fn main() -> Result<()> {
                 StartConfig::smoke(ticks)
             }
             .with_network(network)
-            .with_metrics(metrics_listen);
+            .with_metrics(metrics_listen)
+            .with_validators(validators)
+            .with_roles(is_aggregator, finality);
             client.start_with(cfg).await?;
         }
         Command::Validator => {

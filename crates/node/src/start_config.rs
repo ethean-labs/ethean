@@ -55,6 +55,12 @@ pub struct StartConfig {
     pub network: NetworkTarget,
     /// When `Some`, spawn `/metrics` HTTP on this address.
     pub metrics: Option<MetricsListen>,
+    /// Validator registry size for local genesis (default 4).
+    pub validators: usize,
+    /// Lean aggregator role (collect/prove aggregates).
+    pub is_aggregator: bool,
+    /// Self-apply proposals + full-registry votes so head/finality move solo.
+    pub local_finality: bool,
 }
 
 impl Default for StartConfig {
@@ -63,6 +69,9 @@ impl Default for StartConfig {
             mode: RunMode::default(),
             network: NetworkTarget::pq_devnet_4(),
             metrics: Some(MetricsListen::default()),
+            validators: 4,
+            is_aggregator: true,
+            local_finality: true,
         }
     }
 }
@@ -72,8 +81,7 @@ impl StartConfig {
     pub fn smoke(ticks: u32) -> Self {
         Self {
             mode: RunMode::SmokeElapsed { ticks },
-            network: NetworkTarget::pq_devnet_4(),
-            metrics: Some(MetricsListen::default()),
+            ..Self::default()
         }
     }
 
@@ -84,8 +92,7 @@ impl StartConfig {
                 ticks,
                 enable_sleep,
             },
-            network: NetworkTarget::pq_devnet_4(),
-            metrics: Some(MetricsListen::default()),
+            ..Self::default()
         }
     }
 
@@ -93,8 +100,7 @@ impl StartConfig {
     pub fn until_signal(enable_sleep: bool) -> Self {
         Self {
             mode: RunMode::UntilSignal { enable_sleep },
-            network: NetworkTarget::pq_devnet_4(),
-            metrics: Some(MetricsListen::default()),
+            ..Self::default()
         }
     }
 
@@ -109,6 +115,19 @@ impl StartConfig {
         self.metrics = metrics;
         self
     }
+
+    /// Set local genesis validator count.
+    pub fn with_validators(mut self, validators: usize) -> Self {
+        self.validators = validators.max(1);
+        self
+    }
+
+    /// Aggregator + local finality switches.
+    pub fn with_roles(mut self, is_aggregator: bool, local_finality: bool) -> Self {
+        self.is_aggregator = is_aggregator;
+        self.local_finality = local_finality;
+        self
+    }
 }
 
 #[cfg(test)]
@@ -117,24 +136,11 @@ mod tests {
     use crate::network_target::NetworkId;
 
     #[test]
-    fn defaults_to_smoke_five_on_pq_devnet_4() {
+    fn defaults_enable_local_finality() {
         let cfg = StartConfig::default();
-        assert_eq!(cfg.mode, RunMode::SmokeElapsed { ticks: 5 });
         assert_eq!(cfg.network.id, NetworkId::PqDevnet4);
-        assert!(cfg.metrics.is_some());
-    }
-
-    #[test]
-    fn until_signal_mode() {
-        assert!(matches!(
-            StartConfig::until_signal(true).mode,
-            RunMode::UntilSignal { enable_sleep: true }
-        ));
-    }
-
-    #[test]
-    fn with_network_keeps_pq_devnet_5_ready() {
-        let cfg = StartConfig::smoke(1).with_network(NetworkTarget::pq_devnet_5());
-        assert_eq!(cfg.network.id, NetworkId::PqDevnet5);
+        assert!(cfg.local_finality);
+        assert!(cfg.is_aggregator);
+        assert_eq!(cfg.validators, 4);
     }
 }

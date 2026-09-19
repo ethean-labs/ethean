@@ -81,19 +81,29 @@ fn try_plan_proposal(
         Ok(p) => p,
         Err(_) => return out,
     };
-    let root = match plan.block_root() {
-        Ok(r) => r,
-        Err(_) => return out,
-    };
+
+    if owner.local_finality || owner.is_aggregator {
+        crate::local_finality::inject_local_aggregate(owner, &mut plan);
+        if let Err(e) = crate::local_finality::rebind_plan_state_root(owner, &mut plan) {
+            tracing::debug!(error = %e, "local attestation rebind skipped");
+        }
+    }
+
     let attestations = plan.block.body.attestations.len();
     let publish_allowed = matches!(decide_publish(tick, tick, true), PublishDecision::Allow)
         && tick.interval == 0;
 
     if publish_allowed {
         if let Type2ProveResult::Attached { proof_len } = try_attach_type2_proof(&mut plan) {
+            let root = plan.block_root().unwrap_or([0u8; 32]);
             out.push(ChainEvent::Type2ProofAttached { root, proof_len });
         }
     }
+
+    let root = match plan.block_root() {
+        Ok(r) => r,
+        Err(_) => return out,
+    };
 
     let duty_view = owner.snapshot(tick.slot, 0).duty_view;
     let mut binding_ok = true;
@@ -109,15 +119,12 @@ fn try_plan_proposal(
                             out.push(ChainEvent::ProposalBindingVerified { root });
                         }
                         Err(_) => {
-                            // Fail closed: never gossip a signature that does not verify.
                             binding_ok = false;
                             plan.proposer_signature = None;
                         }
                     }
                 }
-                Err(_) => {
-                    // Leave unsigned; structural gossip may still proceed.
-                }
+                Err(_) => {}
             }
         }
     }
@@ -142,6 +149,29 @@ fn try_plan_proposal(
             };
             owner.pending_block_gossip = Some(gossip);
             out.push(ready);
+        }
+        // Proposer self-import so solo / local-finality runs advance head without peers.
+        if owner.local_finality {
+            match crate::local_finality::apply_planned_locally(owner, &plan) {
+                Ok(applied) => {
+                    tracing::info!(
+                        slot = tick.slot.get(),
+                        root = %format!("{:02x}{:02x}…", applied[0], applied[1]),
+                        finalized = owner
+                            .head_state
+                            .as_ref()
+                            .map(|s| s.latest_finalized.slot.get())
+                            .unwrap_or(0),
+                        justified = owner
+                            .head_state
+                            .as_ref()
+                            .map(|s| s.latest_justified.slot.get())
+                            .unwrap_or(0),
+                        "local finality applied proposal to head"
+                    );
+                }
+                Err(e) => tracing::warn!(error = %e, "local finality apply failed"),
+            }
         }
     } else {
         owner.pending_block_gossip = None;

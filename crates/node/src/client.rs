@@ -9,7 +9,7 @@ use crate::{
     start_config::{RunMode, StartConfig},
     Error, Result, VERSION,
 };
-use ethean_genesis::{local_smoke_genesis, BuiltGenesis, GenesisBuilder, GenesisError};
+use ethean_genesis::{BuiltGenesis, GenesisBuilder, GenesisError};
 use ethean_network::StatusSessionBook;
 use ethean_network_wire::Status;
 use ethean_primitives::Slot;
@@ -73,6 +73,7 @@ impl EtheanClient {
         owner.generation = 1;
         owner.head_state = Some(genesis.clone());
         owner.profile = Some(profile.clone());
+        crate::local_finality::seal_genesis_head(&mut owner);
         match crate::local_proposer::LocalProposer::prefer_production() {
             Ok(prop) => {
                 let production = prop.is_production();
@@ -107,17 +108,33 @@ impl EtheanClient {
         Self::with_genesis(profile, state).await
     }
 
-    /// Local smoke start: `lstar_devnet` + single zero-key validator genesis.
-    pub async fn new() -> Result<Self> {
+    /// Local smoke start: recent genesis + `validator_count` zero-key validators.
+    pub async fn with_local_devnet(validator_count: usize) -> Result<Self> {
         let profile = lstar_devnet()?;
-        let built = local_smoke_genesis(1_700_000_000)?;
+        let built = crate::local_genesis::local_devnet_genesis(
+            validator_count,
+            profile.seconds_per_slot,
+        )?;
         Self::with_genesis(profile, built.state).await
+    }
+
+    /// Local smoke start: `lstar_devnet` + recent 4-validator genesis.
+    pub async fn new() -> Result<Self> {
+        Self::with_local_devnet(4).await
     }
 
     /// Smoke genesis with a path-backed store (`ethean_storage::open_path`).
     pub async fn open_data_dir(path: &str) -> Result<Self> {
+        Self::open_data_dir_validators(path, 4).await
+    }
+
+    /// Path-backed store with an explicit validator registry size.
+    pub async fn open_data_dir_validators(path: &str, validator_count: usize) -> Result<Self> {
         let profile = lstar_devnet()?;
-        let built = local_smoke_genesis(1_700_000_000)?;
+        let built = crate::local_genesis::local_devnet_genesis(
+            validator_count,
+            profile.seconds_per_slot,
+        )?;
         let db = ethean_storage::open_path(path)?;
         Self::with_genesis_store(profile, built.state, db).await
     }
@@ -174,6 +191,14 @@ impl EtheanClient {
 
     /// Verify schema, smoke health, run the configured duty loop, record metrics.
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
+        self.owner.is_aggregator = cfg.is_aggregator;
+        self.owner.local_finality = cfg.local_finality;
+        info!(
+            validators = self.genesis.validators.len(),
+            is_aggregator = cfg.is_aggregator,
+            local_finality = cfg.local_finality,
+            "local finality / aggregator roles"
+        );
         if let Some(ref metrics) = cfg.metrics {
             let bound = ethean_metrics::spawn_metrics_server(
                 metrics.addr,

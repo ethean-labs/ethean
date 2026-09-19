@@ -6,6 +6,9 @@ target
 .rules
 .cursor/
 bazalinacaklar
-
-
+# Extra research scratch (never push peer clones or extracts)
+**/peer-repos/
+**/peer-client-library/
+**/*-link-index-*.md
 notlar.txt
+
