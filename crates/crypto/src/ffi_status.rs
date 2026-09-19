@@ -18,12 +18,51 @@ pub struct FfiStatus {
     pub leanvm: bool,
 }
 
+/// Detailed leanVM gate (safe to call without the `leanvm-backend` feature).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LeanVmGate {
+    /// Upstream pin string (40-char hex when known).
+    pub pinned_rev: &'static str,
+    /// Cargo feature `leanvm-backend` compiled in.
+    pub feature_enabled: bool,
+    /// `LEANVM_FFI_LINKED` is true.
+    pub ffi_linked: bool,
+}
+
+impl LeanVmGate {
+    /// Probe this build.
+    pub fn probe() -> Self {
+        #[cfg(feature = "leanvm-backend")]
+        {
+            let s = crate::backend_leanvm::LeanVmLinkStatus::probe();
+            Self {
+                pinned_rev: s.pinned_rev,
+                feature_enabled: s.feature_enabled,
+                ffi_linked: s.ffi_linked,
+            }
+        }
+        #[cfg(not(feature = "leanvm-backend"))]
+        {
+            Self {
+                pinned_rev: crate::aggregation::LEANVM_REV,
+                feature_enabled: false,
+                ffi_linked: false,
+            }
+        }
+    }
+
+    /// Production prove/verify may run only when feature + FFI are both true.
+    pub fn ready(self) -> bool {
+        self.feature_enabled && self.ffi_linked
+    }
+}
+
 impl FfiStatus {
     /// Probe compile-time features and link flags (never claims leanVM without FFI).
     pub fn probe() -> Self {
         Self {
             leansig: cfg!(feature = "leansig-backend"),
-            leanvm: leanvm_ready(),
+            leanvm: LeanVmGate::probe().ready(),
         }
     }
 
@@ -45,17 +84,6 @@ impl FfiStatus {
     }
 }
 
-fn leanvm_ready() -> bool {
-    #[cfg(feature = "leanvm-backend")]
-    {
-        crate::backend_leanvm::LEANVM_FFI_LINKED
-    }
-    #[cfg(not(feature = "leanvm-backend"))]
-    {
-        false
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -66,6 +94,9 @@ mod tests {
         assert!(!s.both_selected());
         assert!(!s.gaps().is_empty());
         assert!(!s.leanvm);
+        let g = LeanVmGate::probe();
+        assert!(!g.ready());
+        assert_eq!(g.pinned_rev.len(), 40);
     }
 
     #[cfg(feature = "leanvm-backend")]
@@ -73,5 +104,7 @@ mod tests {
     fn leanvm_feature_alone_is_not_ready() {
         assert!(!crate::backend_leanvm::LEANVM_FFI_LINKED);
         assert!(!FfiStatus::probe().leanvm);
+        assert!(LeanVmGate::probe().feature_enabled);
+        assert!(!LeanVmGate::probe().ready());
     }
 }
