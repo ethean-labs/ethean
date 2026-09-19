@@ -154,7 +154,7 @@ impl EtheanClient {
 
     /// Verify schema, smoke health, run the configured duty loop, record metrics.
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
-        self.boot_gates()?;
+        self.boot_gates().await?;
         let events = match cfg.mode {
             RunMode::SmokeElapsed { ticks } => run_duty_loop(
                 &self.profile,
@@ -196,7 +196,7 @@ impl EtheanClient {
         self.finish_observability(&events)
     }
 
-    fn boot_gates(&mut self) -> Result<()> {
+    async fn boot_gates(&mut self) -> Result<()> {
         self.db.verify_schema()?;
         self.observability.mark_storage_ok();
         self.observability.mark_signer_ok();
@@ -214,6 +214,26 @@ impl EtheanClient {
             },
         )?;
         info!(port = bound.listen_port, "UDP listen bind for QUIC facade");
+
+        #[cfg(feature = "libp2p-quic")]
+        {
+            let mut facade = crate::network::SwarmFacade::default();
+            facade.attach_transport(bound);
+            facade
+                .bind_quic_swarm(&crate::network::TransportConfig {
+                    listen_port: 0,
+                    idle_timeout_ms: 30_000,
+                })
+                .await?;
+            info!(
+                peer = %facade.quic.as_ref().map(|q| q.peer_id.to_string()).unwrap_or_default(),
+                listen = %facade.quic.as_ref().map(|q| q.listen_addr.to_string()).unwrap_or_default(),
+                "libp2p QuicSwarm bound"
+            );
+            // Facade is local to the boot probe; durable swarm ownership lands with gossip wiring.
+            let _ = facade;
+        }
+
         self.observability.mark_network_ok();
 
         let health = smoke_health_route()?;
