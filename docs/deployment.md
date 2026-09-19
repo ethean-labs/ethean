@@ -17,12 +17,16 @@ Requires the workspace Rust toolchain (see `rust-toolchain.toml`). Do not use le
 ./target/release/ethean start
 ./target/release/ethean start --ticks 3
 ./target/release/ethean start --ticks 2 --wall-clock
+./target/release/ethean start --until-signal
 ```
 
-`start` (default) loads `lstar_devnet`, opens Lean in-memory storage, smokes `/lean/v1/health`,
-runs a finite **elapsed** duty loop, then drains. `--wall-clock` samples the system clock and
-sleeps until the next profile interval between ticks. Full gossip/QUIC swarm bind and RocksDB-backed
-production deploy remain open gates (`prepare_transport` / `open_path` fail closed; TCP/WS refused).
+`start` (default) loads `lstar_devnet`, opens Lean in-memory storage, binds an ephemeral UDP
+listen for the QUIC facade, smokes `/lean/v1/health`, runs a finite **elapsed** duty loop, then
+drains. `--wall-clock` samples the system clock between ticks. `--until-signal` runs until Ctrl-C.
+
+Path-backed RocksDB: enable `ethean-storage/rocksdb` and call `ethean_storage::open_path` (needs
+native libclang/rocksdb build deps). libp2p QUIC dial/swarm and leanSig/leanVM FFI remain
+fail-closed until those backends link.
 
 ## Config / data
 
