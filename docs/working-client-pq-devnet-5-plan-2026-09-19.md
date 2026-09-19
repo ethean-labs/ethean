@@ -26,7 +26,7 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 ## Follow-ups (D5-focused)
 
 - Fork digest override landed; still need the operator/leanSpec pin value for a live run.
-- leanSig + leanVM production gates (**Type-1 merge + Type-2 prove/verify**); **structural Type-2→Type-1 pool reseed landed** ([type2-structural-split-pool-reseed-2026-09-19.md](./type2-structural-split-pool-reseed-2026-09-19.md)), real leanVM SNARK split still open.
+- leanSig + leanVM production gates: **Type-1 merge API + pool coalesce landed** ([type1-recursive-merge-2026-09-19.md](./type1-recursive-merge-2026-09-19.md)); structural Type-2 split reseed landed; leanVM SNARK prove/split and leanSig production still open.
 - Status / blocks-by-root — wire + SignedBlock ingest + **multi-hop parent catch-up** landed ([blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md)); BlocksByRange still open.
 - Decode/validate D5 block body: single Type-2 proof + re-agg cache from split.
 - Hive / leanSpec fixture consumer for matrix inclusion.
@@ -42,6 +42,7 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 10. Blocks-by-root SignedBlock ingest — [blocks-by-root-signedblock-ingest-2026-09-19.md](./blocks-by-root-signedblock-ingest-2026-09-19.md)
 11. Multi-hop parent catch-up — [blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md)
 12. Type-2 structural split / pool reseed — [type2-structural-split-pool-reseed-2026-09-19.md](./type2-structural-split-pool-reseed-2026-09-19.md)
+13. Type-1 recursive merge — [type1-recursive-merge-2026-09-19.md](./type1-recursive-merge-2026-09-19.md)
 
 ## How to run (summary)
 
