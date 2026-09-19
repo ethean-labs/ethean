@@ -6,6 +6,7 @@ use leansig::signature::generalized_xmss::instantiations_aborting::lifetime_2_to
 };
 use leansig::signature::SignatureScheme;
 use rand::rngs::StdRng;
+use rand::SeedableRng;
 
 use crate::error::{CryptoError, Result};
 use crate::signature::{PublicKey, Signature};
