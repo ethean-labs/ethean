@@ -1,0 +1,36 @@
+# Ethean Phase 12 protocol lock
+# English only. Digests and full commits are authoritative.
+
+schema = "ethean-phase-lock-v1"
+phase = "12"
+phase_name = "api-observability-and-multiclient-interop"
+lock_status = "resolved_with_open_gates"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+profile_note = """
+Lean /lean/v1 RPC routes (no /eth/v1), admin auth, ethean_ metrics registry with
+closed labels, Prometheus text export, readiness gates, and deploy stubs landed.
+HTTP bind of exporter/server, Grafana image digests, Hive harness remain open.
+OSD-009 leanMetrics upstream pin still open.
+"""
+
+[ethean]
+planning_phase_doc = "road-to/lean-consensus-migration/phases/12-api-observability-and-multiclient-interop.md"
+
+[resolved.rpc]
+prefix = "/lean/v1"
+beacon_eth_v1 = "rejected"
+admin_public_bind = "requires_bearer_token"
+max_body_bytes = 262144
+
+[resolved.metrics]
+namespace = "ethean_"
+schema = "ethean-metrics-v1"
+forbidden_labels = ["root", "peer_id", "validator_index", "signature"]
+readiness_gates = ["storage", "crypto", "signer", "network", "prover"]
+
+[open_gates]
+lean_metrics_upstream = "OSD-009"
+http_exporter_bind = "deferred_to_binary"
+grafana_image_digest = "unpinned_stub"
+hive_harness = "deferred"
+mixed_client_fleet_run = "deferred"
