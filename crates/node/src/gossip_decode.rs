@@ -112,7 +112,8 @@ mod tests {
     fn attestation_topic_uses_data_tree_root() {
         let agg = AggregatedAttestation {
             aggregation_bits: AggregationBits {
-                bits: vec![true, false],
+                // Trailing false bits are not preserved by the bitlist codec.
+                bits: vec![true, true],
             },
             data: AttestationData {
                 slot: Slot::new(2),
@@ -122,6 +123,8 @@ mod tests {
             },
         };
         let enc = agg.ssz_encode();
+        let round = AggregatedAttestation::ssz_decode(&enc).expect("agg roundtrip");
+        assert_eq!(round, agg);
         let topic = "/leanconsensus/abcd/attestation_0/ssz_snappy";
         let root = try_decode_attestation_root(topic, &enc).expect("att root");
         assert_eq!(root, agg.hash_tree_root().unwrap());
