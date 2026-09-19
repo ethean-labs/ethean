@@ -1,26 +1,29 @@
 # Start Prometheus + Grafana for Ethean long-run metrics (Windows).
-# Requires a healthy Docker Desktop + WSL2 backend.
+# Requires a healthy Docker Desktop Linux engine (Hyper-V / Virtual Machine Platform).
 $ErrorActionPreference = "Stop"
 
-function Assert-DockerReady {
-    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-        throw @"
-Docker CLI not found in PATH.
-Install Docker Desktop, then reopen this terminal.
+function Get-DockerHint([string]$text) {
+    if ($text -match 'dockerDesktopLinuxEngine|_ping|500 Internal Server Error|requested API version|HCS_E_HYPERV|HypervisorPresent|timeout waiting') {
+        return @"
 
-Until Docker works, run ethean alone and scrape:
+Docker Desktop UI can be open while the Linux engine is down (HTTP 500 on
+dockerDesktopLinuxEngine/_ping). On this host that usually means Hyper-V /
+Virtual Machine Platform is off (HCS_E_HYPERV_NOT_INSTALLED).
+
+Fix (elevated PowerShell), then reboot:
+  wsl.exe --install --no-distribution
+  dism.exe /Online /Enable-Feature /FeatureName:VirtualMachinePlatform /All /NoRestart
+
+Also enable CPU virtualization in firmware if Get-CimInstance Win32_ComputerSystem
+shows HypervisorPresent = False.
+
+Until then, skip Grafana and scrape the node:
+  ethean start --until-signal --network pq-devnet-4
   curl http://127.0.0.1:9100/metrics
-  curl http://127.0.0.1:9100/healthz
 "@
     }
-    $prev = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    $info = & docker info 2>&1 | Out-String
-    $exit = $LASTEXITCODE
-    $ErrorActionPreference = $prev
-    if ($exit -ne 0) {
-        $hint = if ($info -match 'wsl|WSL|Sistem dosyaya') {
-            @"
+    if ($text -match 'wsl|WSL|Sistem dosyaya') {
+        return @"
 
 This looks like a Docker Desktop / WSL failure (wsl.exe exit 1).
 Fix on Windows:
@@ -34,14 +37,45 @@ Ethean does NOT need Grafana to advance head — use:
   ethean start --until-signal --network pq-devnet-4
   curl http://127.0.0.1:9100/metrics
 "@
-        } else {
-            @"
+    }
+    return @"
 
 Start Docker Desktop, wait until it says Engine running, then re-run:
   .\scripts\run-observability.ps1
 "@
-        }
-        throw "Docker daemon not ready.$hint"
+}
+
+function Invoke-DockerInfo {
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "docker"
+    $psi.Arguments = "info"
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $p = [System.Diagnostics.Process]::Start($psi)
+    if (-not $p.WaitForExit(15000)) {
+        try { $p.Kill() } catch { }
+        return @{ Exit = -1; Text = "timeout waiting for docker info" }
+    }
+    $out = $p.StandardOutput.ReadToEnd() + $p.StandardError.ReadToEnd()
+    return @{ Exit = $p.ExitCode; Text = $out }
+}
+
+function Assert-DockerReady {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        throw @"
+Docker CLI not found in PATH.
+Install Docker Desktop, then reopen this terminal.
+
+Until Docker works, run ethean alone and scrape:
+  curl http://127.0.0.1:9100/metrics
+  curl http://127.0.0.1:9100/healthz
+"@
+    }
+    $info = Invoke-DockerInfo
+    if ($info.Exit -ne 0) {
+        throw "Docker daemon not ready.$($info.Text)`n$(Get-DockerHint $info.Text)"
     }
 }
 
@@ -49,15 +83,15 @@ Assert-DockerReady
 Set-Location (Join-Path $PSScriptRoot "..\deploy\observability")
 $prev = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
-& docker compose up -d 2>&1 | Write-Host
+$composeOut = & docker compose up -d 2>&1 | Out-String
 $composeExit = $LASTEXITCODE
 $ErrorActionPreference = $prev
 if ($composeExit -ne 0) {
     throw @"
 docker compose up -d failed (exit $composeExit).
-
-If the error mentions wsl.exe / 'Sistem dosyaya erişemiyor', repair WSL/Docker Desktop
-(see Assert-DockerReady hints above). Ethean metrics still work at :9100 without Grafana.
+$composeOut
+$(Get-DockerHint $composeOut)
+Ethean metrics still work at :9100 without Grafana.
 "@
 }
 
