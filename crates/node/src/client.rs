@@ -169,7 +169,7 @@ impl EtheanClient {
 
     /// Verify schema, smoke health, run the configured duty loop, record metrics.
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
-        self.boot_gates().await?;
+        self.boot_gates(&cfg.network).await?;
         #[cfg(feature = "libp2p-quic")]
         {
             let budget = self.pump_network(8).await?;
@@ -213,7 +213,10 @@ impl EtheanClient {
         self.finish_observability(&events)
     }
 
-    async fn boot_gates(&mut self) -> Result<()> {
+    async fn boot_gates(
+        &mut self,
+        network: &crate::network_target::NetworkTarget,
+    ) -> Result<()> {
         self.db.verify_schema()?;
         self.observability.mark_storage_ok();
         self.observability.mark_signer_ok();
@@ -222,6 +225,8 @@ impl EtheanClient {
         let leanvm_gate = ethean_crypto::LeanVmGate::probe();
         let leansig_gate = ethean_crypto::LeanSigGate::probe();
         info!(
+            network = network.id.as_str(),
+            bootnodes = network.bootnodes.len(),
             leanvm_feature = leanvm_gate.feature_enabled,
             leanvm_ffi = leanvm_gate.ffi_linked,
             leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
@@ -239,10 +244,12 @@ impl EtheanClient {
         #[cfg(feature = "libp2p-quic")]
         {
             self.swarm = swarm;
+            crate::boot_network::dial_bootnodes(network, self.swarm.as_mut());
         }
         #[cfg(not(feature = "libp2p-quic"))]
         {
             let _ = swarm;
+            crate::boot_network::dial_bootnodes(network, None);
         }
 
         self.observability.mark_network_ok();
@@ -260,6 +267,7 @@ impl EtheanClient {
             slot = wall.slot.get(),
             interval = wall.interval,
             fork = self.profile.fork_name,
+            network = network.id.as_str(),
             ready = self.observability.readiness.is_ready(),
             ffi_leansig = ethean_crypto::FfiStatus::probe().leansig,
             ffi_leanvm = ethean_crypto::FfiStatus::probe().leanvm,
