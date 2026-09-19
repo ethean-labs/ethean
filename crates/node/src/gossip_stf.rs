@@ -4,7 +4,10 @@ use crate::chain_owner::ChainOwner;
 use crate::gossip_decode::DecodedBlockGossip;
 use crate::shutdown::{ShutdownPhase, ShutdownState};
 use ethean_primitives::Hash32;
-use ethean_transition::{apply_block, apply_block_unverified, TransitionContext};
+use ethean_transition::{
+    apply_block, apply_block_unverified, verify_proposer_signature, TransitionContext,
+};
+use ethean_crypto::ProductionBackend;
 
 /// Outcome of attempting to import a decoded gossip block.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,6 +45,12 @@ pub fn import_decoded_block(
     };
 
     let ctx = TransitionContext::new(profile);
+    if let Some(sig) = &decoded.proposer_signature {
+        // Claimed sidecar bindings fail closed against the registry proposal key.
+        if verify_proposer_signature(&pre, &decoded.block, sig, &ProductionBackend).is_err() {
+            return GossipStfResult::Rejected;
+        }
+    }
     if let Some(signed) = &decoded.signed {
         if !signed.proof.proof.is_empty() {
             return match apply_block(&pre, signed, &ctx) {
@@ -135,6 +144,7 @@ mod tests {
             parent: parent_root,
             block,
             signed: None,
+            proposer_signature: None,
         };
         assert_eq!(
             import_decoded_block(&mut owner, &shutdown, &decoded),
@@ -162,6 +172,7 @@ mod tests {
             parent: [1u8; 32],
             block,
             signed: None,
+            proposer_signature: None,
         };
         assert_eq!(
             import_decoded_block(&mut owner, &shutdown, &decoded),
@@ -199,6 +210,37 @@ mod tests {
             parent: [1u8; 32],
             block,
             signed: Some(signed),
+            proposer_signature: None,
+        };
+        assert_eq!(
+            import_decoded_block(&mut owner, &shutdown, &decoded),
+            GossipStfResult::Rejected
+        );
+        assert_eq!(owner.head_root, [1u8; 32]);
+    }
+
+    #[test]
+    fn rejects_bad_proposer_sidecar_when_state_present() {
+        let pre = sample_state(2);
+        let mut owner = ChainOwner::new(2);
+        owner.head_root = [1u8; 32];
+        owner.head_state = Some(pre);
+        owner.profile = Some(lstar_devnet().unwrap());
+        let shutdown = ShutdownState::default();
+        let block = Block {
+            slot: Slot::new(1),
+            proposer_index: ValidatorIndex::new(0),
+            parent_root: [1u8; 32],
+            state_root: [7u8; 32],
+            body: BlockBody::default(),
+        };
+        let root = block.hash_tree_root().unwrap();
+        let decoded = DecodedBlockGossip {
+            root,
+            parent: [1u8; 32],
+            block,
+            signed: None,
+            proposer_signature: Some(vec![0u8; ethean_crypto::SIGNATURE_BYTES]),
         };
         assert_eq!(
             import_decoded_block(&mut owner, &shutdown, &decoded),
