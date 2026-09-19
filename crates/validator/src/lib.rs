@@ -12,7 +12,7 @@ pub mod signer;
 
 pub use aggregator::{run_aggregator, AggregatorOutcome, AggregatorPlan};
 pub use attester::{run_attester, AttesterOutcome, AttesterPlan};
-pub use duty_gate::{evaluate_gate, DutyView, SuppressReason};
+pub use duty_gate::{evaluate_gate, DutyView, SuppressReason, SYNC_LAG_THRESHOLD_SLOTS};
 pub use error::{Result, SignerError};
 pub use proposer::{run_proposer, ProposerOutcome, ProposerPlan};
 pub use scheduler::{advance_tick, should_process, tick_from_elapsed_ms, DutyTick};
