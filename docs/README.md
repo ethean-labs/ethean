@@ -57,6 +57,7 @@ Planning session summaries:
 - [Auto-flush pending block gossip on wall ticks](./auto-flush-block-gossip-2026-09-19.md)
 - [Local proposer signing on duty ticks](./local-proposer-signing-2026-09-19.md)
 - [Type-2 prove attach on proposal path](./type2-prove-attach-2026-09-19.md)
+- [leanVM gate and leanSig proposer features](./leanvm-gate-leansig-proposer-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
