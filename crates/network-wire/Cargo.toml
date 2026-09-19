@@ -1,0 +1,16 @@
+[package]
+name = "ethean-network-wire"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Lean Consensus wire codecs and topic schemas (Phase 10)"
+
+[dependencies]
+ethean-primitives = { workspace = true }
+thiserror = { workspace = true }
+
+[lib]
+name = "ethean_network_wire"
+path = "src/lib.rs"
