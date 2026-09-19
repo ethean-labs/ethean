@@ -32,6 +32,7 @@ pq-devnet-5 is **in progress** on [leanroadmap.org](https://leanroadmap.org/) (n
 5. Boot stores local Status, queues `StatusSessionBook`, stages Status/blocks outboxes
 6. See [status-handshake-outbox-2026-09-19.md](./status-handshake-outbox-2026-09-19.md)
 7. QuicSwarm Status request_response send/receive — [quic-status-reqresp-wire-2026-09-19.md](./quic-status-reqresp-wire-2026-09-19.md)
+8. Local client verification (offline + two-process Status mesh) — [pq-devnet-5-client-run-2026-09-19.md](./pq-devnet-5-client-run-2026-09-19.md)
 
 ## How to run (summary)
 
