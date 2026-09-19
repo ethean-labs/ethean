@@ -2,6 +2,7 @@
 
 mod blocks_by_root;
 mod handler;
+mod status_outbound;
 mod status_session;
 mod tracker;
 
@@ -9,5 +10,6 @@ pub use blocks_by_root::{
     blocks_by_root_for_status_gap, blocks_by_root_protocol_id, encode_blocks_by_root,
 };
 pub use handler::{handle_status, StatusExchange};
+pub use status_outbound::{prepare_status_outbounds, OutboundStatusRequest};
 pub use status_session::StatusSessionBook;
-pub use tracker::RequestTracker;
+pub use tracker::{RequestId, RequestTracker};
