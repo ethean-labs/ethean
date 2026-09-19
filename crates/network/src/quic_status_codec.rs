@@ -2,8 +2,9 @@
 
 #![cfg(feature = "libp2p-quic")]
 
+use crate::quic_framed::{read_framed, write_framed};
 use async_trait::async_trait;
-use ethean_network_wire::{compress_framed, decompress_framed, rpc_status};
+use ethean_network_wire::rpc_status;
 use futures::prelude::*;
 use libp2p::request_response;
 use libp2p::swarm::StreamProtocol;
@@ -39,7 +40,7 @@ impl request_response::Codec for StatusCodec {
     where
         T: AsyncRead + Unpin + Send,
     {
-        read_framed(io).await
+        read_framed(io, MAX_STATUS_FRAME).await
     }
 
     async fn read_response<T>(
@@ -50,7 +51,7 @@ impl request_response::Codec for StatusCodec {
     where
         T: AsyncRead + Unpin + Send,
     {
-        read_framed(io).await
+        read_framed(io, MAX_STATUS_FRAME).await
     }
 
     async fn write_request<T>(
@@ -76,26 +77,6 @@ impl request_response::Codec for StatusCodec {
     {
         write_framed(io, &res).await
     }
-}
-
-async fn read_framed<T>(io: &mut T) -> io::Result<Vec<u8>>
-where
-    T: AsyncRead + Unpin + Send,
-{
-    let mut buf = Vec::new();
-    io.take(MAX_STATUS_FRAME).read_to_end(&mut buf).await?;
-    decompress_framed(&buf).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))
-}
-
-async fn write_framed<T>(io: &mut T, plain: &[u8]) -> io::Result<()>
-where
-    T: AsyncWrite + Unpin + Send,
-{
-    let framed = compress_framed(plain)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
-    io.write_all(&framed).await?;
-    io.close().await?;
-    Ok(())
 }
 
 #[cfg(test)]
