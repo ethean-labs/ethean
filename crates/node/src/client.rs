@@ -4,18 +4,16 @@ use crate::{
     chain_owner::ChainOwner,
     clock::{clock_from_genesis, SlotClock},
     duty_loop::{run_duty_loop, DutyLoopConfig},
-    events::ChainEvent,
-    observability::{smoke_health_route, NodeObservability},
+    observability::NodeObservability,
     shutdown::ShutdownState,
     start_config::{RunMode, StartConfig},
-    wall_tick::tick_from_wall,
     Error, Result, VERSION,
 };
-use ethean_genesis::{
-    local_smoke_genesis, BuiltGenesis, FakeTime, GenesisBuilder, GenesisError,
-};
-use ethean_profile::{lstar_devnet, require_lstar_fork, ChainProfile};
+use ethean_genesis::{local_smoke_genesis, BuiltGenesis, GenesisBuilder, GenesisError};
+use ethean_network::StatusSessionBook;
+use ethean_network_wire::Status;
 use ethean_primitives::Slot;
+use ethean_profile::{lstar_devnet, require_lstar_fork, ChainProfile};
 use ethean_storage::Database;
 use ethean_sync::SyncStatus;
 use ethean_types::State;
@@ -23,15 +21,19 @@ use tracing::info;
 
 /// Main Ethean Lean Consensus client.
 pub struct EtheanClient {
-    profile: ChainProfile,
-    genesis: State,
+    pub(crate) profile: ChainProfile,
+    pub(crate) genesis: State,
     pub(crate) clock: SlotClock,
     /// Owns chain mutation; workers only read snapshots / send commands.
     pub(crate) owner: ChainOwner,
-    db: Database,
+    pub(crate) db: Database,
     pub(crate) sync: SyncStatus,
     pub(crate) shutdown: ShutdownState,
-    observability: NodeObservability,
+    pub(crate) observability: NodeObservability,
+    /// Pending / completed Lean Status handshakes.
+    pub(crate) status_sessions: StatusSessionBook,
+    /// Last advertised local Status (set during boot).
+    pub(crate) local_status: Option<Status>,
     /// Durable libp2p QUIC facade (feature `libp2p-quic`).
     #[cfg(feature = "libp2p-quic")]
     pub(crate) swarm: Option<crate::network::SwarmFacade>,
@@ -90,6 +92,8 @@ impl EtheanClient {
             sync: SyncStatus::new(Slot::new(0), Slot::new(0)),
             shutdown: ShutdownState::default(),
             observability,
+            status_sessions: StatusSessionBook::default(),
+            local_status: None,
             #[cfg(feature = "libp2p-quic")]
             swarm: None,
         })
@@ -172,22 +176,7 @@ impl EtheanClient {
         self.boot_gates(&cfg.network).await?;
         #[cfg(feature = "libp2p-quic")]
         {
-            let budget = self.pump_network(8).await?;
-            if budget.drained > 0 {
-                info!(
-                    drained = budget.drained,
-                    accepted = budget.accepted.len(),
-                    "QuicSwarm pump drained boot events"
-                );
-            }
-            let ingest = crate::gossip_ingest::ingest_accepted(
-                &mut self.owner,
-                &mut self.shutdown,
-                &budget.accepted,
-            );
-            if !ingest.is_empty() {
-                info!(n = ingest.len(), "Ingested gossip from boot pump");
-            }
+            self.boot_pump_status_and_gossip().await?;
         }
         let events = match cfg.mode {
             RunMode::SmokeElapsed { ticks } => run_duty_loop(
@@ -203,115 +192,11 @@ impl EtheanClient {
             RunMode::WallClock {
                 ticks,
                 enable_sleep,
-            } => {
-                self.run_wall_with_flush(ticks, enable_sleep).await?
-            }
+            } => self.run_wall_with_flush(ticks, enable_sleep).await?,
             RunMode::UntilSignal { enable_sleep } => {
                 self.run_until_signal_with_flush(enable_sleep).await?
             }
         };
         self.finish_observability(&events)
-    }
-
-    async fn boot_gates(
-        &mut self,
-        network: &crate::network_target::NetworkTarget,
-    ) -> Result<()> {
-        self.db.verify_schema()?;
-        self.observability.mark_storage_ok();
-        self.observability.mark_signer_ok();
-        self.observability
-            .apply_ffi_status(ethean_crypto::FfiStatus::probe());
-        let leanvm_gate = ethean_crypto::LeanVmGate::probe();
-        let leansig_gate = ethean_crypto::LeanSigGate::probe();
-        info!(
-            network = network.id.as_str(),
-            bootnodes = network.bootnodes.len(),
-            fork_digest = network.fork_digest.as_deref().unwrap_or(""),
-            leanvm_feature = leanvm_gate.feature_enabled,
-            leanvm_ffi = leanvm_gate.ffi_linked,
-            leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
-            leanvm_ipc_ready = leanvm_gate.ipc_protocol_ready,
-            leanvm_pin = leanvm_gate.pinned_rev,
-            leansig_feature = leansig_gate.feature_enabled,
-            leansig_pin = leansig_gate.pinned_rev,
-            "crypto backend gate probe"
-        );
-        // Smoke crypto path is loaded even when production FFI is off.
-        self.observability.mark_crypto_ok();
-
-        let fork_segment = ethean_network_wire::fork_segment_resolve(
-            self.profile.fork_name,
-            network.fork_digest.as_deref(),
-        )
-        .map_err(|e| crate::Error::Config(format!("fork segment: {e}")))?;
-        info!(%fork_segment, "resolved gossip fork segment");
-
-        let (_port, swarm) = crate::boot_network::prepare_boot_network(&fork_segment).await?;
-        #[cfg(feature = "libp2p-quic")]
-        {
-            self.swarm = swarm;
-            crate::boot_network::dial_bootnodes(network, self.swarm.as_mut());
-        }
-        #[cfg(not(feature = "libp2p-quic"))]
-        {
-            let _ = swarm;
-            crate::boot_network::dial_bootnodes(network, None);
-        }
-
-        let genesis_root = self
-            .genesis
-            .hash_tree_root()
-            .map_err(crate::Error::Types)?;
-        let status =
-            crate::local_status::local_status(&self.owner, genesis_root, &fork_segment);
-        info!(
-            head_slot = status.head_slot,
-            finalized_slot = status.finalized_slot,
-            fork = %status.fork_segment,
-            "local Lean Status ready for peer handshake"
-        );
-
-        self.observability.mark_network_ok();
-
-        let health = smoke_health_route()?;
-        info!(?health, "Lean health route smoke ok");
-
-        let genesis_ms = self.clock.genesis_time_millis()?;
-        let wall = tick_from_wall(
-            &self.clock,
-            &FakeTime::new(genesis_ms),
-            self.owner.generation.max(1),
-        )?;
-        info!(
-            slot = wall.slot.get(),
-            interval = wall.interval,
-            fork = self.profile.fork_name,
-            fork_segment = %fork_segment,
-            network = network.id.as_str(),
-            ready = self.observability.readiness.is_ready(),
-            ffi_leansig = ethean_crypto::FfiStatus::probe().leansig,
-            ffi_leanvm = ethean_crypto::FfiStatus::probe().leanvm,
-            "Ethean Lean Consensus client starting duties"
-        );
-        Ok(())
-    }
-
-    fn finish_observability(&mut self, events: &[ChainEvent]) -> Result<()> {
-        let accepted = events
-            .iter()
-            .filter(|e| matches!(e, ChainEvent::TickAccepted(_)))
-            .count();
-        let head_slot = self.owner.last_tick.map(|t| t.slot.get()).unwrap_or(0);
-        self.observability
-            .record_chain(head_slot, self.sync.lag())?;
-        self.observability.refresh_ready_gauge()?;
-        info!(
-            ticks_accepted = accepted,
-            events = events.len(),
-            ready = self.observability.readiness.is_ready(),
-            "Duty loop finished"
-        );
-        Ok(())
     }
 }
