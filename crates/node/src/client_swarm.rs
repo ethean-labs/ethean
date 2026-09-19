@@ -95,26 +95,34 @@ impl EtheanClient {
         self.swarm.as_mut()
     }
 
+    /// Drain QuicSwarm events with an explicit idle wait between events.
+    pub async fn pump_network_idle(
+        &mut self,
+        max_events: u32,
+        idle: std::time::Duration,
+    ) -> Result<crate::swarm_pump::PumpBudgetResult> {
+        let Some(facade) = self.swarm.as_mut() else {
+            return Ok(crate::swarm_pump::PumpBudgetResult::default());
+        };
+        crate::swarm_pump::pump_swarm_budget(facade, max_events, idle).await
+    }
+
     /// Drain a small budget of QuicSwarm events and return accepted gossip.
     pub async fn pump_network(
         &mut self,
         max_events: u32,
     ) -> Result<crate::swarm_pump::PumpBudgetResult> {
-        let Some(facade) = self.swarm.as_mut() else {
-            return Ok(crate::swarm_pump::PumpBudgetResult::default());
-        };
-        crate::swarm_pump::pump_swarm_budget(
-            facade,
-            max_events,
-            std::time::Duration::from_millis(2),
-        )
-        .await
+        self.pump_network_idle(max_events, std::time::Duration::from_millis(2))
+            .await
     }
 
-    /// Boot-time pump: queue Status handshakes and ingest accepted gossip.
+    /// Boot-time pump: wait longer so local dials can establish before Status staging.
     pub(crate) async fn boot_pump_status_and_gossip(&mut self) -> Result<()> {
         use tracing::info;
-        let budget = self.pump_network(8).await?;
+        // Dial is async; give the QUIC handshake a real window after bootnodes.
+        let budget = self
+            .pump_network_idle(64, std::time::Duration::from_millis(50))
+            .await?;
         if budget.drained > 0 {
             info!(
                 drained = budget.drained,
