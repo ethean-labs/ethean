@@ -69,6 +69,15 @@ impl EtheanClient {
         );
         self.local_status = Some(status);
 
+        #[cfg(feature = "libp2p-quic")]
+        if let Some(facade) = self.swarm.as_mut() {
+            if let Some(ref st) = self.local_status {
+                if let Ok(bytes) = st.encode() {
+                    let _ = facade.set_local_status_bytes(bytes);
+                }
+            }
+        }
+
         self.observability.mark_network_ok();
 
         let health = smoke_health_route()?;
