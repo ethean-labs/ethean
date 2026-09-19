@@ -2,7 +2,7 @@
 
 use crate::aggregation::{AggregationBudget, ProverJob, ProverOutcome, ProverWorker};
 use crate::block_builder::PlanTransition;
-use ethean_crypto::{verify_type2, CryptoError};
+use ethean_crypto::verify_type2;
 use ethean_transition::type2_statement_for_block;
 
 /// Outcome of attempting a local Type-2 prove for a plan.
@@ -40,11 +40,6 @@ pub fn try_attach_type2_proof(plan: &mut PlanTransition) -> Type2ProveResult {
 /// True when crypto reports leanVM FFI ready (never claims test-aggregate as production).
 pub fn production_type2_ready() -> bool {
     ethean_crypto::LeanVmGate::probe().ready()
-}
-
-/// Map a crypto error into skip vs hard failure for callers that care.
-pub fn is_backend_gap(err: &CryptoError) -> bool {
-    matches!(err, CryptoError::BackendUnavailable(_))
 }
 
 #[cfg(test)]
