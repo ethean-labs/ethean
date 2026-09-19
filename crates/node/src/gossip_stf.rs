@@ -1,5 +1,6 @@
 //! Structural state transition for decoded gossip blocks.
 
+use crate::aggregation::seed_pool_from_signed_block;
 use crate::chain_owner::ChainOwner;
 use crate::gossip_decode::DecodedBlockGossip;
 use crate::shutdown::{ShutdownPhase, ShutdownState};
@@ -38,6 +39,11 @@ pub fn import_decoded_block(
     }
 
     let (Some(pre), Some(profile)) = (owner.head_state.clone(), owner.profile.clone()) else {
+        if let Some(signed) = &decoded.signed {
+            if !signed.proof.proof.is_empty() {
+                let _ = seed_pool_from_signed_block(&mut owner.aggregates, signed);
+            }
+        }
         owner.head_root = decoded.root;
         return GossipStfResult::RootOnly {
             root: decoded.root,
@@ -57,6 +63,7 @@ pub fn import_decoded_block(
                 Ok(out) => {
                     owner.head_state = Some(out.post_state);
                     owner.head_root = decoded.root;
+                    let _ = seed_pool_from_signed_block(&mut owner.aggregates, signed);
                     GossipStfResult::AppliedVerified {
                         root: decoded.root,
                     }
