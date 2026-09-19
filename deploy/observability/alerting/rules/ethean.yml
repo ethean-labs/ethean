@@ -1,0 +1,24 @@
+groups:
+  - name: ethean.slo
+    rules:
+      - alert: EtheanReadinessFalse
+        expr: ethean_ready == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Ethean process not ready
+      - alert: EtheanFinalityStall
+        expr: increase(ethean_finalized_slot[10m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Finalized slot not advancing
+      - alert: EtheanProverTimeouts
+        expr: increase(ethean_prover_timeout_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prover wall-time timeouts observed
