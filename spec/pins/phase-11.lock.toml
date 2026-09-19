@@ -1,0 +1,36 @@
+# Ethean Phase 11 protocol lock
+# English only. Digests and full commits are authoritative.
+
+schema = "ethean-phase-lock-v1"
+phase = "11"
+phase_name = "storage-sync-and-checkpoints"
+lock_status = "resolved_with_open_gates"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+profile_note = """
+Process-local Database with schema ethean-lc-d5-v1, flush-before-publish, prune policy,
+parent/range planners, SyncStatus hysteresis, and explicit checkpoint trust landed.
+RocksDB native backend and full crash-inject matrix remain open gates.
+"""
+
+[ethean]
+planning_phase_doc = "road-to/lean-consensus-migration/phases/11-storage-sync-and-checkpoints.md"
+
+[resolved.storage]
+schema_id = "ethean-lc-d5-v1"
+schema_version = 1
+backend = "process_local_database"
+rocksdb = "deferred"
+json_consensus_identity = "forbidden"
+signer_watermark = "monotonic_never_rewind"
+
+[resolved.sync]
+max_blocks_per_request = 1024
+duty_gate = "hysteresis_high8_low2"
+checkpoint_trust = "pinned_root_or_quorum"
+structural_eq_canonical = false
+
+[open_gates]
+rocksdb_fsync_backend = "deferred"
+crash_inject_matrix = "deferred"
+db_inspect_tool = "deferred"
+peer_range_import_loop = "deferred"
