@@ -12,6 +12,8 @@ pub struct PumpBudgetResult {
     pub drained: u32,
     /// ACCEPT gossip messages with decompressed payloads.
     pub accepted: Vec<GossipIngress>,
+    /// Peer fingerprints from `ConnectionEstablished` events.
+    pub connected_peers: Vec<ethean_primitives::Hash32>,
 }
 
 /// Result of flushing a pending local block proposal to gossip.
@@ -36,6 +38,10 @@ pub async fn pump_swarm_budget(
         match tokio::time::timeout(idle, facade.pump_quic_once()).await {
             Ok(Ok(event)) => {
                 out.drained = out.drained.saturating_add(1);
+                if let crate::network::PumpEvent::ConnectionEstablished { peer: Some(p) } = &event
+                {
+                    out.connected_peers.push(*p);
+                }
                 if let Some(g) = event.gossip() {
                     if g.action == GossipAction::Accept && g.plain.is_some() {
                         out.accepted.push(g.clone());
