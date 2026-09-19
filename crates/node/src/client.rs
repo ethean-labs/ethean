@@ -38,13 +38,21 @@ pub struct EtheanClient {
 impl EtheanClient {
     /// Start with an explicit pinned profile and verified genesis state.
     pub async fn with_genesis(profile: ChainProfile, genesis: State) -> Result<Self> {
+        Self::with_genesis_store(profile, genesis, Database::open()?).await
+    }
+
+    /// Same as [`Self::with_genesis`] but with a caller-provided store handle.
+    pub async fn with_genesis_store(
+        profile: ChainProfile,
+        genesis: State,
+        db: Database,
+    ) -> Result<Self> {
         require_lstar_fork(&profile)?;
         if genesis.validators.is_empty() {
             return Err(Error::Genesis(GenesisError::EmptyValidators));
         }
 
         let clock = clock_from_genesis(&genesis, profile.clone())?;
-        let db = Database::open()?;
         let observability = NodeObservability::new(VERSION)?;
 
         info!(
@@ -52,6 +60,7 @@ impl EtheanClient {
             seconds_per_slot = profile.seconds_per_slot,
             genesis_time = genesis.genesis_time(),
             validators = genesis.validators.len(),
+            rocks = db.is_rocks(),
             "Loaded chain profile and genesis"
         );
 
@@ -83,6 +92,14 @@ impl EtheanClient {
         let profile = lstar_devnet()?;
         let built = local_smoke_genesis(1_700_000_000)?;
         Self::with_genesis(profile, built.state).await
+    }
+
+    /// Smoke genesis with a path-backed store (`ethean_storage::open_path`).
+    pub async fn open_data_dir(path: &str) -> Result<Self> {
+        let profile = lstar_devnet()?;
+        let built = local_smoke_genesis(1_700_000_000)?;
+        let db = ethean_storage::open_path(path)?;
+        Self::with_genesis_store(profile, built.state, db).await
     }
 
     /// Access the chain owner (sole writer of head/sync flags).
