@@ -4,6 +4,7 @@ use ethean_primitives::Hash32;
 use sha2::{Digest, Sha256};
 
 use crate::error::{Result, WireError};
+use crate::fork_id::fork_segment_hex;
 
 /// Forbidden placeholder fork id from the migration plan (never emit).
 pub const FORBIDDEN_DUMMY_FORK: &str = "12345678";
@@ -12,20 +13,7 @@ pub const FORBIDDEN_DUMMY_FORK: &str = "12345678";
 ///
 /// This is an interim Ethean mapping (SHA-256 prefix), not a leanSpec wire pin.
 pub fn fork_segment_from_name(fork_name: &str) -> Result<String> {
-    if fork_name.is_empty() {
-        return Err(WireError::InvalidTopic("empty fork name".into()));
-    }
-    let digest = Sha256::digest(fork_name.as_bytes());
-    let mut out = String::with_capacity(8);
-    for b in digest.iter().take(4) {
-        out.push_str(&format!("{b:02x}"));
-    }
-    if out == FORBIDDEN_DUMMY_FORK {
-        return Err(WireError::InvalidTopic(
-            "derived fork segment collided with forbidden dummy".into(),
-        ));
-    }
-    Ok(out)
+    fork_segment_hex(fork_name)
 }
 
 /// Gossip block topic: `/leanconsensus/{fork}/block/ssz_snappy`.
