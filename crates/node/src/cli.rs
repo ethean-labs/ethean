@@ -27,8 +27,8 @@ pub enum Command {
         /// Path-backed store (requires `ethean-storage/rocksdb` feature on the build).
         #[arg(long)]
         data_dir: Option<String>,
-        /// Network label (default: pq-devnet-5). Use `local` for explicit smoke-only.
-        #[arg(long, default_value = "pq-devnet-5")]
+        /// Network label (default: pq-devnet-4). Use `pq-devnet-5` when operator mesh is up; `local` for smoke-only.
+        #[arg(long, default_value = "pq-devnet-4")]
         network: String,
         /// Comma-separated QUIC multiaddrs (overrides file/env when set).
         #[arg(long)]
