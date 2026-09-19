@@ -40,7 +40,7 @@ pub fn dial_bootnodes(target: &NetworkTarget, swarm: Option<&mut SwarmFacade>) {
             crate::network_target::NetworkId::PqDevnet4 => {
                 warn!(
                     network = target.id.as_str(),
-                    "no bootnodes configured; running pq-devnet-4 offline (set --bootnodes, ETHEAN_BOOTNODES, or config/networks/pq-devnet-4.bootnodes)"
+                    "no bootnodes configured; offline smoke is expected (Ream lean_peers.yaml is also empty). For a mesh, paste lean-quickstart nodes.yaml multiaddrs into config/networks/pq-devnet-4.bootnodes or pass --bootnodes / ETHEAN_BOOTNODES"
                 );
             }
             crate::network_target::NetworkId::PqDevnet5 => {
