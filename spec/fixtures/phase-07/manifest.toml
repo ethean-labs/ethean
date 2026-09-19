@@ -1,0 +1,16 @@
+schema = "ethean-fixture-manifest-v1"
+phase = "07"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+status = "local_unit_coverage"
+note = "Upstream XMSS fixture tarball byte-diff deferred; PROD sizes asserted in ethean-crypto tests."
+
+[[suites]]
+name = "wire-sizes"
+authority = "spec/pins/phase-07.lock.toml"
+public_key_bytes = 52
+signature_bytes = 2536
+
+[[suites]]
+name = "signer-journal"
+authority = "crates/validator"
+cases = ["idempotent_retry", "conflicting_root", "cross_role", "flush_barrier", "burn_uncertain"]

@@ -1,0 +1,53 @@
+# Ethean Phase 07 protocol lock
+# English only. Digests and full commits are authoritative.
+
+schema = "ethean-phase-lock-v1"
+phase = "07"
+phase_name = "xmss-signer-safety"
+lock_status = "resolved_with_open_gates"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+profile_note = """
+PROD_CONFIG wire sizes locked (52 / 2536). leanSig wrap attempted at pinned rev;
+Plonky3/num_bigint resolution blocked production backend compile — ProductionBackend
+fails closed. test-hmac used for signer journal unit tests only (real verify).
+"""
+
+[ethean]
+planning_phase_doc = "road-to/lean-consensus-migration/phases/07-xmss-signer-safety.md"
+
+[resolved.lean_spec]
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+citation_xmss = "src/lean_spec/spec/crypto/xmss/"
+
+[resolved.leansig]
+status = "pinned_compile_blocked"
+repository = "https://github.com/leanEthereum/leanSig"
+commit = "15cbdd43ec8525aa43fea2f42cafc5ed366084ae"
+optional_cargo_feature = "leansig-backend"
+blocker = "dependency resolution / Plonky3 / num_bigint with workspace lock"
+
+[resolved.crypto]
+construction = "leanSpec_internal_xmss"
+public_key_bytes = 52
+signature_bytes = 2536
+dimension = 46
+log_lifetime = 32
+base = 8
+target_sum = 200
+fingerprint = "leanSpec_internal_xmss|LOG_LIFETIME=32|DIMENSION=46|BASE=8|Z=8|Q=127|TARGET_SUM=200|PK=52|SIG=2536|HASH_FE=8|PARAM_FE=5|RAND_FE=7|CAP=9"
+production_verify = "fail_closed_without_leansig_backend"
+test_verify = "test-hmac_fixed_wire_real_mac"
+
+[resolved.signer]
+crate = "ethean-validator"
+journal = "reserve_flush_sign_complete"
+roles = ["Attestation", "Proposal"]
+idempotent_retry = true
+conflict_same_slot_different_root = "reject"
+cross_role = "reject"
+uncertain_leaf = "burn_never_rewind"
+
+[open_gates]
+leansig_prod_backend = "blocked_compile"
+upstream_xmss_fixture_byte_diff = "deferred"
+encrypted_at_rest_policy = "release_gate"
