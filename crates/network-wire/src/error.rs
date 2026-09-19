@@ -1,11 +1,28 @@
-//! Wire errors.
+//! Wire codec and topic errors.
 
 use thiserror::Error;
 
+/// Errors from Lean network wire codecs and topic helpers.
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum WireError {
-    #[error("network-wire not implemented (Phase 10)")]
-    NotImplemented,
+    #[error("invalid topic: {0}")]
+    InvalidTopic(String),
+
+    #[error("snappy: {0}")]
+    Snappy(String),
+
+    #[error("payload exceeds limit: got {got}, max {max}")]
+    PayloadTooLarge { got: usize, max: usize },
+
+    #[error("invalid status: {0}")]
+    InvalidStatus(String),
+
+    #[error("invalid req/resp: {0}")]
+    InvalidReqResp(String),
+
+    #[error("trailing bytes after decode")]
+    TrailingBytes,
 }
 
+/// Result alias for this crate.
 pub type Result<T> = std::result::Result<T, WireError>;
