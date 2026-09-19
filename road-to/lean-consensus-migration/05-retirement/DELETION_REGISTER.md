@@ -14,6 +14,14 @@ Deletion phases (R1–R5) align with migration work:
 
 **No empty legacy directories may remain.** After each batch delete, run the empty-directory scan in [REQUIRED_DIRECTORY_POLICY.md](./REQUIRED_DIRECTORY_POLICY.md). Required top-level dirs are recreated with an English `README.md`, not `.gitkeep`.
 
+### Progress note (2026-09-19)
+
+`crates/node` no longer ships Beacon-era `api/`, `bench/`, `config/`, `consensus/`, `integration/`,
+`optimization/`, legacy `storage/`, `utils/`, or libp2p `network/*.rs` sources. The node library
+compiles as a Lean shell (`cargo check -p ethean-node -p ethean`). Workspace manifests no longer
+pin `blst` / `blstrs` / `bls12_381` / `libp2p`. Rows below that still name root `src/...` paths refer
+to the original baseline inventory; corresponding `crates/node/src/...` copies are gone.
+
 ---
 
 ## Root package identity (`panro`)
