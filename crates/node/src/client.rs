@@ -227,6 +227,7 @@ impl EtheanClient {
         info!(
             network = network.id.as_str(),
             bootnodes = network.bootnodes.len(),
+            fork_digest = network.fork_digest.as_deref().unwrap_or(""),
             leanvm_feature = leanvm_gate.feature_enabled,
             leanvm_ffi = leanvm_gate.ffi_linked,
             leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
@@ -239,8 +240,14 @@ impl EtheanClient {
         // Smoke crypto path is loaded even when production FFI is off.
         self.observability.mark_crypto_ok();
 
-        let (_port, swarm) =
-            crate::boot_network::prepare_boot_network(&self.profile.fork_name).await?;
+        let fork_segment = ethean_network_wire::fork_segment_resolve(
+            self.profile.fork_name,
+            network.fork_digest.as_deref(),
+        )
+        .map_err(|e| crate::Error::Config(format!("fork segment: {e}")))?;
+        info!(%fork_segment, "resolved gossip fork segment");
+
+        let (_port, swarm) = crate::boot_network::prepare_boot_network(&fork_segment).await?;
         #[cfg(feature = "libp2p-quic")]
         {
             self.swarm = swarm;
@@ -251,6 +258,19 @@ impl EtheanClient {
             let _ = swarm;
             crate::boot_network::dial_bootnodes(network, None);
         }
+
+        let genesis_root = self
+            .genesis
+            .hash_tree_root()
+            .map_err(crate::Error::Types)?;
+        let status =
+            crate::local_status::local_status(&self.owner, genesis_root, &fork_segment);
+        info!(
+            head_slot = status.head_slot,
+            finalized_slot = status.finalized_slot,
+            fork = %status.fork_segment,
+            "local Lean Status ready for peer handshake"
+        );
 
         self.observability.mark_network_ok();
 
@@ -267,6 +287,7 @@ impl EtheanClient {
             slot = wall.slot.get(),
             interval = wall.interval,
             fork = self.profile.fork_name,
+            fork_segment = %fork_segment,
             network = network.id.as_str(),
             ready = self.observability.readiness.is_ready(),
             ffi_leansig = ethean_crypto::FfiStatus::probe().leansig,
