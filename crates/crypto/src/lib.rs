@@ -11,6 +11,7 @@ pub mod backend;
 mod backend_leansig;
 pub mod domain;
 pub mod error;
+pub mod ffi_status;
 pub mod hash;
 pub mod signature;
 pub mod xmss;
@@ -25,6 +26,7 @@ pub use backend::{CryptoBackend, ProductionBackend, SecretKeyMaterial};
 #[cfg(any(test, feature = "test-hmac"))]
 pub use backend::TestHmacBackend;
 pub use error::{CryptoError, Result};
+pub use ffi_status::{BackendGap, FfiStatus};
 pub use hash::{domain_digest, signature_hash, signing_root_digest, Digest32};
 pub use signature::{verify, PublicKey, Signature};
 pub use xmss::{
