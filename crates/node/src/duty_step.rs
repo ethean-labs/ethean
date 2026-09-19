@@ -1,7 +1,8 @@
 //! Shared single-step wall duty application (no sleep).
 
 use crate::block_builder::{
-    decide_publish, encode_proposal_gossip, plan_from_pool, PublishDecision,
+    decide_publish, encode_proposal_gossip, plan_from_pool, try_attach_type2_proof,
+    PublishDecision, Type2ProveResult,
 };
 use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
@@ -87,6 +88,12 @@ fn try_plan_proposal(
     let attestations = plan.block.body.attestations.len();
     let publish_allowed = matches!(decide_publish(tick, tick, true), PublishDecision::Allow)
         && tick.interval == 0;
+
+    if publish_allowed {
+        if let Type2ProveResult::Attached { proof_len } = try_attach_type2_proof(&mut plan) {
+            out.push(ChainEvent::Type2ProofAttached { root, proof_len });
+        }
+    }
 
     let duty_view = owner.snapshot(tick.slot, 0).duty_view;
     if publish_allowed {
@@ -182,6 +189,9 @@ mod tests {
             generation: 1,
         };
         let events = try_plan_proposal(&mut owner, tick);
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, ChainEvent::Type2ProofAttached { .. })));
         assert!(events.iter().any(|e| matches!(e, ChainEvent::ProposalSigned { .. })));
         assert!(matches!(
             events.iter().find(|e| matches!(e, ChainEvent::ProposalPlanned { .. })),
@@ -194,7 +204,7 @@ mod tests {
         assert!(matches!(
             events.iter().find(|e| matches!(e, ChainEvent::ProposalGossipReady { .. })),
             Some(ChainEvent::ProposalGossipReady {
-                has_type2_proof: false,
+                has_type2_proof: true,
                 proposer_sig_len,
                 topic,
                 ..
@@ -202,6 +212,7 @@ mod tests {
                 && topic.ends_with("/block/ssz_snappy")
         ));
         let pending = owner.pending_block_gossip.expect("pending");
+        assert!(pending.has_type2_proof);
         assert_eq!(pending.proposer_sig_len, ethean_crypto::SIGNATURE_BYTES);
         assert!(owner
             .planned_proposal
