@@ -6,11 +6,13 @@ use crate::error::NetworkError;
 use crate::gossip::{LeanGossipTopics, PumpEvent};
 use crate::multiaddr::parse_quic_udp;
 use crate::quic_blocks_codec::{blocks_by_root_behaviour, BlocksByRootCodec};
+use crate::quic_range_codec::{blocks_by_range_behaviour, BlocksByRangeCodec};
 use crate::quic_status_codec::{status_behaviour, StatusCodec};
+use crate::quic_swarm_bind::{build_gossipsub, subscribe_all, wait_quic_listen};
 use crate::transport::TransportConfig;
 use ethean_primitives::Hash32;
 use libp2p::futures::StreamExt;
-use libp2p::gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode};
+use libp2p::gossipsub::{self, IdentTopic};
 use libp2p::request_response;
 use libp2p::swarm::SwarmEvent;
 use libp2p::{identity, ping, Multiaddr, PeerId, SwarmBuilder};
@@ -19,13 +21,14 @@ use std::time::Duration;
 
 type NetResult<T> = std::result::Result<T, NetworkError>;
 
-/// Ping + gossipsub + Lean Status / blocks-by-root request_response.
+/// Ping + gossipsub + Lean Status / blocks-by-root / blocks-by-range request_response.
 #[derive(libp2p::swarm::NetworkBehaviour)]
 pub(crate) struct LeanBehaviour {
     pub(crate) ping: ping::Behaviour,
     pub(crate) gossipsub: gossipsub::Behaviour,
     pub(crate) status: request_response::Behaviour<StatusCodec>,
     pub(crate) blocks_by_root: request_response::Behaviour<BlocksByRootCodec>,
+    pub(crate) blocks_by_range: request_response::Behaviour<BlocksByRangeCodec>,
 }
 
 /// libp2p swarm listening on QUIC-v1 (UDP).
@@ -44,6 +47,8 @@ pub struct QuicSwarm {
     pub(crate) local_status: Option<Vec<u8>>,
     /// Signed-block bytes keyed by root for inbound blocks-by-root replies.
     pub(crate) blocks_by_root: HashMap<Hash32, Vec<u8>>,
+    /// Signed-block bytes keyed by slot for inbound blocks-by-range replies.
+    pub(crate) blocks_by_slot: HashMap<u64, Vec<u8>>,
 }
 
 impl std::fmt::Debug for QuicSwarm {
@@ -92,6 +97,7 @@ impl QuicSwarm {
                 gossipsub,
                 status: status_behaviour(),
                 blocks_by_root: blocks_by_root_behaviour(),
+                blocks_by_range: blocks_by_range_behaviour(),
             })
             .map_err(|e| NetworkError::Handshake(format!("behaviour: {e}")))?
             .build();
@@ -119,6 +125,7 @@ impl QuicSwarm {
             peers: HashMap::new(),
             local_status: None,
             blocks_by_root: HashMap::new(),
+            blocks_by_slot: HashMap::new(),
         })
     }
 
@@ -130,6 +137,12 @@ impl QuicSwarm {
     /// Insert or replace a block body served on inbound blocks-by-root.
     pub fn put_block_bytes(&mut self, root: Hash32, bytes: Vec<u8>) {
         self.blocks_by_root.insert(root, bytes);
+    }
+
+    /// Index a block body by slot for inbound blocks-by-range replies.
+    pub fn put_block_at_slot(&mut self, slot: u64, root: Hash32, bytes: Vec<u8>) {
+        self.blocks_by_root.insert(root, bytes.clone());
+        self.blocks_by_slot.insert(slot, bytes);
     }
 
     /// Dial `/ip4/.../udp/.../quic-v1` only.
@@ -190,6 +203,25 @@ impl QuicSwarm {
         Ok(())
     }
 
+    /// Send a blocks-by-range request to a connected peer fingerprint.
+    pub fn send_blocks_by_range_request(
+        &mut self,
+        peer: Hash32,
+        payload: Vec<u8>,
+    ) -> NetResult<()> {
+        let Some(peer_id) = self.peers.get(&peer).copied() else {
+            return Err(NetworkError::Handshake(
+                "peer not connected for blocks-by-range request".into(),
+            ));
+        };
+        let _ = self
+            .swarm
+            .behaviour_mut()
+            .blocks_by_range
+            .send_request(&peer_id, payload);
+        Ok(())
+    }
+
     /// Pump one swarm event; validates inbound gossip against Lean rules.
     pub async fn pump_once(&mut self) -> PumpEvent {
         match self.swarm.select_next_some().await {
@@ -211,84 +243,11 @@ impl QuicSwarm {
             SwarmEvent::Behaviour(LeanBehaviourEvent::BlocksByRoot(ev)) => {
                 self.handle_blocks_by_root_event(ev)
             }
+            SwarmEvent::Behaviour(LeanBehaviourEvent::BlocksByRange(ev)) => {
+                self.handle_blocks_by_range_event(ev)
+            }
             SwarmEvent::Behaviour(_) => PumpEvent::Behaviour,
             _ => PumpEvent::Other,
         }
-    }
-}
-
-fn build_gossipsub(keypair: &identity::Keypair) -> NetResult<gossipsub::Behaviour> {
-    let config = gossipsub::ConfigBuilder::default()
-        .validation_mode(ValidationMode::Permissive)
-        .build()
-        .map_err(|e| NetworkError::Handshake(format!("gossipsub config: {e}")))?;
-    gossipsub::Behaviour::new(MessageAuthenticity::Signed(keypair.clone()), config)
-        .map_err(|e| NetworkError::Handshake(format!("gossipsub behaviour: {e}")))
-}
-
-fn subscribe_all(
-    swarm: &mut libp2p::Swarm<LeanBehaviour>,
-    topics: &LeanGossipTopics,
-) -> NetResult<()> {
-    for topic in topics.as_slice() {
-        LeanGossipTopics::reject_if_eth2(topic)?;
-        let t = IdentTopic::new(topic);
-        swarm
-            .behaviour_mut()
-            .gossipsub
-            .subscribe(&t)
-            .map_err(|e| NetworkError::Handshake(format!("subscribe {topic}: {e}")))?;
-    }
-    Ok(())
-}
-
-async fn wait_quic_listen(swarm: &mut libp2p::Swarm<LeanBehaviour>) -> NetResult<Multiaddr> {
-    loop {
-        match swarm.select_next_some().await {
-            SwarmEvent::NewListenAddr { address, .. } => {
-                if address.to_string().contains("quic") {
-                    return Ok(address);
-                }
-            }
-            SwarmEvent::ListenerError { error, .. } => {
-                return Err(NetworkError::Handshake(format!("listener: {error}")));
-            }
-            _ => {}
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn binds_ephemeral_quic() {
-        let mut swarm = QuicSwarm::bind(&TransportConfig {
-            listen_port: 0,
-            idle_timeout_ms: 1_000,
-        })
-        .await
-        .expect("quic bind");
-        assert!(swarm.listen_addr.to_string().contains("quic"));
-        assert!(swarm.dial("/ip4/127.0.0.1/tcp/1").is_err());
-    }
-
-    #[tokio::test]
-    async fn binds_and_subscribes_lean_topics() {
-        let mut swarm = QuicSwarm::bind_for_fork(
-            &TransportConfig {
-                listen_port: 0,
-                idle_timeout_ms: 1_000,
-            },
-            "lstar",
-        )
-        .await
-        .expect("quic+gossip");
-        let topics = swarm.topics.as_ref().expect("topics");
-        assert!(topics.block.contains("/leanconsensus/"));
-        assert!(swarm
-            .publish_gossip("/eth2/beacon_block/ssz_snappy", b"x")
-            .is_err());
     }
 }
