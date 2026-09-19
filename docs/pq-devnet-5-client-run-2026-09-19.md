@@ -49,7 +49,7 @@ Duty loops previously did not poll QuicSwarm after boot, so a listening
 
 ```bash
 cargo build -p ethean --release
-RUST_LOG=info ./target/release/ethean start --network pq-devnet-5 --ticks 3
+RUST_LOG=info ethean start --network pq-devnet-5 --ticks 3
 cargo test -p ethean-network --features libp2p-quic --test status_mesh
 ```
 
@@ -57,7 +57,7 @@ For two binaries: start A with `--until-signal`, copy the logged `dialable=…`
 (use `127.0.0.1` on the same host), then:
 
 ```bash
-./target/release/ethean start --network pq-devnet-5 --ticks 3 --wall-clock \
+ethean start --network pq-devnet-5 --ticks 3 --wall-clock \
   --bootnodes '/ip4/127.0.0.1/udp/<port>/quic-v1/p2p/<peer-id>'
 ```
 
