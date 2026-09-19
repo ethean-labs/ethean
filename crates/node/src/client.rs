@@ -162,9 +162,21 @@ impl EtheanClient {
         self.boot_gates().await?;
         #[cfg(feature = "libp2p-quic")]
         {
-            let drained = self.pump_network(8).await?;
-            if drained > 0 {
-                info!(drained, "QuicSwarm pump drained boot events");
+            let budget = self.pump_network(8).await?;
+            if budget.drained > 0 {
+                info!(
+                    drained = budget.drained,
+                    accepted = budget.accepted.len(),
+                    "QuicSwarm pump drained boot events"
+                );
+            }
+            let ingest = crate::gossip_ingest::ingest_accepted(
+                &mut self.owner,
+                &mut self.shutdown,
+                &budget.accepted,
+            );
+            if !ingest.is_empty() {
+                info!(n = ingest.len(), "Ingested gossip from boot pump");
             }
         }
         let events = match cfg.mode {
@@ -290,11 +302,14 @@ impl EtheanClient {
         self.swarm.as_mut()
     }
 
-    /// Drain a small budget of QuicSwarm events (non-blocking timeouts).
+    /// Drain a small budget of QuicSwarm events and return accepted gossip.
     #[cfg(feature = "libp2p-quic")]
-    pub async fn pump_network(&mut self, max_events: u32) -> Result<u32> {
+    pub async fn pump_network(
+        &mut self,
+        max_events: u32,
+    ) -> Result<crate::swarm_pump::PumpBudgetResult> {
         let Some(facade) = self.swarm.as_mut() else {
-            return Ok(0);
+            return Ok(crate::swarm_pump::PumpBudgetResult::default());
         };
         crate::swarm_pump::pump_swarm_budget(
             facade,
