@@ -46,6 +46,21 @@ impl SwarmFacade {
         };
         dial_quic(bound, multiaddr)
     }
+
+    /// UDP Status path probe (not a QUIC crypto handshake).
+    pub fn probe_peer_status(
+        &self,
+        multiaddr: &str,
+        local: &ethean_network_wire::Status,
+        timeout: std::time::Duration,
+    ) -> Result<crate::dial::UdpDialProbe> {
+        let Some(bound) = self.transport.as_ref() else {
+            return Err(NetworkError::TransportPending(
+                "attach UDP listen bind before status probe",
+            ));
+        };
+        crate::probe_udp_status(bound, multiaddr, local, timeout)
+    }
 }
 
 #[cfg(test)]
