@@ -14,13 +14,19 @@ use std::time::Duration;
 use tracing::{info, warn};
 
 /// Drive duties until Ctrl-C (or equivalent) then drain shutdown.
-pub async fn run_until_signal(
+///
+/// `after_step` runs after each wall sample (e.g. flush pending block gossip).
+pub async fn run_until_signal<F>(
     clock: &SlotClock,
     owner: &mut ChainOwner,
     shutdown: &mut ShutdownState,
     sync: &mut SyncStatus,
     enable_sleep: bool,
-) -> Result<Vec<ChainEvent>> {
+    mut after_step: F,
+) -> Result<Vec<ChainEvent>>
+where
+    F: FnMut(&mut ChainOwner) -> Result<Option<ChainEvent>>,
+{
     let mut events = Vec::new();
     let time = SystemTimeSource;
     info!("Duty loop running until Ctrl-C");
@@ -38,7 +44,7 @@ pub async fn run_until_signal(
                 info!("Ctrl-C received; draining duties");
                 break;
             }
-            step = run_one_step(clock, owner, shutdown, sync, enable_sleep, &time) => {
+            step = run_one_step(clock, owner, shutdown, sync, enable_sleep, &time, &mut after_step) => {
                 match step {
                     Ok(step_events) => events.extend(step_events),
                     Err(e) => {
@@ -58,15 +64,22 @@ pub async fn run_until_signal(
     Ok(events)
 }
 
-async fn run_one_step(
+async fn run_one_step<F>(
     clock: &SlotClock,
     owner: &mut ChainOwner,
     shutdown: &mut ShutdownState,
     sync: &mut SyncStatus,
     enable_sleep: bool,
     time: &SystemTimeSource,
-) -> Result<Vec<ChainEvent>> {
-    let step_events = apply_wall_step(clock, owner, shutdown, sync)?;
+    after_step: &mut F,
+) -> Result<Vec<ChainEvent>>
+where
+    F: FnMut(&mut ChainOwner) -> Result<Option<ChainEvent>>,
+{
+    let mut step_events = apply_wall_step(clock, owner, shutdown, sync)?;
+    if let Some(ev) = after_step(owner)? {
+        step_events.push(ev);
+    }
     if enable_sleep && shutdown.accepts_new_duties() {
         let now_ms = time.unix_millis().map_err(Error::Clock)?;
         let wait = ms_until_next_interval(clock, now_ms)?;
