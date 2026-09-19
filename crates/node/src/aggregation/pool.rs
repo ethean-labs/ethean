@@ -21,6 +21,8 @@ pub struct PoolEntry {
     pub coverage: u32,
     /// Insertion slot for TTL / staleness.
     pub inserted_slot: u64,
+    /// SSZ of `AggregatedAttestation` when gossip carried attestation data.
+    pub attestation_ssz: Vec<u8>,
 }
 
 /// In-memory pool with per-key variant bounds.
@@ -78,6 +80,21 @@ impl AggregatePool {
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
+
+    /// Best-coverage entry per key, sorted by message root for deterministic builds.
+    pub fn best_entries(&self) -> Vec<(PoolKey, PoolEntry)> {
+        let mut out: Vec<(PoolKey, PoolEntry)> = self
+            .entries
+            .iter()
+            .filter_map(|(k, list)| {
+                list.iter()
+                    .max_by_key(|e| e.coverage)
+                    .map(|e| (*k, e.clone()))
+            })
+            .collect();
+        out.sort_by(|a, b| a.0.message_root.cmp(&b.0.message_root));
+        out
+    }
 }
 
 #[cfg(test)]
@@ -98,10 +115,46 @@ mod tests {
                     proof: vec![i],
                     coverage: i as u32,
                     inserted_slot: i as u64,
+                    attestation_ssz: Vec::new(),
                 },
             );
         }
         assert_eq!(pool.best(&key).unwrap().coverage, 2);
         assert_eq!(pool.entries.get(&key).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn best_entries_sort_by_message_root() {
+        let mut pool = AggregatePool::new(2);
+        let k1 = PoolKey {
+            profile_digest: [1u8; 32],
+            message_root: [9u8; 32],
+        };
+        let k2 = PoolKey {
+            profile_digest: [1u8; 32],
+            message_root: [3u8; 32],
+        };
+        pool.insert_verified(
+            k1,
+            PoolEntry {
+                proof: vec![1],
+                coverage: 1,
+                inserted_slot: 1,
+                attestation_ssz: Vec::new(),
+            },
+        );
+        pool.insert_verified(
+            k2,
+            PoolEntry {
+                proof: vec![2],
+                coverage: 4,
+                inserted_slot: 2,
+                attestation_ssz: Vec::new(),
+            },
+        );
+        let best = pool.best_entries();
+        assert_eq!(best.len(), 2);
+        assert_eq!(best[0].0.message_root, [3u8; 32]);
+        assert_eq!(best[1].0.message_root, [9u8; 32]);
     }
 }
