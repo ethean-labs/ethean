@@ -18,6 +18,7 @@ pub mod dispatch;
 pub mod duty_loop;
 pub mod duty_step;
 pub mod events;
+pub mod gossip_decode;
 pub mod gossip_ingest;
 pub mod network;
 pub mod observability;
