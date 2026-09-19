@@ -72,13 +72,26 @@ pub fn probe_udp_status(
     })
 }
 
-/// True QUIC/libp2p dial — still pending after UDP path probe helpers.
+/// True QUIC/libp2p dial without a bound swarm.
+///
+/// With feature `libp2p-quic`, bind [`crate::QuicSwarm`] (or
+/// [`crate::SwarmFacade::bind_quic_swarm`]) and call `dial` / `dial_quic_peer`.
+/// Without that feature, only [`probe_udp_status`] is available for path checks.
 pub fn dial_quic_pending(multiaddr: &str) -> Result<()> {
     reject_non_quic(multiaddr)?;
     let _ = parse_quic_udp(multiaddr)?;
-    Err(NetworkError::TransportPending(
-        "libp2p QUIC-v1 swarm dial not wired; use probe_udp_status for path checks",
-    ))
+    #[cfg(feature = "libp2p-quic")]
+    {
+        Err(NetworkError::TransportPending(
+            "no QuicSwarm bound; use SwarmFacade::bind_quic_swarm then dial_quic_peer",
+        ))
+    }
+    #[cfg(not(feature = "libp2p-quic"))]
+    {
+        Err(NetworkError::TransportPending(
+            "enable ethean-network/libp2p-quic for QuicSwarm dial; use probe_udp_status for path checks",
+        ))
+    }
 }
 
 #[cfg(test)]
