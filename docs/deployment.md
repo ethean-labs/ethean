@@ -17,7 +17,10 @@ Requires the workspace Rust toolchain (see `rust-toolchain.toml`). Do not use le
 ./target/release/ethean start
 ```
 
-`start` loads the pinned `lstar_devnet` profile and a local smoke genesis, opens the Lean in-memory store schema, then exits the smoke path when ready. Full gossip/QUIC and RocksDB-backed production deploy remain open gates.
+`start` loads the pinned `lstar_devnet` profile and a local smoke genesis, opens the Lean
+in-memory store schema, runs a finite duty-tick smoke loop (sync hysteresis + duty gate),
+then drains shutdown. Full gossip/QUIC and RocksDB-backed production deploy remain open gates
+(`ethean_storage::open_path` fails closed until the RocksDB bind lands).
 
 ## Config / data
 
