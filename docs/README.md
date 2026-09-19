@@ -12,6 +12,8 @@ Peer clients (reference, not a clone): [peer-reference-clients.md](./peer-refere
 
 Language: [english.md](./english.md) (all in-repo text in English).
 
+Git: [commit-after-each-file.md](./commit-after-each-file.md) (English commit after each file, even mid-prompt).
+
 Active migration planning library: [../road-to/lean-consensus-migration/README.md](../road-to/lean-consensus-migration/README.md) (charter, baseline, protocol pins, architecture, risks, retirement, observability, phases 00–13).
 
 Planning session summaries:
