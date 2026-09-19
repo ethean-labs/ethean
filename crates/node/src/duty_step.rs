@@ -40,6 +40,10 @@ pub fn apply_wall_step(
         let snap = owner.snapshot(tick.slot, lag);
         if let Err(reason) = evaluate_gate(&snap.duty_view) {
             events.push(ChainEvent::DutySuppressed { tick, reason });
+        } else {
+            let min_slot = tick.slot.get().saturating_sub(owner.max_head_lag_slots);
+            owner.aggregates.prune_before(min_slot);
+            let _ = crate::block_builder::body_from_pool(&owner.aggregates, 16);
         }
     }
     Ok(events)
