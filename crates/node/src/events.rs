@@ -43,6 +43,15 @@ pub enum ChainEvent {
         /// True when the envelope carries a non-empty Type-2 proof.
         has_type2_proof: bool,
     },
+    /// Pending proposal was published on QuicSwarm gossip.
+    ProposalPublished {
+        /// Lean gossip topic string.
+        topic: String,
+        /// Uncompressed SSZ payload length.
+        payload_len: usize,
+        /// True when the envelope carried a non-empty Type-2 proof.
+        has_type2_proof: bool,
+    },
     /// Syncing flag changed on the chain owner.
     SyncingUpdated(bool),
     /// Shutdown acknowledged; no new duties.
