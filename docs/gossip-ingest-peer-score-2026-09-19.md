@@ -28,5 +28,5 @@ cargo test -p ethean-node --features libp2p-quic --lib
 
 ## Still open
 
-- SSZ decode of block/attestation/aggregation into real `ImportBlock`
+- Attestation-subnet SSZ into duty/pool paths; full state transition on import
 - leanSig git dep / leanVM FFI
