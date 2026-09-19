@@ -3,6 +3,9 @@
 use crate::{
     chain_owner::ChainOwner,
     clock::{clock_from_genesis, SlotClock},
+    duty_loop::{run_duty_loop, DutyLoopConfig},
+    events::ChainEvent,
+    shutdown::ShutdownState,
     Error, Result,
 };
 use ethean_genesis::{local_smoke_genesis, BuiltGenesis, GenesisBuilder, GenesisError};
@@ -21,6 +24,7 @@ pub struct EtheanClient {
     owner: ChainOwner,
     db: Database,
     sync: SyncStatus,
+    shutdown: ShutdownState,
 }
 
 impl EtheanClient {
@@ -42,13 +46,18 @@ impl EtheanClient {
             "Loaded chain profile and genesis"
         );
 
+        let mut owner = ChainOwner::new(32);
+        owner.generation = 1;
+        owner.head_state = Some(genesis.clone());
+
         Ok(Self {
             profile,
             genesis,
             clock,
-            owner: ChainOwner::new(32),
+            owner,
             db,
             sync: SyncStatus::new(Slot::new(0), Slot::new(0)),
+            shutdown: ShutdownState::default(),
         })
     }
 
@@ -101,13 +110,35 @@ impl EtheanClient {
         &self.sync
     }
 
-    /// Smoke start: verify schema and log readiness (no Beacon HTTP).
-    pub async fn start(self) -> Result<()> {
+    /// Shutdown tracker.
+    pub fn shutdown(&self) -> &ShutdownState {
+        &self.shutdown
+    }
+
+    /// Verify schema, run a finite duty smoke loop, then stop.
+    pub async fn start(mut self) -> Result<()> {
         self.db.verify_schema()?;
         info!(
             fork = self.profile.fork_name,
             syncing = self.owner.syncing,
             "Ethean Lean Consensus client ready"
+        );
+
+        let events = run_duty_loop(
+            &self.profile,
+            &mut self.owner,
+            &mut self.shutdown,
+            &mut self.sync,
+            DutyLoopConfig::default(),
+        );
+        let accepted = events
+            .iter()
+            .filter(|e| matches!(e, ChainEvent::TickAccepted(_)))
+            .count();
+        info!(
+            ticks_accepted = accepted,
+            events = events.len(),
+            "Duty smoke loop finished"
         );
         Ok(())
     }
