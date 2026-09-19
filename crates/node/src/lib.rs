@@ -1,26 +1,21 @@
-//! Ethean Lean Consensus Client — node library
+//! Ethean Lean Consensus Client — node library (Lean modules only).
 //!
-//! Ultra-modular Rust implementation with small, focused modules.
-//! Consensus containers live in `ethean-types` (Phase 03).
+//! Legacy Panro/Beacon trees under `src/{api,bench,config,consensus,...}`
+//! remain on disk for the deletion register but are not compiled.
 
-pub mod crypto;
-pub mod consensus;
+#![forbid(unsafe_code)]
+
 pub mod aggregation;
 pub mod block_builder;
 pub mod chain_owner;
-pub mod commands;
-pub mod events;
-pub mod shutdown;
-pub mod network;
-pub mod storage;
-pub mod integration;
-pub mod bench;
-pub mod api;
-pub mod config;
-pub mod utils;
 pub mod cli;
 pub mod client;
 pub mod clock;
+pub mod commands;
+pub mod crypto;
+pub mod events;
+pub mod network;
+pub mod shutdown;
 
 pub use ethean_primitives::{Epoch, Hash32, Slot, ValidatorIndex};
 pub use ethean_profile::{lstar_devnet, ChainProfile, ForkId};
@@ -32,6 +27,7 @@ pub use ethean_genesis::{
     GenesisError, SlotClock, SystemTimeSource, TimeSource,
 };
 
+pub use chain_owner::{ChainOwner, ChainSnapshot};
 pub use client::EtheanClient;
 
 /// Main result type for the application
@@ -46,20 +42,11 @@ pub enum Error {
     #[error("Crypto error: {0}")]
     Crypto(String),
 
-    #[error("Consensus error: {0}")]
-    Consensus(String),
-
     #[error("Network error: {0}")]
-    Network(String),
+    Network(#[from] ethean_network::NetworkError),
 
     #[error("Storage error: {0}")]
-    Storage(String),
-
-    #[error("Integration error: {0}")]
-    Integration(#[from] integration::IntegrationError),
-
-    #[error("API error: {0}")]
-    Api(String),
+    Storage(#[from] ethean_storage::StorageError),
 
     #[error("Configuration error: {0}")]
     Config(String),
@@ -69,8 +56,12 @@ pub enum Error {
 
     #[error("Genesis error: {0}")]
     Genesis(#[from] ethean_genesis::GenesisError),
+
+    #[error("Sync error: {0}")]
+    Sync(#[from] ethean_sync::SyncError),
 }
 
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Crate package name
 pub const NAME: &str = env!("CARGO_PKG_NAME");
