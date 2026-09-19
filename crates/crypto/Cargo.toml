@@ -1,0 +1,23 @@
+[package]
+name = "ethean-crypto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Lean Consensus XMSS crypto surface for Ethean (PROD_CONFIG wire types)"
+
+[dependencies]
+ethean-primitives = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+serde = { workspace = true, optional = true }
+leansig = { git = "https://github.com/leanEthereum/leanSig", rev = "15cbdd43ec8525aa43fea2f42cafc5ed366084ae", package = "leansig", optional = true }
+rand = { workspace = true, optional = true }
+
+[features]
+default = ["leansig-backend"]
+leansig-backend = ["dep:leansig", "dep:rand"]
+serde = ["dep:serde"]
+
+[dev-dependencies]
