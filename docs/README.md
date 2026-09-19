@@ -45,6 +45,7 @@ Planning session summaries:
 - [Wall-clock run mode and QUIC gate](./wall-clock-run-and-quic-gate-2026-09-19.md)
 - [Open gates closeout (until-signal, UDP, RocksDB, FFI)](./open-gates-closeout-2026-09-19.md)
 - [External gates: QuicSwarm, RocksDB INCLUDE, leanSig vendor](./external-gates-quic-rocksdb-leansig-2026-09-19.md)
+- [Durable QuicSwarm, leanVM stub, leanSig vendor patch](./durable-quic-leanvm-leansig-vendor-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
