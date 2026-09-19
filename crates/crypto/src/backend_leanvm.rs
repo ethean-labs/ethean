@@ -45,30 +45,28 @@ pub fn pinned_rev() -> &'static str {
     LEANVM_REV
 }
 
-/// Produce an aggregate proof via leanVM (fail closed until linked).
+/// Produce an aggregate proof via leanVM (fail closed until linked or IPC-ready).
 pub fn prove(statement: &AggregateStatement) -> Result<Vec<u8>> {
-    let _ = statement;
-    if !LEANVM_FFI_LINKED {
+    statement.validate_shape()?;
+    if LEANVM_FFI_LINKED {
         return Err(CryptoError::BackendUnavailable(
-            "leanVM FFI not linked (pin e2592df4); refuse fake proofs",
+            "leanVM FFI flag set but prove symbols not wired",
         ));
     }
-    Err(CryptoError::BackendUnavailable(
-        "leanVM FFI flag set but prove symbols not wired",
-    ))
+    // Prefer process isolation (Phase 08); IPC stub still fails closed.
+    crate::leanvm_ipc::prove_ipc(statement)
 }
 
-/// Verify an aggregate proof via leanVM (fail closed until linked).
+/// Verify an aggregate proof via leanVM (fail closed until linked or IPC-ready).
 pub fn verify(statement: &AggregateStatement, proof: &[u8]) -> Result<bool> {
-    let _ = (statement, proof);
-    if !LEANVM_FFI_LINKED {
+    statement.validate_shape()?;
+    if LEANVM_FFI_LINKED {
+        let _ = proof;
         return Err(CryptoError::BackendUnavailable(
-            "leanVM FFI not linked (pin e2592df4); refuse always-true verify",
+            "leanVM FFI flag set but verify symbols not wired",
         ));
     }
-    Err(CryptoError::BackendUnavailable(
-        "leanVM FFI flag set but verify symbols not wired",
-    ))
+    crate::leanvm_ipc::verify_ipc(statement, proof)
 }
 
 #[cfg(test)]
