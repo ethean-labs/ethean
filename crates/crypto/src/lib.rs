@@ -9,6 +9,8 @@ pub mod aggregation;
 pub mod backend;
 #[cfg(feature = "leansig-backend")]
 mod backend_leansig;
+#[cfg(feature = "leanvm-backend")]
+mod backend_leanvm;
 pub mod domain;
 pub mod error;
 pub mod ffi_status;
