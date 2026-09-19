@@ -4,8 +4,7 @@
 
 use crate::error::NetworkError;
 use crate::gossip::LeanGossipTopics;
-use crate::quic_swarm::{LeanBehaviour, QuicSwarm};
-use crate::transport::TransportConfig;
+use crate::quic_swarm::LeanBehaviour;
 use libp2p::futures::StreamExt;
 use libp2p::gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode};
 use libp2p::identity;
@@ -60,6 +59,8 @@ pub(crate) async fn wait_quic_listen(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::quic_swarm::QuicSwarm;
+    use crate::transport::TransportConfig;
 
     #[tokio::test]
     async fn binds_ephemeral_quic() {
