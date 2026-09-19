@@ -159,7 +159,12 @@ impl SignerStore for InMemorySignerStore {
 
     fn highest_reserved_leaf(&self, key_id: &KeyId) -> Result<Option<u32>> {
         let mut max = None;
-        for ((kid, slot, _), _) in self.reserved.iter().chain(self.completed.iter()) {
+        for (kid, slot, _) in self
+            .reserved
+            .keys()
+            .chain(self.completed.keys())
+            .chain(self.dirty.keys())
+        {
             if kid == key_id {
                 max = Some(max.map_or(*slot, |m: u32| m.max(*slot)));
             }
