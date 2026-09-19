@@ -33,6 +33,9 @@ pub struct EtheanClient {
     sync: SyncStatus,
     shutdown: ShutdownState,
     observability: NodeObservability,
+    /// Durable libp2p QUIC facade (feature `libp2p-quic`).
+    #[cfg(feature = "libp2p-quic")]
+    swarm: Option<crate::network::SwarmFacade>,
 }
 
 impl EtheanClient {
@@ -77,6 +80,8 @@ impl EtheanClient {
             sync: SyncStatus::new(Slot::new(0), Slot::new(0)),
             shutdown: ShutdownState::default(),
             observability,
+            #[cfg(feature = "libp2p-quic")]
+            swarm: None,
         })
     }
 
@@ -228,10 +233,9 @@ impl EtheanClient {
             info!(
                 peer = %facade.quic.as_ref().map(|q| q.peer_id.to_string()).unwrap_or_default(),
                 listen = %facade.quic.as_ref().map(|q| q.listen_addr.to_string()).unwrap_or_default(),
-                "libp2p QuicSwarm bound"
+                "libp2p QuicSwarm bound and retained on client"
             );
-            // Facade is local to the boot probe; durable swarm ownership lands with gossip wiring.
-            let _ = facade;
+            self.swarm = Some(facade);
         }
 
         self.observability.mark_network_ok();
@@ -255,6 +259,18 @@ impl EtheanClient {
             "Ethean Lean Consensus client starting duties"
         );
         Ok(())
+    }
+
+    /// Bound libp2p QUIC facade when `libp2p-quic` is enabled and boot completed.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn swarm(&self) -> Option<&crate::network::SwarmFacade> {
+        self.swarm.as_ref()
+    }
+
+    /// Mutable access for dial / event pump (gossip loop ownership).
+    #[cfg(feature = "libp2p-quic")]
+    pub fn swarm_mut(&mut self) -> Option<&mut crate::network::SwarmFacade> {
+        self.swarm.as_mut()
     }
 
     fn finish_observability(&mut self, events: &[ChainEvent]) -> Result<()> {
