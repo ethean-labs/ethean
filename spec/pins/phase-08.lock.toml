@@ -1,0 +1,48 @@
+# Ethean Phase 08 protocol lock
+# English only. Digests and full commits are authoritative.
+
+schema = "ethean-phase-lock-v1"
+phase = "08"
+phase_name = "leanvm-aggregation"
+lock_status = "resolved_with_open_gates"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+profile_note = """
+Type-1 / Type-2 statement binding and fail-closed verify landed.
+leanVM FFI not wired (pin recorded). test-aggregate binds statement digests for unit tests only.
+"""
+
+[ethean]
+planning_phase_doc = "road-to/lean-consensus-migration/phases/08-leanvm-aggregation.md"
+
+[resolved.lean_spec]
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+citation_aggregation = "src/lean_spec/spec/forks/lstar/containers/aggregation.py"
+
+[resolved.leanvm]
+status = "pinned_ffi_not_wired"
+repository = "https://github.com/leanEthereum/leanVM"
+commit = "e2592df4e30fdddbbf8ae26a333116c68cec7026"
+optional_cargo_feature = "leanvm-backend"
+blocker = "FFI / native proving process not integrated; refuse fake accept"
+
+[resolved.aggregation]
+type1 = "SingleMessageAggregate"
+type2 = "MultiMessageAggregate"
+max_proof_bytes = 524288
+log_inv_rate = 2
+max_type2_components = 9
+max_attestations_data = 8
+fingerprint = "leanVM|rev=e2592df4e30fdddbbf8ae26a333116c68cec7026|LOG_INV_RATE=2|MAX_PROOF=524288|TYPE2_COMP_MAX=9|gen=type1_type2"
+production_verify = "fail_closed_without_leanvm_backend"
+test_verify = "test-aggregate_statement_bound"
+
+[resolved.node]
+pool = "ethean-node/aggregation"
+prover = "sync_facade_until_process_sandbox"
+selection = "coverage_desc_then_index_asc"
+
+[open_gates]
+leanvm_ffi = "blocked"
+dedicated_prover_process = "deferred"
+upstream_proof_fixture_byte_diff = "deferred"
+mutation_corpus_100k = "deferred"

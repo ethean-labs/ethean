@@ -1,9 +1,8 @@
 //! Lean Consensus state transition (lstar / leanSpec@0b7d33ec).
 //!
 //! Structural path: [`apply_block_unverified`] / [`transition_block`] with
-//! `require_proofs = false`. Verified path: [`apply_block`] — rejects empty
-//! proofs and returns [`TransitionError::UnsupportedSignature`] until Phase 07/08
-//! XMSS verification lands (never fake-accepts).
+//! `require_proofs = false`. Verified path: [`apply_block`] — Type-2 envelope
+//! bound to consensus-derived inputs; leanVM fails closed (never fake-accepts).
 
 #![forbid(unsafe_code)]
 
@@ -71,7 +70,9 @@ pub fn apply_block_unverified(
     })
 }
 
-/// Verified API: requires a non-empty multi-message proof; XMSS verify deferred to Phase 07/08.
+/// Verified API: non-empty Type-2 envelope bound to consensus-derived inputs.
+///
+/// leanVM production verify fails closed; empty / mismatched proofs rejected; no fake accept.
 pub fn apply_block(
     pre: &State,
     signed: &SignedBlock,
@@ -82,10 +83,41 @@ pub fn apply_block(
             "block aggregate proof is empty".into(),
         ));
     }
-    let _ = (pre, ctx);
-    Err(TransitionError::UnsupportedSignature(
-        "XMSS / leanMultisig verification not implemented (Phase 07/08)".into(),
-    ))
+    let body_root = signed
+        .block
+        .body
+        .hash_tree_root()
+        .map_err(|e| TransitionError::Types(e.to_string()))?;
+    let profile = ethean_crypto::domain_digest(
+        b"ethean-transition/v1/agg-profile",
+        ethean_crypto::PROD_AGGREGATION_FINGERPRINT.as_bytes(),
+    );
+    let mut components = Vec::with_capacity(1 + signed.block.body.attestations.len());
+    components.push(ethean_crypto::Type2ComponentRef {
+        message_root: body_root,
+        slot: signed.block.slot.get(),
+    });
+    for att in &signed.block.body.attestations {
+        components.push(ethean_crypto::Type2ComponentRef {
+            message_root: att.data.hash_tree_root(),
+            slot: signed.block.slot.get(),
+        });
+    }
+    let statement = ethean_crypto::AggregateStatement {
+        kind: ethean_crypto::ProofKind::Type2,
+        profile_digest: profile,
+        message_root: body_root,
+        slot: signed.block.slot.get(),
+        participants: ethean_crypto::ParticipantSet::empty(),
+        components,
+    };
+    match ethean_crypto::verify_type2(&statement, &signed.proof.proof) {
+        Ok(()) => apply_block_unverified(pre, &signed.block, ctx),
+        Err(ethean_crypto::CryptoError::BackendUnavailable(msg)) => {
+            Err(TransitionError::UnsupportedSignature(msg.to_string()))
+        }
+        Err(e) => Err(TransitionError::UnsupportedSignature(e.to_string())),
+    }
 }
 
 /// Alias matching leanSpec naming: slots then block (structural / unverified).

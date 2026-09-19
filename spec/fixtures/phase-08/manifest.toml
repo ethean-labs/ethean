@@ -1,0 +1,15 @@
+schema = "ethean-fixture-manifest-v1"
+phase = "08"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+status = "local_unit_coverage"
+note = "Upstream leanVM fixture byte-diff deferred; statement binding covered in ethean-crypto aggregation tests."
+
+[[suites]]
+name = "statement-shape"
+authority = "crates/crypto/src/aggregation"
+cases = ["empty_proof", "duplicate_participants", "type1_roundtrip", "type2_roundtrip", "kind_mismatch"]
+
+[[suites]]
+name = "node-pool-selection"
+authority = "crates/node/src/aggregation"
+cases = ["variant_cap", "coverage_tie_break"]

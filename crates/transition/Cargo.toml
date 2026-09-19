@@ -12,6 +12,7 @@ ethean-primitives = { workspace = true }
 ethean-profile = { workspace = true }
 ethean-types = { workspace = true }
 ethean-ssz = { workspace = true }
+ethean-crypto = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
