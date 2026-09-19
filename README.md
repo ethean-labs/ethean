@@ -110,25 +110,34 @@ cargo build -p ethean --release
 After that build, the command is `ethean` (Windows and Linux). The build script
 places a shim in `~/.cargo/bin`; no `install.sh` step.
 
-### Run (default: pq-devnet-4)
+### Run (default: pq-devnet-4, local finality on)
+
+Solo long-run now **advances head** (recent genesis, 4 validators, aggregator +
+self-apply). You do **not** need public bootnodes for Grafana slot panels to move.
 
 ```bash
 ethean version
-ethean start
-ethean start --ticks 3
-ethean start --ticks 2 --wall-clock
-ethean start --until-signal
-ethean start --network pq-devnet-4
-ethean start --network local
+ethean start --until-signal --network pq-devnet-4
+ethean start --until-signal --network pq-devnet-4 --validators 4 --metrics
+ethean start --until-signal --network pq-devnet-5   # same local finality; label only
 ```
 
-Helpers (build + long-run):
+Disable local finality only when joining a real operator mesh:
+
+```bash
+ethean start --until-signal --network pq-devnet-4 --no-local-finality --bootnodes '…'
+```
+
+Helpers:
 
 ```bash
 # Unix
-./scripts/run-pq-devnet-4.sh
+./scripts/run-local-finality.sh
+METRICS_STACK=1 ./scripts/run-local-finality.sh
 
 # Windows PowerShell
+.\scripts\run-local-finality.ps1
+.\scripts\run-local-finality.ps1 -MetricsStack
 .\scripts\run-pq-devnet-4.ps1
 ```
 
