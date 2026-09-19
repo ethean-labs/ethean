@@ -21,4 +21,4 @@ pub use identity::NodeIdentity;
 pub use peer_manager::{PeerManager, PeerRecord};
 pub use reqresp::{handle_status, RequestTracker, StatusExchange};
 pub use swarm::SwarmFacade;
-pub use transport::{prepare_transport, TransportConfig};
+pub use transport::{prepare_transport, reject_non_quic, TransportConfig};
