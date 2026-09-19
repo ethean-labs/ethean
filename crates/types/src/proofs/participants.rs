@@ -14,7 +14,10 @@ pub fn validate_ordered_indices(indices: &[u32]) -> Result<(), TypesError> {
     }
     for (i, &idx) in indices.iter().enumerate() {
         if idx as usize >= VALIDATOR_REGISTRY_LIMIT {
-            return Err(TypesError::InvalidValidatorIndex { index: idx as usize });
+            return Err(TypesError::ValidatorIndexOutOfRange {
+                index: idx as u64,
+                limit: VALIDATOR_REGISTRY_LIMIT as u64,
+            });
         }
         if i > 0 && indices[i - 1] >= idx {
             return Err(TypesError::InvalidContainer(

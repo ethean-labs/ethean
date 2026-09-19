@@ -22,4 +22,7 @@ pub enum TypesError {
 
     #[error("profile: {0}")]
     Profile(String),
+
+    #[error("invalid container: {0}")]
+    InvalidContainer(String),
 }
