@@ -70,6 +70,7 @@ impl EtheanClient {
         let mut owner = ChainOwner::new(32);
         owner.generation = 1;
         owner.head_state = Some(genesis.clone());
+        owner.profile = Some(profile.clone());
 
         Ok(Self {
             profile,
