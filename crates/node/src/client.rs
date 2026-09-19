@@ -182,8 +182,23 @@ impl EtheanClient {
     fn boot_gates(&mut self) -> Result<()> {
         self.db.verify_schema()?;
         self.observability.mark_storage_ok();
-        self.observability.mark_crypto_ok();
         self.observability.mark_signer_ok();
+        self.observability
+            .apply_ffi_status(ethean_crypto::FfiStatus::probe());
+        // Smoke crypto path is loaded even when production FFI is off.
+        self.observability.mark_crypto_ok();
+
+        let identity = crate::network::NodeIdentity::from_seed(b"ethean-local");
+        let bound = crate::network::prepare_transport(
+            &identity,
+            &crate::network::TransportConfig {
+                listen_port: 0,
+                idle_timeout_ms: 30_000,
+            },
+        )?;
+        info!(port = bound.listen_port, "UDP listen bind for QUIC facade");
+        self.observability.mark_network_ok();
+
         let health = smoke_health_route()?;
         info!(?health, "Lean health route smoke ok");
 
@@ -198,6 +213,8 @@ impl EtheanClient {
             interval = wall.interval,
             fork = self.profile.fork_name,
             ready = self.observability.readiness.is_ready(),
+            ffi_leansig = ethean_crypto::FfiStatus::probe().leansig,
+            ffi_leanvm = ethean_crypto::FfiStatus::probe().leanvm,
             "Ethean Lean Consensus client starting duties"
         );
         Ok(())
