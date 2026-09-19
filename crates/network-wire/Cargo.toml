@@ -10,6 +10,8 @@ description = "Lean Consensus wire codecs and topic schemas (Phase 10)"
 [dependencies]
 ethean-primitives = { workspace = true }
 thiserror = { workspace = true }
+sha2 = { workspace = true }
+snap = "1.1"
 
 [lib]
 name = "ethean_network_wire"
