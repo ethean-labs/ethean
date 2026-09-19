@@ -10,6 +10,15 @@ pub enum ChainCommand {
     Tick(DutyTick),
     /// Import a locally verified block root.
     ImportBlock { root: Hash32, parent: Hash32 },
+    /// Ingest validated gossip (Snappy already removed); does not advance head alone.
+    IngestGossip {
+        /// Gossip topic string.
+        topic: String,
+        /// Decompressed SSZ payload.
+        payload: Vec<u8>,
+        /// Optional source peer fingerprint.
+        peer: Option<Hash32>,
+    },
     /// Update syncing flag from the sync subsystem.
     SetSyncing(bool),
     /// Request graceful stop of new duties.
