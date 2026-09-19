@@ -24,10 +24,16 @@ pub struct PoolEntry {
 }
 
 /// In-memory pool with per-key variant bounds.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct AggregatePool {
     entries: HashMap<PoolKey, Vec<PoolEntry>>,
     max_variants: usize,
+}
+
+impl Default for AggregatePool {
+    fn default() -> Self {
+        Self::new(8)
+    }
 }
 
 impl AggregatePool {
