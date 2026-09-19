@@ -10,6 +10,7 @@ description = "Lean Consensus durable storage contracts (Phase 11)"
 [dependencies]
 ethean-primitives = { workspace = true }
 thiserror = { workspace = true }
+sha2 = { workspace = true }
 
 [lib]
 name = "ethean_storage"
