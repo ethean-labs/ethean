@@ -1,7 +1,7 @@
 //! Decode Lean gossip SSZ payloads into importable roots.
 
 use ethean_primitives::Hash32;
-use ethean_types::{Block, SignedBlock};
+use ethean_types::{Block, MultiMessageAggregate, SignedBlock};
 use sha2::{Digest, Sha256};
 
 /// Block gossip that can drive [`crate::commands::ChainCommand::ImportBlock`].
@@ -35,10 +35,17 @@ pub fn try_decode_block(topic: &str, payload: &[u8]) -> Option<DecodedBlockGossi
     None
 }
 
-/// Prefer SSZ tree root for blocks; otherwise domain-separated SHA-256 of bytes.
+/// Prefer SSZ tree roots; otherwise domain-separated SHA-256 of bytes.
 pub fn content_root_for(topic: &str, payload: &[u8]) -> Hash32 {
     if let Some(decoded) = try_decode_block(topic, payload) {
         return decoded.root;
+    }
+    if topic.contains("/aggregation/") {
+        if let Ok(agg) = MultiMessageAggregate::new(payload.to_vec()) {
+            if let Ok(root) = agg.hash_tree_root() {
+                return root;
+            }
+        }
     }
     provisional_content_root(payload)
 }
@@ -78,8 +85,23 @@ mod tests {
     }
 
     #[test]
-    fn non_block_topic_uses_provisional_hash() {
+    fn aggregation_topic_uses_ssz_tree_root() {
         let topic = "/leanconsensus/abcd/aggregation/ssz_snappy";
+        let payload = b"agg-proof-bytes";
+        let expected = MultiMessageAggregate::new(payload.to_vec())
+            .unwrap()
+            .hash_tree_root()
+            .unwrap();
+        assert_eq!(content_root_for(topic, payload), expected);
+        assert_ne!(
+            content_root_for(topic, payload),
+            provisional_content_root(payload)
+        );
+    }
+
+    #[test]
+    fn unknown_topic_uses_provisional_hash() {
+        let topic = "/leanconsensus/abcd/unknown/ssz_snappy";
         let payload = b"not-a-block";
         assert!(try_decode_block(topic, payload).is_none());
         assert_eq!(
