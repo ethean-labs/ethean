@@ -11,6 +11,8 @@ pub mod multiaddr;
 pub mod peer_manager;
 pub mod quic_swarm;
 #[cfg(feature = "libp2p-quic")]
+mod quic_events;
+#[cfg(feature = "libp2p-quic")]
 pub mod quic_status_codec;
 pub mod reqresp;
 pub mod swarm;
