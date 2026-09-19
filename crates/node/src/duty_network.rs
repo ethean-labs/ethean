@@ -90,30 +90,54 @@ impl EtheanClient {
                 payload,
                 &mut facade.requests,
             ) {
-                Ok(Some(blocks_req)) => {
-                    facade.enqueue_blocks_outbounds(vec![blocks_req]);
-                    match facade.flush_blocks_outbox() {
-                        Ok(sent) => info!(
-                            peer0 = peer[0],
-                            sent,
-                            "blocks-by-root flushed after Status response"
-                        ),
-                        Err(e) => info!(
-                            peer0 = peer[0],
-                            error = %e,
-                            "blocks-by-root staged; flush deferred"
-                        ),
+                Ok(out) => {
+                    let mut staged = false;
+                    if let Some(blocks_req) = out.blocks_by_root {
+                        staged = true;
+                        facade.enqueue_blocks_outbounds(vec![blocks_req]);
+                        match facade.flush_blocks_outbox() {
+                            Ok(sent) => info!(
+                                peer0 = peer[0],
+                                sent,
+                                "blocks-by-root flushed after Status response"
+                            ),
+                            Err(e) => info!(
+                                peer0 = peer[0],
+                                error = %e,
+                                "blocks-by-root staged; flush deferred"
+                            ),
+                        }
                     }
-                }
-                Ok(None) => {
-                    info!(peer0 = peer[0], "Status handshake completed; heads match");
+                    if let Some(range_req) = out.blocks_by_range {
+                        staged = true;
+                        facade.enqueue_blocks_range_outbounds(vec![range_req]);
+                        match facade.flush_blocks_range_outbox() {
+                            Ok(sent) => info!(
+                                peer0 = peer[0],
+                                sent,
+                                "blocks-by-range flushed after Status response"
+                            ),
+                            Err(e) => info!(
+                                peer0 = peer[0],
+                                error = %e,
+                                "blocks-by-range staged; flush deferred"
+                            ),
+                        }
+                    }
+                    if !staged {
+                        info!(peer0 = peer[0], "Status handshake completed; heads match");
+                    }
                 }
                 Err(e) => {
                     info!(peer0 = peer[0], error = %e, "Status handshake failed");
                 }
             }
         }
-        for (peer, payload) in &budget.blocks_by_root_responses {
+        for (peer, payload) in budget
+            .blocks_by_root_responses
+            .iter()
+            .chain(budget.blocks_by_range_responses.iter())
+        {
             let outcome = crate::blocks_sync::ingest_blocks_by_root_response(
                 &mut self.owner,
                 &mut self.shutdown,
@@ -126,7 +150,7 @@ impl EtheanClient {
                     peer0 = peer[0],
                     n = outcome.events.len(),
                     orphans = self.owner.sync_orphans.len(),
-                    "blocks-by-root response ingested"
+                    "blocks sync response ingested"
                 );
             }
             if outcome.fetch_roots.is_empty() {
