@@ -135,6 +135,18 @@ Helpers (build + long-run):
 Paste D4 QUIC multiaddrs into `config/networks/pq-devnet-4.bootnodes` (or pass
 `--bootnodes` / `ETHEAN_BOOTNODES`) before expecting a live mesh dial.
 
+### Grafana / Prometheus (optional second terminal)
+
+`ethean start` does **not** open Grafana or Prometheus. After the node is up:
+
+```powershell
+# Requires Docker Desktop on PATH
+.\scripts\run-observability.ps1
+```
+
+Then open http://localhost:3000 and http://localhost:9090. Until then only
+http://127.0.0.1:9100/metrics works (that is the scrape target).
+
 ### Local private mesh (no public bootnodes)
 
 Same pattern as Ream/ethlambda: create a private 2-peer mesh for this run, write
@@ -366,9 +378,20 @@ skip_signature_verification = false
 ##  Monitoring & Metrics
 
 Long-run monitoring matches Ream/ethlambda Grafana practice (head / justified /
-finalized / current slot). Prometheus scrape is **on by default**.
+finalized / current slot).
 
-### Process health APIs (live today)
+**Important:** `ethean start …` only starts the **client** and its scrape HTTP on
+**`:9100`**. It does **not** start Grafana (`:3000`) or Prometheus (`:9090`).
+Those need a **second process** (Docker Compose). Without Docker Desktop running,
+`http://localhost:3000` and `http://localhost:9090` stay blank / unreachable —
+that is expected, not a bug in `ethean start`.
+
+| What you ran | What works |
+| --- | --- |
+| `ethean start --until-signal --network pq-devnet-5` alone | [http://127.0.0.1:9100/metrics](http://127.0.0.1:9100/metrics) (and `/healthz`, `/readyz`) |
+| Same + `.\scripts\run-observability.ps1` (Docker required) | Grafana `:3000` + Prometheus `:9090` scraping `:9100` |
+
+### Process health APIs (live with `ethean start`)
 
 Metrics HTTP binds to `127.0.0.1:9100` unless overridden. These are the endpoints
 to check that the process is up (Lean JSON-RPC on `:5052` is **not** wired yet):
@@ -404,8 +427,9 @@ Useful gauges: `ethean_head_slot`, `ethean_justified_slot`, `ethean_finalized_sl
 | `--metrics-port` | `9100` | Bind port (must match Prometheus scrape) |
 
 ```bash
-# Terminal A — long-run node (Ctrl-C to stop)
+# Terminal A — long-run node (Ctrl-C to stop). Metrics only on :9100.
 ethean start --until-signal --network pq-devnet-4
+# or: ethean start --until-signal --network pq-devnet-5
 # or: ./scripts/run-pq-devnet-4.sh   /   .\scripts\run-pq-devnet-4.ps1
 
 # Optional bind override
@@ -413,12 +437,16 @@ ethean start --until-signal --network pq-devnet-4 \
   --metrics-address 127.0.0.1 --metrics-port 9100
 ```
 
-### Prometheus + Grafana
+### Prometheus + Grafana (separate Docker stack)
+
+Requires **Docker Desktop** (or Docker Engine + Compose) on `PATH`. This machine’s
+blank `:3000` / `:9090` pages mean that stack was never started.
 
 ```bash
-# Terminal B — scrape stack (needs Docker)
+# Terminal B — scrape + UI (after Terminal A is up)
 ./scripts/run-observability.sh
-# Windows: .\scripts\run-observability.ps1
+# Windows PowerShell:
+.\scripts\run-observability.ps1
 # or: cd deploy/observability && docker compose up -d
 ```
 
@@ -432,8 +460,11 @@ ethean start --until-signal --network pq-devnet-4 \
 Healthy long-run: `ethean_slot_current` and `ethean_head_slot` climb; justified /
 finalized follow when a mesh + aggregator exists. Flat finalized while head climbs
 = finality stall (same failure mode Shariq caught on a 5-day Ream run).
+Solo offline node: `ethean_peer_count` stays `0` and head may stay flat — wall
+`ethean_slot_current` still climbs.
 
 Details: [docs/long-run-metrics-grafana-2026-09-20.md](./docs/long-run-metrics-grafana-2026-09-20.md),
+[docs/grafana-prometheus-need-docker-2026-09-20.md](./docs/grafana-prometheus-need-docker-2026-09-20.md),
 [deploy/observability/README.md](./deploy/observability/README.md).
 
 There is no `ethean monitor` CLI. Do not use Beacon `/eth/v1/node/health` paths.
