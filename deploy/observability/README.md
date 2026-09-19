@@ -4,11 +4,8 @@ Local stack for Shariq-style long-run monitoring of Ethean.
 
 ## Prerequisites
 
-1. **Docker Desktop** (or Docker Engine + Compose) — required for Grafana/Prometheus
+1. Docker Desktop (or Docker Engine + Compose)
 2. Ethean built: `cargo build -p ethean --release`
-
-`ethean start` alone only exposes `:9100`. Without step 1 + `run-observability`,
-ports `:3000` / `:9090` stay closed.
 
 ## Long-run node (pq-devnet-4)
 
@@ -23,12 +20,23 @@ Disable with `--no-metrics`. Bind: `--metrics-address` / `--metrics-port`.
 
 ## Start Prometheus + Grafana
 
+**Preferred:** pass `--metrics` on the node (starts Docker Compose automatically):
+
+```powershell
+ethean start --until-signal --network pq-devnet-4 --metrics
+```
+
+**Or** start the stack alone:
+
 ```powershell
 .\scripts\run-observability.ps1
 # or
 cd deploy/observability
 docker compose up -d
 ```
+
+Requires Docker Desktop (or Engine + Compose). Without it, `:3000` / `:9090` stay down
+even though `:9100/metrics` from the binary works.
 
 - Grafana: http://localhost:3000 (anonymous viewer)
 - Dashboard: **Ethean Lean Clients Dashboard**
