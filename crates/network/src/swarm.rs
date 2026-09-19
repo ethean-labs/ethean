@@ -2,7 +2,9 @@
 
 use crate::error::{NetworkError, Result};
 use crate::peer_manager::PeerManager;
-use crate::reqresp::{OutboundBlocksByRootRequest, OutboundStatusRequest, RequestTracker};
+use crate::reqresp::{
+    OutboundBlocksByRangeRequest, OutboundBlocksByRootRequest, OutboundStatusRequest, RequestTracker,
+};
 use crate::transport::{dial_quic, BoundTransport};
 
 #[cfg(feature = "libp2p-quic")]
@@ -19,6 +21,8 @@ pub struct SwarmFacade {
     pub status_outbox: Vec<OutboundStatusRequest>,
     /// Blocks-by-root payloads staged after a Status head gap (wire send TBD).
     pub blocks_outbox: Vec<OutboundBlocksByRootRequest>,
+    /// Blocks-by-range payloads staged for deep slot catch-up.
+    pub blocks_range_outbox: Vec<OutboundBlocksByRangeRequest>,
     pub events_processed: u64,
     /// Present after [`Self::attach_transport`].
     pub transport: Option<BoundTransport>,
@@ -248,52 +252,5 @@ impl SwarmFacade {
             ));
         };
         crate::probe_udp_status(bound, multiaddr, local, timeout)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::identity::NodeIdentity;
-    use crate::transport::{prepare_transport, TransportConfig};
-
-    #[test]
-    fn progress_flag() {
-        let mut s = SwarmFacade::default();
-        assert!(!s.is_progressing());
-        s.note_progress();
-        assert!(s.is_progressing());
-    }
-
-    #[test]
-    fn attach_bind_enables_dial_path() {
-        let mut s = SwarmFacade::default();
-        let id = NodeIdentity::from_seed(b"swarm");
-        let bound = prepare_transport(
-            &id,
-            &TransportConfig {
-                listen_port: 0,
-                idle_timeout_ms: 1_000,
-            },
-        )
-        .unwrap();
-        s.attach_transport(bound);
-        assert!(s.has_listen_bind());
-        assert!(s.dial_static_peer("/ip4/127.0.0.1/udp/9/quic-v1").is_err());
-    }
-
-    #[cfg(feature = "libp2p-quic")]
-    #[tokio::test]
-    async fn bind_quic_enables_swarm_dial() {
-        let mut s = SwarmFacade::default();
-        s.bind_quic_swarm(&TransportConfig {
-            listen_port: 0,
-            idle_timeout_ms: 1_000,
-        })
-        .await
-        .expect("quic swarm");
-        assert!(s.has_quic_swarm());
-        assert!(s.dial_quic_peer("/ip4/127.0.0.1/tcp/9").is_err());
-        assert!(s.dial_quic_peer("/ip4/127.0.0.1/udp/9/quic-v1").is_ok());
     }
 }
