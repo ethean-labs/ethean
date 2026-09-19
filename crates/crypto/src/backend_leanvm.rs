@@ -6,8 +6,7 @@
 //!
 //! Flip [`LEANVM_FFI_LINKED`] only when prove/verify call real linked symbols.
 
-use crate::aggregation::bindings::LEANVM_REV;
-use crate::aggregation::statement::AggregateStatement;
+use crate::aggregation::{AggregateStatement, LEANVM_REV};
 use crate::error::{CryptoError, Result};
 
 /// Must stay false until FFI / process prover symbols are linked and tested.
@@ -21,19 +20,17 @@ pub fn pinned_rev() -> &'static str {
 /// Produce an aggregate proof via leanVM (fail closed until linked).
 pub fn prove(statement: &AggregateStatement) -> Result<Vec<u8>> {
     let _ = statement;
-    Err(CryptoError::BackendUnavailable(format!(
-        "leanVM FFI not linked (pin {LEANVM_REV}); refuse fake proofs \
-         (LEANVM_FFI_LINKED={LEANVM_FFI_LINKED})"
-    )))
+    Err(CryptoError::BackendUnavailable(
+        "leanVM FFI not linked (pin e2592df4); refuse fake proofs",
+    ))
 }
 
 /// Verify an aggregate proof via leanVM (fail closed until linked).
 pub fn verify(statement: &AggregateStatement, proof: &[u8]) -> Result<bool> {
     let _ = (statement, proof);
-    Err(CryptoError::BackendUnavailable(format!(
-        "leanVM FFI not linked (pin {LEANVM_REV}); refuse always-true verify \
-         (LEANVM_FFI_LINKED={LEANVM_FFI_LINKED})"
-    )))
+    Err(CryptoError::BackendUnavailable(
+        "leanVM FFI not linked (pin e2592df4); refuse always-true verify",
+    ))
 }
 
 #[cfg(test)]
@@ -44,5 +41,6 @@ mod tests {
     fn pin_is_recorded() {
         assert_eq!(pinned_rev().len(), 40);
         assert!(!LEANVM_FFI_LINKED);
+        assert!(pinned_rev().starts_with("e2592df4"));
     }
 }
