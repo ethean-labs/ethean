@@ -17,6 +17,8 @@ pub struct PlanTransition {
     pub block: Block,
     /// Best multi-message proof bytes from the pool (may be empty).
     pub aggregate_proof: Vec<u8>,
+    /// Proposer XMSS/HMAC signature over the block root (not a leanVM Type-2 proof).
+    pub proposer_signature: Option<Vec<u8>>,
 }
 
 impl PlanTransition {
@@ -82,6 +84,7 @@ fn plan_with_body(
         parent_root,
         block,
         aggregate_proof,
+        proposer_signature: None,
     })
 }
 
