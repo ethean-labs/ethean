@@ -1,5 +1,7 @@
 # ethean-validator
 
-Validator duties and **XMSS signer safety** for Ethean Lean Consensus.
+Validator **XMSS signer safety** (Phase 07) and **duty scheduling** (Phase 09) for Ethean Lean Consensus.
 
-Phase 07 delivers the durable journal and role-separated signer. Duty scheduling and networking arrive in later phases.
+- Signer: reserve → flush → sign; role-separated keys; burn uncertain leaves
+- Duties: profile-driven `(slot, interval, generation)` ticks; duty gate; attester / proposer / aggregator flows
+- Networking and gossip publication arrive in Phase 10
