@@ -111,6 +111,43 @@ impl EtheanClient {
         .await
     }
 
+    /// Boot-time pump: queue Status handshakes and ingest accepted gossip.
+    pub(crate) async fn boot_pump_status_and_gossip(&mut self) -> Result<()> {
+        use tracing::info;
+        let budget = self.pump_network(8).await?;
+        if budget.drained > 0 {
+            info!(
+                drained = budget.drained,
+                accepted = budget.accepted.len(),
+                connected = budget.connected_peers.len(),
+                "QuicSwarm pump drained boot events"
+            );
+        }
+        if let Some(local) = self.local_status.clone() {
+            let queued = crate::status_handshake::queue_peers(
+                &mut self.status_sessions,
+                &local,
+                &budget.connected_peers,
+            );
+            if queued > 0 {
+                info!(
+                    queued,
+                    pending = self.status_sessions.pending_len(),
+                    "Status handshakes queued for connected peers"
+                );
+            }
+        }
+        let ingest = crate::gossip_ingest::ingest_accepted(
+            &mut self.owner,
+            &mut self.shutdown,
+            &budget.accepted,
+        );
+        if !ingest.is_empty() {
+            info!(n = ingest.len(), "Ingested gossip from boot pump");
+        }
+        Ok(())
+    }
+
     /// Publish `pending_block_gossip` on the bound QuicSwarm when present.
     pub fn flush_pending_block_gossip(
         &mut self,
