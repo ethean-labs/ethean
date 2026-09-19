@@ -6,7 +6,9 @@ use std::path::{Path, PathBuf};
 /// Supported network labels for `ethean start --network`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NetworkId {
-    /// Interop generation aimed at leanroadmap pq-devnet-5 (in progress).
+    /// Operational join target while pq-devnet-5 has no public mesh.
+    PqDevnet4,
+    /// Next-generation label; code paths stay ready for operator bootnodes.
     PqDevnet5,
     /// Explicit local-only smoke (same profile, never expects mesh).
     Local,
@@ -16,10 +18,11 @@ impl NetworkId {
     /// Parse CLI / config network name.
     pub fn parse(name: &str) -> Result<Self, String> {
         match name.trim().to_ascii_lowercase().as_str() {
+            "pq-devnet-4" | "pq_devnet_4" | "devnet4" | "devnet-4" => Ok(Self::PqDevnet4),
             "pq-devnet-5" | "pq_devnet_5" | "devnet5" | "devnet-5" => Ok(Self::PqDevnet5),
             "local" | "smoke" | "lstar" => Ok(Self::Local),
             other => Err(format!(
-                "unknown network '{other}' (expected pq-devnet-5 or local)"
+                "unknown network '{other}' (expected pq-devnet-4, pq-devnet-5, or local)"
             )),
         }
     }
@@ -27,8 +30,18 @@ impl NetworkId {
     /// Stable CLI string.
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::PqDevnet4 => "pq-devnet-4",
             Self::PqDevnet5 => "pq-devnet-5",
             Self::Local => "local",
+        }
+    }
+
+    /// Config basename under `config/networks/` (None for local smoke).
+    pub fn config_stem(self) -> Option<&'static str> {
+        match self {
+            Self::PqDevnet4 => Some("pq-devnet-4"),
+            Self::PqDevnet5 => Some("pq-devnet-5"),
+            Self::Local => None,
         }
     }
 }
@@ -45,7 +58,16 @@ pub struct NetworkTarget {
 }
 
 impl NetworkTarget {
-    /// Default: pq-devnet-5 label with empty bootnodes (offline until supplied).
+    /// Default operational target: pq-devnet-4 (empty until file/CLI/env supplied).
+    pub fn pq_devnet_4() -> Self {
+        Self {
+            id: NetworkId::PqDevnet4,
+            bootnodes: Vec::new(),
+            fork_digest: None,
+        }
+    }
+
+    /// Ready-path target for pq-devnet-5 when an operator mesh opens.
     pub fn pq_devnet_5() -> Self {
         Self {
             id: NetworkId::PqDevnet5,
@@ -67,8 +89,10 @@ impl NetworkTarget {
                 bootnodes = parse_bootnode_csv(&env);
             }
         }
-        if bootnodes.is_empty() && id == NetworkId::PqDevnet5 {
-            bootnodes = load_lines_file(&default_bootnodes_path())?;
+        if bootnodes.is_empty() {
+            if let Some(path) = bootnodes_path_for(id) {
+                bootnodes = load_lines_file(&path)?;
+            }
         }
 
         let mut digest = fork_digest
@@ -83,8 +107,10 @@ impl NetworkTarget {
                 }
             }
         }
-        if digest.is_none() && id == NetworkId::PqDevnet5 {
-            digest = load_single_line_file(&default_forkdigest_path())?;
+        if digest.is_none() {
+            if let Some(path) = forkdigest_path_for(id) {
+                digest = load_single_line_file(&path)?;
+            }
         }
 
         Ok(Self {
@@ -108,12 +134,14 @@ fn parse_bootnode_csv(raw: &str) -> Vec<String> {
         .collect()
 }
 
-fn default_bootnodes_path() -> PathBuf {
-    PathBuf::from("config/networks/pq-devnet-5.bootnodes")
+fn bootnodes_path_for(id: NetworkId) -> Option<PathBuf> {
+    id.config_stem()
+        .map(|stem| PathBuf::from(format!("config/networks/{stem}.bootnodes")))
 }
 
-fn default_forkdigest_path() -> PathBuf {
-    PathBuf::from("config/networks/pq-devnet-5.forkdigest")
+fn forkdigest_path_for(id: NetworkId) -> Option<PathBuf> {
+    id.config_stem()
+        .map(|stem| PathBuf::from(format!("config/networks/{stem}.forkdigest")))
 }
 
 fn load_lines_file(path: &Path) -> Result<Vec<String>, String> {
@@ -139,7 +167,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_devnet5_aliases() {
+    fn parses_devnet_aliases() {
+        assert_eq!(NetworkId::parse("pq-devnet-4").unwrap(), NetworkId::PqDevnet4);
+        assert_eq!(NetworkId::parse("devnet4").unwrap(), NetworkId::PqDevnet4);
         assert_eq!(NetworkId::parse("pq-devnet-5").unwrap(), NetworkId::PqDevnet5);
         assert_eq!(NetworkId::parse("devnet5").unwrap(), NetworkId::PqDevnet5);
         assert_eq!(NetworkId::parse("local").unwrap(), NetworkId::Local);
@@ -160,5 +190,12 @@ mod tests {
     fn fork_digest_cli() {
         let t = NetworkTarget::from_cli("local", None, Some("0xAABBCCDD")).unwrap();
         assert_eq!(t.fork_digest.as_deref(), Some("0xAABBCCDD"));
+    }
+
+    #[test]
+    fn config_stems_for_devnets() {
+        assert_eq!(NetworkId::PqDevnet4.config_stem(), Some("pq-devnet-4"));
+        assert_eq!(NetworkId::PqDevnet5.config_stem(), Some("pq-devnet-5"));
+        assert_eq!(NetworkId::Local.config_stem(), None);
     }
 }
