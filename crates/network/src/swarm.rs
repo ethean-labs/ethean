@@ -63,6 +63,19 @@ impl SwarmFacade {
         Ok(())
     }
 
+    /// Bind QUIC using a resolved fork segment (operator digest).
+    #[cfg(feature = "libp2p-quic")]
+    pub async fn bind_quic_swarm_for_fork_segment(
+        &mut self,
+        cfg: &TransportConfig,
+        fork_segment: &str,
+    ) -> Result<()> {
+        let swarm = QuicSwarm::bind_for_fork_segment(cfg, fork_segment).await?;
+        self.quic = Some(swarm);
+        self.note_progress();
+        Ok(())
+    }
+
     /// Publish compressed gossip on a Lean topic via the bound swarm.
     #[cfg(feature = "libp2p-quic")]
     pub fn publish_gossip(&mut self, topic: &str, compressed: &[u8]) -> Result<()> {
