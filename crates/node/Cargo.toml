@@ -44,3 +44,6 @@ tempfile = { workspace = true }
 default = []
 # Forward optional libp2p QUIC swarm from ethean-network.
 libp2p-quic = ["ethean-network/libp2p-quic"]
+# Optional production crypto backends (fail-closed until vendor/FFI ready).
+leansig-backend = ["ethean-crypto/leansig-backend"]
+leanvm-backend = ["ethean-crypto/leanvm-backend"]
