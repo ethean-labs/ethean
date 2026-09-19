@@ -3,13 +3,15 @@
 #![cfg(feature = "libp2p-quic")]
 
 use crate::error::NetworkError;
-use crate::gossip::LeanGossipTopics;
+use crate::gossip::{GossipAction, GossipIngress, LeanGossipTopics, PumpEvent};
 use crate::multiaddr::parse_quic_udp;
 use crate::transport::TransportConfig;
+use ethean_primitives::Hash32;
 use libp2p::futures::StreamExt;
 use libp2p::gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode};
 use libp2p::swarm::SwarmEvent;
 use libp2p::{identity, ping, Multiaddr, PeerId, SwarmBuilder};
+use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::time::Duration;
 
@@ -121,38 +123,57 @@ impl QuicSwarm {
     }
 
     /// Pump one swarm event; validates inbound gossip against Lean rules.
-    pub async fn pump_once(&mut self) -> &'static str {
+    pub async fn pump_once(&mut self) -> PumpEvent {
         match self.swarm.select_next_some().await {
-            SwarmEvent::ConnectionEstablished { .. } => "connection_established",
-            SwarmEvent::ConnectionClosed { .. } => "connection_closed",
-            SwarmEvent::OutgoingConnectionError { .. } => "outgoing_error",
-            SwarmEvent::IncomingConnectionError { .. } => "incoming_error",
-            SwarmEvent::NewListenAddr { .. } => "new_listen_addr",
+            SwarmEvent::ConnectionEstablished { .. } => PumpEvent::ConnectionEstablished,
+            SwarmEvent::ConnectionClosed { .. } => PumpEvent::ConnectionClosed,
+            SwarmEvent::OutgoingConnectionError { .. } => PumpEvent::OutgoingError,
+            SwarmEvent::IncomingConnectionError { .. } => PumpEvent::IncomingError,
+            SwarmEvent::NewListenAddr { .. } => PumpEvent::NewListenAddr,
             SwarmEvent::Behaviour(LeanBehaviourEvent::Gossipsub(ev)) => {
                 self.handle_gossip_event(ev)
             }
-            SwarmEvent::Behaviour(_) => "behaviour",
-            _ => "other",
+            SwarmEvent::Behaviour(_) => PumpEvent::Behaviour,
+            _ => PumpEvent::Other,
         }
     }
 
-    fn handle_gossip_event(&mut self, ev: gossipsub::Event) -> &'static str {
+    fn handle_gossip_event(&mut self, ev: gossipsub::Event) -> PumpEvent {
         match ev {
-            gossipsub::Event::Message { message, .. } => {
-                let topic = message.topic.as_str();
-                let (action, _) =
-                    crate::gossip::validate_gossip_payload(topic, &message.data, &mut self.seen_ids);
-                match action {
-                    crate::gossip::GossipAction::Accept => "gossip_accept",
-                    crate::gossip::GossipAction::Ignore => "gossip_ignore",
-                    crate::gossip::GossipAction::Reject => "gossip_reject",
-                }
+            gossipsub::Event::Message {
+                propagation_source,
+                message,
+                ..
+            } => {
+                let topic = message.topic.to_string();
+                let peer = Some(peer_fingerprint(&propagation_source));
+                let (action, plain) =
+                    crate::gossip::validate_gossip_payload(&topic, &message.data, &mut self.seen_ids);
+                let plain = match action {
+                    GossipAction::Accept => plain,
+                    _ => None,
+                };
+                PumpEvent::Gossip(GossipIngress {
+                    action,
+                    topic,
+                    peer,
+                    plain,
+                })
             }
-            gossipsub::Event::Subscribed { .. } => "gossip_subscribed",
-            gossipsub::Event::Unsubscribed { .. } => "gossip_unsubscribed",
-            _ => "gossip_other",
+            gossipsub::Event::Subscribed { .. } => PumpEvent::GossipSubscribed,
+            gossipsub::Event::Unsubscribed { .. } => PumpEvent::GossipUnsubscribed,
+            _ => PumpEvent::Other,
         }
     }
+}
+
+fn peer_fingerprint(peer: &PeerId) -> Hash32 {
+    let mut hasher = Sha256::new();
+    hasher.update(peer.to_bytes());
+    let dig = hasher.finalize();
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&dig);
+    out
 }
 
 fn build_gossipsub(keypair: &identity::Keypair) -> NetResult<gossipsub::Behaviour> {
