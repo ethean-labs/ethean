@@ -22,5 +22,5 @@ pwsh tools/release/check-leansig-vendor.ps1
 
 ## Still open
 
-- Attestation-subnet SSZ into duty/pool paths; verified SignedBlock STF
-- leanSig git dep / leanVM FFI
+- Feeding pool best-coverage into block builder / proposer duties
+- leanSig git dep / leanVM FFI (verified path fails closed until FFI links)
