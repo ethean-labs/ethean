@@ -365,16 +365,21 @@ skip_signature_verification = false
 
 ##  Monitoring & Metrics
 
-Default `start` prints tracing logs and smokes Lean `/lean/v1/health` in-process.
-Provisioned Grafana / Prometheus (`deploy/observability/`) is still planning-only; see `road-to/lean-consensus-migration/06-observability/`.
+`ethean start` exposes Prometheus scrape by default at `http://127.0.0.1:9100/metrics`
+(`--no-metrics` to disable). Long-run path matches Ream/ethlambda Grafana practice:
 
 ```bash
-# Long-running node (Ctrl-C to stop); default label is pq-devnet-4
+# Terminal A — keep the node up (Ctrl-C to stop)
 ethean start --until-signal --network pq-devnet-4
 
-# Ready path when a D5 operator mesh publishes bootnodes
-ethean start --until-signal --network pq-devnet-5
+# Terminal B — Prometheus + Grafana
+./scripts/run-observability.sh
+# Windows: .\scripts\run-observability.ps1
 ```
+
+- Grafana: http://localhost:3000 → **Ethean Lean Clients Dashboard**
+- Prometheus: http://localhost:9090
+- Details: [docs/long-run-metrics-grafana-2026-09-20.md](./docs/long-run-metrics-grafana-2026-09-20.md), [deploy/observability/README.md](./deploy/observability/README.md)
 
 There is no `ethean monitor` CLI. Do not use Beacon `/eth/v1/node/health` paths.
 
