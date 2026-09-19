@@ -79,9 +79,11 @@ pub fn prepare_transport(
     })
 }
 
-/// Dial remains pending until libp2p QUIC swarm wiring lands.
+/// Dial without a bound [`crate::QuicSwarm`].
 ///
 /// For UDP path / Status reachability checks use [`crate::probe_udp_status`].
+/// With `libp2p-quic`, call [`crate::SwarmFacade::bind_quic_swarm`] then
+/// [`crate::SwarmFacade::dial_quic_peer`].
 pub fn dial_quic(_bound: &BoundTransport, multiaddr: &str) -> Result<()> {
     crate::dial::dial_quic_pending(multiaddr)
 }
