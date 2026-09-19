@@ -2,14 +2,17 @@
 
 ## Verdict
 
-pq-devnet-5 is **in progress** on [leanroadmap.org](https://leanroadmap.org/) (not a finished public mesh with published bootnodes). Ethean defaults `start` to that **network label** and dials only operator-supplied QUIC multiaddrs.
+pq-devnet-5 is the **current generation target**. leanroadmap still labels the card **Planned**, but leanSpec Type-2 work is merged and peers have been running private interop. There is **no** finished public mesh with published bootnodes. Ethean defaults `start` to that **network label** and dials only operator-supplied QUIC multiaddrs.
+
+Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-5-research-refresh-2026-09-19.md).
 
 ## Peer baseline
 
 | Name | Use |
 | --- | --- |
 | Zeam | Primary Zig reference (devnet5 release shape, static nodes/ENR) |
-| Ream | Primary Rust reference (`devnet5` feature, `--bootnodes`) |
+| Ream | Primary Rust reference (`devnet5` feature, `--bootnodes`, Hive) |
+| ethlambda | Type-2 performance / interop notes |
 | Peam | Secondary; older aggregation surfaces — not pin authority |
 | Beam | Historical Lean name only |
 
@@ -20,12 +23,14 @@ pq-devnet-5 is **in progress** on [leanroadmap.org](https://leanroadmap.org/) (n
 3. Root README Quick Start rewritten for real `ethean` binary
 4. Clear offline warning when bootnode list is empty
 
-## Follow-ups
+## Follow-ups (D5-focused)
 
-- ~~Pin genesis fork digest to leanSpec (replace interim SHA-256 fork segment)~~ — **override path landed** (`--fork-digest` / env / file); still need the operator/leanSpec pin value for a live run.
-- leanSig + leanVM production gates
-- Status / blocks-by-root **stream** exchange — Status request_response wire + boot flush landed; response ingest + blocks-by-root stream still open
-- Goldfish only when leanSpec for the run requires it
+- Fork digest override landed; still need the operator/leanSpec pin value for a live run.
+- leanSig + leanVM production gates (**Type-1 merge + Type-2 prove/verify/split**).
+- Status / blocks-by-root stream exchange — Status wire + boot flush landed; response ingest + blocks-by-root still open.
+- Decode/validate D5 block body: single Type-2 proof + re-agg cache from split.
+- Hive / leanSpec fixture consumer for matrix inclusion.
+- Goldfish / PQ heartbeat **only** when leanSpec for the run requires it (may be D6).
 
 ## Sprint landings (Status sync)
 

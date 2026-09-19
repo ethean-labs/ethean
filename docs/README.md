@@ -68,6 +68,7 @@ Planning session summaries:
 - [Type-2 proposer Sidecar policy](./type2-proposer-sidecar-policy-2026-09-19.md)
 - [Remote proposer sidecar verify on gossip](./remote-proposer-sidecar-verify-2026-09-19.md)
 - [Working-client pq-devnet-5 plan](./working-client-pq-devnet-5-plan-2026-09-19.md)
+- [pq-devnet-5 research refresh (status + links)](./pq-devnet-5-research-refresh-2026-09-19.md)
 - [Start pq-devnet-5 network target](./start-pq-devnet-5-network-target-2026-09-19.md)
 - [Fork digest override and local Status](./fork-digest-local-status-2026-09-19.md)
 - [Status handshake outboxes (Status + blocks-by-root staging)](./status-handshake-outbox-2026-09-19.md)
