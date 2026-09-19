@@ -1,7 +1,9 @@
 //! Path-backed store open (RocksDB when feature enabled).
 
 use crate::db::Database;
-use crate::error::{Result, StorageError};
+use crate::error::Result;
+#[cfg(any(test, not(feature = "rocksdb")))]
+use crate::error::StorageError;
 use std::path::Path;
 
 /// Attempt to open a path-backed store.
