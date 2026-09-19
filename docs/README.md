@@ -34,6 +34,7 @@ Planning session summaries:
 - [Phase 07 XMSS signer safety](./lean-consensus-migration-phase-07-xmss-signer-2026-09-19.md)
 - [Phase 08 leanVM aggregation](./lean-consensus-migration-phase-08-leanvm-aggregation-2026-09-19.md)
 - [Phase 09 validator and node duties](./lean-consensus-migration-phase-09-validator-duties-2026-09-19.md)
+- [Phase 10 QUIC gossip and req/resp](./lean-consensus-migration-phase-10-quic-gossip-2026-09-19.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
 
 Protocol evidence tree: [`../spec/README.md`](../spec/README.md).
