@@ -1450,6 +1450,7 @@ name = "ethean-storage"
 version = "0.1.0"
 dependencies = [
  "ethean-primitives",
+ "sha2",
  "thiserror 1.0.69",
 ]
 
@@ -1457,6 +1458,7 @@ dependencies = [
 name = "ethean-sync"
 version = "0.1.0"
 dependencies = [
+ "ethean-network-wire",
  "ethean-primitives",
  "thiserror 1.0.69",
 ]
