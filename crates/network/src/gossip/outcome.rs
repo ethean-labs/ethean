@@ -6,10 +6,16 @@ use ethean_primitives::Hash32;
 /// One drained swarm event after optional gossip validation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PumpEvent {
-    /// QUIC connection opened.
-    ConnectionEstablished,
-    /// QUIC connection closed.
-    ConnectionClosed,
+    /// QUIC connection opened (peer fingerprint when known).
+    ConnectionEstablished {
+        /// SHA-256 of PeerId bytes when available.
+        peer: Option<Hash32>,
+    },
+    /// QUIC connection closed (peer fingerprint when known).
+    ConnectionClosed {
+        /// SHA-256 of PeerId bytes when available.
+        peer: Option<Hash32>,
+    },
     /// Outbound dial failed.
     OutgoingError,
     /// Inbound connection failed.
@@ -45,8 +51,8 @@ impl PumpEvent {
     /// Stable short label for logs and legacy callers.
     pub fn kind_label(&self) -> &'static str {
         match self {
-            Self::ConnectionEstablished => "connection_established",
-            Self::ConnectionClosed => "connection_closed",
+            Self::ConnectionEstablished { .. } => "connection_established",
+            Self::ConnectionClosed { .. } => "connection_closed",
             Self::OutgoingError => "outgoing_error",
             Self::IncomingError => "incoming_error",
             Self::NewListenAddr => "new_listen_addr",
