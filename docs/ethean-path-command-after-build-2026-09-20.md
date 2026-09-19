@@ -16,7 +16,8 @@ an `install.sh` / `cargo install` step, and without documenting
 - The shim prefers `target/release/ethean`, then `target/debug/ethean`, under
   the workspace root discovered from `CARGO_MANIFEST_DIR`.
 - If the shim cannot be written, the build still succeeds and emits a cargo
-  warning.
+  warning. Successful shim writes stay quiet (no `cargo:warning=`), so a
+  normal build does not look like a failure.
 
 ## Docs
 
