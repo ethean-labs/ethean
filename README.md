@@ -91,9 +91,15 @@ cargo test
 
 ##  Quick Start
 
-Binary name is `ethean` (crate `ethean`). Default network label is **`pq-devnet-5`**.
-leanroadmap lists that generation as **in progress**; there is no permanent public bootnode list.
-Without `--bootnodes` / `ETHEAN_BOOTNODES` / `config/networks/pq-devnet-5.bootnodes`, the node runs **offline** under that label (local smoke duties).
+Binary name is `ethean` (crate `ethean`).
+
+**Operational default:** `--network pq-devnet-4` (D5 has no public always-on mesh yet).
+**Ready path kept:** `--network pq-devnet-5` plus `config/networks/pq-devnet-5.bootnodes` /
+`pq-devnet-5.forkdigest` and `scripts/run-pq-devnet-5.*` — flip when operators publish multiaddrs.
+
+Without bootnodes (`--bootnodes` / `ETHEAN_BOOTNODES` / the matching
+`config/networks/<label>.bootnodes` file), the node runs **offline** under that label
+(local smoke duties).
 
 ### Build
 
@@ -104,7 +110,7 @@ cargo build -p ethean --release
 After that build, the command is `ethean` (Windows and Linux). The build script
 places a shim in `~/.cargo/bin`; no `install.sh` step.
 
-### Run (local / offline pq-devnet-5 label)
+### Run (default: pq-devnet-4)
 
 ```bash
 ethean version
@@ -112,22 +118,58 @@ ethean start
 ethean start --ticks 3
 ethean start --ticks 2 --wall-clock
 ethean start --until-signal
+ethean start --network pq-devnet-4
 ethean start --network local
 ```
 
-### Join an operator mesh (when you have multiaddrs)
+Helpers (build + long-run):
+
+```bash
+# Unix
+./scripts/run-pq-devnet-4.sh
+
+# Windows PowerShell
+.\scripts\run-pq-devnet-4.ps1
+```
+
+Paste D4 QUIC multiaddrs into `config/networks/pq-devnet-4.bootnodes` (or pass
+`--bootnodes` / `ETHEAN_BOOTNODES`) before expecting a live mesh dial.
+
+### Join an operator mesh (pq-devnet-4)
 
 ```bash
 # Paste operator QUIC multiaddrs into the file, or pass them on the CLI:
-ethean start --until-signal --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
+ethean start --until-signal --network pq-devnet-4 \
+  --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
 
 # Match operator gossip digest when they publish one (8 hex chars):
-ethean start --until-signal --fork-digest aabbccdd --bootnodes '…'
+ethean start --until-signal --network pq-devnet-4 \
+  --fork-digest aabbccdd --bootnodes '…'
 
-# Or:
-#   set ETHEAN_BOOTNODES=/ip4/…/udp/…/quic-v1/p2p/…
-#   edit config/networks/pq-devnet-5.bootnodes
+# Or edit config/networks/pq-devnet-4.bootnodes and:
+ethean start --until-signal --network pq-devnet-4
+```
+
+### Ready path: pq-devnet-5 (keep prepared)
+
+Same binary and sync/crypto stack. Use when an operator D5 run publishes bootnodes:
+
+```bash
+# Explicit D5 label (not the CLI default while D5 is unreachable)
 ethean start --until-signal --network pq-devnet-5
+
+ethean start --until-signal --network pq-devnet-5 \
+  --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…' \
+  --fork-digest aabbccdd
+
+# File-based (preferred for long runs):
+#   edit config/networks/pq-devnet-5.bootnodes
+#   edit config/networks/pq-devnet-5.forkdigest
+ethean start --until-signal --network pq-devnet-5
+
+# Helpers
+./scripts/run-pq-devnet-5.sh
+# Windows: .\scripts\run-pq-devnet-5.ps1
 ```
 
 ### What you will see
@@ -136,7 +178,7 @@ ethean start --until-signal --network pq-devnet-5
 - There is **no** `ethean monitor` subcommand and no Grafana UI in this binary yet.
 - Health surface used internally: Lean `/lean/v1/…` (not Beacon `/eth/v1`).
 
-More detail: [docs/deployment.md](docs/deployment.md), [docs/ethean-path-command-after-build-2026-09-20.md](docs/ethean-path-command-after-build-2026-09-20.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](docs/working-client-pq-devnet-5-plan-2026-09-19.md), [docs/pq-devnet-5-research-refresh-2026-09-19.md](docs/pq-devnet-5-research-refresh-2026-09-19.md), [docs/blocks-by-range-quic-stream-2026-09-19.md](docs/blocks-by-range-quic-stream-2026-09-19.md).
+More detail: [docs/deployment.md](docs/deployment.md), [docs/ethean-path-command-after-build-2026-09-20.md](docs/ethean-path-command-after-build-2026-09-20.md), [docs/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](docs/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](docs/working-client-pq-devnet-5-plan-2026-09-19.md), [docs/pq-devnet-5-research-refresh-2026-09-19.md](docs/pq-devnet-5-research-refresh-2026-09-19.md), [docs/blocks-by-range-quic-stream-2026-09-19.md](docs/blocks-by-range-quic-stream-2026-09-19.md).
 
 ### Validator stub
 
@@ -312,7 +354,10 @@ Default `start` prints tracing logs and smokes Lean `/lean/v1/health` in-process
 Provisioned Grafana / Prometheus (`deploy/observability/`) is still planning-only; see `road-to/lean-consensus-migration/06-observability/`.
 
 ```bash
-# Long-running node (Ctrl-C to stop); watch the terminal for dial + duty logs
+# Long-running node (Ctrl-C to stop); default label is pq-devnet-4
+ethean start --until-signal --network pq-devnet-4
+
+# Ready path when a D5 operator mesh publishes bootnodes
 ethean start --until-signal --network pq-devnet-5
 ```
 
