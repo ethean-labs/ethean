@@ -18,15 +18,18 @@ Requires the workspace Rust toolchain (see `rust-toolchain.toml`). Do not use le
 ./target/release/ethean start --ticks 3
 ./target/release/ethean start --ticks 2 --wall-clock
 ./target/release/ethean start --until-signal
+./target/release/ethean start --data-dir ./ethean-data
+./target/release/ethean validator
 ```
 
 `start` (default) loads `lstar_devnet`, opens Lean in-memory storage, binds an ephemeral UDP
 listen for the QUIC facade, smokes `/lean/v1/health`, runs a finite **elapsed** duty loop, then
 drains. `--wall-clock` samples the system clock between ticks. `--until-signal` runs until Ctrl-C.
+`--data-dir` uses `ethean_storage::open_path` (requires a build with `ethean-storage/rocksdb`).
 
-Path-backed RocksDB: enable `ethean-storage/rocksdb` and call `ethean_storage::open_path` (needs
-native libclang/rocksdb build deps). libp2p QUIC dial/swarm and leanSig/leanVM FFI remain
-fail-closed until those backends link.
+UDP Status path probes are available via `probe_udp_status` (reachability only). libp2p QUIC-v1
+swarm dial and leanSig/leanVM FFI remain fail-closed until those backends link. For RocksDB on
+Windows, run `tools/release/check-libclang.ps1` then set `LIBCLANG_PATH`.
 
 ## Config / data
 
