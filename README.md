@@ -193,7 +193,7 @@ ethean start --until-signal --network pq-devnet-5
 - There is **no** `ethean monitor` subcommand and no Grafana UI in this binary yet.
 - Health surface used internally: Lean `/lean/v1/…` (not Beacon `/eth/v1`).
 
-More detail: [docs/deployment.md](docs/deployment.md), [docs/ethean-path-command-after-build-2026-09-20.md](docs/ethean-path-command-after-build-2026-09-20.md), [docs/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](docs/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md), [docs/ream-empty-lean-peers-bootnodes-2026-09-20.md](docs/ream-empty-lean-peers-bootnodes-2026-09-20.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](docs/working-client-pq-devnet-5-plan-2026-09-19.md), [docs/pq-devnet-5-research-refresh-2026-09-19.md](docs/pq-devnet-5-research-refresh-2026-09-19.md), [docs/blocks-by-range-quic-stream-2026-09-19.md](docs/blocks-by-range-quic-stream-2026-09-19.md).
+More detail: [docs/deployment.md](docs/deployment.md), [docs/ethean-path-command-after-build-2026-09-20.md](docs/ethean-path-command-after-build-2026-09-20.md), [docs/build-path-shim-quiet-success-2026-09-20.md](docs/build-path-shim-quiet-success-2026-09-20.md), [docs/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](docs/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md), [docs/ream-empty-lean-peers-bootnodes-2026-09-20.md](docs/ream-empty-lean-peers-bootnodes-2026-09-20.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](docs/working-client-pq-devnet-5-plan-2026-09-19.md), [docs/pq-devnet-5-research-refresh-2026-09-19.md](docs/pq-devnet-5-research-refresh-2026-09-19.md), [docs/blocks-by-range-quic-stream-2026-09-19.md](docs/blocks-by-range-quic-stream-2026-09-19.md).
 
 ### Validator stub
 
