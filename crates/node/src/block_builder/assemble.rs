@@ -1,5 +1,6 @@
 //! Assemble a Type-2 `SignedBlock` envelope from a planned proposal.
 
+use crate::block_builder::type2_envelope::{assert_sidecar_invariant, wire_proof_bytes};
 use crate::block_builder::PlanTransition;
 use ethean_network::LeanGossipTopics;
 use ethean_primitives::Hash32;
@@ -16,16 +17,20 @@ pub struct ProposalGossip {
     pub block_root: Hash32,
     /// True when the envelope carries a non-empty pool Type-2 proof.
     pub has_type2_proof: bool,
-    /// Length of the local proposer signature when present (not embedded as Type-2).
+    /// Length of the local proposer signature when present (sidecar; not in Type-2).
     pub proposer_sig_len: usize,
 }
 
 /// Wrap a plan as `SignedBlock` (proof may be empty → remote uses structural STF).
 ///
-/// Proposer signatures stay off the Type-2 field until leanVM aggregation is linked;
-/// embedding a raw XMSS/HMAC sig as Type-2 would fail-closed on remote verify.
+/// Proposer XMSS stays off the Type-2 field under [`crate::block_builder::PROPOSER_TYPE2_POLICY`].
 pub fn assemble_signed_block(plan: &PlanTransition) -> Result<SignedBlock, String> {
-    let proof = MultiMessageAggregate::new(plan.aggregate_proof.clone()).map_err(|e| e.to_string())?;
+    assert_sidecar_invariant(plan)?;
+    let proof_bytes = wire_proof_bytes(
+        &plan.aggregate_proof,
+        plan.proposer_signature.as_deref(),
+    );
+    let proof = MultiMessageAggregate::new(proof_bytes).map_err(|e| e.to_string())?;
     Ok(SignedBlock::new(plan.block.clone(), proof))
 }
 
