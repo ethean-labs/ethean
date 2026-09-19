@@ -4,7 +4,7 @@
 pub const CONSTRUCTION: &str = "leanSpec_internal_xmss";
 
 /// leanSig pin used for the production backend (when enabled).
-pub const LEANSIG_REV: &str = "15cbdd43ec8525aa43fea2f42cafc5ed366084ae";
+pub const LEANSIG_REV: &str = "c08a3bae74b0d85379cab72dcbefa4091546ecbb";
 
 /// Base-2 log of lifetime (2^32 epochs).
 pub const LOG_LIFETIME: u32 = 32;
