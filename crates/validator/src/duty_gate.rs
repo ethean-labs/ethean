@@ -2,6 +2,12 @@
 
 use ethean_primitives::Slot;
 
+/// Default max head lag before duties are suppressed (leanSpec / PQ Interop sync-lag gate).
+///
+/// Interop #37 / leanSpec #689 direction: skip attestation and proposal when local head
+/// trails wall clock by more than this many slots.
+pub const SYNC_LAG_THRESHOLD_SLOTS: u64 = 4;
+
 /// Reasons a duty must not sign or publish.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SuppressReason {
@@ -76,7 +82,7 @@ mod tests {
             profile_matches: true,
             signer_safe: true,
             head_lag_slots: 0,
-            max_head_lag_slots: 2,
+            max_head_lag_slots: SYNC_LAG_THRESHOLD_SLOTS,
         }
     }
 
@@ -95,7 +101,14 @@ mod tests {
     #[test]
     fn suppresses_head_lag() {
         let mut v = ok_view();
-        v.head_lag_slots = 5;
+        v.head_lag_slots = SYNC_LAG_THRESHOLD_SLOTS.saturating_add(1);
         assert_eq!(evaluate_gate(&v), Err(SuppressReason::HeadLagExceeded));
+    }
+
+    #[test]
+    fn allows_lag_at_threshold() {
+        let mut v = ok_view();
+        v.head_lag_slots = SYNC_LAG_THRESHOLD_SLOTS;
+        assert!(evaluate_gate(&v).is_ok());
     }
 }
