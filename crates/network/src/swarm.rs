@@ -160,6 +160,39 @@ impl SwarmFacade {
         Ok(sent)
     }
 
+    /// Flush staged blocks-by-root outbox payloads over Lean req/resp streams.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn flush_blocks_outbox(&mut self) -> Result<usize> {
+        let Some(swarm) = self.quic.as_mut() else {
+            return Err(NetworkError::TransportPending(
+                "bind_quic_swarm before flush_blocks_outbox",
+            ));
+        };
+        let pending = std::mem::take(&mut self.blocks_outbox);
+        let mut sent = 0;
+        for req in pending {
+            swarm.send_blocks_by_root_request(req.peer, req.payload)?;
+            sent += 1;
+        }
+        if sent > 0 {
+            self.note_progress();
+        }
+        Ok(sent)
+    }
+
+    /// Cache a block body for inbound blocks-by-root replies.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn put_block_bytes(&mut self, root: ethean_primitives::Hash32, bytes: Vec<u8>) -> Result<()> {
+        let Some(swarm) = self.quic.as_mut() else {
+            return Err(NetworkError::TransportPending(
+                "bind_quic_swarm before put_block_bytes",
+            ));
+        };
+        swarm.put_block_bytes(root, bytes);
+        self.note_progress();
+        Ok(())
+    }
+
     /// Stage encoded Status requests for later stream send.
     pub fn enqueue_status_outbounds(&mut self, reqs: Vec<OutboundStatusRequest>) {
         self.status_outbox.extend(reqs);
