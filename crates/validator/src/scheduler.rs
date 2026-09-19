@@ -31,7 +31,7 @@ pub fn tick_from_elapsed_ms(elapsed_ms: u64, profile: &ChainProfile, generation:
 
 /// Advance one interval; wraps to the next slot when needed.
 pub fn advance_tick(tick: DutyTick, profile: &ChainProfile) -> DutyTick {
-    let max_i = profile.intervals_per_slot.saturating_sub(1);
+    let max_i = (profile.intervals_per_slot.saturating_sub(1)).min(u64::from(u8::MAX)) as u8;
     if tick.interval < max_i {
         DutyTick {
             slot: tick.slot,
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn five_intervals_per_four_second_slot() {
-        let p = lstar_devnet();
+        let p = lstar_devnet().expect("lstar preset");
         assert_eq!(p.milliseconds_per_slot, 4000);
         assert_eq!(p.intervals_per_slot, 5);
         let t0 = tick_from_elapsed_ms(0, &p, 1);
@@ -77,12 +77,13 @@ mod tests {
 
     #[test]
     fn dedupes_repeats() {
+        let p = lstar_devnet().expect("lstar preset");
         let t = DutyTick {
             slot: Slot::new(1),
             interval: 0,
             generation: 1,
         };
         assert!(!should_process(Some(t), t));
-        assert!(should_process(Some(t), advance_tick(t, &lstar_devnet())));
+        assert!(should_process(Some(t), advance_tick(t, &p)));
     }
 }
