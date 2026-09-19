@@ -39,19 +39,24 @@ Skip Grafana until WSL is healthy. See also
 
 ## Fix WSL / Docker Desktop (operator)
 
-1. Quit Docker Desktop completely (tray icon → Quit).
-2. Admin PowerShell:
-   - `wsl --shutdown`
-   - `wsl --update`
-   - If still broken: **Settings → Apps → Windows Subsystem for Linux** repair,
-     or reinstall WSL (`wsl --install` after optional feature enable).
-3. Enable **Virtual Machine Platform** and **Windows Subsystem for Linux**
-   (optional features), reboot if Windows asks.
-4. Start Docker Desktop; wait until status is **Running**.
-5. Confirm:
-   - `wsl --version` prints a version
-   - `docker info` succeeds
-6. Then: `.\scripts\run-observability.ps1` or `ethean start ... --metrics`.
+If even `wsl --update` fails with **Sistem dosyaya erişemiyor**, the Store
+package is corrupt (`NeedsRemediation`). Do **not** keep retrying
+`wsl --update` — follow
+[wsl-needsremediation-repair-2026-09-20.md](wsl-needsremediation-repair-2026-09-20.md).
+
+Short path (elevated PowerShell, Docker Desktop quit first):
+
+```powershell
+Get-AppxPackage MicrosoftCorporationII.WindowsSubsystemForLinux | Remove-AppxPackage
+winget install --id Microsoft.WSL -e --accept-package-agreements --accept-source-agreements
+# reboot, then:
+wsl --version
+```
+
+Or: **Settings → Apps → Windows Subsystem for Linux → Advanced → Repair/Reset**.
+
+Then start Docker Desktop; wait until status is **Running**; confirm
+`docker info` has a Server section; run `.\scripts\run-observability.ps1`.
 
 If Docker Desktop is not installed at all, install it from
 [Docker’s Windows install page](https://docs.docker.com/desktop/setup/install/windows-install/)
