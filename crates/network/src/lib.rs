@@ -9,6 +9,7 @@ pub mod gossip;
 pub mod identity;
 pub mod multiaddr;
 pub mod peer_manager;
+pub mod quic_swarm;
 pub mod reqresp;
 pub mod swarm;
 pub mod transport;
@@ -23,6 +24,8 @@ pub use gossip::{
 pub use identity::NodeIdentity;
 pub use multiaddr::{parse_quic_udp, QuicUdpAddr};
 pub use peer_manager::{PeerManager, PeerRecord};
+#[cfg(feature = "libp2p-quic")]
+pub use quic_swarm::QuicSwarm;
 pub use reqresp::{handle_status, RequestTracker, StatusExchange};
 pub use swarm::SwarmFacade;
 pub use transport::{
