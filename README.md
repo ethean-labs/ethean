@@ -118,6 +118,9 @@ cargo build -p ethean --release
 # Paste operator QUIC multiaddrs into the file, or pass them on the CLI:
 ./target/release/ethean start --until-signal --bootnodes '/ip4/…/udp/…/quic-v1/p2p/…'
 
+# Match operator gossip digest when they publish one (8 hex chars):
+./target/release/ethean start --until-signal --fork-digest aabbccdd --bootnodes '…'
+
 # Or:
 #   set ETHEAN_BOOTNODES=/ip4/…/udp/…/quic-v1/p2p/…
 #   edit config/networks/pq-devnet-5.bootnodes
