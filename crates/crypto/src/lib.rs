@@ -28,7 +28,7 @@ pub use backend::{CryptoBackend, ProductionBackend, SecretKeyMaterial};
 #[cfg(any(test, feature = "test-hmac"))]
 pub use backend::TestHmacBackend;
 pub use error::{CryptoError, Result};
-pub use ffi_status::{BackendGap, FfiStatus, LeanVmGate};
+pub use ffi_status::{BackendGap, FfiStatus, LeanSigGate, LeanVmGate};
 pub use hash::{domain_digest, signature_hash, signing_root_digest, Digest32};
 pub use signature::{verify, PublicKey, Signature};
 pub use xmss::{
