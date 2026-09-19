@@ -24,6 +24,7 @@ pub mod gossip_ingest;
 pub mod gossip_pool;
 pub mod gossip_stf;
 pub mod local_proposer;
+pub mod local_status;
 pub mod network;
 pub mod network_target;
 pub mod observability;
