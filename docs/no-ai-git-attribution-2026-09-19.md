@@ -51,6 +51,8 @@ If you also use Cursor CLI, set in `~/.cursor/cli-config.json`:
 
 Hosted / cloud agent commits may still force a Cursor author identity; IDE toggles do not fully cover that path. Prefer local agent commits for this repository.
 
-## Note on older commits
+## Unpublished history scrub (2026-09-19)
 
-Existing history already contains `Co-authored-by: Cursor <cursoragent@cursor.com>` on many commits. This change stops new ones. Rewriting old history is out of scope unless explicitly requested.
+All **unpublished** commits (`origin/master..HEAD`, 625 commits) were message-rewritten to drop Cursor trailers / `cursoragent@cursor.com`. Trees, authors (`Paro <pamenarti@gmail.com>`), dates, and file contents were kept. `origin/master` was not rewritten (about 25 older pushed commits may still carry the trailer; changing those would need a force push).
+
+Safety ref (local only): `backup/pre-cursor-trailer-scrub-2` points at the pre-scrub tip. Details: [scrub-unpublished-cursor-trailers-2026-09-19.md](./scrub-unpublished-cursor-trailers-2026-09-19.md).
