@@ -8,6 +8,8 @@ pub mod error;
 pub mod prune;
 pub mod recovery;
 pub mod rocks;
+#[cfg(feature = "rocksdb")]
+pub mod rocks_store;
 pub mod schema;
 pub mod tables;
 
