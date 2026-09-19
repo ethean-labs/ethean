@@ -1,0 +1,19 @@
+schema = "ethean-fixture-manifest-v1"
+phase = "09"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+status = "local_unit_coverage"
+
+[[suites]]
+name = "duty-gate"
+authority = "crates/validator/src/duty_gate.rs"
+cases = ["healthy", "syncing", "head_lag"]
+
+[[suites]]
+name = "scheduler"
+authority = "crates/validator/src/scheduler.rs"
+cases = ["five_intervals", "dedupe"]
+
+[[suites]]
+name = "duty-flows"
+authority = "crates/validator"
+cases = ["attester_suppress", "proposer_late_interval", "aggregator_coverage"]
