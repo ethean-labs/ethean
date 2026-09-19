@@ -76,6 +76,20 @@ pub fn publish_pending_block(
     }
 }
 
+/// Flush pending gossip and map success to [`crate::events::ChainEvent::ProposalPublished`].
+pub fn flush_pending_event(
+    facade: &mut SwarmFacade,
+    owner: &mut ChainOwner,
+) -> Result<Option<crate::events::ChainEvent>> {
+    Ok(publish_pending_block(facade, owner)?.map(|p| {
+        crate::events::ChainEvent::ProposalPublished {
+            topic: p.topic,
+            payload_len: p.payload_len,
+            has_type2_proof: p.has_type2_proof,
+        }
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
