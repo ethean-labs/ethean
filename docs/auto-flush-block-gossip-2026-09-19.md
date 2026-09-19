@@ -25,6 +25,6 @@ cargo test -p ethean-node --lib
 
 ## Still open
 
-- XMSS/proposer signing into the Type-2 envelope (pool proof remains best-effort)
-- leanVM FFI so non-empty proofs verify on ingest
-- leanSig clean git dependency
+- Fold proposer sig + attestation aggregates into a real leanVM Type-2 envelope
+- Production leanSig backend (`leansig-backend` feature) instead of test-hmac smoke keys
+- leanVM FFI so non-empty Type-2 proofs verify on ingest
