@@ -10,27 +10,30 @@ Metrics prefix: `ethean_` (`ethean-metrics`).
 | http://127.0.0.1:9100/readyz | `200` + `ready` (or `503` while booting) |
 | http://127.0.0.1:9100/metrics | Prometheus text |
 
-Disable with `--no-metrics`. Bind: `--metrics-address` / `--metrics-port`.
+Scrape HTTP is on by default. Disable with `--no-metrics`.
+Bind: `--metrics-address` / `--metrics-port`.
 
-`ethean start` does **not** bind Grafana (`:3000`) or Prometheus (`:9090`).
+## Grafana + Prometheus UI
 
-## Long-run (two terminals)
+Needs **Docker Desktop** (or Engine + Compose). Start with:
 
 ```text
-# A — node (scrape on :9100)
-ethean start --network pq-devnet-4 --until-signal
-
-# B — UI stack (requires Docker Desktop)
-.\scripts\run-observability.ps1
+ethean start --network pq-devnet-4 --until-signal --metrics
 ```
 
-- Grafana: http://localhost:3000 → **Ethean Lean Clients Dashboard**
-- Prometheus: http://localhost:9090
-- Targets: http://localhost:9090/targets
+Or separately: `.\scripts\run-observability.ps1`
+
+| Service | URL |
+| --- | --- |
+| Grafana | http://localhost:3000 — **Ethean Lean Clients Dashboard** |
+| Prometheus | http://localhost:9090 |
+| Targets | http://localhost:9090/targets |
+
+Without Docker, `:3000` / `:9090` stay down; `:9100/metrics` from the binary still works.
 
 Lean JSON-RPC HTTP on `:5052` is not bound yet; operator health checks use the
 metrics URLs above. In-process smoke still validates `GET /lean/v1/health`.
 
 See root [README.md](../README.md#monitoring--metrics),
-[grafana-prometheus-need-docker-2026-09-20.md](./grafana-prometheus-need-docker-2026-09-20.md),
+[metrics-flag-starts-grafana-prometheus-2026-09-20.md](./metrics-flag-starts-grafana-prometheus-2026-09-20.md),
 and [long-run-metrics-grafana-2026-09-20.md](./long-run-metrics-grafana-2026-09-20.md).
