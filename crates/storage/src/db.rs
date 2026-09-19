@@ -1,4 +1,4 @@
-//! In-memory durable store with schema gate and flush-before-publish.
+//! Durable store with in-memory default and optional RocksDB engine.
 
 use crate::batch::{apply_puts, BatchPut, WriteBatch};
 use crate::error::{Result, StorageError};
@@ -7,7 +7,10 @@ use ethean_primitives::Hash32;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 
-/// Opened database handle (process-local; RocksDB backend deferred).
+#[cfg(feature = "rocksdb")]
+use crate::rocks_store::RocksEngine;
+
+/// Opened database handle.
 #[derive(Debug)]
 pub struct Database {
     schema_id: String,
@@ -15,16 +18,34 @@ pub struct Database {
     data: HashMap<(String, Vec<u8>), (Vec<u8>, Hash32)>,
     /// Highest signer watermark leaf (never rewind on chain rollback).
     signer_watermark: u64,
+    #[cfg(feature = "rocksdb")]
+    rocks: Option<RocksEngine>,
 }
 
 impl Database {
-    /// Open or create with pinned schema.
+    /// Open or create an in-memory store with pinned schema.
     pub fn open() -> Result<Self> {
         Ok(Self {
             schema_id: SCHEMA_ID.to_string(),
             schema_version: SCHEMA_VERSION,
             data: HashMap::new(),
             signer_watermark: 0,
+            #[cfg(feature = "rocksdb")]
+            rocks: None,
+        })
+    }
+
+    /// Open a path-backed RocksDB store (requires `rocksdb` feature).
+    #[cfg(feature = "rocksdb")]
+    pub fn open_rocks(path: &std::path::Path) -> Result<Self> {
+        let rocks = RocksEngine::open(path)?;
+        let signer_watermark = rocks.load_watermark()?;
+        Ok(Self {
+            schema_id: SCHEMA_ID.to_string(),
+            schema_version: SCHEMA_VERSION,
+            data: HashMap::new(),
+            signer_watermark,
+            rocks: Some(rocks),
         })
     }
 
@@ -47,10 +68,16 @@ impl Database {
         Sha256::digest(value).into()
     }
 
-    /// Apply a batch and mark it flushed (simulates fsync success).
+    /// Apply a batch and mark it flushed.
     pub fn commit(&mut self, batch: &mut WriteBatch) -> Result<()> {
         self.verify_schema()?;
         let puts = batch.take_puts();
+        #[cfg(feature = "rocksdb")]
+        if let Some(rocks) = self.rocks.as_ref() {
+            rocks.commit_puts(&puts)?;
+            batch.mark_flushed();
+            return Ok(());
+        }
         apply_puts(&mut self.data, &puts);
         batch.mark_flushed();
         Ok(())
@@ -58,6 +85,10 @@ impl Database {
 
     /// Read a value if present and checksum matches.
     pub fn get(&self, table: &str, key: &[u8]) -> Result<Option<Vec<u8>>> {
+        #[cfg(feature = "rocksdb")]
+        if let Some(rocks) = self.rocks.as_ref() {
+            return rocks.get(table, key);
+        }
         match self.data.get(&(table.to_string(), key.to_vec())) {
             None => Ok(None),
             Some((value, sum)) => {
@@ -94,12 +125,28 @@ impl Database {
             ));
         }
         self.signer_watermark = leaf;
+        #[cfg(feature = "rocksdb")]
+        if let Some(rocks) = self.rocks.as_ref() {
+            rocks.store_watermark(leaf)?;
+        }
         Ok(())
     }
 
     /// Current signer watermark.
     pub fn signer_watermark(&self) -> u64 {
         self.signer_watermark
+    }
+
+    /// True when backed by RocksDB.
+    pub fn is_rocks(&self) -> bool {
+        #[cfg(feature = "rocksdb")]
+        {
+            return self.rocks.is_some();
+        }
+        #[cfg(not(feature = "rocksdb"))]
+        {
+            false
+        }
     }
 }
 
