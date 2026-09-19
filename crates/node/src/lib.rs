@@ -23,6 +23,7 @@ pub mod gossip_decode;
 pub mod gossip_ingest;
 pub mod gossip_pool;
 pub mod gossip_stf;
+pub mod local_proposer;
 pub mod network;
 pub mod observability;
 pub mod shutdown;
