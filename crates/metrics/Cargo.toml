@@ -10,6 +10,8 @@ description = "Lean Consensus leanMetrics / observability (Phase 12)"
 [dependencies]
 ethean-primitives = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
 
 [lib]
 name = "ethean_metrics"
