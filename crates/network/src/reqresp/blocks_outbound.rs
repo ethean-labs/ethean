@@ -2,7 +2,8 @@
 
 use crate::error::Result;
 use crate::reqresp::blocks_by_root::{
-    blocks_by_root_for_status_gap, blocks_by_root_protocol_id, encode_blocks_by_root,
+    blocks_by_root_for_roots, blocks_by_root_for_status_gap, blocks_by_root_protocol_id,
+    encode_blocks_by_root,
 };
 use crate::reqresp::tracker::{RequestId, RequestTracker};
 use ethean_network_wire::Status;
@@ -29,6 +30,24 @@ pub fn prepare_blocks_by_root_outbound(
     tracker: &mut RequestTracker,
 ) -> Result<Option<OutboundBlocksByRootRequest>> {
     let Some(req) = blocks_by_root_for_status_gap(local_head, remote)? else {
+        return Ok(None);
+    };
+    let request_id = tracker.insert(peer);
+    Ok(Some(OutboundBlocksByRootRequest {
+        peer,
+        request_id,
+        protocol_id: blocks_by_root_protocol_id(),
+        payload: encode_blocks_by_root(&req),
+    }))
+}
+
+/// Build an outbound request for explicit missing roots (parent multi-hop catch-up).
+pub fn prepare_blocks_by_root_for_roots(
+    peer: Hash32,
+    roots: Vec<Hash32>,
+    tracker: &mut RequestTracker,
+) -> Result<Option<OutboundBlocksByRootRequest>> {
+    let Some(req) = blocks_by_root_for_roots(roots)? else {
         return Ok(None);
     };
     let request_id = tracker.insert(peer);

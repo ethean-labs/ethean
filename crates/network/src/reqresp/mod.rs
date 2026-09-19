@@ -9,9 +9,12 @@ mod status_session;
 mod tracker;
 
 pub use blocks_by_root::{
-    blocks_by_root_for_status_gap, blocks_by_root_protocol_id, encode_blocks_by_root,
+    blocks_by_root_for_roots, blocks_by_root_for_status_gap, blocks_by_root_protocol_id,
+    encode_blocks_by_root,
 };
-pub use blocks_outbound::{prepare_blocks_by_root_outbound, OutboundBlocksByRootRequest};
+pub use blocks_outbound::{
+    prepare_blocks_by_root_for_roots, prepare_blocks_by_root_outbound, OutboundBlocksByRootRequest,
+};
 pub use blocks_response::{decode_blocks_by_root_response, encode_blocks_by_root_response};
 pub use handler::{handle_status, StatusExchange};
 pub use status_outbound::{prepare_status_outbounds, OutboundStatusRequest};

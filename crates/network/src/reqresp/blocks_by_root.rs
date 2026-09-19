@@ -22,6 +22,25 @@ pub fn blocks_by_root_for_status_gap(
         .map_err(|e| NetworkError::Handshake(e.to_string()))
 }
 
+/// Build a blocks-by-root request for an explicit root list (parent catch-up).
+pub fn blocks_by_root_for_roots(roots: Vec<Hash32>) -> Result<Option<BlocksByRootRequest>> {
+    let mut uniq = Vec::new();
+    for r in roots {
+        if r == Hash32::default() {
+            continue;
+        }
+        if !uniq.contains(&r) {
+            uniq.push(r);
+        }
+    }
+    if uniq.is_empty() {
+        return Ok(None);
+    }
+    BlocksByRootRequest::new(uniq)
+        .map(Some)
+        .map_err(|e| NetworkError::Handshake(e.to_string()))
+}
+
 /// Encode a blocks-by-root request as length-prefixed roots (scaffold, not leanSpec SSZ yet).
 pub fn encode_blocks_by_root(req: &BlocksByRootRequest) -> Vec<u8> {
     let mut out = Vec::with_capacity(4 + req.roots.len() * 32);
@@ -70,5 +89,13 @@ mod tests {
         assert!(blocks_by_root_for_status_gap(root, &remote)
             .unwrap()
             .is_none());
+    }
+
+    #[test]
+    fn roots_helper_dedupes_and_skips_zero() {
+        let req = blocks_by_root_for_roots(vec![[0u8; 32], [5u8; 32], [5u8; 32]])
+            .unwrap()
+            .expect("roots");
+        assert_eq!(req.roots, vec![[5u8; 32]]);
     }
 }

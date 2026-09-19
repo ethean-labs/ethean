@@ -3,6 +3,7 @@
 use crate::aggregation::AggregatePool;
 use crate::block_builder::{PlanTransition, ProposalGossip};
 use crate::local_proposer::LocalProposer;
+use crate::sync_orphan::SyncOrphanCache;
 use ethean_primitives::{Hash32, Slot};
 use ethean_profile::ChainProfile;
 use ethean_types::State;
@@ -56,6 +57,8 @@ pub struct ChainOwner {
     pub pending_block_gossip: Option<ProposalGossip>,
     /// Optional local proposal signer (test-hmac smoke key).
     pub proposer: Option<LocalProposer>,
+    /// Sync blobs waiting for a missing parent (blocks-by-root catch-up).
+    pub sync_orphans: SyncOrphanCache,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
 }
@@ -75,6 +78,7 @@ impl Default for ChainOwner {
             planned_tick: None,
             pending_block_gossip: None,
             proposer: None,
+            sync_orphans: SyncOrphanCache::default(),
             max_head_lag_slots: 0,
         }
     }

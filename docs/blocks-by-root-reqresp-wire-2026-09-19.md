@@ -14,7 +14,9 @@ Shared framed I/O lives in `quic_framed.rs` so Status and blocks codecs stay sma
 
 ## Still open
 
-- Multi-hop parent-chain catch-up when the remote head is far ahead of local head.
+- Multi-hop parent-chain catch-up when the remote head is far ahead of local head
+  — **landed** (orphan cache + parent fetch); see
+  [blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md).
 - Persist more than the latest published proposal into the serve cache (history).
 - Operator fork digest + bootnodes still required for live pq-devnet-5 join
   ([leanroadmap.org](https://leanroadmap.org/) still lists D5 as Planned).

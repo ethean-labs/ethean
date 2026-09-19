@@ -114,19 +114,51 @@ impl EtheanClient {
             }
         }
         for (peer, payload) in &budget.blocks_by_root_responses {
-            let events = crate::blocks_sync::ingest_blocks_by_root_response(
+            let outcome = crate::blocks_sync::ingest_blocks_by_root_response(
                 &mut self.owner,
                 &mut self.shutdown,
                 self.swarm.as_mut(),
                 *peer,
                 payload,
             );
-            if !events.is_empty() {
+            if !outcome.events.is_empty() {
                 info!(
                     peer0 = peer[0],
-                    n = events.len(),
+                    n = outcome.events.len(),
+                    orphans = self.owner.sync_orphans.len(),
                     "blocks-by-root response ingested"
                 );
+            }
+            if outcome.fetch_roots.is_empty() {
+                continue;
+            }
+            let Some(facade) = self.swarm.as_mut() else {
+                continue;
+            };
+            match ethean_network::prepare_blocks_by_root_for_roots(
+                *peer,
+                outcome.fetch_roots.clone(),
+                &mut facade.requests,
+            ) {
+                Ok(Some(req)) => {
+                    let n = outcome.fetch_roots.len();
+                    facade.enqueue_blocks_outbounds(vec![req]);
+                    match facade.flush_blocks_outbox() {
+                        Ok(sent) => info!(
+                            peer0 = peer[0],
+                            parents = n,
+                            sent,
+                            "parent blocks-by-root flushed for orphan catch-up"
+                        ),
+                        Err(e) => info!(
+                            peer0 = peer[0],
+                            error = %e,
+                            "parent blocks-by-root staged; flush deferred"
+                        ),
+                    }
+                }
+                Ok(None) => {}
+                Err(e) => info!(peer0 = peer[0], error = %e, "parent fetch prepare failed"),
             }
         }
         Ok(())

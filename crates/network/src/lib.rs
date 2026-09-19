@@ -35,10 +35,11 @@ pub use peer_manager::{PeerManager, PeerRecord};
 #[cfg(feature = "libp2p-quic")]
 pub use quic_swarm::QuicSwarm;
 pub use reqresp::{
-    blocks_by_root_for_status_gap, blocks_by_root_protocol_id, decode_blocks_by_root_response,
-    encode_blocks_by_root, encode_blocks_by_root_response, handle_status,
-    prepare_blocks_by_root_outbound, prepare_status_outbounds, OutboundBlocksByRootRequest,
-    OutboundStatusRequest, RequestId, RequestTracker, StatusExchange, StatusSessionBook,
+    blocks_by_root_for_roots, blocks_by_root_for_status_gap, blocks_by_root_protocol_id,
+    decode_blocks_by_root_response, encode_blocks_by_root, encode_blocks_by_root_response,
+    handle_status, prepare_blocks_by_root_for_roots, prepare_blocks_by_root_outbound,
+    prepare_status_outbounds, OutboundBlocksByRootRequest, OutboundStatusRequest, RequestId,
+    RequestTracker, StatusExchange, StatusSessionBook,
 };
 pub use swarm::SwarmFacade;
 pub use transport::{
