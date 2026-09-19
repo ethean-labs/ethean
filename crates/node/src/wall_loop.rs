@@ -32,13 +32,19 @@ impl Default for WallLoopConfig {
 }
 
 /// Drive duties from the system wall clock for a fixed tick budget.
-pub async fn run_wall_duty_loop(
+///
+/// `after_step` runs after each wall sample (e.g. flush pending block gossip).
+pub async fn run_wall_duty_loop<F>(
     clock: &SlotClock,
     owner: &mut ChainOwner,
     shutdown: &mut ShutdownState,
     sync: &mut SyncStatus,
     cfg: WallLoopConfig,
-) -> Result<Vec<ChainEvent>> {
+    mut after_step: F,
+) -> Result<Vec<ChainEvent>>
+where
+    F: FnMut(&mut ChainOwner) -> Result<Option<ChainEvent>>,
+{
     let mut events = Vec::new();
     let time = SystemTimeSource;
 
@@ -47,6 +53,9 @@ pub async fn run_wall_duty_loop(
             break;
         }
         events.extend(apply_wall_step(clock, owner, shutdown, sync)?);
+        if let Some(ev) = after_step(owner)? {
+            events.push(ev);
+        }
 
         if cfg.enable_sleep && i + 1 < cfg.max_ticks {
             let now_ms = time.unix_millis().map_err(Error::Clock)?;
@@ -91,6 +100,7 @@ mod tests {
                 max_ticks: 2,
                 enable_sleep: false,
             },
+            |_| Ok(None),
         )
         .await
         .unwrap();
