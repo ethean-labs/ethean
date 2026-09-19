@@ -38,6 +38,6 @@ cargo test -p ethean-network --features libp2p-quic --lib
 ## Remaining external blockers
 
 1. Commit-clean leanSig **git** dep (upstream still on `num-bigint` 0.4) — committed
-   patch + vendor script work locally  
+   patch + `check-leansig-vendor.ps1`  
 2. leanVM FFI / process prover link (`LEANVM_FFI_LINKED`, lean-multisig workspace)  
-3. SSZ decode of ingested gossip into real `ImportBlock` (content-root ingest landed)
+3. Full state transition on gossip block import (SSZ root + head advance landed; attestations deferred)
