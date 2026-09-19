@@ -13,6 +13,7 @@ mod helpers;
 mod operation;
 mod opts;
 mod outcome;
+mod proposer_verify;
 mod slot;
 mod type2_statement;
 
@@ -20,6 +21,7 @@ pub use context::TransitionContext;
 pub use error::TransitionError;
 pub use opts::TransitionOpts;
 pub use outcome::TransitionOutcome;
+pub use proposer_verify::verify_proposer_signature;
 pub use slot::process_slots;
 pub use type2_statement::type2_statement_for_block;
 
