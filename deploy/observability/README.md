@@ -4,8 +4,11 @@ Local stack for Shariq-style long-run monitoring of Ethean.
 
 ## Prerequisites
 
-1. Docker Desktop (or Docker Engine + Compose)
+1. **Docker Desktop** (or Docker Engine + Compose) — required for Grafana/Prometheus
 2. Ethean built: `cargo build -p ethean --release`
+
+`ethean start` alone only exposes `:9100`. Without step 1 + `run-observability`,
+ports `:3000` / `:9090` stay closed.
 
 ## Long-run node (pq-devnet-4)
 
