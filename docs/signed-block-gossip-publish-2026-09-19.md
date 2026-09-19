@@ -28,7 +28,6 @@ cargo test -p ethean-node --features libp2p-quic --lib
 
 ## Still open
 
-- Call `flush_pending_block_gossip` from the wall/duty loop each tick (not only manually)
 - XMSS/proposer signing into the Type-2 envelope (pool proof is still best-effort bytes)
 - leanVM FFI so non-empty proofs verify on ingest
 - leanSig clean git dependency
