@@ -2,6 +2,7 @@
 
 use crate::aggregation::AggregatePool;
 use crate::block_builder::{PlanTransition, ProposalGossip};
+use crate::local_proposer::LocalProposer;
 use ethean_primitives::{Hash32, Slot};
 use ethean_profile::ChainProfile;
 use ethean_types::State;
@@ -29,7 +30,7 @@ pub struct ChainSnapshot {
 }
 
 /// Owns chain mutation; workers only read snapshots / send commands.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ChainOwner {
     /// Current generation for stale rejection.
     pub generation: u64,
@@ -53,8 +54,30 @@ pub struct ChainOwner {
     pub planned_tick: Option<DutyTick>,
     /// Encoded SignedBlock waiting for network gossip publish.
     pub pending_block_gossip: Option<ProposalGossip>,
+    /// Optional local proposal signer (test-hmac smoke key).
+    pub proposer: Option<LocalProposer>,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
+}
+
+impl Default for ChainOwner {
+    fn default() -> Self {
+        Self {
+            generation: 0,
+            last_tick: None,
+            head_root: Hash32::default(),
+            head_state: None,
+            syncing: false,
+            last_gossip_root: None,
+            profile: None,
+            aggregates: AggregatePool::default(),
+            planned_proposal: None,
+            planned_tick: None,
+            pending_block_gossip: None,
+            proposer: None,
+            max_head_lag_slots: 0,
+        }
+    }
 }
 
 impl ChainOwner {
