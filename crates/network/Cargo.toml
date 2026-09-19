@@ -33,6 +33,13 @@ libp2p-quic = [
     "libp2p/request-response",
 ]
 
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+sha2 = { workspace = true }
+ethean-network-wire = { workspace = true }
+ethean-primitives = { workspace = true }
+libp2p = { workspace = true, features = ["quic", "tokio", "ping", "macros", "gossipsub", "request-response"] }
+
 [lib]
 name = "ethean_network"
 path = "src/lib.rs"
