@@ -36,6 +36,7 @@ Planning session summaries:
 - [Phase 09 validator and node duties](./lean-consensus-migration-phase-09-validator-duties-2026-09-19.md)
 - [Phase 10 QUIC gossip and req/resp](./lean-consensus-migration-phase-10-quic-gossip-2026-09-19.md)
 - [Phase 11 storage sync and checkpoints](./lean-consensus-migration-phase-11-storage-sync-2026-09-19.md)
+- [Phase 12 API and observability](./lean-consensus-migration-phase-12-api-observability-2026-09-19.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
 
 Protocol evidence tree: [`../spec/README.md`](../spec/README.md).
