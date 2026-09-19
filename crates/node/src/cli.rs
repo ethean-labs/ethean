@@ -24,6 +24,9 @@ pub enum Command {
         /// Run until Ctrl-C (implies wall-clock sleeps).
         #[arg(long, default_value_t = false)]
         until_signal: bool,
+        /// Path-backed store (requires `ethean-storage/rocksdb` feature on the build).
+        #[arg(long)]
+        data_dir: Option<String>,
     },
     /// Start the validator client
     Validator,
