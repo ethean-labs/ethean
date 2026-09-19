@@ -1,0 +1,68 @@
+# Phase 05 lock — Lean state transition
+
+schema = "ethean-phase-lock-v1"
+phase = "05"
+phase_name = "lean-state-transition"
+lock_status = "in_progress_state_transition"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+inherits = [
+  "spec/pins/phase-00.lock.toml",
+  "spec/pins/phase-01.lock.toml",
+  "spec/pins/phase-02.lock.toml",
+  "spec/pins/phase-03.lock.toml",
+  "spec/pins/phase-04.lock.toml",
+]
+
+[resolved.lean_spec]
+status = "inherited"
+commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+tree = "4a0a358abf0447c26ad64ad6e57fd1e59ecccafd"
+fork = "lstar"
+citation_state_transition = "src/lean_spec/spec/forks/lstar/state_transition.py"
+citation_errors = "src/lean_spec/spec/forks/lstar/errors.py"
+citation_slot = "src/lean_spec/spec/forks/lstar/slot.py"
+
+[resolved.profile]
+max_attestations_data = 8
+no_beacon_epochs = true
+no_beacon_rewards = true
+
+[resolved.transition]
+package = "ethean-transition"
+path = "crates/transition"
+apis = [
+  "process_slots",
+  "state_transition / apply_block_unverified",
+  "apply_block (UnsupportedSignature until Phase 07/08)",
+  "transition_block + TransitionOpts.require_proofs",
+]
+implemented = [
+  "process_slots (cache zero state_root then advance)",
+  "process_block_header (proposer round-robin, parent root, historical hashes, justified bit extend)",
+  "process_attestations distinct-data cap",
+  "3SF-mini justification/finalization (leanSpec process_attestations)",
+  "post-state root check",
+]
+deferred = [
+  "XMSS / leanMultisig proof verification (Phase 07/08)",
+  "fork choice store (Phase 06)",
+  "standalone gossip attestation intake",
+]
+
+[ethean.workspace]
+members = [
+  "crates/primitives",
+  "crates/profile",
+  "crates/ssz",
+  "crates/types",
+  "crates/genesis",
+  "crates/transition",
+  "crates/node",
+  "bin/ethean",
+]
+package_transition = "ethean-transition"
+
+[unresolved]
+rust_toolchain = "TBD — do not invent rust-toolchain.toml version"
+fork_identifier_bytes = "open (phase-00)"
+xmss_verify = "Phase 07/08"

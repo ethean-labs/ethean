@@ -1,7 +1,7 @@
 //! Consensus module surface (Lean transition).
 //!
-//! Phase 03 replaces Beacon containers with `ethean-types`. Full 3SF / duty
-//! logic lands in Phase 05; these modules keep a compile-stable stub API.
+//! Phase 05: state transition lives in `ethean-transition`. Fork choice / store
+//! (Phase 06) remain stubs here.
 
 pub mod attestation_processing;
 pub mod block_processing;

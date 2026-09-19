@@ -1,4 +1,7 @@
-//! Attestation processing stub (Phase 05 replaces Beacon committee logic).
+//! Attestation intake stub — no Beacon committees or rewards.
+//!
+//! Full attestation application lives in `ethean-transition` during block processing.
+//! Standalone gossip attestation handling lands with Phase 06 fork choice.
 
 use crate::consensus::validator_management::{ValidatorError, ValidatorManager};
 use ethean_types::{Attestation, AttestationData, State};
@@ -10,15 +13,12 @@ pub enum AttestationError {
     Invalid(String),
     #[error(transparent)]
     Validator(#[from] ValidatorError),
-    #[error("stub: {0}")]
-    Stub(String),
+    #[error("deferred: {0}")]
+    Deferred(String),
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct AttestationConfig {
-    pub target_committee_size: usize,
-    pub committees_per_slot: u64,
-}
+pub struct AttestationConfig;
 
 #[derive(Debug, Clone, Default)]
 pub struct AttestationResult {
@@ -48,12 +48,17 @@ impl AttestationProcessor {
         _state: &State,
         _attestation: &Attestation,
     ) -> Result<AttestationResult, AttestationError> {
-        Err(AttestationError::Stub(
-            "attestation processing deferred to Phase 05".into(),
+        Err(AttestationError::Deferred(
+            "standalone attestation gossip deferred to Phase 06".into(),
         ))
     }
 
-    pub fn validate_data(&self, _data: &AttestationData) -> Result<(), AttestationError> {
+    pub fn validate_data(&self, data: &AttestationData) -> Result<(), AttestationError> {
+        if data.source.slot.get() > data.target.slot.get() {
+            return Err(AttestationError::Invalid(
+                "source slot after target".into(),
+            ));
+        }
         Ok(())
     }
 }

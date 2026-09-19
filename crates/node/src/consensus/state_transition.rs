@@ -13,17 +13,6 @@ use thiserror::Error;
 pub enum StateTransitionError {
     #[error(transparent)]
     Transition(#[from] TransitionError),
-    #[error("profile: {0}")]
-    Profile(String),
-}
-
-impl From<StateTransitionError> for TransitionError {
-    fn from(value: StateTransitionError) -> Self {
-        match value {
-            StateTransitionError::Transition(e) => e,
-            StateTransitionError::Profile(s) => TransitionError::Types(s),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Default)]

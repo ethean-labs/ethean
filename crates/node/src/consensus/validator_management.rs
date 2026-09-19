@@ -1,49 +1,27 @@
-//! Validator management stub — Lean registry has dual XMSS keys, no balances.
-//! Beacon deposit/exit economics are deferred to Phase 05.
+//! Lean validator registry helpers (XMSS keys). No Beacon deposit/exit economics.
 
 use crate::storage::StateStore;
 use ethean_primitives::{Bytes52, Epoch, ValidatorIndex};
 use ethean_types::{State, Validator};
 use thiserror::Error;
 
-/// Validator-layer errors.
 #[derive(Debug, Error)]
 pub enum ValidatorError {
     #[error("validator not found: {0}")]
     NotFound(u64),
-    #[error("invalid deposit: {0}")]
-    InvalidDeposit(String),
+    #[error("invalid validator: {0}")]
+    Invalid(String),
     #[error("registry full")]
     RegistryFull,
-    #[error("stub: {0}")]
-    Stub(String),
 }
 
-/// Operational knobs retained for API/client wiring (not Lean consensus params).
-#[derive(Debug, Clone)]
+/// Operational knobs for API/client wiring (not Lean consensus params).
+#[derive(Debug, Clone, Default)]
 pub struct ValidatorConfig {
-    pub min_deposit_amount: u64,
-    pub max_validators_per_epoch: u64,
-    pub activation_delay: u64,
-    pub exit_delay: u64,
-    pub slashing_penalty_multiplier: u64,
-    pub inactivity_penalty_per_epoch: u64,
+    pub max_validators: u64,
 }
 
-impl Default for ValidatorConfig {
-    fn default() -> Self {
-        Self {
-            min_deposit_amount: 0,
-            max_validators_per_epoch: 1000,
-            activation_delay: 0,
-            exit_delay: 0,
-            slashing_penalty_multiplier: 0,
-            inactivity_penalty_per_epoch: 0,
-        }
-    }
-}
-
-/// Placeholder manager until Lean duties land.
+/// Registry helper until Lean duties land in a dedicated crate.
 #[derive(Clone)]
 pub struct ValidatorManager {
     pub config: ValidatorConfig,
@@ -58,7 +36,6 @@ impl ValidatorManager {
         }
     }
 
-    /// Register a Lean validator (XMSS keys). Beacon balances are not tracked.
     pub fn add_validator(
         &self,
         attestation_public_key: Bytes52,
@@ -66,7 +43,7 @@ impl ValidatorManager {
         index: ValidatorIndex,
     ) -> Result<ValidatorIndex, ValidatorError> {
         let _ = Validator::new(attestation_public_key, proposal_public_key, index)
-            .map_err(|e| ValidatorError::InvalidDeposit(e.to_string()))?;
+            .map_err(|e| ValidatorError::Invalid(e.to_string()))?;
         Ok(index)
     }
 
@@ -80,7 +57,7 @@ impl ValidatorManager {
             .ok_or(ValidatorError::NotFound(index.get()))
     }
 
-    /// Beacon-era activation check removed; Lean has no epoch activation fields.
+    /// Lean registry has no epoch activation fields.
     pub fn is_active(&self, _validator: &Validator, _epoch: Epoch) -> bool {
         true
     }

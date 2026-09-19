@@ -50,12 +50,7 @@ impl EtheanClient {
         let state_store = Arc::new(StateStore::new(database));
 
         let validator_config = ValidatorConfig {
-            min_deposit_amount: 1_000_000_000,
-            max_validators_per_epoch: 1000,
-            activation_delay: 4,
-            exit_delay: 256,
-            slashing_penalty_multiplier: 3,
-            inactivity_penalty_per_epoch: 1_000_000,
+            max_validators: profile.validator_registry_limit,
         };
         let validator_manager = Arc::new(ValidatorManager::new(
             validator_config,

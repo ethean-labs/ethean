@@ -1,0 +1,31 @@
+# Phase 05 fixture manifest — state transition
+
+phase = "05"
+phase_name = "lean-state-transition"
+recorded_at_utc = "2026-09-19T00:00:00Z"
+lock = "spec/pins/phase-05.lock.toml"
+
+[authority]
+lean_spec_commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
+citation = "src/lean_spec/spec/forks/lstar/state_transition.py"
+fork = "lstar"
+
+[profile]
+max_attestations_data = 8
+
+[crate]
+name = "ethean-transition"
+path = "crates/transition"
+
+[tests]
+unit = [
+  "process_slots advances and caches state_root",
+  "process_slots rejects non-future target",
+  "rejects MAX_ATTESTATIONS_DATA + 1 distinct data",
+  "apply_block rejects empty / unverified proofs",
+  "structural block header update",
+]
+
+[upstream_vectors]
+status = "not_vendored"
+note = "Binary leanSpec fixture roots deferred; unit tests exercise logic locally"

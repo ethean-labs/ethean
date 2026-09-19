@@ -1,4 +1,4 @@
-//! Fork choice stub (modified 3SF / lstar lands in Phase 05–06).
+//! Fork choice stub — modified 3SF / lstar store lands in Phase 06.
 
 use ethean_primitives::{Hash32, Slot};
 use ethean_types::{Checkpoint, State};
@@ -51,7 +51,7 @@ impl LMDGHOSTForkChoice {
         _state: &State,
     ) -> Result<(), ForkChoiceError> {
         Err(ForkChoiceError::Stub(
-            "fork choice on_block deferred to Phase 05".into(),
+            "fork choice on_block deferred to Phase 06".into(),
         ))
     }
 }

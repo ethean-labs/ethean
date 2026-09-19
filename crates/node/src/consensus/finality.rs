@@ -1,4 +1,6 @@
-//! Finality stub — uses Lean [`Checkpoint`] (slot, not epoch).
+//! Finality gadget stub — Phase 06 wires store + 3SF checkpoints.
+//!
+//! Justification/finalization during block application lives in `ethean-transition`.
 
 use ethean_types::Checkpoint;
 use thiserror::Error;
@@ -34,5 +36,4 @@ impl FinalityGadget {
     }
 }
 
-// Re-export Lean checkpoint so older `consensus::finality::Checkpoint` imports resolve.
 pub use ethean_types::Checkpoint;
