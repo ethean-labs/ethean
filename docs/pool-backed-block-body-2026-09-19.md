@@ -28,5 +28,5 @@ cargo test -p ethean-node --lib
 
 ## Still open
 
-- Attach packed body + Type-2 proof into a real `PlanTransition` / publish path
+- Sign / assemble Type-2 `SignedBlock` and gossip-publish when `publish_allowed`
 - leanVM FFI so verified SignedBlock gossip can accept
