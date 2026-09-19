@@ -1,12 +1,14 @@
 //! Ethean Lean Consensus Client main binary
 
+mod observability;
+
 use clap::Parser;
 use ethean_crypto::FfiStatus;
 use ethean_node::{
     cli::{Cli, Command},
     EtheanClient, MetricsListen, NetworkTarget, StartConfig,
 };
-use tracing::info;
+use tracing::{info, warn};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -30,6 +32,7 @@ async fn main() -> Result<()> {
             network,
             bootnodes,
             fork_digest,
+            metrics,
             no_metrics,
             metrics_address,
             metrics_port,
@@ -39,8 +42,18 @@ async fn main() -> Result<()> {
                 bootnodes.as_deref(),
                 fork_digest.as_deref(),
             )?;
-            let metrics = !no_metrics;
-            let metrics_listen = if metrics {
+            let scrape = !no_metrics;
+            if metrics {
+                if let Err(e) = observability::ensure_stack() {
+                    warn!(error = %e, "observability stack not started; node continues");
+                }
+            } else {
+                info!(
+                    "Prometheus/Grafana UI not started (pass --metrics to docker-compose \
+                     deploy/observability, or run scripts/run-observability.*)"
+                );
+            }
+            let metrics_listen = if scrape {
                 let addr = format!("{metrics_address}:{metrics_port}").parse()?;
                 Some(MetricsListen { addr })
             } else {
@@ -54,7 +67,8 @@ async fn main() -> Result<()> {
                 network = network.id.as_str(),
                 bootnodes = network.bootnodes.len(),
                 fork_digest = network.fork_digest.as_deref().unwrap_or(""),
-                metrics,
+                metrics_stack = metrics,
+                scrape,
                 metrics_address = metrics_address.as_str(),
                 metrics_port,
                 "Starting lean consensus node"
