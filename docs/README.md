@@ -81,6 +81,7 @@ Planning session summaries:
 - [Sync-lag duty gate threshold](./sync-lag-threshold-2026-09-19.md)
 - [Blocks-by-range request scaffold](./blocks-by-range-scaffold-2026-09-19.md)
 - [pq-devnet-5 client run verification](./pq-devnet-5-client-run-2026-09-19.md)
+- [ethean PATH command after cargo build](./ethean-path-command-after-build-2026-09-20.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
