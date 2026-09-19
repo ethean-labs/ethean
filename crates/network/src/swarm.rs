@@ -2,7 +2,7 @@
 
 use crate::error::{NetworkError, Result};
 use crate::peer_manager::PeerManager;
-use crate::reqresp::{OutboundStatusRequest, RequestTracker};
+use crate::reqresp::{OutboundBlocksByRootRequest, OutboundStatusRequest, RequestTracker};
 use crate::transport::{dial_quic, BoundTransport};
 
 #[cfg(feature = "libp2p-quic")]
@@ -17,6 +17,8 @@ pub struct SwarmFacade {
     pub requests: RequestTracker,
     /// Status request payloads staged for Lean req/resp streams (wire send TBD).
     pub status_outbox: Vec<OutboundStatusRequest>,
+    /// Blocks-by-root payloads staged after a Status head gap (wire send TBD).
+    pub blocks_outbox: Vec<OutboundBlocksByRootRequest>,
     pub events_processed: u64,
     /// Present after [`Self::attach_transport`].
     pub transport: Option<BoundTransport>,
@@ -134,6 +136,17 @@ impl SwarmFacade {
     /// Drain staged Status outbox payloads.
     pub fn take_status_outbox(&mut self) -> Vec<OutboundStatusRequest> {
         std::mem::take(&mut self.status_outbox)
+    }
+
+    /// Stage encoded blocks-by-root requests for later stream send.
+    pub fn enqueue_blocks_outbounds(&mut self, reqs: Vec<OutboundBlocksByRootRequest>) {
+        self.blocks_outbox.extend(reqs);
+        self.note_progress();
+    }
+
+    /// Drain staged blocks-by-root outbox payloads.
+    pub fn take_blocks_outbox(&mut self) -> Vec<OutboundBlocksByRootRequest> {
+        std::mem::take(&mut self.blocks_outbox)
     }
 
     /// Record a tick of the (future) event loop for health.
