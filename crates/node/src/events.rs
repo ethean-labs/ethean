@@ -42,6 +42,15 @@ pub enum ChainEvent {
         payload_len: usize,
         /// True when the envelope carries a non-empty Type-2 proof.
         has_type2_proof: bool,
+        /// Local proposer signature length when signed this tick.
+        proposer_sig_len: usize,
+    },
+    /// Local proposer signed the planned block root (XMSS/HMAC binding).
+    ProposalSigned {
+        /// Inner block tree root that was signed.
+        root: Hash32,
+        /// Signature wire length in bytes.
+        signature_len: usize,
     },
     /// Pending proposal was published on QuicSwarm gossip.
     ProposalPublished {
