@@ -7,6 +7,7 @@
 
 pub mod aggregation;
 pub mod block_builder;
+pub mod boot_network;
 pub mod chain_owner;
 pub mod cli;
 pub mod client;
