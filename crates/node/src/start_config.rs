@@ -1,5 +1,7 @@
 //! Start / run mode configuration for the node client.
 
+use crate::network_target::NetworkTarget;
+
 /// How `EtheanClient::start` drives duty ticks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RunMode {
@@ -29,25 +31,29 @@ impl Default for RunMode {
 }
 
 /// Bundle passed into client start.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StartConfig {
     /// Duty run mode.
     pub mode: RunMode,
+    /// Network label + bootnodes (default pq-devnet-5).
+    pub network: NetworkTarget,
 }
 
 impl Default for StartConfig {
     fn default() -> Self {
         Self {
             mode: RunMode::default(),
+            network: NetworkTarget::pq_devnet_5(),
         }
     }
 }
 
 impl StartConfig {
-    /// Smoke elapsed loop with `ticks` intervals.
+    /// Smoke elapsed loop with `ticks` intervals (pq-devnet-5 label).
     pub fn smoke(ticks: u32) -> Self {
         Self {
             mode: RunMode::SmokeElapsed { ticks },
+            network: NetworkTarget::pq_devnet_5(),
         }
     }
 
@@ -58,6 +64,7 @@ impl StartConfig {
                 ticks,
                 enable_sleep,
             },
+            network: NetworkTarget::pq_devnet_5(),
         }
     }
 
@@ -65,20 +72,27 @@ impl StartConfig {
     pub fn until_signal(enable_sleep: bool) -> Self {
         Self {
             mode: RunMode::UntilSignal { enable_sleep },
+            network: NetworkTarget::pq_devnet_5(),
         }
+    }
+
+    /// Attach a resolved network target.
+    pub fn with_network(mut self, network: NetworkTarget) -> Self {
+        self.network = network;
+        self
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::network_target::NetworkId;
 
     #[test]
-    fn defaults_to_smoke_five() {
-        assert_eq!(
-            StartConfig::default().mode,
-            RunMode::SmokeElapsed { ticks: 5 }
-        );
+    fn defaults_to_smoke_five_on_pq_devnet_5() {
+        let cfg = StartConfig::default();
+        assert_eq!(cfg.mode, RunMode::SmokeElapsed { ticks: 5 });
+        assert_eq!(cfg.network.id, NetworkId::PqDevnet5);
     }
 
     #[test]
