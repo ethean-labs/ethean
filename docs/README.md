@@ -63,6 +63,7 @@ Planning session summaries:
 - [leanVM statement wire and process-IPC gate](./leanvm-statement-wire-ipc-gate-2026-09-19.md)
 - [Type-2 proposer Sidecar policy](./type2-proposer-sidecar-policy-2026-09-19.md)
 - [Remote proposer sidecar verify on gossip](./remote-proposer-sidecar-verify-2026-09-19.md)
+- [Working-client pq-devnet-5 plan](./working-client-pq-devnet-5-plan-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
