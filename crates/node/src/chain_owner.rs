@@ -1,6 +1,7 @@
 //! Chain owner: sole writer of transition, fork choice, and import status.
 
 use ethean_primitives::{Hash32, Slot};
+use ethean_profile::ChainProfile;
 use ethean_types::State;
 use ethean_validator::{DutyTick, DutyView};
 
@@ -40,6 +41,8 @@ pub struct ChainOwner {
     pub syncing: bool,
     /// Last ingested gossip content root (provisional until SSZ import).
     pub last_gossip_root: Option<Hash32>,
+    /// Chain profile for structural gossip state transitions.
+    pub profile: Option<ChainProfile>,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
 }
