@@ -48,6 +48,7 @@ Planning session summaries:
 - [Durable QuicSwarm, leanVM stub, leanSig vendor patch](./durable-quic-leanvm-leansig-vendor-2026-09-19.md)
 - [Gossipsub mesh on QuicSwarm](./gossipsub-quic-mesh-2026-09-19.md)
 - [Gossip ingest and peer score feedback](./gossip-ingest-peer-score-2026-09-19.md)
+- [SSZ gossip decode into ImportBlock](./ssz-gossip-import-block-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
