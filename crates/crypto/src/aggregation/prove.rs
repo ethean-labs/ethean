@@ -26,9 +26,16 @@ pub fn prove_type2(statement: &AggregateStatement) -> Result<Vec<u8>> {
 }
 
 fn prove_bound(statement: &AggregateStatement) -> Result<Vec<u8>> {
-    #[cfg(feature = "leanvm-backend")]
+    #[cfg(all(feature = "leanvm-backend", feature = "test-aggregate"))]
     {
-        crate::backend_leanvm::prove(statement)
+        if crate::backend_leanvm::LEANVM_FFI_LINKED {
+            return crate::backend_leanvm::prove(statement);
+        }
+        return Ok(crate::aggregation::verify::test_proof_bytes(statement));
+    }
+    #[cfg(all(feature = "leanvm-backend", not(feature = "test-aggregate")))]
+    {
+        return crate::backend_leanvm::prove(statement);
     }
     #[cfg(all(not(feature = "leanvm-backend"), feature = "test-aggregate"))]
     {
