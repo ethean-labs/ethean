@@ -17,7 +17,9 @@ pub mod dispatch;
 pub mod duty_loop;
 pub mod events;
 pub mod network;
+pub mod observability;
 pub mod shutdown;
+pub mod wall_tick;
 
 pub use ethean_primitives::{Epoch, Hash32, Slot, ValidatorIndex};
 pub use ethean_profile::{lstar_devnet, ChainProfile, ForkId};
@@ -35,7 +37,9 @@ pub use commands::ChainCommand;
 pub use dispatch::apply_command;
 pub use duty_loop::{run_duty_loop, DutyLoopConfig};
 pub use events::ChainEvent;
+pub use observability::{smoke_health_route, NodeObservability};
 pub use shutdown::{ShutdownPhase, ShutdownState};
+pub use wall_tick::{ms_until_next_interval, tick_from_wall};
 
 /// Main result type for the application
 pub type Result<T> = std::result::Result<T, Error>;
@@ -66,6 +70,15 @@ pub enum Error {
 
     #[error("Sync error: {0}")]
     Sync(#[from] ethean_sync::SyncError),
+
+    #[error("Metrics error: {0}")]
+    Metrics(#[from] ethean_metrics::MetricsError),
+
+    #[error("RPC error: {0}")]
+    Rpc(#[from] ethean_rpc::RpcError),
+
+    #[error("Clock error: {0}")]
+    Clock(#[from] ethean_genesis::ClockError),
 }
 
 /// Version information
