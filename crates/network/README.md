@@ -1,3 +1,10 @@
 # ethean-network
 
-QUIC / Gossipsub runtime for Lean Consensus. Scaffold for Phase 10.
+Lean Consensus P2P runtime scaffolding for Phase 10.
+
+- Gossip: raw Snappy validation with ACCEPT/IGNORE/REJECT (no `/eth2/` topics)
+- Req/resp: Status handshake + request tracker
+- Transport: QUIC-v1 facade **fails closed** (no TCP/WS fallback)
+- Peer admission caps and disposable scores
+
+Full libp2p QUIC swarm wiring remains an open gate.
