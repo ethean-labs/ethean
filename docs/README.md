@@ -55,6 +55,7 @@ Planning session summaries:
 - [PlanTransition from pool on duty ticks](./plan-transition-pool-duty-2026-09-19.md)
 - [SignedBlock assemble and gossip publish](./signed-block-gossip-publish-2026-09-19.md)
 - [Auto-flush pending block gossip on wall ticks](./auto-flush-block-gossip-2026-09-19.md)
+- [Local proposer signing on duty ticks](./local-proposer-signing-2026-09-19.md)
 - [UDP Status probe, data-dir, libclang](./udp-probe-data-dir-libclang-2026-09-19.md)
 - [Release runbooks](./release/README.md)
 - [Master branch consolidation](./master-branch-consolidation-2026-09-19.md)
