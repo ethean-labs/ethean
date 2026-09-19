@@ -10,6 +10,7 @@ description = "Lean Consensus validator signer safety for Ethean"
 [dependencies]
 ethean-crypto = { workspace = true, features = ["test-hmac"] }
 ethean-primitives = { workspace = true }
+ethean-profile = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
