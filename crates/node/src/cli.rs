@@ -36,6 +36,10 @@ pub enum Command {
         /// Optional 8-hex fork digest for gossip topics (overrides interim name hash).
         #[arg(long)]
         fork_digest: Option<String>,
+        /// Start Prometheus (:9090) + Grafana (:3000) via Docker Compose.
+        /// Scrape HTTP on :9100 stays on unless `--no-metrics` is set.
+        #[arg(long, default_value_t = false)]
+        metrics: bool,
         /// Disable Prometheus scrape HTTP (`/metrics` is on by default at :9100).
         #[arg(long, default_value_t = false)]
         no_metrics: bool,
