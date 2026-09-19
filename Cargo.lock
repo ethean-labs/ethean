@@ -1486,6 +1486,7 @@ version = "0.1.0"
 dependencies = [
  "ethean-crypto",
  "ethean-primitives",
+ "ethean-profile",
  "serde",
  "sha2",
  "thiserror 1.0.69",
