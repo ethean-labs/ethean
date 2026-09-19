@@ -39,4 +39,4 @@ cargo test -p ethean-network --features libp2p-quic --lib
 
 1. Commit-clean leanSig git dep (upstream `num-bigint` vs Plonky3) — vendor works locally  
 2. leanVM FFI crate / symbols from pin  
-3. Node boot optionally attaching `QuicSwarm` (API ready; default still UDP facade)
+3. Durable QuicSwarm ownership in the node gossip loop (boot probe exists under `libp2p-quic`)
