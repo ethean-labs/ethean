@@ -6,6 +6,11 @@
 pub mod crypto;
 pub mod consensus;
 pub mod aggregation;
+pub mod block_builder;
+pub mod chain_owner;
+pub mod commands;
+pub mod events;
+pub mod shutdown;
 pub mod network;
 pub mod storage;
 pub mod integration;
