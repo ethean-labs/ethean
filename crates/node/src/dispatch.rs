@@ -4,6 +4,7 @@ use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::events::ChainEvent;
 use crate::shutdown::ShutdownState;
+use sha2::{Digest, Sha256};
 
 /// Dispatch one command; returns the observer event.
 pub fn apply_command(
@@ -38,6 +39,21 @@ pub fn apply_command(
                 slot: owner.last_tick.map(|t| t.slot.get()).unwrap_or(0),
             }
         }
+        ChainCommand::IngestGossip {
+            topic,
+            payload,
+            peer: _,
+        } => {
+            if shutdown.phase() == crate::shutdown::ShutdownPhase::Stopped {
+                return ChainEvent::ShutdownComplete;
+            }
+            let content_root = content_root(&payload);
+            owner.last_gossip_root = Some(content_root);
+            ChainEvent::GossipIngested {
+                topic,
+                content_root,
+            }
+        }
         ChainCommand::SetSyncing(syncing) => {
             owner.syncing = syncing;
             ChainEvent::SyncingUpdated(syncing)
@@ -48,6 +64,16 @@ pub fn apply_command(
             ChainEvent::ShutdownComplete
         }
     }
+}
+
+fn content_root(payload: &[u8]) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(b"ethean-gossip-ingest-v1");
+    hasher.update(payload);
+    let dig = hasher.finalize();
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&dig);
+    out
 }
 
 #[cfg(test)]
@@ -101,5 +127,25 @@ mod tests {
         );
         assert_eq!(owner.head_root, [2u8; 32]);
         assert!(matches!(ev, ChainEvent::HeadUpdated { root, .. } if root == [2u8; 32]));
+    }
+
+    #[test]
+    fn ingest_gossip_records_content_root() {
+        let mut owner = ChainOwner::new(2);
+        let mut shutdown = ShutdownState::default();
+        let ev = apply_command(
+            &mut owner,
+            &mut shutdown,
+            ChainCommand::IngestGossip {
+                topic: "/leanconsensus/x/block/ssz_snappy".into(),
+                payload: b"block-bytes".to_vec(),
+                peer: None,
+            },
+        );
+        let root = owner.last_gossip_root.expect("root");
+        assert!(matches!(
+            ev,
+            ChainEvent::GossipIngested { content_root, .. } if content_root == root
+        ));
     }
 }
