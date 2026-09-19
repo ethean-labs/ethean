@@ -15,6 +15,11 @@ pub enum RunMode {
         /// When false, do not sleep (tests / dry runs).
         enable_sleep: bool,
     },
+    /// Wall-clock loop until Ctrl-C / process signal (binary long-run).
+    UntilSignal {
+        /// Sleep between interval boundaries.
+        enable_sleep: bool,
+    },
 }
 
 impl Default for RunMode {
@@ -55,6 +60,13 @@ impl StartConfig {
             },
         }
     }
+
+    /// Run until Ctrl-C with wall-clock sleeps between intervals.
+    pub fn until_signal(enable_sleep: bool) -> Self {
+        Self {
+            mode: RunMode::UntilSignal { enable_sleep },
+        }
+    }
 }
 
 #[cfg(test)]
@@ -67,5 +79,13 @@ mod tests {
             StartConfig::default().mode,
             RunMode::SmokeElapsed { ticks: 5 }
         );
+    }
+
+    #[test]
+    fn until_signal_mode() {
+        assert!(matches!(
+            StartConfig::until_signal(true).mode,
+            RunMode::UntilSignal { enable_sleep: true }
+        ));
     }
 }
