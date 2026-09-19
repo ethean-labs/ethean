@@ -411,7 +411,11 @@ Useful gauges: `ethean_head_slot`, `ethean_justified_slot`, `ethean_finalized_sl
 
 ### Start with Grafana + Prometheus
 
-Requires **Docker Desktop** (or Docker Engine + Compose) running.
+Requires **Docker Desktop** (or Docker Engine + Compose) running. If compose
+prints HTTP 500 on `dockerDesktopLinuxEngine/_ping`, the Linux engine is down
+(often Hyper-V / Virtual Machine Platform off on Windows) — the node still
+serves http://127.0.0.1:9100/metrics. See
+[docs/docker-engine-500-hyperv-not-installed-2026-09-20.md](./docs/docker-engine-500-hyperv-not-installed-2026-09-20.md).
 
 ```bash
 # Starts docker compose (Grafana :3000, Prometheus :9090) then the node
