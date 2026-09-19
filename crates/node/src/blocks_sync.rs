@@ -61,6 +61,11 @@ pub fn ingest_blocks_by_root_response(
         };
         if let Some(facade) = swarm.as_deref_mut() {
             let _ = facade.put_block_bytes(decoded.root, blob.clone());
+            let _ = facade.put_block_at_slot(
+                decoded.block.slot.get(),
+                decoded.root,
+                blob.clone(),
+            );
         }
         owner.last_gossip_root = Some(decoded.root);
         out.events.push(ChainEvent::GossipIngested {
