@@ -18,6 +18,8 @@ pub mod commands;
 pub mod crypto;
 pub mod dispatch;
 pub mod duty_loop;
+pub mod duty_mesh;
+pub mod duty_network;
 pub mod duty_step;
 pub mod events;
 pub mod gossip_decode;
