@@ -1,9 +1,10 @@
 //! Graceful shutdown: stop new duties, preserve signer/storage boundaries.
 
 /// Shutdown phase for the node duty loop.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ShutdownPhase {
     /// Accepting new duties.
+    #[default]
     Running,
     /// Stop scheduling; finish in-flight durable work.
     Draining,
