@@ -43,6 +43,26 @@ impl NodeObservability {
         self.readiness.signer = true;
     }
 
+    /// Mark UDP/QUIC listen bind attached (swarm dial may still be pending).
+    pub fn mark_network_ok(&mut self) {
+        self.readiness.network = true;
+    }
+
+    /// Mark leanVM prover path available when FFI is wired.
+    pub fn mark_prover_ok(&mut self) {
+        self.readiness.prover = true;
+    }
+
+    /// Apply [`ethean_crypto::FfiStatus`] to crypto/prover readiness bits.
+    pub fn apply_ffi_status(&mut self, status: ethean_crypto::FfiStatus) {
+        if status.leansig {
+            self.mark_crypto_ok();
+        }
+        if status.leanvm {
+            self.mark_prover_ok();
+        }
+    }
+
     /// Network remains false until QUIC binds; prover false until leanVM FFI.
     pub fn refresh_ready_gauge(&mut self) -> Result<(), MetricsError> {
         set_ready(&mut self.registry, self.readiness.is_ready())
