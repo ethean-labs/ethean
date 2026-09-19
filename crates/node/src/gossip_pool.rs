@@ -1,6 +1,6 @@
 //! Insert attestation / aggregation gossip into the aggregate pool.
 
-use crate::aggregation::{AggregatePool, PoolEntry, PoolKey};
+use crate::aggregation::{merge_best_pool_variants, AggregatePool, PoolEntry, PoolKey};
 use crate::gossip_decode::try_decode_attestation;
 use ethean_crypto::{domain_digest, PROD_AGGREGATION_FINGERPRINT};
 use ethean_primitives::Hash32;
@@ -69,6 +69,11 @@ pub fn ingest_into_pool(
                     attestation_ssz: reconstructed.ssz_encode(),
                 },
             );
+            let key = PoolKey {
+                profile_digest: pool_profile_digest(),
+                message_root,
+            };
+            let _ = merge_best_pool_variants(pool, key);
             return Some(message_root);
         }
         // Fall through to generic decode path for content-only retention.
