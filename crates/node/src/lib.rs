@@ -19,6 +19,8 @@ pub mod events;
 pub mod network;
 pub mod observability;
 pub mod shutdown;
+pub mod start_config;
+pub mod wall_loop;
 pub mod wall_tick;
 
 pub use ethean_primitives::{Epoch, Hash32, Slot, ValidatorIndex};
@@ -39,6 +41,8 @@ pub use duty_loop::{run_duty_loop, DutyLoopConfig};
 pub use events::ChainEvent;
 pub use observability::{smoke_health_route, NodeObservability};
 pub use shutdown::{ShutdownPhase, ShutdownState};
+pub use start_config::{RunMode, StartConfig};
+pub use wall_loop::{run_wall_duty_loop, WallLoopConfig};
 pub use wall_tick::{ms_until_next_interval, tick_from_wall};
 
 /// Main result type for the application
