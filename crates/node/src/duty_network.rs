@@ -114,11 +114,20 @@ impl EtheanClient {
             }
         }
         for (peer, payload) in &budget.blocks_by_root_responses {
-            info!(
-                peer0 = peer[0],
-                bytes = payload.len(),
-                "blocks-by-root response received (decode/ingest pending)"
+            let events = crate::blocks_sync::ingest_blocks_by_root_response(
+                &mut self.owner,
+                &mut self.shutdown,
+                self.swarm.as_mut(),
+                *peer,
+                payload,
             );
+            if !events.is_empty() {
+                info!(
+                    peer0 = peer[0],
+                    n = events.len(),
+                    "blocks-by-root response ingested"
+                );
+            }
         }
         Ok(())
     }

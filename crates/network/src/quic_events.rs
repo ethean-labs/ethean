@@ -77,17 +77,17 @@ impl QuicSwarm {
         channel: ResponseChannel<Vec<u8>>,
     ) {
         let roots = decode_root_list(request);
-        let mut out = Vec::new();
-        let mut n: u32 = 0;
+        let mut blocks = Vec::new();
         for root in roots {
             if let Some(block) = self.blocks_by_root.get(&root) {
-                out.extend_from_slice(block);
-                n = n.saturating_add(1);
+                blocks.push(block.clone());
             }
         }
-        let mut payload = Vec::with_capacity(4 + out.len());
-        payload.extend_from_slice(&n.to_le_bytes());
-        payload.extend_from_slice(&out);
+        let payload = crate::reqresp::encode_blocks_by_root_response(&blocks).unwrap_or_else(|_| {
+            let mut empty = Vec::with_capacity(4);
+            empty.extend_from_slice(&0u32.to_le_bytes());
+            empty
+        });
         let _ = self
             .swarm
             .behaviour_mut()

@@ -79,11 +79,14 @@ pub fn publish_pending_block(
         )))
     })?;
     match facade.publish_gossip(&gossip.topic, &compressed) {
-        Ok(()) => Ok(Some(PublishedBlock {
-            topic: gossip.topic,
-            payload_len: gossip.payload.len(),
-            has_type2_proof: gossip.has_type2_proof,
-        })),
+        Ok(()) => {
+            let _ = facade.put_block_bytes(gossip.block_root, gossip.payload.clone());
+            Ok(Some(PublishedBlock {
+                topic: gossip.topic,
+                payload_len: gossip.payload.len(),
+                has_type2_proof: gossip.has_type2_proof,
+            }))
+        }
         Err(e) => {
             // Restore so a later flush can retry.
             owner.pending_block_gossip = Some(gossip);

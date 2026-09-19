@@ -14,12 +14,17 @@ Shared framed I/O lives in `quic_framed.rs` so Status and blocks codecs stay sma
 
 ## Still open
 
-- Decode response bodies into `SignedBlock` and run STF / fork-choice import.
-- Persist served blocks into the QuicSwarm cache when local proposals land.
+- Multi-hop parent-chain catch-up when the remote head is far ahead of local head.
+- Persist more than the latest published proposal into the serve cache (history).
 - Operator fork digest + bootnodes still required for live pq-devnet-5 join
   ([leanroadmap.org](https://leanroadmap.org/) still lists D5 as Planned).
 
+## Follow-up (2026-09-19)
+
+SignedBlock decode/import from response bodies landed — see
+[blocks-by-root-signedblock-ingest-2026-09-19.md](./blocks-by-root-signedblock-ingest-2026-09-19.md).
+
 ## Plan mapping
 
-Closes wire half of **C2** in `bazalinacaklar/pq-devnet-5-ethean-plan-2026-09-19.md`
-(fetch stream). Import/decode remains.
+Closes **C2** in `bazalinacaklar/pq-devnet-5-ethean-plan-2026-09-19.md`
+(fetch stream + SignedBlock ingest). Multi-hop sync remains.
