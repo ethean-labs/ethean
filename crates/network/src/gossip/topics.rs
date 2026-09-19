@@ -18,15 +18,20 @@ pub struct LeanGossipTopics {
 }
 
 impl LeanGossipTopics {
-    /// Build topics from a profile fork name.
+    /// Build topics from a profile fork name (interim SHA-256 segment).
     pub fn from_fork_name(fork_name: &str) -> Result<Self> {
         let fork = fork_segment_from_name(fork_name)
             .map_err(|e| NetworkError::Handshake(e.to_string()))?;
+        Self::from_fork_segment(&fork)
+    }
+
+    /// Build topics from an already-resolved 8-hex fork segment (operator pin).
+    pub fn from_fork_segment(fork_segment: &str) -> Result<Self> {
         Ok(Self {
-            block: topic_block(&fork).map_err(|e| NetworkError::Handshake(e.to_string()))?,
-            aggregation: topic_aggregation(&fork)
+            block: topic_block(fork_segment).map_err(|e| NetworkError::Handshake(e.to_string()))?,
+            aggregation: topic_aggregation(fork_segment)
                 .map_err(|e| NetworkError::Handshake(e.to_string()))?,
-            attestation_0: topic_attestation(&fork, 0)
+            attestation_0: topic_attestation(fork_segment, 0)
                 .map_err(|e| NetworkError::Handshake(e.to_string()))?,
         })
     }
@@ -58,5 +63,11 @@ mod tests {
         assert!(t.block.ends_with("/block/ssz_snappy"));
         assert!(!t.block.contains("12345678"));
         assert!(LeanGossipTopics::reject_if_eth2("/eth2/beacon_block").is_err());
+    }
+
+    #[test]
+    fn segment_override_topics() {
+        let t = LeanGossipTopics::from_fork_segment("aabbccdd").unwrap();
+        assert!(t.block.contains("/leanconsensus/aabbccdd/"));
     }
 }
