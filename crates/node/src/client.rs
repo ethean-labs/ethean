@@ -7,6 +7,7 @@ use crate::{
     events::ChainEvent,
     observability::{smoke_health_route, NodeObservability},
     shutdown::ShutdownState,
+    signal_loop::run_until_signal,
     start_config::{RunMode, StartConfig},
     wall_loop::{run_wall_duty_loop, WallLoopConfig},
     wall_tick::tick_from_wall,
@@ -161,6 +162,16 @@ impl EtheanClient {
                         max_ticks: ticks,
                         enable_sleep,
                     },
+                )
+                .await?
+            }
+            RunMode::UntilSignal { enable_sleep } => {
+                run_until_signal(
+                    &self.clock,
+                    &mut self.owner,
+                    &mut self.shutdown,
+                    &mut self.sync,
+                    enable_sleep,
                 )
                 .await?
             }
