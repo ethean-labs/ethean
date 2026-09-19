@@ -1,0 +1,12 @@
+# pq-devnet-4 bootnodes (QUIC multiaddrs)
+#
+# Operational run target while pq-devnet-5 has no public always-on mesh.
+# One multiaddr per line. Lines starting with # are ignored.
+#
+# Paste operator / lean-quickstart nodes.yaml ENR-derived QUIC multiaddrs
+# for the active pq-devnet-4 interop run, for example:
+# /ip4/203.0.113.10/udp/9000/quic-v1/p2p/12D3KooWExamplePeerIdReplaceMe
+#
+# Also accepted via:
+#   ethean start --network pq-devnet-4 --bootnodes '<addr1>,<addr2>'
+#   ETHEAN_BOOTNODES='<addr1>,<addr2>'
