@@ -12,9 +12,13 @@ Lean Consensus XMSS wire surface and Type-1 / Type-2 aggregation for Ethean.
 Pinned git rev `c08a3bae…` still declares `num-bigint 0.4` while Plonky3 wants `0.5`.
 Until upstream unifies:
 
-1. `pwsh tools/release/vendor-leansig-bigint-fix.ps1`
+1. `pwsh tools/release/vendor-leansig-bigint-fix.ps1` (applies `vendor/leansig/num-bigint-0.5.patch`)
 2. Temporarily point `crates/crypto/Cargo.toml` at `../../bazalinacaklar/leanSig-patched`
 3. `cargo check -p ethean-crypto --features leansig-backend`
 4. Restore the git dep before committing
 
-`leanvm-backend` remains a fail-closed stub (no FFI symbols wired yet).
+## leanVM backend
+
+`leanvm-backend` compiles `backend_leanvm` against pin `e2592df4…`.
+`FfiStatus.leanvm` stays false until `LEANVM_FFI_LINKED` is flipped after real FFI/process link.
+With `test-aggregate` (default), unit tests keep using the statement-bound synthetic verifier.
