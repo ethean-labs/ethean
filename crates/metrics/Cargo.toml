@@ -1,0 +1,16 @@
+[package]
+name = "ethean-metrics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Lean Consensus leanMetrics / observability (Phase 12)"
+
+[dependencies]
+ethean-primitives = { workspace = true }
+thiserror = { workspace = true }
+
+[lib]
+name = "ethean_metrics"
+path = "src/lib.rs"
