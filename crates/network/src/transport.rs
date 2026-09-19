@@ -80,16 +80,16 @@ pub fn prepare_transport(
 }
 
 /// Dial remains pending until libp2p QUIC swarm wiring lands.
+///
+/// For UDP path / Status reachability checks use [`crate::probe_udp_status`].
 pub fn dial_quic(_bound: &BoundTransport, multiaddr: &str) -> Result<()> {
-    reject_non_quic(multiaddr)?;
-    Err(NetworkError::TransportPending(
-        "libp2p QUIC-v1 dial/swarm not wired; UDP listen bind only",
-    ))
+    crate::dial::dial_quic_pending(multiaddr)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::NetworkError;
 
     #[test]
     fn rejects_tcp_and_ws() {
@@ -107,6 +107,9 @@ mod tests {
         };
         let bound = prepare_transport(&id, &cfg).expect("bind");
         assert_ne!(bound.listen_port, 0);
-        assert!(dial_quic(&bound, "/ip4/127.0.0.1/udp/1/quic-v1").is_err());
+        assert!(matches!(
+            dial_quic(&bound, "/ip4/127.0.0.1/udp/1/quic-v1"),
+            Err(NetworkError::TransportPending(_))
+        ));
     }
 }
