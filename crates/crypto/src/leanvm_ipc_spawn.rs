@@ -6,11 +6,15 @@
 
 use crate::aggregation::MAX_PROOF_BYTES;
 use crate::error::{CryptoError, Result};
+use crate::leanvm_ipc::{PROBE_ENV, PROVER_ENV};
 use crate::leanvm_ipc_frame::IpcFrame;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
+
+/// Set on spawned prover children so in-process `prove_type1` cannot re-enter IPC.
+pub const SERVING_ENV: &str = "ETHEAN_LEANVM_IPC_SERVING";
 
 /// Default wall budget for one prove/verify IPC exchange.
 pub const DEFAULT_IPC_WALL: Duration = Duration::from_secs(30);
@@ -36,6 +40,9 @@ pub fn exchange_frame(
     }
     let req_bytes = request.encode()?;
     let mut child = Command::new(prover)
+        .env_remove(PROVER_ENV)
+        .env_remove(PROBE_ENV)
+        .env(SERVING_ENV, "1")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
