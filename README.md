@@ -10,7 +10,10 @@
 
 **Rust consensus client for Ethereum Lean Consensus (Beam / leanEthereum)**
 
-[Installation](#installation) · [Usage](#usage) · [Contributing](./CONTRIBUTING.md) · [Docs](./docs/readme/README.md)
+[Overview](#overview) · [Architecture](#architecture) · [Installation](#installation) ·
+[Usage](#usage) · [API](#api-documentation) · [Development](#development) ·
+[Testing](#testing) · [Contributing](./CONTRIBUTING.md) · [Docs](./docs/readme/README.md) ·
+[License](#license)
 
 </div>
 
