@@ -24,10 +24,12 @@ docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
 
 | Gap | Notes |
 | --- | --- |
-| Upstream `clients/ethean` PR in ethereum/hive | Needs published image or git context |
-| Consume Hive `config.yaml` / validators registry | CLI file flags |
+| Upstream `clients/ethean` PR in ethereum/hive | Needs published image or git context + asset preparer entry |
+| Load registry privkeys for duties | Indices logged; signing still local smoke |
 | A2/A3 / leanVM / bigint | External production gates |
 
-Lean HTTP `/lean/v1` on `:5052` and fixed QUIC `:9000` landed — see
-[`lean-http-api-5052-2026-09-20.md`](./lean-http-api-5052-2026-09-20.md) and
-[`quic-fixed-listen-port-2026-09-20.md`](./quic-fixed-listen-port-2026-09-20.md).
+Lean HTTP `:5052`, fixed QUIC `:9000`, and Hive `config.yaml` / `validators.yaml`
+consume landed — see
+[`lean-http-api-5052-2026-09-20.md`](./lean-http-api-5052-2026-09-20.md),
+[`quic-fixed-listen-port-2026-09-20.md`](./quic-fixed-listen-port-2026-09-20.md), and
+[`hive-lean-config-consume-2026-09-20.md`](./hive-lean-config-consume-2026-09-20.md).
