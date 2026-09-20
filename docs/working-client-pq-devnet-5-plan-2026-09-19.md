@@ -30,7 +30,7 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 - Blocks-by-range request encode scaffold landed; QuicSwarm stream still open ([blocks-by-range-scaffold-2026-09-19.md](./blocks-by-range-scaffold-2026-09-19.md)).
 - leanSig + leanVM production gates: **Type-1 merge API + pool coalesce landed** ([type1-recursive-merge-2026-09-19.md](./type1-recursive-merge-2026-09-19.md)); structural Type-2 split reseed landed; leanVM SNARK prove/split and leanSig production still open.
 - Status / blocks-by-root — wire + SignedBlock ingest + **multi-hop parent catch-up** landed ([blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md)); BlocksByRange still open.
-- Decode/validate D5 block body: single Type-2 proof + re-agg cache from split.
+- Decode/validate D5 block body: single Type-2 proof gate landed ([d5-type2-gossip-envelope-gate-2026-09-19.md](./d5-type2-gossip-envelope-gate-2026-09-19.md)); leanVM SNARK verify + re-agg cache from split still open.
 - Hive / leanSpec fixture consumer for matrix inclusion.
 - Goldfish / PQ heartbeat **only** when leanSpec for the run requires it (may be D6).
 
