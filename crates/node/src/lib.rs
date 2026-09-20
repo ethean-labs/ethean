@@ -58,6 +58,7 @@ pub mod sync_orphan;
 pub mod swarm_pump;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump_agg;
+pub mod validator_registry;
 pub mod wall_loop;
 pub mod wall_tick;
 
@@ -67,8 +68,9 @@ pub use ethean_types::{
     Attestation, Block, Checkpoint, SignedBlock, State, TypesError, Validator,
 };
 pub use ethean_genesis::{
-    load_genesis_ssz, local_smoke_genesis, BuiltGenesis, ClockError, FakeTime, GenesisBuilder,
-    GenesisError, SlotClock, SystemTimeSource, TimeSource,
+    genesis_from_lean_config, load_genesis_ssz, load_lean_network_config, local_smoke_genesis,
+    BuiltGenesis, ClockError, FakeTime, GenesisBuilder, GenesisError, LeanNetworkConfig, SlotClock,
+    SystemTimeSource, TimeSource,
 };
 
 pub use chain_owner::{ChainOwner, ChainSnapshot};
@@ -82,6 +84,7 @@ pub use shutdown::{ShutdownPhase, ShutdownState};
 pub use signal_loop::run_until_signal;
 pub use network_target::{NetworkId, NetworkTarget};
 pub use start_config::{LocalRoles, MetricsListen, RpcListen, RunMode, StartConfig};
+pub use validator_registry::{load_validator_assignment, parse_validator_assignment, ValidatorAssignment};
 pub use wall_loop::{run_wall_duty_loop, WallLoopConfig};
 pub use wall_tick::{ms_until_next_interval, tick_from_wall};
 
