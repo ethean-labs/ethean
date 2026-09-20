@@ -457,8 +457,8 @@ skip_signature_verification = false
 
 ##  Monitoring & Metrics
 
-Long-run monitoring matches Ream/ethlambda Grafana practice (head / justified /
-finalized / current slot).
+Long-run monitoring: head / justified / finalized / current slot, plus validators,
+roles, readiness, peers, and lag gauges on provisioned Grafana boards.
 
 **Two layers (easy to confuse):**
 
@@ -488,7 +488,8 @@ curl -s http://127.0.0.1:9100/metrics | findstr ethean_head_slot
 ```
 
 Useful gauges: `ethean_head_slot`, `ethean_justified_slot`, `ethean_finalized_slot`,
-`ethean_slot_current`, `ethean_peer_count`, `ethean_ready`.
+`ethean_slot_current`, `ethean_peer_count`, `ethean_validator_count`,
+`ethean_finality_lag_slots`, `ethean_ready`, `ethean_aggregator_enabled`.
 
 ### Start with Grafana + Prometheus
 
@@ -526,7 +527,7 @@ Manual stack only (if you prefer not to use `--metrics`):
 | Service | Link |
 | --- | --- |
 | Grafana (anonymous viewer) | [http://localhost:3000](http://localhost:3000) |
-| Dashboard | **Ethean Lean Clients Dashboard** (folder Ethean) |
+| Dashboard | **Ethean Lean Clients Dashboard** + **Ethean Node Health** (folder Ethean) |
 | Prometheus UI | [http://localhost:9090](http://localhost:9090) |
 | Prometheus targets | [http://localhost:9090/targets](http://localhost:9090/targets) (`ethean` / `ethean-localhost` → UP) |
 | Node scrape | [http://127.0.0.1:9100/metrics](http://127.0.0.1:9100/metrics) |
@@ -536,6 +537,7 @@ finalized follow when a mesh + aggregator exists. Flat finalized while head clim
 = finality stall (same failure mode Shariq caught on a 5-day Ream run).
 
 Details: [docs/long-run-metrics-grafana-2026-09-20.md](./docs/long-run-metrics-grafana-2026-09-20.md),
+[docs/ethean-grafana-richer-monitors-2026-09-20.md](./docs/ethean-grafana-richer-monitors-2026-09-20.md),
 [docs/metrics-flag-starts-grafana-prometheus-2026-09-20.md](./docs/metrics-flag-starts-grafana-prometheus-2026-09-20.md),
 [deploy/observability/README.md](./deploy/observability/README.md).
 
