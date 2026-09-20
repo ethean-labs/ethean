@@ -191,6 +191,10 @@ Console colors: [docs/ethean-console-log-colors-2026-09-20.md](docs/ethean-conso
 
 `--ephemeral` wins over `--data-dir` if both are set (logs a warning).
 
+Console log level defaults to **INFO** (libp2p heartbeats stay quiet). Pass `-v`
+for Ethean DEBUG, `-vv` for libp2p DEBUG, or set `RUST_LOG`. See
+[docs/ethean-log-verbosity-2026-09-20.md](docs/ethean-log-verbosity-2026-09-20.md).
+
 #### What the peer model (fixed genesis package) gives you
 
 Same idea as Ream / Zeam / ethlambda / qlean-mini / Lantern / gean / Peam on
@@ -512,6 +516,8 @@ ethean start --until-signal --network pq-devnet-5 --metrics
 | `--data-dir` | unset | Durable fixed genesis + head resume |
 | `--ephemeral` | off | Force recent-genesis smoke (ignore `--data-dir`) |
 | `--reset-chain` | off | Empty `--data-dir` (chain + logs) before start |
+| `-v` / `--verbose` | off | More logs (`-v` DEBUG, `-vv` +libp2p, `-vvv` TRACE) |
+| `--log-level` | unset | Max level (`info`/`debug`/`trace`; `RUST_LOG` wins) |
 | `--validators` | `4` | Local registry size |
 | `--no-aggregator` | off | Disable aggregator role (default **on**) |
 | `--no-local-finality` | off | Disable solo head/finality advance (default **on**) |
