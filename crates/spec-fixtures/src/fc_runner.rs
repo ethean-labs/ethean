@@ -1,11 +1,11 @@
-//! Run leanSpec `fork_choice_test` rejection steps against Ethean fork-choice.
+//! Run leanSpec `fork_choice_test` steps against Ethean fork-choice.
 
 use crate::envelope::FixtureCase;
+use crate::fc_steps::{apply_block_step, apply_tick, BlockStepKind};
 use crate::json_types::{block_from_value, state_from_value, JsonTypesError};
-use crate::rejection::map_fork_choice_rejection;
 use ethean_fork_choice::{create_store, ForkChoiceError, ForkChoiceOpts, ForkChoiceStore};
 use ethean_profile::lstar_devnet;
-use ethean_types::State;
+use ethean_transition::TransitionContext;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -25,17 +25,23 @@ pub enum FcRunError {
     Unmapped(String),
     #[error("no rejection block steps executed")]
     NoSteps,
+    #[error("{0}")]
+    Step(String),
 }
 
-/// Outcome of running mapped rejection steps in one fixture case.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FcRejectionReport {
-    /// How many rejected block steps were executed and matched.
-    pub matched: usize,
+/// Counts of executed fork-choice fixture steps.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct FcRunReport {
+    /// Successful `tick` steps.
+    pub ticks: usize,
+    /// Successful valid block imports.
+    pub imports: usize,
+    /// Rejection steps that matched the expected error.
+    pub rejections: usize,
 }
 
-/// Create a store from fixture anchors and assert each rejected block step.
-pub fn run_fork_choice_rejections(case: &FixtureCase) -> Result<FcRejectionReport, FcRunError> {
+/// Create a store from fixture anchors and run tick / block steps in order.
+pub fn run_fork_choice_case(case: &FixtureCase) -> Result<FcRunReport, FcRunError> {
     let anchor_state_v = case
         .rest
         .get("anchorState")
@@ -46,68 +52,69 @@ pub fn run_fork_choice_rejections(case: &FixtureCase) -> Result<FcRejectionRepor
         .ok_or(FcRunError::MissingAnchor)?;
     let state = state_from_value(anchor_state_v)?;
     let block = block_from_value(anchor_block_v)?;
-    let profile = lstar_devnet().map_err(|e| {
-        FcRunError::Create(ForkChoiceError::Types(e.to_string()))
-    })?;
+    let profile = lstar_devnet()
+        .map_err(|e| FcRunError::Create(ForkChoiceError::Types(e.to_string())))?;
     let mut store = create_store(state, block, &profile, ForkChoiceOpts::STRUCTURAL)
         .map_err(FcRunError::Create)?;
+    let ctx = TransitionContext::new(profile);
 
-    let mut matched = 0;
+    let mut report = FcRunReport::default();
     for step in &case.steps {
-        if step.valid != Some(false) {
-            continue;
-        }
-        let Some(reason) = step.rejection_reason.as_deref() else {
-            continue;
-        };
-        let Some(token) = map_fork_choice_rejection(reason) else {
-            return Err(FcRunError::Unmapped(reason.to_string()));
-        };
-        let Some(block_v) = step.rest.get("block") else {
-            continue;
-        };
-        let incoming = block_from_value(block_v)?;
-        // Rejection paths fail before post-state is consumed; dummy is enough.
-        let dummy = State::default();
-        let got = store.on_block(incoming, dummy);
-        let expected_err = token.to_error();
-        match &got {
-            Err(e) if e == &expected_err => {
-                matched += 1;
+        let step_v = serde_json::to_value(step)
+            .map_err(|e| FcRunError::Json(JsonTypesError::Serde(e.to_string())))?;
+        // Prefer explicit stepType; fall back to field presence.
+        let step_type = step_v
+            .get("stepType")
+            .and_then(|v| v.as_str())
+            .or_else(|| {
+                if step_v.get("interval").is_some() {
+                    Some("tick")
+                } else if step_v.get("block").is_some() {
+                    Some("block")
+                } else {
+                    None
+                }
+            });
+        match step_type {
+            Some("tick") => {
+                apply_tick(&mut store, &step_v)?;
+                report.ticks += 1;
             }
-            other => {
-                return Err(FcRunError::WrongOutcome {
-                    expected: reason.to_string(),
-                    got: other.clone(),
-                });
+            Some("block") => match apply_block_step(&mut store, &step_v, &ctx)? {
+                BlockStepKind::Imported => report.imports += 1,
+                BlockStepKind::Rejected => report.rejections += 1,
+            },
+            _ => {
+                // Ignore attestation/vote steps until those runners land.
             }
         }
     }
-    if matched == 0 {
+    if report.rejections == 0 && report.imports == 0 && report.ticks == 0 {
         return Err(FcRunError::NoSteps);
     }
-    Ok(FcRejectionReport { matched })
+    Ok(report)
 }
 
-/// Convenience: load JSON bytes and run every case that has rejection steps.
-pub fn run_fork_choice_file(bytes: &[u8]) -> Result<Vec<(String, FcRejectionReport)>, FcRunError> {
+/// Backward-compatible alias focused on rejection fixtures.
+pub fn run_fork_choice_rejections(case: &FixtureCase) -> Result<FcRunReport, FcRunError> {
+    let report = run_fork_choice_case(case)?;
+    if report.rejections == 0 {
+        return Err(FcRunError::NoSteps);
+    }
+    Ok(report)
+}
+
+/// Load JSON bytes and run every case that includes anchors.
+pub fn run_fork_choice_file(bytes: &[u8]) -> Result<Vec<(String, FcRunReport)>, FcRunError> {
     let file = crate::envelope::FixtureFile::from_slice(bytes)
         .map_err(|e| FcRunError::Json(JsonTypesError::Serde(e.to_string())))?;
     let mut out = Vec::new();
     for (id, case) in &file.cases {
-        if case
-            .steps
-            .iter()
-            .any(|s| s.valid == Some(false) && s.rejection_reason.is_some())
-        {
-            // Skip cases that only have rejectionReason without block payload
-            // (committed structural samples).
-            if case.rest.get("anchorState").is_none() {
-                continue;
-            }
-            let report = run_fork_choice_rejections(case)?;
-            out.push((id.clone(), report));
+        if case.rest.get("anchorState").is_none() {
+            continue;
         }
+        let report = run_fork_choice_case(case)?;
+        out.push((id.clone(), report));
     }
     if out.is_empty() {
         return Err(FcRunError::NoSteps);
@@ -115,18 +122,18 @@ pub fn run_fork_choice_file(bytes: &[u8]) -> Result<Vec<(String, FcRejectionRepo
     Ok(out)
 }
 
-/// Keep the store type name referenced for callers that want to inspect later.
+/// Keep the store type available for callers.
 pub type _Store = ForkChoiceStore;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::discover::{discover_json_fixtures, fixtures_root_from_env};
+    use crate::discover::fixtures_root_from_env;
+    use crate::FIXTURES_ENV;
     use std::path::PathBuf;
 
-    fn beyond_horizon_path() -> Option<PathBuf> {
+    fn ensure_cache_env() {
         if fixtures_root_from_env().is_none() {
-            // Default local cache from fetch-leanspec-fixtures.ps1
             let mut def = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
             def.pop();
             def.pop();
@@ -134,52 +141,61 @@ mod tests {
             def.push("leanspec-fixtures");
             def.push("extracted");
             if def.is_dir() {
-                std::env::set_var(crate::FIXTURES_ENV, &def);
+                std::env::set_var(FIXTURES_ENV, &def);
             }
         }
+    }
+
+    fn fixture(rel: &str) -> Option<PathBuf> {
+        ensure_cache_env();
         let root = fixtures_root_from_env()?;
-        let mut p = root.clone();
-        p.push("fixtures");
-        p.push("consensus");
-        p.push("fork_choice");
+        let mut p = root.join("fixtures").join("consensus").join("fork_choice");
         p.push("lstar");
         p.push("fork_choice");
-        p.push("test_block_future_horizon");
-        p.push("test_block_beyond_future_horizon_rejected.json");
-        if p.is_file() {
-            return Some(p);
+        for part in rel.split('/') {
+            p.push(part);
         }
-        let mut alt = root;
-        alt.push("consensus");
-        alt.push("fork_choice");
-        alt.push("lstar");
-        alt.push("fork_choice");
-        alt.push("test_block_future_horizon");
-        alt.push("test_block_beyond_future_horizon_rejected.json");
-        alt.is_file().then_some(alt)
+        p.is_file().then_some(p)
     }
 
     #[test]
     fn runs_beyond_future_horizon_when_cache_present() {
-        let Some(path) = beyond_horizon_path() else {
-            eprintln!("skip: set ETHEAN_LEANSPEC_FIXTURES after fetch-leanspec-fixtures.ps1");
+        let Some(path) = fixture(
+            "test_block_future_horizon/test_block_beyond_future_horizon_rejected.json",
+        ) else {
+            eprintln!("skip: fetch-leanspec-fixtures.ps1 cache missing");
             return;
         };
-        let bytes = std::fs::read(&path).expect("read fixture");
-        let reports = run_fork_choice_file(&bytes).expect("run fixture");
-        assert_eq!(reports.len(), 1);
-        assert_eq!(reports[0].1.matched, 1);
+        let bytes = std::fs::read(&path).unwrap();
+        let reports = run_fork_choice_file(&bytes).unwrap();
+        assert_eq!(reports[0].1.rejections, 1);
     }
 
     #[test]
-    fn discovers_future_horizon_under_cache() {
-        let Some(root) = fixtures_root_from_env() else {
+    fn runs_one_past_horizon_after_tick() {
+        let Some(path) =
+            fixture("test_block_future_horizon/test_block_one_past_horizon_rejected.json")
+        else {
+            eprintln!("skip: cache missing");
             return;
         };
-        let files = discover_json_fixtures(&root).unwrap();
-        assert!(files.iter().any(|p| p
-            .file_name()
-            .and_then(|n| n.to_str())
-            .is_some_and(|n| n.contains("beyond_future_horizon"))));
+        let bytes = std::fs::read(&path).unwrap();
+        let reports = run_fork_choice_file(&bytes).unwrap();
+        assert_eq!(reports[0].1.ticks, 1);
+        assert_eq!(reports[0].1.rejections, 1);
+    }
+
+    #[test]
+    fn runs_unknown_parent_after_valid_import() {
+        let Some(path) = fixture(
+            "test_block_unknown_parent/test_block_with_fabricated_parent_is_rejected.json",
+        ) else {
+            eprintln!("skip: cache missing");
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let reports = run_fork_choice_file(&bytes).unwrap();
+        assert_eq!(reports[0].1.imports, 1);
+        assert_eq!(reports[0].1.rejections, 1);
     }
 }
