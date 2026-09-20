@@ -1,6 +1,7 @@
 //! Install Hive registry keys onto a running client.
 
 use crate::client::EtheanClient;
+use crate::local_attester::LocalAttester;
 use crate::local_proposer::LocalProposer;
 use crate::registry_keys::LoadedNodeKeys;
 use tracing::{info, warn};
@@ -8,8 +9,8 @@ use tracing::{info, warn};
 impl EtheanClient {
     /// Prefer Hive registry proposal/attestation keys when present.
     ///
-    /// Proposal import requires `leansig-backend`; otherwise the existing local
-    /// proposer (smoke / production keygen) is left unchanged and a warning is logged.
+    /// Import requires `leansig-backend`; otherwise existing local signers are
+    /// left unchanged and a warning is logged.
     pub fn apply_registry_keys(&mut self, keys: &LoadedNodeKeys) {
         info!(
             node_id = %keys.node_id,
@@ -18,11 +19,25 @@ impl EtheanClient {
             has_attestation = keys.attestation.is_some(),
             "applying Hive validator registry keys"
         );
-        if let Some(ref att) = keys.attestation {
-            info!(
-                index_key = ?att.key_id,
-                "attestation registry key loaded (duty wiring still uses local attester path)"
-            );
+        if !keys.indices.is_empty() {
+            self.owner.owned_validator_indices = keys.indices.clone();
+        }
+        if let Some(att) = keys.attestation.clone() {
+            match LocalAttester::from_key_record(att) {
+                Ok(attester) => {
+                    info!(
+                        production = attester.is_production(),
+                        "installed registry attestation privkey into LocalAttester"
+                    );
+                    self.owner.attester = Some(attester);
+                }
+                Err(e) => {
+                    warn!(
+                        error = %e,
+                        "registry attestation privkey not installed"
+                    );
+                }
+            }
         }
         let Some(prop) = keys.proposal.clone() else {
             return;
