@@ -132,8 +132,10 @@ When stuck on a protocol detail, compare 1–2 peer clients, then implement in
 
 ## Code of conduct
 
-Be respectful in issues and PRs. Assume good faith. Disagreements are about the
-protocol and the code, not the person.
+This project follows the [Contributor Covenant](./CODE_OF_CONDUCT.md)
+(v2.1). Be respectful in issues and PRs. Assume good faith. Disagreements are
+about the protocol and the code, not the person. Report enforcement concerns to
+the contact listed in that file.
 
 ## License
 
