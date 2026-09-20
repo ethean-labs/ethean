@@ -19,7 +19,7 @@ Design notes, sprint write-ups, and working plans for the client.
 
 - [LeanSpec / fork choice / STF](./lean-spec/README.md) (28 notes)
 - [Networking / QUIC / gossip / HTTP](./networking/README.md) (26 notes)
-- [Observability / metrics / Grafana](./observability/README.md) (17 notes)
+- [Observability / metrics / Grafana](./observability/README.md) (18 notes)
 - [pq-devnet / operator run](./pq-devnet/README.md) (13 notes)
 - [leanSig / leanVM / aggregation](./lean-crypto/README.md) (20 notes)
 - [Storage / persist / prune](./storage/README.md) (7 notes)

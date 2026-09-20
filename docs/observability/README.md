@@ -13,6 +13,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [grafana prometheus need docker](grafana-prometheus-need-docker-2026-09-20.md)
 - [grafana range serve seed panels](grafana-range-serve-seed-panels-2026-09-20.md)
 - [leanmetrics safe target name map](leanmetrics-safe-target-name-map-2026-09-20.md)
+- [node safe target reorg metrics](node-safe-target-reorg-metrics-2026-09-20.md)
 - [long run metrics grafana](long-run-metrics-grafana-2026-09-20.md)
 - [metrics flag starts grafana prometheus](metrics-flag-starts-grafana-prometheus-2026-09-20.md)
 - [observability docker daemon guard](observability-docker-daemon-guard-2026-09-20.md)
