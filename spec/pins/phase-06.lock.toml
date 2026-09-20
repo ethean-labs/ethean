@@ -42,7 +42,7 @@ apis = [
   "ForkChoiceStore::on_block (post-state supplied; no STF re-run)",
   "ForkChoiceStore::on_attestation_data (structural via STRUCTURAL opts)",
   "head / safe_target / justified / finalized",
-  "prune_finalized_away",
+  "prune_stale_attestation_data",
 ]
 vote_model = "ValidatorIndex -> AttestationData (new/known pools; simplified vs leanSpec aggregate-proof maps)"
 implemented = [
@@ -51,7 +51,7 @@ implemented = [
   "on_block unknown-parent reject; justified advance; head update",
   "weighted head walk from justified with known votes; lex root tie-break",
   "safe_target with 2/3 min_score on pending votes",
-  "prune blocks finalized away; keep finalized ancestry",
+  "prune stale votes/payloads on finalization (keep all blocks; leanSpec)",
 ]
 deferred = [
   "XMSS / aggregate proof verify on gossip attestations (Phase 07/08)",
