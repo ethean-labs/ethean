@@ -100,6 +100,7 @@ pub fn ingest_blocks_by_root_response(
             GossipStfResult::Applied { .. }
             | GossipStfResult::AppliedVerified { .. }
             | GossipStfResult::RootOnly { .. } => {
+                owner.remember_durable_block(decoded.root, blob.clone());
                 info!(
                     peer0 = peer[0],
                     root0 = decoded.root[0],
@@ -137,6 +138,7 @@ fn drain_orphans(
             GossipStfResult::Applied { .. }
             | GossipStfResult::AppliedVerified { .. }
             | GossipStfResult::RootOnly { .. } => {
+                owner.remember_durable_block(root, orphan.blob.clone());
                 events.push(ChainEvent::GossipIngested {
                     topic: SYNC_BLOCK_TOPIC.to_string(),
                     content_root: root,
