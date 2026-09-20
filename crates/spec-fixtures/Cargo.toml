@@ -1,0 +1,16 @@
+[package]
+name = "ethean-spec-fixtures"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "leanSpec / Hive fixture index and rejection-reason mapping for Ethean"
+
+[dependencies]
+ethean-fork-choice = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
