@@ -88,7 +88,7 @@ stays down.
 
 - Grafana: http://localhost:3000 (anonymous viewer)
 - Dashboards: **Ethean Lean Clients Dashboard**, **Ethean Node Health**
-  (Node Health includes durable flush / prune floor and rates)
+  (Node Health includes durable flush / prune and blocks-by-range serve rows)
 - Prometheus: http://localhost:9090
 
 ## Health check URLs
