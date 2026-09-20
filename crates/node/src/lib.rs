@@ -38,6 +38,7 @@ pub mod local_status;
 pub mod metrics_snap;
 pub mod network;
 pub mod network_target;
+pub mod fork_digest_policy;
 pub mod observability;
 pub mod shutdown;
 pub mod signal_loop;
