@@ -36,6 +36,6 @@ cargo test -p ethean-spec-fixtures --lib fc_runner
 
 | Gap | Notes |
 | --- | --- |
-| Fixture `checks` / storeSnapshot asserts | Not validated yet |
-| Cap `tickToSlot` at earliest admissible interval (Gean) | Optional hardening |
+| Fixture `checks` / storeSnapshot asserts | Landed for core fields — see `leanspec-fc-checks-snapshot-2026-09-20.md` |
+| Cap `tickToSlot` at earliest admissible interval (Gean) | Valid votes use earliest-admissible; blocks keep slot start |
 | STF runner / Hive image / A2/A3 / leanVM / bigint | External or separate |
