@@ -180,6 +180,30 @@ fn losing_fork_higher_finalized_does_not_latch() {
 }
 
 #[test]
+fn fork_above_finalized_wins_at_or_below_loses() {
+    let Some(r) = run_ok(
+        "test_finalized_safety/test_fork_above_finalized_wins_at_or_below_loses.json",
+    ) else {
+        eprintln!("skip: cache missing");
+        return;
+    };
+    assert_eq!(r.imports, 9);
+    assert_eq!(r.rejections, 0);
+}
+
+#[test]
+fn heavier_fork_below_finalized_slot_never_wins() {
+    let Some(r) = run_ok(
+        "test_finalized_safety/test_heavier_fork_below_finalized_slot_never_wins.json",
+    ) else {
+        eprintln!("skip: cache missing");
+        return;
+    };
+    assert_eq!(r.imports, 9);
+    assert_eq!(r.rejections, 0);
+}
+
+#[test]
 fn tick_interval_0_skips_acceptance_when_not_proposer() {
     let Some(r) = run_ok(
         "test_tick_system/test_tick_interval_0_skips_acceptance_when_not_proposer.json",
