@@ -1,20 +1,67 @@
-//! Prune blocks that finalization has orphaned.
+//! Prune stale attestation data after finalization advances (leanSpec).
+
+use ethean_primitives::Hash32;
 
 use crate::store::ForkChoiceStore;
 
-/// Drop blocks that are not ancestors of the finalized checkpoint and sit at or
-/// below the finalized slot. Keeps the finalized ancestry intact.
-pub fn prune_finalized_away(store: &mut ForkChoiceStore) {
-    let keep = store.ancestry_set(store.latest_finalized.root);
-    let finalized_slot = store.latest_finalized.slot;
-    let doomed: Vec<_> = store
-        .blocks
+/// Drop votes and payloads whose head can no longer influence fork choice.
+///
+/// leanSpec filters attestation-keyed pools only — it does **not** delete
+/// blocks from the store when finalization advances. A vote/payload survives
+/// when its head is strictly above the finalized slot and a descendant of the
+/// finalized checkpoint.
+pub fn prune_stale_attestation_data(store: &mut ForkChoiceStore) {
+    let finalized = store.latest_finalized;
+
+    let drop_new: Vec<_> = store
+        .latest_new_attestations
         .iter()
-        .filter(|(root, block)| block.slot <= finalized_slot && !keep.contains(*root))
-        .map(|(root, _)| *root)
+        .filter(|(_, data)| {
+            !(data.head.slot > finalized.slot
+                && store.checkpoint_is_ancestor(finalized, data.head))
+        })
+        .map(|(k, _)| *k)
         .collect();
-    for root in doomed {
-        store.blocks.remove(&root);
-        store.block_states.remove(&root);
+    for k in drop_new {
+        store.latest_new_attestations.remove(&k);
+    }
+
+    let drop_known: Vec<_> = store
+        .latest_known_attestations
+        .iter()
+        .filter(|(_, data)| {
+            !(data.head.slot > finalized.slot
+                && store.checkpoint_is_ancestor(finalized, data.head))
+        })
+        .map(|(k, _)| *k)
+        .collect();
+    for k in drop_known {
+        store.latest_known_attestations.remove(&k);
+    }
+
+    let drop_new_payloads: Vec<Hash32> = store
+        .latest_new_payloads
+        .iter()
+        .filter(|(_, entry)| {
+            !(entry.data.head.slot > finalized.slot
+                && store.checkpoint_is_ancestor(finalized, entry.data.head))
+        })
+        .map(|(k, _)| *k)
+        .collect();
+    for k in drop_new_payloads {
+        store.latest_new_payloads.remove(&k);
+    }
+
+    let drop_known_payloads: Vec<Hash32> = store
+        .latest_known_payloads
+        .iter()
+        .filter(|(_, entry)| {
+            !(entry.data.head.slot > finalized.slot
+                && store.checkpoint_is_ancestor(finalized, entry.data.head))
+        })
+        .map(|(k, _)| *k)
+        .collect();
+    for k in drop_known_payloads {
+        store.latest_known_payloads.remove(&k);
     }
 }
