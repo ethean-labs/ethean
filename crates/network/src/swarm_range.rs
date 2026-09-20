@@ -26,6 +26,15 @@ impl SwarmFacade {
         Ok(())
     }
 
+    /// Cumulative range-serve found/missing totals and cache slot count.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn range_serve_stats(&self) -> (u64, u64, u64) {
+        match self.quic.as_ref() {
+            Some(swarm) => swarm.range_serve_stats(),
+            None => (0, 0, 0),
+        }
+    }
+
     /// Stage encoded blocks-by-range requests for later stream send.
     pub fn enqueue_blocks_range_outbounds(&mut self, reqs: Vec<OutboundBlocksByRangeRequest>) {
         self.blocks_range_outbox.extend(reqs);
