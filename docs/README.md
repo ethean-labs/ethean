@@ -52,6 +52,7 @@ Planning session summaries:
 - [External gates: QuicSwarm, RocksDB INCLUDE, leanSig vendor](./external-gates-quic-rocksdb-leansig-2026-09-19.md)
 - [Durable QuicSwarm, leanVM stub, leanSig vendor patch](./durable-quic-leanvm-leansig-vendor-2026-09-19.md)
 - [B1 leanSig vendor backend compile path](./b1-leansig-vendor-backend-compile-2026-09-20.md)
+- [B2 leanVM IPC live probe (protocol_ready)](./b2-leanvm-ipc-live-probe-2026-09-20.md)
 - [Gossipsub mesh on QuicSwarm](./gossipsub-quic-mesh-2026-09-19.md)
 - [Gossip ingest and peer score feedback](./gossip-ingest-peer-score-2026-09-19.md)
 - [SSZ gossip decode into ImportBlock](./ssz-gossip-import-block-2026-09-19.md)
