@@ -121,6 +121,7 @@ impl ForkChoiceStore {
                 }
             }
         }
+        self.promote_new_payloads();
         self.update_head()
     }
 
