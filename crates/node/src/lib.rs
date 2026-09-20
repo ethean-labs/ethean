@@ -17,6 +17,7 @@ pub mod chain_redb;
 pub mod chain_snap;
 pub mod persist_paths;
 pub mod persist_ssz;
+pub mod serve_cache_seed;
 pub mod cli;
 pub mod client;
 pub mod client_boot;
