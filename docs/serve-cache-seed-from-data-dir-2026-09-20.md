@@ -16,6 +16,9 @@ blobs into the in-memory range serve cache:
 
 Cold peers that previously replied empty on deep-lag range requests can now
 serve restarted history that was flushed via `save_head` / `save_block_ssz`.
+Applied sync/gossip blocks are queued on `ChainOwner::durable_blocks` so they
+reach disk (see
+[persist-applied-blocks-durable-2026-09-20.md](./persist-applied-blocks-durable-2026-09-20.md)).
 
 ## Tests
 
