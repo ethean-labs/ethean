@@ -492,8 +492,13 @@ curl -s http://127.0.0.1:9100/metrics | findstr ethean_head_slot
 ```
 
 Useful gauges: `ethean_head_slot`, `ethean_justified_slot`, `ethean_finalized_slot`,
-`ethean_slot_current`, `ethean_peer_count`, `ethean_validator_count`,
-`ethean_finality_lag_slots`, `ethean_ready`, `ethean_aggregator_enabled`.
+`ethean_slot_current`, `ethean_peer_count`, `ethean_bootnode_count`,
+`ethean_validator_count`, `ethean_finality_lag_slots`, `ethean_ready`,
+`ethean_aggregator_enabled`.
+
+If Grafana shows **1970** dates or **No data** on validators/roles, rebuild the
+binary and reload dashboards:
+[docs/grafana-no-data-and-1970-fix-2026-09-20.md](./docs/grafana-no-data-and-1970-fix-2026-09-20.md).
 
 ### Start with Grafana + Prometheus
 
