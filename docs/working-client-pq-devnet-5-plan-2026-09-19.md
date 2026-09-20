@@ -32,7 +32,7 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 - Status / blocks-by-root — wire + SignedBlock ingest + **multi-hop parent catch-up** landed ([blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md)); BlocksByRange still open.
 - Decode/validate D5 block body: single Type-2 proof gate landed ([d5-type2-gossip-envelope-gate-2026-09-19.md](./d5-type2-gossip-envelope-gate-2026-09-19.md)); leanVM SNARK verify + re-agg cache from split still open.
 - Fork-digest mesh isolation warn + leanSig/leanVM refuse_reason boot honesty ([c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md](./c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md), [b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md](./b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md)).
-- D2 smoke: four attestation subnet subscribe + `AggregatorReady` duty hook ([b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md](./b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md)); Type-1 publish still open.
+- D2 smoke: four attestation subnet subscribe + `AggregatorReady` + Type-1 prove + **aggregation gossip publish** ([d2-type1-aggregation-gossip-publish-2026-09-20.md](./d2-type1-aggregation-gossip-publish-2026-09-20.md)).
 - Hive / leanSpec fixture consumer for matrix inclusion.
 - Goldfish / PQ heartbeat **only** when leanSpec for the run requires it (may be D6).
 
