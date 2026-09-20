@@ -950,6 +950,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Grafana range-serve / seed panels**: [docs/grafana-range-serve-seed-panels-2026-09-20.md](./docs/grafana-range-serve-seed-panels-2026-09-20.md)
 - **leanSpec FC finality / reorg / LMD**: [docs/leanspec-fc-finality-reorg-lmd-2026-09-20.md](./docs/leanspec-fc-finality-reorg-lmd-2026-09-20.md)
 - **leanEthereum official repos plan**: [docs/lean-ethereum-official-repos-plan-2026-09-20.md](./docs/lean-ethereum-official-repos-plan-2026-09-20.md)
+- **leanEthereum/pm indexed**: [docs/lean-ethereum-pm-indexed-2026-09-20.md](./docs/lean-ethereum-pm-indexed-2026-09-20.md)
+- **FC MAX_ATTESTATIONS_DATA / D4 rate**: [docs/fc-max-attestations-d4-log-inv-rate-2026-09-20.md](./docs/fc-max-attestations-d4-log-inv-rate-2026-09-20.md)
 - **leanMetrics safe_target / name map**: [docs/leanmetrics-safe-target-name-map-2026-09-20.md](./docs/leanmetrics-safe-target-name-map-2026-09-20.md)
 - **leanSpec FC payload LMD weights**: [docs/leanspec-fc-payload-lmd-weights-2026-09-20.md](./docs/leanspec-fc-payload-lmd-weights-2026-09-20.md)
 - **Full State SSZ encode/decode**: [docs/state-ssz-encode-decode-complete-2026-09-20.md](./docs/state-ssz-encode-decode-complete-2026-09-20.md)

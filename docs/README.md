@@ -69,6 +69,8 @@ Planning session summaries:
 - [leanSpec FC gossipAggregatedAttestation](./leanspec-fc-gossip-aggregated-2026-09-20.md)
 - [leanSpec FC finality / reorg / LMD suites](./leanspec-fc-finality-reorg-lmd-2026-09-20.md)
 - [leanEthereum official repos plan](./lean-ethereum-official-repos-plan-2026-09-20.md)
+- [leanEthereum/pm indexed](./lean-ethereum-pm-indexed-2026-09-20.md)
+- [FC MAX_ATTESTATIONS_DATA + D4 log_inv_rate](./fc-max-attestations-d4-log-inv-rate-2026-09-20.md)
 - [leanMetrics safe_target + name map](./leanmetrics-safe-target-name-map-2026-09-20.md)
 - [leanSpec FC payload LMD weights](./leanspec-fc-payload-lmd-weights-2026-09-20.md)
 - [leanSpec FC wall-clock tick + justification](./leanspec-fc-wall-clock-tick-justification-2026-09-20.md)
