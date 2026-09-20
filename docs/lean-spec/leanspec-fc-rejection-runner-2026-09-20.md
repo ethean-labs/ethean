@@ -13,7 +13,7 @@ filled leanSpec JSON (not only parse/index):
 Verified against production-scheme vectors including
 `test_block_beyond_future_horizon_rejected`, tick+reject
 (`one_past_horizon`), and import+`UNKNOWN_PARENT_BLOCK`. See also
-[`leanspec-fc-tick-import-rejections-2026-09-20.md`](./leanspec-fc-tick-import-rejections-2026-09-20.md).
+[`leanspec-fc-tick-import-rejections-2026-09-20.md`](leanspec-fc-tick-import-rejections-2026-09-20.md).
 
 ## Recipe
 

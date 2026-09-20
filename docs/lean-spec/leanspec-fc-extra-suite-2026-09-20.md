@@ -26,8 +26,8 @@ New module `fc_runner_extra_tests.rs` (cache-gated):
 
 | Gap | Notes |
 | --- | --- |
-| Filled `at_9` / `dead_9` empty bodies | Python BlockSpec has 7 votes; JSON body empty — weight dumps gated; see [empty-body gate](./leanspec-fc-finalized-safety-empty-body-gate-2026-09-20.md) |
+| Filled `at_9` / `dead_9` empty bodies | Python BlockSpec has 7 votes; JSON body empty — weight dumps gated; see [empty-body gate](leanspec-fc-finalized-safety-empty-body-gate-2026-09-20.md) |
 | Node metrics | live FC `safe_target` / `reorg_total` (justified used as safe stand-in) |
 
 Tick interval-0 acceptance is green — see
-[leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md](./leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md).
+[leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md](leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md).
