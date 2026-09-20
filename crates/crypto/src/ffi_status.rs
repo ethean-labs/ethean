@@ -31,6 +31,8 @@ pub struct LeanVmGate {
     pub ipc_binary_present: bool,
     /// Versioned IPC frame codec is compiled in.
     pub ipc_frame_abi_ready: bool,
+    /// Length-prefixed spawn exchange is compiled in.
+    pub ipc_spawn_wired: bool,
     /// Framed process IPC spawn/round-trip is implemented.
     pub ipc_protocol_ready: bool,
 }
@@ -83,6 +85,7 @@ impl LeanVmGate {
                 ffi_linked: s.ffi_linked,
                 ipc_binary_present: ipc.binary_present,
                 ipc_frame_abi_ready: ipc.frame_abi_ready,
+                ipc_spawn_wired: ipc.spawn_exchange_wired,
                 ipc_protocol_ready: ipc.protocol_ready,
             }
         }
@@ -94,6 +97,7 @@ impl LeanVmGate {
                 ffi_linked: false,
                 ipc_binary_present: ipc.binary_present,
                 ipc_frame_abi_ready: ipc.frame_abi_ready,
+                ipc_spawn_wired: ipc.spawn_exchange_wired,
                 ipc_protocol_ready: ipc.protocol_ready,
             }
         }
@@ -116,6 +120,11 @@ impl LeanVmGate {
         }
         if !self.feature_enabled {
             return Some("leanvm-backend feature disabled; refuse always-true aggregate verify");
+        }
+        if self.ipc_binary_present && self.ipc_spawn_wired && !self.ipc_protocol_ready {
+            return Some(
+                "leanVM IPC spawn wired but pin-checked round-trip not green; refuse ready claim",
+            );
         }
         if self.ipc_binary_present && !self.ipc_protocol_ready {
             return Some("leanVM IPC binary present but framed protocol not ready");
