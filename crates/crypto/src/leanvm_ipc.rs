@@ -1,7 +1,8 @@
 //! leanVM process-isolated prover IPC status (feature `leanvm-backend`).
 //!
-//! Frame codec + spawn exchange are wired. `protocol_ready` stays false until a
-//! pin-checked round-trip against a real leanVM binary succeeds in CI/ops.
+//! Frame codec + spawn exchange are wired. `protocol_ready` becomes true only after
+//! an explicit live probe (`ETHEAN_LEANVM_IPC_PROBE`) succeeds against the configured
+//! binary (ops should point that at a pin-trusted leanVM, not only the mock).
 
 use crate::aggregation::{AggregateStatement, LEANVM_REV};
 use crate::error::{CryptoError, Result};
@@ -11,6 +12,20 @@ use std::path::PathBuf;
 
 /// Env var naming a candidate leanVM prover executable.
 pub const PROVER_ENV: &str = "ETHEAN_LEANVM_PROVER";
+
+/// When truthy (`1`/`true`/`yes`/`on`), [`LeanVmIpcStatus::probe`] runs one pin-checked
+/// prove round-trip and sets `protocol_ready` on success.
+pub const PROBE_ENV: &str = "ETHEAN_LEANVM_IPC_PROBE";
+
+fn env_flag(name: &str) -> bool {
+    match std::env::var(name) {
+        Ok(v) => matches!(
+            v.trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes" | "on"
+        ),
+        Err(_) => false,
+    }
+}
 
 /// Snapshot of process-prover wiring for gates / boot logs.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,25 +38,36 @@ pub struct LeanVmIpcStatus {
     pub frame_abi_ready: bool,
     /// Length-prefixed spawn exchange is compiled in (still fail-closed on bad peers).
     pub spawn_exchange_wired: bool,
-    /// Live pin-checked round-trip against leanVM succeeded (ops/CI sets this path later).
+    /// Operator requested a live pin-checked round-trip during probe.
+    pub probe_requested: bool,
+    /// Live pin-checked round-trip against the configured binary succeeded.
     pub protocol_ready: bool,
 }
 
 impl LeanVmIpcStatus {
-    /// Probe env + filesystem; never executes the binary.
+    /// Probe env + filesystem; executes the binary only when [`PROBE_ENV`] is set.
     pub fn probe() -> Self {
         let binary_path = std::env::var_os(PROVER_ENV).map(PathBuf::from);
         let binary_present = binary_path
             .as_ref()
             .map(|p| p.is_file())
             .unwrap_or(false);
+        let probe_requested = env_flag(PROBE_ENV);
+        let protocol_ready = if binary_present && probe_requested {
+            binary_path
+                .as_ref()
+                .map(|p| try_roundtrip_prove(p).is_ok())
+                .unwrap_or(false)
+        } else {
+            false
+        };
         Self {
             binary_path,
             binary_present,
             frame_abi_ready: FRAME_CODEC_READY,
             spawn_exchange_wired: SPAWN_EXCHANGE_WIRED,
-            // Flip only after a successful pin-checked round-trip in ops/CI.
-            protocol_ready: false,
+            probe_requested,
+            protocol_ready,
         }
     }
 
@@ -139,7 +165,7 @@ fn accept_verify_response(request: &IpcFrame, response: IpcFrame) -> Result<bool
 
 /// Attempt one Type-1 prove round-trip against `prover` (dev/CI helper).
 ///
-/// Does not flip [`LeanVmIpcStatus::protocol_ready`]; callers decide trust policy.
+/// Also used by [`LeanVmIpcStatus::probe`] when [`PROBE_ENV`] is set.
 pub fn try_roundtrip_prove(prover: &std::path::Path) -> Result<Vec<u8>> {
     use crate::aggregation::{ParticipantSet, ProofKind};
     let statement = AggregateStatement {
@@ -156,95 +182,5 @@ pub fn try_roundtrip_prove(prover: &std::path::Path) -> Result<Vec<u8>> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::aggregation::{ParticipantSet, ProofKind};
-    use crate::leanvm_ipc_frame::IpcOp;
-    use crate::verify_type1;
-
-    fn sample() -> AggregateStatement {
-        AggregateStatement {
-            kind: ProofKind::Type1,
-            profile_digest: [1u8; 32],
-            message_root: [2u8; 32],
-            slot: 1,
-            participants: ParticipantSet::try_from_ordered(vec![0]).unwrap(),
-            components: vec![],
-        }
-    }
-
-    #[test]
-    fn probe_without_env_is_not_ready() {
-        std::env::remove_var(PROVER_ENV);
-        let s = LeanVmIpcStatus::probe();
-        assert!(!s.binary_present);
-        assert!(s.frame_abi_ready);
-        assert!(s.spawn_exchange_wired);
-        assert!(!s.protocol_ready);
-        assert!(!s.ready());
-    }
-
-    #[test]
-    fn prove_ipc_fails_closed_without_env() {
-        std::env::remove_var(PROVER_ENV);
-        assert!(prove_ipc(&sample()).is_err());
-    }
-
-    #[test]
-    fn accept_prove_response_checks_pin_and_op() {
-        let req = IpcFrame::prove_request(&sample()).unwrap();
-        let mut bad = req.clone();
-        bad.op = IpcOp::ProveResponse;
-        bad.ok = true;
-        bad.proof = vec![1];
-        bad.pin_rev = "0".repeat(40);
-        assert!(accept_prove_response(&req, bad).is_err());
-
-        let good = IpcFrame {
-            op: IpcOp::ProveResponse,
-            pin_rev: LEANVM_REV.to_string(),
-            statement: req.statement.clone(),
-            proof: vec![9, 9],
-            ok: true,
-        };
-        assert_eq!(accept_prove_response(&req, good).unwrap(), vec![9, 9]);
-    }
-
-    #[test]
-    fn roundtrip_against_workspace_mock_if_built() {
-        let mock = mock_prover_path();
-        if !mock.is_file() {
-            eprintln!("skip: build ethean-leanvm-mock first ({})", mock.display());
-            return;
-        }
-        let proof = try_roundtrip_prove(&mock).expect("mock prove round-trip");
-        assert!(!proof.is_empty());
-        let statement = AggregateStatement {
-            kind: ProofKind::Type1,
-            profile_digest: [9u8; 32],
-            message_root: [8u8; 32],
-            slot: 1,
-            participants: ParticipantSet::try_from_ordered(vec![0, 1]).unwrap(),
-            components: vec![],
-        };
-        verify_type1(&statement, &proof).expect("mock proof verifies");
-        // Also exercise env-based prove_ipc path.
-        std::env::set_var(PROVER_ENV, &mock);
-        let via_env = prove_ipc(&statement).expect("prove_ipc via mock env");
-        assert_eq!(via_env, proof);
-        std::env::remove_var(PROVER_ENV);
-    }
-
-    fn mock_prover_path() -> std::path::PathBuf {
-        let mut p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        p.pop(); // crates
-        p.pop(); // repo root
-        p.push("target");
-        p.push("debug");
-        #[cfg(windows)]
-        p.push("ethean-leanvm-mock.exe");
-        #[cfg(not(windows))]
-        p.push("ethean-leanvm-mock");
-        p
-    }
-}
+#[path = "leanvm_ipc_tests.rs"]
+mod tests;
