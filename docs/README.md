@@ -14,6 +14,8 @@ Language: [english.md](./english.md) (all in-repo text in English).
 
 Git: [commit-after-each-file.md](./commit-after-each-file.md) (English commit after each file, even mid-prompt).
 
+Version: [versioning.md](./versioning.md) (root `VERSION`, patch bumps, `0.1.99` → `0.2.0`).
+
 No AI / Cursor attribution: [no-ai-git-attribution-2026-09-19.md](./no-ai-git-attribution-2026-09-19.md) (no Cursor co-author trailers or emails in commits/PRs).
 
 Unpublished Cursor trailer scrub: [scrub-unpublished-cursor-trailers-2026-09-19.md](./scrub-unpublished-cursor-trailers-2026-09-19.md).
