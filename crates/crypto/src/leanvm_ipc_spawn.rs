@@ -107,25 +107,7 @@ fn read_len_prefixed_with_deadline(
     }
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
-        let result = (|| -> Result<Vec<u8>> {
-            let mut len_buf = [0u8; 4];
-            stdout.read_exact(&mut len_buf).map_err(|e| {
-                CryptoError::InvalidAggregate(format!("leanVM stdout length: {e}"))
-            })?;
-            let len = u32::from_le_bytes(len_buf) as usize;
-            let max = MAX_PROOF_BYTES.saturating_add(65_536);
-            if len > max {
-                return Err(CryptoError::InvalidAggregate(
-                    "leanVM IPC response length unreasonable".into(),
-                ));
-            }
-            let mut payload = vec![0u8; len];
-            stdout.read_exact(&mut payload).map_err(|e| {
-                CryptoError::InvalidAggregate(format!("leanVM stdout payload: {e}"))
-            })?;
-            Ok(payload)
-        })();
-        let _ = tx.send(result);
+        let _ = tx.send(read_len_prefixed(&mut stdout));
     });
     match rx.recv_timeout(wall) {
         Ok(inner) => inner,
@@ -136,6 +118,26 @@ fn read_len_prefixed_with_deadline(
             "leanVM IPC reader thread disconnected".into(),
         )),
     }
+}
+
+/// Read one u32-LE length-prefixed payload from `input`.
+pub fn read_len_prefixed(input: &mut impl Read) -> Result<Vec<u8>> {
+    let mut len_buf = [0u8; 4];
+    input
+        .read_exact(&mut len_buf)
+        .map_err(|e| CryptoError::InvalidAggregate(format!("leanVM stdout length: {e}")))?;
+    let len = u32::from_le_bytes(len_buf) as usize;
+    let max = MAX_PROOF_BYTES.saturating_add(65_536);
+    if len > max {
+        return Err(CryptoError::InvalidAggregate(
+            "leanVM IPC response length unreasonable".into(),
+        ));
+    }
+    let mut payload = vec![0u8; len];
+    input
+        .read_exact(&mut payload)
+        .map_err(|e| CryptoError::InvalidAggregate(format!("leanVM stdout payload: {e}")))?;
+    Ok(payload)
 }
 
 /// Encode a length-prefixed payload (mock provers / tests).
