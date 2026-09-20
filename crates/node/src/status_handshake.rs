@@ -12,12 +12,18 @@ use ethean_primitives::{Hash32, Slot};
 use ethean_sync::SyncStatus;
 use tracing::info;
 
+/// Prefer blocks-by-range when remote head is at least this many slots ahead.
+///
+/// Smaller gaps use blocks-by-root (head / parent walk). Matches the duty sync-lag
+/// threshold so deep catch-up does not double-fetch root + range.
+pub const RANGE_PREFER_LAG_SLOTS: u64 = 4;
+
 /// Blocks fetch requests staged after a successful Status handshake.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct StatusSyncOutbounds {
-    /// Immediate head catch-up via blocks-by-root (when heads differ).
+    /// Immediate head catch-up via blocks-by-root (when heads differ and lag is small).
     pub blocks_by_root: Option<OutboundBlocksByRootRequest>,
-    /// Deep slot catch-up via blocks-by-range (when remote head slot is ahead).
+    /// Deep slot catch-up via blocks-by-range (when remote head slot lag is large).
     pub blocks_by_range: Option<OutboundBlocksByRangeRequest>,
 }
 
@@ -83,20 +89,33 @@ pub fn complete_status_handshake(
         lag = sync.lag(),
         "Status handshake completed"
     );
-    let blocks_by_root = prepare_blocks_by_root_outbound(
-        peer,
-        owner.head_root,
-        &exchange.remote,
-        tracker,
-    )
-    .map_err(|e| e.to_string())?;
-    let blocks_by_range = prepare_blocks_by_range_outbound(
-        peer,
-        local_head.get(),
-        &exchange.remote,
-        tracker,
-    )
-    .map_err(|e| e.to_string())?;
+    let lag = exchange
+        .remote
+        .head_slot
+        .saturating_sub(local_head.get());
+    let (blocks_by_root, blocks_by_range) = if lag >= RANGE_PREFER_LAG_SLOTS {
+        (
+            None,
+            prepare_blocks_by_range_outbound(
+                peer,
+                local_head.get(),
+                &exchange.remote,
+                tracker,
+            )
+            .map_err(|e| e.to_string())?,
+        )
+    } else {
+        (
+            prepare_blocks_by_root_outbound(
+                peer,
+                owner.head_root,
+                &exchange.remote,
+                tracker,
+            )
+            .map_err(|e| e.to_string())?,
+            None,
+        )
+    };
     Ok(StatusSyncOutbounds {
         blocks_by_root,
         blocks_by_range,
@@ -146,5 +165,10 @@ mod tests {
             finalized_root: [0u8; 32],
         };
         assert_eq!(queue_peers(&mut book, &local, &[[8u8; 32]]), 1);
+    }
+
+    #[test]
+    fn range_prefer_threshold_matches_sync_lag_default() {
+        assert_eq!(RANGE_PREFER_LAG_SLOTS, 4);
     }
 }
