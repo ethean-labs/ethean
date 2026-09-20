@@ -168,3 +168,33 @@ fn runs_block_includes_genesis_self_vote() {
     assert!(reports[0].1.imports >= 1);
     assert_eq!(reports[0].1.rejections, 0);
 }
+
+#[test]
+fn runs_justification_fixed_point_with_gossip_aggregates() {
+    let Some(path) = fixture(
+        "test_block_production/test_block_builder_fixed_point_advances_justification.json",
+    ) else {
+        eprintln!("skip: cache missing");
+        return;
+    };
+    let bytes = std::fs::read(&path).unwrap();
+    let reports = run_fork_choice_file(&bytes).unwrap();
+    assert_eq!(reports[0].1.imports, 6);
+    assert_eq!(reports[0].1.ticks, 2);
+    assert_eq!(reports[0].1.attestations, 2);
+    assert_eq!(reports[0].1.rejections, 0);
+}
+
+#[test]
+fn runs_attestation_target_advances_with_body_votes() {
+    let Some(path) = fixture(
+        "test_attestation_target_selection/test_attestation_target_advances_with_attestations.json",
+    ) else {
+        eprintln!("skip: cache missing");
+        return;
+    };
+    let bytes = std::fs::read(&path).unwrap();
+    let reports = run_fork_choice_file(&bytes).unwrap();
+    assert_eq!(reports[0].1.imports, 5);
+    assert_eq!(reports[0].1.rejections, 0);
+}
