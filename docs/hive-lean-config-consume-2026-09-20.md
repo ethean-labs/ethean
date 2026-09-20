@@ -24,6 +24,8 @@ ethean start --until-signal --ephemeral \
 
 ## Still open
 
-- Load XMSS privkeys from registry `privkey_file` rows for production signing
+- Load XMSS privkeys from registry `privkey_file` rows for production signing — **landed**
+  (see [`registry-privkey-load-2026-09-20.md`](./registry-privkey-load-2026-09-20.md); needs `leansig-backend`)
 - Upstream ethereum/hive `clients/ethean` (+ add `ethean` to prepare_lean_client_assets.py)
 - Apply `ATTESTATION_COMMITTEE_COUNT` into the live profile when Hive sets it
+- Wire attestation registry key into attester duties

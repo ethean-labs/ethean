@@ -47,5 +47,5 @@ Snippet also kept as [`client-devnet5.yaml`](./client-devnet5.yaml).
 ## Known gaps vs Ream Hive client
 
 - Lean HTTP serves `/lean/v1/…` only (no Beacon `/eth/v1`).
-- Validator private keys from the registry are not loaded yet (indices are logged; signing still uses local smoke keys when present).
+- Registry privkeys load when present; proposal install needs a `leansig-backend` build.
 - Upstream ethereum/hive `clients/ethean` registration still required.

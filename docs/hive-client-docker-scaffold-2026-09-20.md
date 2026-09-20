@@ -24,8 +24,8 @@ docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
 
 | Gap | Notes |
 | --- | --- |
+| Load registry privkeys for duties | Proposal install needs `leansig-backend`; attester wiring open |
 | Upstream `clients/ethean` PR in ethereum/hive | Needs published image or git context + asset preparer entry |
-| Load registry privkeys for duties | Indices logged; signing still local smoke |
 | A2/A3 / leanVM / bigint | External production gates |
 
 Lean HTTP `:5052`, fixed QUIC `:9000`, and Hive `config.yaml` / `validators.yaml`
