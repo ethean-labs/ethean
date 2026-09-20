@@ -14,6 +14,7 @@ mod fc_steps;
 mod hex;
 mod json_types;
 mod rejection;
+mod stf_runner;
 
 pub use discover::{discover_json_fixtures, fixtures_root_from_env, FIXTURES_ENV};
 pub use envelope::{FixtureCase, FixtureFile, FixtureStep};
@@ -24,3 +25,4 @@ pub use fc_runner::{
 pub use rejection::{
     map_fork_choice_rejection, ForkChoiceRejection, UNKNOWN_REJECTION,
 };
+pub use stf_runner::{run_state_transition_case, run_state_transition_file, StfRunError, StfRunReport};
