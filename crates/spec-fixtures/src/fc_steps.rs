@@ -1,7 +1,7 @@
 //! Apply individual leanSpec fork-choice fixture steps.
 
 use crate::fc_runner::FcRunError;
-use crate::json_types::block_from_value;
+use crate::json_types::{attestation_from_value, block_from_value};
 use crate::rejection::map_fork_choice_rejection;
 use ethean_fork_choice::{ForkChoiceError, ForkChoiceStore};
 use ethean_transition::{apply_block_unverified, TransitionContext};
@@ -27,6 +27,19 @@ pub fn apply_tick(
     Ok(())
 }
 
+fn maybe_tick_to_slot(store: &mut ForkChoiceStore, step: &Value, slot: u64) -> Result<(), FcRunError> {
+    if step.get("tickToSlot").and_then(|v| v.as_bool()) != Some(true) {
+        return Ok(());
+    }
+    let need = slot.saturating_mul(store.intervals_per_slot);
+    if store.time < need {
+        store
+            .on_tick_with(need, false)
+            .map_err(|e| FcRunError::Step(format!("tickToSlot({slot}): {e}")))?;
+    }
+    Ok(())
+}
+
 /// Apply a `stepType=block` (import or expected rejection).
 pub fn apply_block_step(
     store: &mut ForkChoiceStore,
@@ -38,6 +51,7 @@ pub fn apply_block_step(
         .get("block")
         .ok_or_else(|| FcRunError::Step("block step missing block".into()))?;
     let incoming = block_from_value(block_v)?;
+    maybe_tick_to_slot(store, step, incoming.slot.get())?;
 
     if valid == Some(false) {
         let reason = step
@@ -70,6 +84,48 @@ pub fn apply_block_step(
         Ok(BlockStepKind::Imported)
     } else {
         Err(FcRunError::Step("block step has invalid valid flag".into()))
+    }
+}
+
+/// Apply a `stepType=attestation` (structural vote ingest / rejection).
+pub fn apply_attestation_step(
+    store: &mut ForkChoiceStore,
+    step: &Value,
+) -> Result<BlockStepKind, FcRunError> {
+    let valid = step.get("valid").and_then(|v| v.as_bool());
+    let att_v = step
+        .get("attestation")
+        .ok_or_else(|| FcRunError::Step("attestation step missing attestation".into()))?;
+    let (validator, data) = attestation_from_value(att_v)?;
+    maybe_tick_to_slot(store, step, data.slot.get())?;
+
+    if valid == Some(false) {
+        let reason = step
+            .get("rejectionReason")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                FcRunError::Step("rejected attestation missing rejectionReason".into())
+            })?;
+        let token = map_fork_choice_rejection(reason)
+            .ok_or_else(|| FcRunError::Unmapped(reason.to_string()))?;
+        let got = store.on_attestation_data(validator, data);
+        let expected = token.to_error();
+        match &got {
+            Err(e) if e == &expected => Ok(BlockStepKind::Rejected),
+            other => Err(FcRunError::WrongOutcome {
+                expected: reason.to_string(),
+                got: other.clone(),
+            }),
+        }
+    } else if valid == Some(true) || valid.is_none() {
+        store
+            .on_attestation_data(validator, data)
+            .map_err(|e| FcRunError::Step(format!("on_attestation_data: {e}")))?;
+        Ok(BlockStepKind::Imported)
+    } else {
+        Err(FcRunError::Step(
+            "attestation step has invalid valid flag".into(),
+        ))
     }
 }
 
