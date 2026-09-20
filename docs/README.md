@@ -68,6 +68,7 @@ Planning session summaries:
 - [leanSpec FC block body attestations](./leanspec-fc-block-body-attestations-2026-09-20.md)
 - [leanSpec FC gossipAggregatedAttestation](./leanspec-fc-gossip-aggregated-2026-09-20.md)
 - [leanSpec FC finality / reorg / LMD suites](./leanspec-fc-finality-reorg-lmd-2026-09-20.md)
+- [leanSpec FC safe-target + reorg_total](./leanspec-fc-safe-target-reorg-total-2026-09-20.md)
 - [leanEthereum official repos plan](./lean-ethereum-official-repos-plan-2026-09-20.md)
 - [leanEthereum/pm indexed](./lean-ethereum-pm-indexed-2026-09-20.md)
 - [FC MAX_ATTESTATIONS_DATA + D4 log_inv_rate](./fc-max-attestations-d4-log-inv-rate-2026-09-20.md)

@@ -949,6 +949,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Range-serve / serve-cache seed metrics**: [docs/range-serve-seed-metrics-2026-09-20.md](./docs/range-serve-seed-metrics-2026-09-20.md)
 - **Grafana range-serve / seed panels**: [docs/grafana-range-serve-seed-panels-2026-09-20.md](./docs/grafana-range-serve-seed-panels-2026-09-20.md)
 - **leanSpec FC finality / reorg / LMD**: [docs/leanspec-fc-finality-reorg-lmd-2026-09-20.md](./docs/leanspec-fc-finality-reorg-lmd-2026-09-20.md)
+- **leanSpec FC safe-target + reorg_total**: [docs/leanspec-fc-safe-target-reorg-total-2026-09-20.md](./docs/leanspec-fc-safe-target-reorg-total-2026-09-20.md)
 - **leanEthereum official repos plan**: [docs/lean-ethereum-official-repos-plan-2026-09-20.md](./docs/lean-ethereum-official-repos-plan-2026-09-20.md)
 - **leanEthereum/pm indexed**: [docs/lean-ethereum-pm-indexed-2026-09-20.md](./docs/lean-ethereum-pm-indexed-2026-09-20.md)
 - **FC MAX_ATTESTATIONS_DATA / D4 rate**: [docs/fc-max-attestations-d4-log-inv-rate-2026-09-20.md](./docs/fc-max-attestations-d4-log-inv-rate-2026-09-20.md)
