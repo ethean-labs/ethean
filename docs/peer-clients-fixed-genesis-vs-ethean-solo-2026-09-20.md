@@ -35,15 +35,17 @@ dirs). Without that flag, an existing bundle is reused. Restarting a node with
 the **same** genesis dir + data dir continues the chain; regenerating genesis
 starts a new chain.
 
-## Contrast with Ethean solo smoke
+## Contrast with Ethean
 
-`ethean start --network pq-devnet-4` (no operator bundle) builds a **recent
-in-memory genesis** each process start (~few slots lookback). Head /
-justified / finalized live in RAM unless a durable resume path is added. That
-is why Ctrl-C at slot 48 and a second start at slot ~4–5 is expected today.
+- **Ephemeral** (`--ephemeral` / no `--data-dir`): builds a **recent
+  in-memory genesis** each process start. Head lives in RAM — Ctrl-C at slot 48
+  then restart near slot 4–5 is expected.
+- **Durable** (`--data-dir PATH`): pins `genesis_time` once and resumes
+  `head_snap.json` (peer-like local analogue). See
+  [dual-mode-persist-and-ephemeral-2026-09-20.md](./dual-mode-persist-and-ephemeral-2026-09-20.md).
 
-Interop mode for Ethean should match peers: load a shared generated bundle
-from disk, do not invent a new genesis per restart.
+Interop mesh import of a full lean-quickstart bundle remains a follow-up; wire
+contract (bootnodes, topics, aggregator) already matches peers.
 
 ## Sources
 
