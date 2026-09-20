@@ -78,6 +78,7 @@ Planning session summaries:
 - [leanSpec FC prune votes not blocks](./leanspec-fc-prune-votes-not-blocks-2026-09-20.md)
 - [leanSpec FC extra suite expansion](./leanspec-fc-extra-suite-2026-09-20.md)
 - [leanSpec FC tick safe-target snapshot gate](./leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md)
+- [leanSpec FC finalized_safety empty-body gate](./leanspec-fc-finalized-safety-empty-body-gate-2026-09-20.md)
 - [leanEthereum official repos plan](./lean-ethereum-official-repos-plan-2026-09-20.md)
 - [leanEthereum/pm indexed](./lean-ethereum-pm-indexed-2026-09-20.md)
 - [FC MAX_ATTESTATIONS_DATA + D4 log_inv_rate](./fc-max-attestations-d4-log-inv-rate-2026-09-20.md)
