@@ -110,33 +110,41 @@ fn civil_from_unix_days(days: i64) -> (i32, u32, u32) {
     (year as i32, month, day)
 }
 
-/// Wipe durable chain files so the next start creates a new genesis.
+/// Empty `--data-dir` (chain files, logs, leftovers) so the next start is fresh.
+/// Keeps the directory itself; deletes every child.
 pub fn reset_chain_files(root: &Path) -> Result<()> {
-    let paths = PersistPaths::new(root);
-    for p in [
-        paths.genesis_json(),
-        paths.genesis_ssz(),
-        paths.state_ssz(),
-        paths.head_root(),
-        paths.redb(),
-        paths.legacy_pin(),
-        paths.legacy_head(),
-    ] {
-        remove_if_exists(&p)?;
+    if !root.exists() {
+        return Ok(());
     }
-    let blocks = paths.blocks_dir();
-    if blocks.is_dir() {
-        fs::remove_dir_all(&blocks)
-            .map_err(|e| Error::Config(format!("remove {}: {e}", blocks.display())))?;
+    if root.is_file() {
+        return remove_path(root);
+    }
+    let entries = fs::read_dir(root).map_err(|e| {
+        Error::Config(format!("read data-dir {}: {e}", root.display()))
+    })?;
+    for entry in entries {
+        let entry = entry.map_err(|e| {
+            Error::Config(format!("read data-dir entry {}: {e}", root.display()))
+        })?;
+        remove_path(&entry.path())?;
     }
     Ok(())
 }
 
-fn remove_if_exists(path: &Path) -> Result<()> {
-    if path.exists() {
+fn remove_path(path: &Path) -> Result<()> {
+    let meta = match fs::metadata(path) {
+        Ok(m) => m,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(e) => {
+            return Err(Error::Config(format!("stat {}: {e}", path.display())));
+        }
+    };
+    if meta.is_dir() {
+        fs::remove_dir_all(path)
+            .map_err(|e| Error::Config(format!("remove {}: {e}", path.display())))?;
+    } else {
         fs::remove_file(path)
             .map_err(|e| Error::Config(format!("remove {}: {e}", path.display())))?;
-        tracing::info!(path = %path.display(), "removed chain file");
     }
     Ok(())
 }
@@ -183,15 +191,20 @@ mod tests {
     }
 
     #[test]
-    fn reset_removes_created_files() {
+    fn reset_empties_data_dir_including_logs() {
         let dir = tempfile::tempdir().unwrap();
         let paths = PersistPaths::new(dir.path());
         paths.ensure_dir().unwrap();
         fs::write(paths.genesis_json(), b"{}").unwrap();
         fs::write(paths.redb(), b"x").unwrap();
+        fs::write(paths.run_log_path("2026-09-20-040512"), b"log").unwrap();
+        fs::write(dir.path().join("stray.txt"), b"x").unwrap();
         reset_chain_files(dir.path()).unwrap();
+        assert!(dir.path().is_dir());
         assert!(!paths.genesis_json().exists());
         assert!(!paths.redb().exists());
         assert!(!paths.blocks_dir().exists());
+        assert!(!paths.log_dir().exists());
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 0);
     }
 }
