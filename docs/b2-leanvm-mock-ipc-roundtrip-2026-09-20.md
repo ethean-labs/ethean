@@ -22,10 +22,12 @@ cargo test -p ethean-crypto --lib roundtrip_against_workspace_mock
 ## Honesty
 
 - Mock is **not** production leanVM / Plonky3
-- `LeanVmIpcStatus.protocol_ready` stays **false** until a real leanVM pin round-trip is trusted in ops/CI
-- Spawn path is now end-to-end proven against an ELVM peer
+- `protocol_ready` flips only when `ETHEAN_LEANVM_IPC_PROBE=1` and a pin-checked
+  round-trip against `ETHEAN_LEANVM_PROVER` succeeds (see
+  [`b2-leanvm-ipc-live-probe-2026-09-20.md`](./b2-leanvm-ipc-live-probe-2026-09-20.md))
+- Spawn path is end-to-end proven against an ELVM peer
 
 ## Still open
 
-- Real leanVM binary + CI green → flip `protocol_ready`
-- B1 production `leansig-backend` vendor path
+- Prefer a real leanVM binary (not only the mock) before production mesh claims
+- B1 production `leansig-backend` vendor path (local compile OK; git dep residual)
