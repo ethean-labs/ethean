@@ -3,7 +3,7 @@
 #![cfg(feature = "libp2p-quic")]
 
 use crate::error::NetworkError;
-use crate::gossip::{LeanGossipTopics, PumpEvent};
+use crate::gossip::{LeanGossipTopics, PumpEvent, SMOKE_ATTESTATION_SUBNETS};
 use crate::multiaddr::parse_quic_udp;
 use crate::quic_blocks_codec::{blocks_by_root_behaviour, BlocksByRootCodec};
 use crate::quic_range_codec::{blocks_by_range_behaviour, BlocksByRangeCodec};
@@ -78,7 +78,17 @@ impl QuicSwarm {
         cfg: &TransportConfig,
         fork_segment: &str,
     ) -> NetResult<Self> {
-        let topics = LeanGossipTopics::from_fork_segment(fork_segment)?;
+        Self::bind_for_fork_segment_subnets(cfg, fork_segment, SMOKE_ATTESTATION_SUBNETS).await
+    }
+
+    /// Bind with an explicit attestation subnet subscription count.
+    pub async fn bind_for_fork_segment_subnets(
+        cfg: &TransportConfig,
+        fork_segment: &str,
+        attestation_subnets: u16,
+    ) -> NetResult<Self> {
+        let topics =
+            LeanGossipTopics::from_fork_segment_subnets(fork_segment, attestation_subnets)?;
         Self::bind_inner(cfg, Some(topics)).await
     }
 
