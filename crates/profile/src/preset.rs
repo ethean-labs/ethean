@@ -58,4 +58,18 @@ mod tests {
         p.intervals_per_slot = 0;
         assert_eq!(p.validate(), Err(ProfileError::ZeroIntervalsPerSlot));
     }
+
+    #[test]
+    fn with_attestation_committee_count_overrides() {
+        let p = lstar_devnet()
+            .unwrap()
+            .with_attestation_committee_count(4)
+            .expect("count 4");
+        assert_eq!(p.attestation_committee_count, 4);
+        assert_eq!(p.attestation_subnet_count(), 4);
+        assert!(lstar_devnet()
+            .unwrap()
+            .with_attestation_committee_count(0)
+            .is_err());
+    }
 }

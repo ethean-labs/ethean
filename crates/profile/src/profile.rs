@@ -23,6 +23,22 @@ pub struct ChainProfile {
 }
 
 impl ChainProfile {
+    /// Override attestation committee / subnet count (Hive `ATTESTATION_COMMITTEE_COUNT`).
+    ///
+    /// Zero is rejected by [`Self::validate`].
+    pub fn with_attestation_committee_count(mut self, count: u64) -> Result<Self, ProfileError> {
+        self.attestation_committee_count = count;
+        self.validate()?;
+        Ok(self)
+    }
+
+    /// Attestation gossip subnet count clamped to `u16` (at least 1).
+    pub fn attestation_subnet_count(&self) -> u16 {
+        self.attestation_committee_count
+            .min(u64::from(u16::MAX))
+            .max(1) as u16
+    }
+
     /// Validate cross-field invariants. Rejects zero timing/bounds and empty fork name.
     pub fn validate(&self) -> Result<(), ProfileError> {
         if self.seconds_per_slot == 0 {
