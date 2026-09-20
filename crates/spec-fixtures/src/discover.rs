@@ -57,8 +57,13 @@ mod tests {
 
     #[test]
     fn env_absent_is_none() {
+        let prev = std::env::var_os(FIXTURES_ENV);
         std::env::remove_var(FIXTURES_ENV);
         assert!(fixtures_root_from_env().is_none());
+        match prev {
+            Some(v) => std::env::set_var(FIXTURES_ENV, v),
+            None => std::env::remove_var(FIXTURES_ENV),
+        }
     }
 
     #[test]
