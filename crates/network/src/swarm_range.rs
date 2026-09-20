@@ -1,8 +1,10 @@
 //! Blocks-by-range outbox and serve-cache helpers on SwarmFacade.
 
+#[cfg(feature = "libp2p-quic")]
 use crate::error::{NetworkError, Result};
 use crate::reqresp::OutboundBlocksByRangeRequest;
 use crate::swarm::SwarmFacade;
+#[cfg(feature = "libp2p-quic")]
 use ethean_primitives::Hash32;
 
 impl SwarmFacade {
