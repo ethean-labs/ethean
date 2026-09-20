@@ -1,18 +1,37 @@
 //! Aggregator duty evaluation against the in-memory aggregate pool.
 
+use crate::aggregation::PoolEntry;
 use crate::chain_owner::ChainOwner;
 use crate::events::ChainEvent;
 use ethean_primitives::Hash32;
+use ethean_types::AggregatedAttestation;
 use ethean_validator::{run_aggregator, AggregatorOutcome, AggregatorPlan, DutyTick};
 
 /// Minimum pool coverage before emitting [`ChainEvent::AggregatorReady`].
 const MIN_AGGREGATOR_COVERAGE: u32 = 1;
 
-/// Provisional subnet from attestation-data root until committee mapping lands.
+/// Fallback subnet from attestation-data root when bits are unavailable.
 fn provisional_subnet(message_root: Hash32, subnet_count: u16) -> u16 {
     let mut buf = [0u8; 8];
     buf.copy_from_slice(&message_root[0..8]);
     (u64::from_be_bytes(buf) % u64::from(subnet_count.max(1))) as u16
+}
+
+/// Prefer first set aggregation bit mod ACC (matches local attester); else hash fallback.
+fn subnet_for_entry(entry: &PoolEntry, message_root: Hash32, subnet_count: u16) -> u16 {
+    let n = subnet_count.max(1);
+    if let Ok(att) = AggregatedAttestation::ssz_decode(&entry.attestation_ssz) {
+        if let Some((i, _)) = att
+            .aggregation_bits
+            .bits
+            .iter()
+            .enumerate()
+            .find(|(_, bit)| **bit)
+        {
+            return (i as u64 % u64::from(n)) as u16;
+        }
+    }
+    provisional_subnet(message_root, n)
 }
 
 /// Subnet count from the pinned profile (Hive ACC), defaulting to 1.
@@ -40,7 +59,7 @@ pub fn evaluate_aggregator_duties(
         let plan = AggregatorPlan {
             tick,
             data_root: key.message_root,
-            subnet: provisional_subnet(key.message_root, subnets),
+            subnet: subnet_for_entry(&entry, key.message_root, subnets),
             coverage: entry.coverage.max(1),
             min_coverage: MIN_AGGREGATOR_COVERAGE,
         };
@@ -67,6 +86,7 @@ mod tests {
     use crate::aggregation::{PoolEntry, PoolKey};
     use crate::chain_owner::ChainOwner;
     use ethean_primitives::Slot;
+    use ethean_types::{AggregationBits, AttestationData, Checkpoint};
     use ethean_validator::DutyTick;
 
     #[test]
@@ -98,5 +118,28 @@ mod tests {
         ));
         owner.is_aggregator = false;
         assert!(evaluate_aggregator_duties(&owner, tick, 0).is_empty());
+    }
+
+    #[test]
+    fn subnet_follows_first_aggregation_bit() {
+        let att = AggregatedAttestation {
+            aggregation_bits: AggregationBits {
+                bits: vec![false, false, true],
+            },
+            data: AttestationData {
+                slot: Slot::new(1),
+                head: Checkpoint::genesis(),
+                target: Checkpoint::genesis(),
+                source: Checkpoint::genesis(),
+            },
+        };
+        let entry = PoolEntry {
+            proof: Vec::new(),
+            coverage: 1,
+            inserted_slot: 1,
+            attestation_ssz: att.ssz_encode(),
+        };
+        // index 2 % 4 == 2
+        assert_eq!(subnet_for_entry(&entry, [0xff; 32], 4), 2);
     }
 }
