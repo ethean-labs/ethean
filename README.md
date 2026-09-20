@@ -966,6 +966,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Version**: tracked in root [`VERSION`](./VERSION) (currently synced to Cargo
 workspace). After each development update run `.\scripts\bump-version.ps1`
 (or `./scripts/bump-version.sh`) so the patch climbs `0.1.0` → `0.1.1` → …
-→ `0.1.99` → `0.2.0`. See [docs/versioning.md](./docs/versioning.md).
+→ `0.1.99` → `0.2.0`. See [docs/versioning.md](./docs/versioning.md)
+([safe lock bump](./docs/bump-version-safe-cargo-lock-2026-09-20.md)).
 
 **Note**: This is a development version. For production use, please wait for the stable release and conduct thorough testing in your environment.
