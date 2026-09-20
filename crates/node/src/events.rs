@@ -64,6 +64,15 @@ pub enum ChainEvent {
         /// Proof byte length.
         proof_len: usize,
     },
+    /// Aggregator duty saw enough pool coverage to dispatch Type-1 prove.
+    AggregatorReady {
+        /// Attestation-data root being aggregated.
+        data_root: Hash32,
+        /// Assigned attestation subnet.
+        subnet: u16,
+        /// Observed participant coverage.
+        coverage: u32,
+    },
     /// Pending proposal was published on QuicSwarm gossip.
     ProposalPublished {
         /// Lean gossip topic string.
