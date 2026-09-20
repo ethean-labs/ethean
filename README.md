@@ -113,20 +113,25 @@ places a shim in `~/.cargo/bin`; no `install.sh` step.
 ### Run (default: pq-devnet-4, local finality on)
 
 Solo long-run advances **head / justified / finalized** without public bootnodes
-(recent genesis, 4 validators, aggregator + local self-apply). Use `--until-signal`
+(4 validators, aggregator + local self-apply). Use `--until-signal`
 so the process stays up for Grafana.
+
+Ethean keeps **two local modes** (see the dual-mode section below): ephemeral
+smoke, or peer-like fixed genesis under `--data-dir`.
 
 ```bash
 ethean version
-# Long-run (recommended) — Ctrl-C to stop
-ethean start --until-signal --network pq-devnet-4
-ethean start --until-signal --network pq-devnet-5 --validators 4
-# Short smoke
+# Ephemeral smoke (new recent genesis every process start)
+ethean start --until-signal --network pq-devnet-4 --ephemeral
+# Peer-like durable (fixed genesis pin + head resume)
+ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data
+ethean start --until-signal --network pq-devnet-5 --validators 4 --data-dir ./ethean-data
+# Short smoke (always ephemeral)
 ethean start --ticks 3
 ethean start --ticks 2 --wall-clock
-ethean start --network local
+ethean start --network local --ephemeral
 # Opt out of local finality / aggregator if needed
-ethean start --until-signal --no-local-finality --no-aggregator
+ethean start --until-signal --no-local-finality --no-aggregator --ephemeral
 ```
 
 Helpers (build + long-run):
@@ -145,6 +150,68 @@ METRICS_STACK=1 ./scripts/run-local-finality.sh
 
 Paste D4 QUIC multiaddrs into `config/networks/pq-devnet-4.bootnodes` (or pass
 `--bootnodes` / `ETHEAN_BOOTNODES`) before expecting a live mesh dial.
+
+### Dual mode: peer-like persist vs ephemeral smoke
+
+Ideal local setup keeps **both** paths:
+
+| Mode | Flags | Behavior |
+| --- | --- | --- |
+| **Peer-like (durable)** | `--data-dir ./ethean-data` | Pins `genesis_time` once; writes `head_snap.json`; Ctrl-C then restart **continues** from last head / justified / finalized |
+| **Ephemeral smoke** | `--ephemeral` (or omit `--data-dir`) | Builds a **new recent genesis** each start; slot counters reset (e.g. stop at 48 → next run near 4–5) |
+
+```bash
+# Durable long-run (recommended when you care about resume)
+ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data
+
+# Stop with Ctrl-C, then restart — same genesis, resumed head
+ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data
+
+# Wipe pin + head and start a new fixed chain under the same directory
+ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data --reset-chain
+
+# Fast solo smoke (no disk chain identity)
+ethean start --until-signal --network pq-devnet-4 --ephemeral
+```
+
+Under `--data-dir` the node writes:
+
+- `genesis_pin.json` — fixed `genesis_time`, validator count, slot seconds
+- `head_snap.json` — head root + full local state (updated each duty step)
+
+`--ephemeral` wins over `--data-dir` if both are set (logs a warning).
+
+#### What the peer model (fixed genesis package) gives you
+
+Same idea as Ream / Zeam / ethlambda / qlean-mini / Lantern / gean / Peam on
+pq-devnets (lean-quickstart / `setup-genesis.sh`):
+
+- **Resume after restart** — same `GENESIS_TIME` + data directory → continue
+  from the last head (e.g. slot 48), not a new chain.
+- **Shared chain identity** — multiple nodes (or a mixed-client mesh) load the
+  **same** generated bundle.
+- **Real pq-devnet ops** — generate once, reuse; matches lean-quickstart style.
+- **Cleaner debugging** — finality / P2P bugs are not confused with accidental
+  re-genesis.
+
+#### What you trade away vs ephemeral smoke
+
+- First start needs a durable path (`--data-dir`); files appear under that folder.
+- Quick “does finality move?” smoke is slightly less one-liner friendly unless
+  you pass `--ephemeral`.
+- Regenerating genesis (`--reset-chain` or deleting the pin) starts a **new**
+  chain — same as peers when they re-run `--generateGenesis`.
+
+#### When to use which
+
+| Goal | Prefer |
+| --- | --- |
+| Test / mesh like peer clients | Fixed package (`--data-dir`) |
+| ~30s local finality smoke | Ephemeral (`--ephemeral`) |
+| Production-like Lean client direction | Fixed package (`--data-dir`) |
+
+Related: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md),
+[docs/dual-mode-persist-and-ephemeral-2026-09-20.md](docs/dual-mode-persist-and-ephemeral-2026-09-20.md).
 
 ### Local private mesh (no public bootnodes)
 
@@ -427,7 +494,10 @@ ethean start --until-signal --network pq-devnet-5 --metrics
 | `--metrics-port` | `9100` | Bind port (must match Prometheus scrape) |
 | `--until-signal` | off | Long-run until Ctrl-C |
 | `--network` | `pq-devnet-4` | Network label |
-| `--validators` | `4` | Local registry size (recent genesis) |
+| `--data-dir` | unset | Durable fixed genesis + head resume |
+| `--ephemeral` | off | Force recent-genesis smoke (ignore `--data-dir`) |
+| `--reset-chain` | off | Delete pin/head under `--data-dir` before start |
+| `--validators` | `4` | Local registry size |
 | `--no-aggregator` | off | Disable aggregator role (default **on**) |
 | `--no-local-finality` | off | Disable solo head/finality advance (default **on**) |
 
@@ -830,6 +900,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Peer Lean clients (reference)**: [docs/peer-reference-clients.md](./docs/peer-reference-clients.md)
 - **How Ream / ethlambda / Zeam run pq-devnets**: [docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](./docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
 - **Peer fixed genesis vs Ethean solo restart**: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](./docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md)
+- **Dual mode (persist + ephemeral)**: [docs/dual-mode-persist-and-ephemeral-2026-09-20.md](./docs/dual-mode-persist-and-ephemeral-2026-09-20.md)
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/lean-peer-client-research-library-2026-09-19.md)
 - **Language (English only)**: [docs/english.md](./docs/english.md)
 - **Commits (per file, English)**: [docs/commit-after-each-file.md](./docs/commit-after-each-file.md)
