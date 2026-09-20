@@ -1,0 +1,80 @@
+//! Apply individual leanSpec fork-choice fixture steps.
+
+use crate::fc_runner::FcRunError;
+use crate::json_types::block_from_value;
+use crate::rejection::map_fork_choice_rejection;
+use ethean_fork_choice::{ForkChoiceError, ForkChoiceStore};
+use ethean_transition::{apply_block_unverified, TransitionContext};
+use ethean_types::State;
+use serde_json::Value;
+
+/// Apply a `stepType=tick` (absolute `interval` target).
+pub fn apply_tick(
+    store: &mut ForkChoiceStore,
+    step: &Value,
+) -> Result<(), FcRunError> {
+    let interval = step
+        .get("interval")
+        .and_then(|v| v.as_u64())
+        .ok_or_else(|| FcRunError::Step("tick step missing interval".into()))?;
+    let has_proposal = step
+        .get("hasProposal")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    store
+        .on_tick_with(interval, has_proposal)
+        .map_err(|e| FcRunError::Step(format!("on_tick({interval}): {e}")))?;
+    Ok(())
+}
+
+/// Apply a `stepType=block` (import or expected rejection).
+pub fn apply_block_step(
+    store: &mut ForkChoiceStore,
+    step: &Value,
+    ctx: &TransitionContext,
+) -> Result<BlockStepKind, FcRunError> {
+    let valid = step.get("valid").and_then(|v| v.as_bool());
+    let block_v = step
+        .get("block")
+        .ok_or_else(|| FcRunError::Step("block step missing block".into()))?;
+    let incoming = block_from_value(block_v)?;
+
+    if valid == Some(false) {
+        let reason = step
+            .get("rejectionReason")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| FcRunError::Step("rejected block missing rejectionReason".into()))?;
+        let token = map_fork_choice_rejection(reason)
+            .ok_or_else(|| FcRunError::Unmapped(reason.to_string()))?;
+        let got = store.on_block(incoming, State::default());
+        let expected = token.to_error();
+        match &got {
+            Err(e) if e == &expected => Ok(BlockStepKind::Rejected),
+            other => Err(FcRunError::WrongOutcome {
+                expected: reason.to_string(),
+                got: other.clone(),
+            }),
+        }
+    } else if valid == Some(true) || valid.is_none() {
+        let parent = store
+            .block_states
+            .get(&incoming.parent_root)
+            .ok_or(ForkChoiceError::UnknownParent)
+            .map_err(|e| FcRunError::Step(format!("valid block parent: {e}")))?
+            .clone();
+        let outcome = apply_block_unverified(&parent, &incoming, ctx)
+            .map_err(|e| FcRunError::Step(format!("apply_block_unverified: {e}")))?;
+        store
+            .on_block(incoming, outcome.post_state)
+            .map_err(|e| FcRunError::Step(format!("on_block import: {e}")))?;
+        Ok(BlockStepKind::Imported)
+    } else {
+        Err(FcRunError::Step("block step has invalid valid flag".into()))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BlockStepKind {
+    Imported,
+    Rejected,
+}
