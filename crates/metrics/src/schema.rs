@@ -1,7 +1,7 @@
 //! Metrics schema version and closed label policy (OSD-009 leanMetrics pin still open).
 
 /// Ethean metrics schema version embedded in build_info.
-pub const METRICS_SCHEMA_VERSION: &str = "ethean-metrics-v1";
+pub const METRICS_SCHEMA_VERSION: &str = "ethean-metrics-v2";
 
 /// Metric name prefix (Ethean namespace; not peer-copied).
 pub const METRIC_PREFIX: &str = "ethean_";
