@@ -33,6 +33,8 @@ pub struct LeanVmGate {
     pub ipc_frame_abi_ready: bool,
     /// Length-prefixed spawn exchange is compiled in.
     pub ipc_spawn_wired: bool,
+    /// Operator set `ETHEAN_LEANVM_IPC_PROBE` for a live round-trip during probe.
+    pub ipc_probe_requested: bool,
     /// Framed process IPC spawn/round-trip is implemented.
     pub ipc_protocol_ready: bool,
 }
@@ -101,6 +103,7 @@ impl LeanVmGate {
                 ipc_binary_present: ipc.binary_present,
                 ipc_frame_abi_ready: ipc.frame_abi_ready,
                 ipc_spawn_wired: ipc.spawn_exchange_wired,
+                ipc_probe_requested: ipc.probe_requested,
                 ipc_protocol_ready: ipc.protocol_ready,
             }
         }
@@ -113,6 +116,7 @@ impl LeanVmGate {
                 ipc_binary_present: ipc.binary_present,
                 ipc_frame_abi_ready: ipc.frame_abi_ready,
                 ipc_spawn_wired: ipc.spawn_exchange_wired,
+                ipc_probe_requested: ipc.probe_requested,
                 ipc_protocol_ready: ipc.protocol_ready,
             }
         }
@@ -137,6 +141,11 @@ impl LeanVmGate {
             return Some("leanvm-backend feature disabled; refuse always-true aggregate verify");
         }
         if self.ipc_binary_present && self.ipc_spawn_wired && !self.ipc_protocol_ready {
+            if !self.ipc_probe_requested {
+                return Some(
+                    "leanVM IPC binary present; set ETHEAN_LEANVM_IPC_PROBE=1 for pin-checked round-trip",
+                );
+            }
             return Some(
                 "leanVM IPC spawn wired but pin-checked round-trip not green; refuse ready claim",
             );
