@@ -140,6 +140,20 @@ pub fn flush_pending_event(
     }))
 }
 
+/// Flush block then aggregation gossip; returns all publish events produced.
+#[cfg(feature = "libp2p-quic")]
+pub fn flush_all_pending_gossip(
+    facade: &mut SwarmFacade,
+    owner: &mut ChainOwner,
+) -> Result<Vec<crate::events::ChainEvent>> {
+    let mut out = Vec::new();
+    if let Some(ev) = flush_pending_event(facade, owner)? {
+        out.push(ev);
+    }
+    out.extend(crate::swarm_pump_agg::flush_pending_aggregations(facade, owner)?);
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
