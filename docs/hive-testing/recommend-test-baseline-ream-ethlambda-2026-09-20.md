@@ -49,6 +49,6 @@ Authority order stays: leanSpec pin → compatibility ledger → peer wire behav
 
 ## Related
 
-- [peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](./peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
-- [local-pq-mesh-private-dial-2026-09-20.md](./local-pq-mesh-private-dial-2026-09-20.md)
-- [default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](./default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md)
+- [peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](../peer-clients/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
+- [local-pq-mesh-private-dial-2026-09-20.md](../pq-devnet/local-pq-mesh-private-dial-2026-09-20.md)
+- [default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](../pq-devnet/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md)

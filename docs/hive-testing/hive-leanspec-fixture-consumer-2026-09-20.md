@@ -24,7 +24,7 @@ cargo test -p ethean-spec-fixtures
 ## Hive matrix (still open)
 
 ethereum/hive `simulators/lean` launches **client Docker images**
-(`ream_devnet5`, …). Local scaffold: [`hive-client-docker-scaffold-2026-09-20.md`](./hive-client-docker-scaffold-2026-09-20.md)
+(`ream_devnet5`, …). Local scaffold: [`hive-client-docker-scaffold-2026-09-20.md`](hive-client-docker-scaffold-2026-09-20.md)
 (`docker/hive/`). Still needed for matrix green:
 
 1. Upstream `clients/ethean` registration + published image
@@ -39,4 +39,4 @@ Authority: leanSpec pin in `spec/fixtures/phase-00/manifest.toml`; peer
 - Sample JSON is structural only (no full `anchorState` / block execution yet)
 - Fetch script does not vendor the tarball into git
 - Fork-choice **rejection** steps against filled vectors: see
-  [`leanspec-fc-rejection-runner-2026-09-20.md`](./leanspec-fc-rejection-runner-2026-09-20.md)
+  [`leanspec-fc-rejection-runner-2026-09-20.md`](../lean-spec/leanspec-fc-rejection-runner-2026-09-20.md)

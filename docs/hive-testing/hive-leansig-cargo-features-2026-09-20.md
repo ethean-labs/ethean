@@ -7,7 +7,7 @@
 - `docker/hive/Dockerfile` accepts `CARGO_FEATURES` build-arg so Hive images can
   compile with `leansig-backend` when the build context includes the local
   leanSig num-bigint vendor `[patch]` (see
-  [`b1-leansig-vendor-backend-compile-2026-09-20.md`](./b1-leansig-vendor-backend-compile-2026-09-20.md)).
+  [`b1-leansig-vendor-backend-compile-2026-09-20.md`](../lean-crypto/b1-leansig-vendor-backend-compile-2026-09-20.md)).
 
 Default Hive image stays fail-closed (no leansig) so CI/docker builds do not
 depend on gitignored vendor trees.
