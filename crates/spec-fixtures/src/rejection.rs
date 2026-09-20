@@ -35,6 +35,8 @@ pub enum ForkChoiceRejection {
     AttestationTooFarInFuture,
     /// `DUPLICATE_ATTESTATION_DATA`
     DuplicateAttestationData,
+    /// `TOO_MANY_ATTESTATION_DATA`
+    TooManyAttestationData,
     /// `EMPTY_AGGREGATION_BITS`
     EmptyAggregationBits,
 }
@@ -69,6 +71,7 @@ pub fn map_fork_choice_rejection(reason: &str) -> Option<ForkChoiceRejection> {
         "ATTESTATION_SLOT_BEFORE_HEAD" => Some(ForkChoiceRejection::AttestationSlotBeforeHead),
         "ATTESTATION_TOO_FAR_IN_FUTURE" => Some(ForkChoiceRejection::AttestationTooFarInFuture),
         "DUPLICATE_ATTESTATION_DATA" => Some(ForkChoiceRejection::DuplicateAttestationData),
+        "TOO_MANY_ATTESTATION_DATA" => Some(ForkChoiceRejection::TooManyAttestationData),
         "EMPTY_AGGREGATION_BITS" => Some(ForkChoiceRejection::EmptyAggregationBits),
         _ => None,
     }
@@ -93,6 +96,7 @@ impl ForkChoiceRejection {
             Self::AttestationSlotBeforeHead => ForkChoiceError::AttestationSlotBeforeHead,
             Self::AttestationTooFarInFuture => ForkChoiceError::AttestationTooFarInFuture,
             Self::DuplicateAttestationData => ForkChoiceError::DuplicateAttestationData,
+            Self::TooManyAttestationData => ForkChoiceError::TooManyAttestationData,
             Self::EmptyAggregationBits => ForkChoiceError::EmptyAggregationBits,
         }
     }
@@ -115,6 +119,7 @@ impl ForkChoiceRejection {
             Self::AttestationSlotBeforeHead => "ATTESTATION_SLOT_BEFORE_HEAD",
             Self::AttestationTooFarInFuture => "ATTESTATION_TOO_FAR_IN_FUTURE",
             Self::DuplicateAttestationData => "DUPLICATE_ATTESTATION_DATA",
+            Self::TooManyAttestationData => "TOO_MANY_ATTESTATION_DATA",
             Self::EmptyAggregationBits => "EMPTY_AGGREGATION_BITS",
         }
     }
