@@ -1,0 +1,6 @@
+# pq-devnet-5 aggregation / leanVM pin (B4)
+
+# Fill when an operator publishes interop pins. Mismatch warns at boot.
+LOG_INV_RATE=2
+LEANVM_REV=e2592df4e30fdddbbf8ae26a333116c68cec7026
+LEANSIG_REV=c08a3bae74b0d85379cab72dcbefa4091546ecbb
