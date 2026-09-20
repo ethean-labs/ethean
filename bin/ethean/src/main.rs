@@ -89,6 +89,7 @@ async fn main() -> Result<()> {
             http_port,
             http_admin_token,
             listen_port,
+            prune_keep_slots,
             lean_config,
             validator_registry,
             node_id,
@@ -131,6 +132,7 @@ async fn main() -> Result<()> {
             };
             let registry_keys =
                 lean_assets::load_optional_registry(validator_registry.as_deref(), &node_id)?;
+            let prune_keep = ethean_node::block_prune::resolve_prune_keep_slots(prune_keep_slots);
             info!(
                 ticks,
                 wall_clock,
@@ -154,6 +156,7 @@ async fn main() -> Result<()> {
                 http_address = http_address.as_str(),
                 http_port,
                 listen_port,
+                prune_keep_slots = prune_keep,
                 lean_config = lean_config.as_deref().unwrap_or(""),
                 node_id = node_id.as_str(),
                 "Starting lean consensus node"
@@ -212,7 +215,8 @@ async fn main() -> Result<()> {
             .with_metrics(metrics_listen.clone())
             .with_http(http_listen)
             .with_listen_port(listen_port)
-            .with_roles(roles);
+            .with_roles(roles)
+            .with_prune_keep_slots(prune_keep);
             if !no_banner {
                 let bind = format!("{metrics_address}:{metrics_port}");
                 banner::print_start_card(
