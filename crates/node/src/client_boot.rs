@@ -30,6 +30,7 @@ impl EtheanClient {
             leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
             leanvm_ipc_frame = leanvm_gate.ipc_frame_abi_ready,
             leanvm_ipc_spawn = leanvm_gate.ipc_spawn_wired,
+            leanvm_ipc_probe = leanvm_gate.ipc_probe_requested,
             leanvm_ipc_ready = leanvm_gate.ipc_protocol_ready,
             leanvm_pin = leanvm_gate.pinned_rev,
             leansig_feature = leansig_gate.feature_enabled,
