@@ -36,6 +36,7 @@ impl EtheanClient {
                 &mut self.shutdown,
                 &mut self.sync,
             )?);
+            self.flush_chain_persist();
             #[cfg(feature = "libp2p-quic")]
             if let Some(ev) = self.flush_pending_event()? {
                 events.push(ev);
@@ -109,6 +110,7 @@ impl EtheanClient {
             &mut self.shutdown,
             &mut self.sync,
         )?;
+        self.flush_chain_persist();
         #[cfg(feature = "libp2p-quic")]
         {
             if let Some(ev) = self.flush_pending_event()? {
