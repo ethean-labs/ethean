@@ -37,13 +37,13 @@ fn open_db(paths: &PersistPaths) -> Result<Database> {
     }
 }
 
-/// Store genesis SSZ, head root, and head state (optional block blob).
+/// Store genesis SSZ, head root, head state, and any block blobs.
 pub fn save_head(
     paths: &PersistPaths,
     head_root: &Hash32,
     state: &State,
     genesis_ssz: Option<&[u8]>,
-    block: Option<(&[u8], &[u8])>,
+    blocks: &[(Hash32, Vec<u8>)],
 ) -> Result<()> {
     let state_bytes = state
         .ssz_encode()
@@ -62,10 +62,15 @@ pub fn save_head(
         states
             .insert(head_root.as_slice(), state_bytes.as_slice())
             .map_err(map_redb)?;
-        if let Some((root, payload)) = block {
-            if !payload.is_empty() {
-                let mut blocks = txn.open_table(BLOCKS).map_err(map_redb)?;
-                blocks.insert(root, payload).map_err(map_redb)?;
+        if !blocks.is_empty() {
+            let mut table = txn.open_table(BLOCKS).map_err(map_redb)?;
+            for (root, payload) in blocks {
+                if payload.is_empty() {
+                    continue;
+                }
+                table
+                    .insert(root.as_slice(), payload.as_slice())
+                    .map_err(map_redb)?;
             }
         }
     }
@@ -177,7 +182,7 @@ mod tests {
             .build()
             .unwrap();
         let gssz = built.state.ssz_encode().unwrap();
-        save_head(&paths, &HASH32_ZERO, &built.state, Some(&gssz), None).unwrap();
+        save_head(&paths, &HASH32_ZERO, &built.state, Some(&gssz), &[]).unwrap();
         let loaded = load_head(&paths).unwrap().unwrap();
         assert_eq!(loaded.head_root, HASH32_ZERO);
         assert_eq!(loaded.state.config.genesis_time, 42);
