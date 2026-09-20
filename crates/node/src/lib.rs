@@ -33,6 +33,7 @@ pub mod duty_loop;
 pub mod duty_mesh;
 pub mod duty_network;
 pub mod duty_propose;
+pub mod duty_propose_gate;
 pub mod duty_step;
 pub mod events;
 pub mod gossip_decode;

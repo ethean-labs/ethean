@@ -5,6 +5,7 @@ use crate::block_builder::{
     PublishDecision, Type2CacheAttach,
 };
 use crate::chain_owner::ChainOwner;
+use crate::duty_propose_gate::is_assigned_proposer;
 use crate::events::ChainEvent;
 use ethean_primitives::ValidatorIndex;
 use ethean_validator::DutyTick;
@@ -23,7 +24,17 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     if n == 0 {
         return out;
     }
-    let proposer = ValidatorIndex::new(tick.slot.get() % n);
+    let assigned = tick.slot.get() % n;
+    if !is_assigned_proposer(owner, tick.slot.get(), n) {
+        tracing::debug!(
+            assigned,
+            owned = ?owner.owned_validator_indices,
+            slot = tick.slot.get(),
+            "proposal skipped; not an owned validator index"
+        );
+        return out;
+    }
+    let proposer = ValidatorIndex::new(assigned);
     let mut plan = match plan_from_pool(
         &owner.aggregates,
         owner.head_root,
@@ -247,5 +258,23 @@ mod tests {
             .unwrap()
             .proposer_signature
             .is_some());
+    }
+
+    #[test]
+    fn skips_proposal_when_not_owned_index() {
+        let pre = sample_state(3);
+        let mut owner = ChainOwner::new(2);
+        owner.head_state = Some(pre);
+        owner.profile = Some(lstar_devnet().unwrap());
+        owner.proposer = Some(LocalProposer::smoke().expect("proposer"));
+        owner.owned_validator_indices = vec![0]; // slot 1 % 3 = 1 → skip
+        let tick = DutyTick {
+            slot: Slot::new(1),
+            interval: 0,
+            generation: 1,
+        };
+        let events = try_plan_proposal(&mut owner, tick);
+        assert!(events.is_empty());
+        assert!(owner.planned_proposal.is_none());
     }
 }
