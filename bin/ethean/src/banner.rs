@@ -42,7 +42,7 @@ pub fn print_identity() {
 /// Detailed monitoring-style card after the client has loaded chain state.
 pub fn print_start_card(client: &EtheanClient, card: &StartCard<'_>) {
     let green = Color::LightGreen.bold();
-    let cyan = Color::LightCyan;
+    let cyan = Color::LightCyan.normal();
     let dim = Style::new().dimmed();
     let mut out = io::stdout();
 
@@ -77,7 +77,7 @@ pub fn print_start_card(client: &EtheanClient, card: &StartCard<'_>) {
         .map(|s| s.validators.len())
         .unwrap_or(client.genesis().validators.len());
     let sps = client.profile().seconds_per_slot;
-    let fork = client.profile().fork_name.as_str();
+    let fork = client.profile().fork_name;
 
     let network_kind = network_kind_label(card.network.id.as_str());
     let run_mode = run_mode_label(card.cfg.mode);
