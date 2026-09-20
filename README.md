@@ -157,7 +157,7 @@ Ideal local setup keeps **both** paths:
 
 | Mode | Flags | Behavior |
 | --- | --- | --- |
-| **Peer-like (durable)** | `--data-dir ./ethean-data` | Pins `genesis_time` once; writes `head_snap.json`; Ctrl-C then restart **continues** from last head / justified / finalized |
+| **Durable** | `--data-dir ./ethean-data` | Writes `genesis.json` / `genesis.ssz`, `state.ssz`, `blocks/*.ssz`, and `ethean.redb`; Ctrl-C then restart **continues** from last head / justified / finalized |
 | **Ephemeral smoke** | `--ephemeral` (or omit `--data-dir`) | Builds a **new recent genesis** each start; slot counters reset (e.g. stop at 48 → next run near 4–5) |
 
 ```bash
@@ -176,13 +176,14 @@ ethean start --until-signal --network pq-devnet-4 --ephemeral
 
 Under `--data-dir` the node writes:
 
-- `genesis_pin.json` — fixed `genesis_time`, validator count, slot seconds
-- `head_snap.json` — head root + full local state (updated each duty step)
+- `genesis.json` — Ethean operator bundle (`ethean-genesis-v1`: profile, keys, full genesis state)
+- `genesis.ssz` — SSZ-encoded genesis `State`
+- `state.ssz` / `head.root` — current head (updated each duty step)
+- `blocks/<root>.ssz` — signed block blobs when a proposal is in flight
+- `ethean.redb` — same SSZ blobs in a local KV (`historical_block_hashes` lives inside state SSZ)
 
-That JSON dump is Ethean’s solo resume path. Peer clients (Ream, Zeam,
-qlean-mini, ethlambda, Lantern, gean, Peam) keep `historical_block_hashes`
-inside SSZ-encoded `State` and write a DB or `.ssz` files under `--data-dir`
-instead. See [docs/peer-clients-storage-vs-ethean-json-2026-09-20.md](docs/peer-clients-storage-vs-ethean-json-2026-09-20.md).
+A prior `genesis_pin.json` / `head_snap.json` in the same folder is still read once
+and migrated. See [docs/ethean-redb-ssz-data-dir-2026-09-20.md](docs/ethean-redb-ssz-data-dir-2026-09-20.md).
 
 `--ephemeral` wins over `--data-dir` if both are set (logs a warning).
 
