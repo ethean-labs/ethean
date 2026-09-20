@@ -2,7 +2,9 @@
 
 use crate::aggregation::{AggregatePool, PoolEntry, PoolKey};
 use crate::gossip_pool::pool_profile_digest;
-use ethean_crypto::{attestation_leaves_from_type2, Type1Leaf};
+use ethean_crypto::{
+    attestation_leaves_from_type2, split_ipc, Type1Leaf,
+};
 use ethean_transition::type2_statement_for_block;
 use ethean_types::{AggregatedAttestation, SignedBlock};
 
@@ -17,11 +19,11 @@ pub struct Type2SplitSeed {
     pub crypto_split: bool,
 }
 
-/// Split the block's Type-2 proof structurally and insert Type-1 cache rows.
+/// Split the block's Type-2 proof and insert Type-1 cache rows.
 ///
-/// Uses attestation SSZ from the block body so the next proposer can rebuild
-/// coverage without waiting for gossip re-delivery. Proof bytes stay empty until
-/// leanVM exposes a real split.
+/// Prefers process IPC (`split_ipc`) when `ETHEAN_LEANVM_PROVER` is set; otherwise
+/// structural local split. Proof bytes stay empty (`crypto_split = false`) until a
+/// production leanVM fills independently verifiable Type-1 proofs.
 pub fn seed_pool_from_signed_block(
     pool: &mut AggregatePool,
     signed: &SignedBlock,
@@ -32,8 +34,12 @@ pub fn seed_pool_from_signed_block(
     let Ok(statement) = type2_statement_for_block(&signed.block) else {
         return Type2SplitSeed::default();
     };
-    let Ok(leaves) = attestation_leaves_from_type2(&statement, &signed.proof.proof) else {
-        return Type2SplitSeed::default();
+    let leaves = match split_ipc(&statement, &signed.proof.proof) {
+        Ok(all) => attestation_slice(&all),
+        Err(_) => match attestation_leaves_from_type2(&statement, &signed.proof.proof) {
+            Ok(l) => l,
+            Err(_) => return Type2SplitSeed::default(),
+        },
     };
     let mut out = Type2SplitSeed {
         leaves: leaves.len(),
@@ -49,6 +55,14 @@ pub fn seed_pool_from_signed_block(
         out.inserted = out.inserted.saturating_add(1);
     }
     out
+}
+
+/// Match `attestation_leaves_from_type2`: skip body binder and block-root binder.
+fn attestation_slice(leaves: &[Type1Leaf]) -> Vec<Type1Leaf> {
+    if leaves.len() <= 2 {
+        return Vec::new();
+    }
+    leaves[1..leaves.len() - 1].to_vec()
 }
 
 fn insert_leaf(
