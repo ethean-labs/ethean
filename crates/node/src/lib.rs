@@ -38,6 +38,7 @@ pub mod gossip_ingest;
 pub mod gossip_pool;
 pub mod gossip_stf;
 pub mod gossip_type2;
+pub mod genesis_bundle;
 pub mod local_finality;
 pub mod local_genesis;
 pub mod local_proposer;
