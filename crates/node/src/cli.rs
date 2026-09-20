@@ -75,6 +75,18 @@ pub enum Command {
         /// Metrics listen port (default 9100; matches deploy/observability scrape).
         #[arg(long, default_value_t = 9100)]
         metrics_port: u16,
+        /// Disable Lean HTTP API (`/lean/v1` is on by default at :5052).
+        #[arg(long, default_value_t = false)]
+        no_http: bool,
+        /// Lean HTTP listen address (default 127.0.0.1).
+        #[arg(long, default_value = "127.0.0.1")]
+        http_address: String,
+        /// Lean HTTP listen port (default 5052).
+        #[arg(long, default_value_t = 5052)]
+        http_port: u16,
+        /// Bearer token for `/lean/v1/admin/*` on non-loopback HTTP binds.
+        #[arg(long, default_value = "")]
+        http_admin_token: String,
     },
     /// Start the validator client
     Validator,
