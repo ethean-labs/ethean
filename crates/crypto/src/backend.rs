@@ -25,6 +25,19 @@ impl std::fmt::Debug for SecretKeyMaterial {
 }
 
 impl SecretKeyMaterial {
+    /// Import opaque secret bytes (Hive / lean-quickstart `*.ssz` privkey files).
+    pub fn from_imported(
+        bytes: Vec<u8>,
+        activation_epoch: u32,
+        num_active_epochs: u32,
+    ) -> Self {
+        Self {
+            bytes,
+            activation_epoch,
+            num_active_epochs,
+        }
+    }
+
     /// Activation start epoch.
     pub fn activation_epoch(&self) -> u32 {
         self.activation_epoch
@@ -33,6 +46,11 @@ impl SecretKeyMaterial {
     /// Number of active epochs.
     pub fn num_active_epochs(&self) -> u32 {
         self.num_active_epochs
+    }
+
+    /// Borrow raw secret bytes (callers must not log this).
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.bytes
     }
 }
 
