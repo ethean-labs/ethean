@@ -3,6 +3,7 @@
 use crate::aggregation::AggregatePool;
 use crate::aggregation_gossip::AggregationGossip;
 use crate::block_builder::{PlanTransition, ProposalGossip};
+use crate::local_attester::LocalAttester;
 use crate::local_proposer::LocalProposer;
 use crate::sync_orphan::SyncOrphanCache;
 use ethean_primitives::{Hash32, Slot};
@@ -60,6 +61,10 @@ pub struct ChainOwner {
     pub pending_aggregation_gossip: Vec<AggregationGossip>,
     /// Optional local proposal signer (test-hmac smoke key).
     pub proposer: Option<LocalProposer>,
+    /// Optional local attestation signer (Hive registry / smoke).
+    pub attester: Option<LocalAttester>,
+    /// Validator indices owned by this node (from Hive registry).
+    pub owned_validator_indices: Vec<u64>,
     /// Sync blobs waiting for a missing parent (blocks-by-root catch-up).
     pub sync_orphans: SyncOrphanCache,
     /// Configured max head lag.
@@ -86,6 +91,8 @@ impl Default for ChainOwner {
             pending_block_gossip: None,
             pending_aggregation_gossip: Vec::new(),
             proposer: None,
+            attester: None,
+            owned_validator_indices: Vec::new(),
             sync_orphans: SyncOrphanCache::default(),
             max_head_lag_slots: 0,
             is_aggregator: false,
