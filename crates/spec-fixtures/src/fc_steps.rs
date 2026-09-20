@@ -44,8 +44,13 @@ pub fn apply_tick(
     Ok(())
 }
 
-fn maybe_tick_to_slot(store: &mut ForkChoiceStore, step: &Value, slot: u64) -> Result<(), FcRunError> {
-    if step.get("tickToSlot").and_then(|v| v.as_bool()) != Some(true) {
+fn maybe_tick_to_slot(
+    store: &mut ForkChoiceStore,
+    step: &Value,
+    slot: u64,
+) -> Result<(), FcRunError> {
+    // Absent tickToSlot defaults to true (leanSpec / Gean fixture runners).
+    if step.get("tickToSlot").and_then(|v| v.as_bool()) == Some(false) {
         return Ok(());
     }
     let need = slot.saturating_mul(store.intervals_per_slot);
@@ -53,6 +58,18 @@ fn maybe_tick_to_slot(store: &mut ForkChoiceStore, step: &Value, slot: u64) -> R
         store
             .on_tick_with(need, false)
             .map_err(|e| FcRunError::Step(format!("tickToSlot({slot}): {e}")))?;
+    }
+    Ok(())
+}
+
+/// Advance clock to the earliest interval that admits a slot-N vote (Gean/leanSpec).
+fn maybe_tick_to_admit(store: &mut ForkChoiceStore, slot: u64) -> Result<(), FcRunError> {
+    let start = slot.saturating_mul(store.intervals_per_slot);
+    let need = start.saturating_sub(store.gossip_disparity_intervals);
+    if store.time < need {
+        store
+            .on_tick_with(need, false)
+            .map_err(|e| FcRunError::Step(format!("admitTick({slot}): {e}")))?;
     }
     Ok(())
 }
@@ -114,7 +131,9 @@ pub fn apply_attestation_step(
         .get("attestation")
         .ok_or_else(|| FcRunError::Step("attestation step missing attestation".into()))?;
     let (validator, data) = attestation_from_value(att_v)?;
-    maybe_tick_to_slot(store, step, data.slot.get())?;
+    if valid != Some(false) {
+        maybe_tick_to_admit(store, data.slot.get())?;
+    }
 
     if valid == Some(false) {
         let reason = step
@@ -156,7 +175,9 @@ pub fn apply_gossip_aggregated_step(
         .get("attestation")
         .ok_or_else(|| FcRunError::Step("gossipAggregatedAttestation missing attestation".into()))?;
     let (data, participants) = signed_aggregated_from_value(att_v)?;
-    maybe_tick_to_slot(store, step, data.slot.get())?;
+    if valid != Some(false) {
+        maybe_tick_to_admit(store, data.slot.get())?;
+    }
 
     if valid == Some(false) {
         let reason = step
