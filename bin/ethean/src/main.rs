@@ -1,5 +1,6 @@
 //! Ethean Lean Consensus Client main binary
 
+mod console_fmt;
 mod file_log;
 mod observability;
 
@@ -34,7 +35,7 @@ async fn main() -> Result<()> {
             }
             file_log::install(data_dir.as_deref(), *ephemeral)?;
         }
-        _ => tracing_subscriber::fmt().init(),
+        _ => file_log::install_stdout_only(),
     }
 
     info!(
