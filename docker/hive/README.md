@@ -35,6 +35,11 @@ docker build -f docker/hive/Dockerfile \
 | `HIVE_LEAN_NETWORK_CONFIG` | `--lean-config` (`config.yaml`) |
 | `HIVE_LEAN_VALIDATOR_REGISTRY_PATH` | `--validator-registry` |
 | `HIVE_NODE_ID` | `--node-id` (default `ethean_0`) |
+| `HIVE_LEANVM_PROVER` | exports `ETHEAN_LEANVM_PROVER` (optional IPC binary path) |
+| `HIVE_LEANVM_IPC_PROBE` | exports `ETHEAN_LEANVM_IPC_PROBE` (optional live probe) |
+
+Operator plug-in order (fork-digest, bootnodes, leanVM, leansig, Hive):
+[`docs/pq-devnet-operator-plug-in-checklist-2026-09-20.md`](../../docs/pq-devnet-operator-plug-in-checklist-2026-09-20.md).
 
 Always runs `ethean start --until-signal --ephemeral` with Lean HTTP on `0.0.0.0:5052`
 and QUIC on UDP `:9000` (override via `HIVE_LISTEN_PORT`). When Hive injects prepared
