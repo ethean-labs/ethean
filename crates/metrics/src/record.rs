@@ -99,6 +99,11 @@ pub fn ensure_core_families(reg: &mut Registry) -> Result<()> {
             "Lowest slot kept after the last prune pass",
             MetricKind::Gauge,
         ),
+        (
+            "durable_blocks_prune_keep_slots",
+            "Configured slots kept below finalized before prune",
+            MetricKind::Gauge,
+        ),
         ("ready", "1 if process ready", MetricKind::Gauge),
         ("ready_storage", "1 if storage gate passed", MetricKind::Gauge),
         ("ready_crypto", "1 if crypto gate passed", MetricKind::Gauge),
@@ -193,6 +198,7 @@ pub fn record_durable_persist(
     floor_slot: u64,
     files_removed: u64,
     redb_removed: u64,
+    keep_slots: u64,
 ) -> Result<()> {
     if flushed_blocks > 0 {
         reg.inc("durable_blocks_flushed_total", flushed_blocks as f64)?;
@@ -207,6 +213,7 @@ pub fn record_durable_persist(
         reg.inc("durable_blocks_pruned_redb_total", redb_removed as f64)?;
     }
     reg.set("durable_blocks_prune_floor_slot", floor_slot as f64)?;
+    reg.set("durable_blocks_prune_keep_slots", keep_slots as f64)?;
     Ok(())
 }
 
@@ -223,6 +230,6 @@ mod tests {
         record_slot_gauges(&mut r, 10, 8, 6, 11, 1).unwrap();
         record_role_gauges(&mut r, 4, true, true, 1_700_000_000, 4).unwrap();
         record_readiness_gauges(&mut r, true, true, true, true, true).unwrap();
-        record_durable_persist(&mut r, 2, 44, 1, 1).unwrap();
+        record_durable_persist(&mut r, 2, 44, 1, 1, 256).unwrap();
     }
 }
