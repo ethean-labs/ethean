@@ -1,0 +1,24 @@
+# leanSig / leanVM / aggregation
+
+Dated development notes for this topic. Index: [../README.md](../../README.md).
+
+- [aggregator prove ipc route](aggregator-prove-ipc-route-2026-09-20.md)
+- [attest before prove empty type1](attest-before-prove-empty-type1-2026-09-20.md)
+- [b1 leansig vendor backend compile](b1-leansig-vendor-backend-compile-2026-09-20.md)
+- [b2 leanvm ipc frames b4 aggpin](b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md)
+- [b2 leanvm ipc live probe](b2-leanvm-ipc-live-probe-2026-09-20.md)
+- [b2 leanvm ipc spawn exchange](b2-leanvm-ipc-spawn-exchange-2026-09-20.md)
+- [b2 leanvm ipc split ops](b2-leanvm-ipc-split-ops-2026-09-20.md)
+- [b2 leanvm mock ipc roundtrip](b2-leanvm-mock-ipc-roundtrip-2026-09-20.md)
+- [b2 leanvm refuse d2 aggregator subnets](b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md)
+- [d3 type2 from type1 cache](d3-type2-from-type1-cache-2026-09-20.md)
+- [durable quic leanvm leansig vendor](durable-quic-leanvm-leansig-vendor-2026-09-19.md)
+- [external gates quic rocksdb leansig](external-gates-quic-rocksdb-leansig-2026-09-19.md)
+- [leanvm gate leansig proposer](leanvm-gate-leansig-proposer-2026-09-19.md)
+- [leanvm statement wire ipc gate](leanvm-statement-wire-ipc-gate-2026-09-19.md)
+- [remote proposer sidecar verify](remote-proposer-sidecar-verify-2026-09-19.md)
+- [type1 recursive merge](type1-recursive-merge-2026-09-19.md)
+- [type2 block root leansig pin](type2-block-root-leansig-pin-2026-09-19.md)
+- [type2 proposer sidecar policy](type2-proposer-sidecar-policy-2026-09-19.md)
+- [type2 prove attach](type2-prove-attach-2026-09-19.md)
+- [type2 structural split pool reseed](type2-structural-split-pool-reseed-2026-09-19.md)

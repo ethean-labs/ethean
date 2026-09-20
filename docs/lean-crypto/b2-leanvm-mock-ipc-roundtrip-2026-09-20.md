@@ -24,7 +24,7 @@ cargo test -p ethean-crypto --lib roundtrip_against_workspace_mock
 - Mock is **not** production leanVM / Plonky3
 - `protocol_ready` flips only when `ETHEAN_LEANVM_IPC_PROBE=1` and a pin-checked
   round-trip against `ETHEAN_LEANVM_PROVER` succeeds (see
-  [`b2-leanvm-ipc-live-probe-2026-09-20.md`](./b2-leanvm-ipc-live-probe-2026-09-20.md))
+  [`b2-leanvm-ipc-live-probe-2026-09-20.md`](b2-leanvm-ipc-live-probe-2026-09-20.md))
 - Spawn path is end-to-end proven against an ELVM peer
 
 ## Still open
