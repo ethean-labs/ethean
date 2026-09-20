@@ -29,7 +29,7 @@ cargo test -p ethean-spec-fixtures --lib fc_runner
 
 | Gap | Notes |
 | --- | --- |
-| Blocks with non-empty attestation bodies | JSON decode still uses empty `BlockBody` |
+| Blocks with non-empty attestation bodies | Landed — see `leanspec-fc-block-body-attestations-2026-09-20.md` |
 | `aggregated_attestation` steps | Not wired |
 | STF fixture runner | Separate track |
 | Hive client image for Ethean | Matrix registration |
