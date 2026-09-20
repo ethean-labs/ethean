@@ -8,22 +8,39 @@ use ethean_transition::{apply_block_unverified, TransitionContext};
 use ethean_types::State;
 use serde_json::Value;
 
-/// Apply a `stepType=tick` (absolute `interval` target).
+/// Apply a `stepType=tick` (`interval` count or wall-clock `time` seconds).
 pub fn apply_tick(
     store: &mut ForkChoiceStore,
     step: &Value,
 ) -> Result<(), FcRunError> {
-    let interval = step
-        .get("interval")
-        .and_then(|v| v.as_u64())
-        .ok_or_else(|| FcRunError::Step("tick step missing interval".into()))?;
+    let target = if let Some(interval) = step.get("interval").and_then(|v| v.as_u64()) {
+        interval
+    } else if let Some(wall_secs) = step.get("time").and_then(|v| v.as_u64()) {
+        // leanSpec / Gean: Unix seconds → interval count via genesis + ms/interval.
+        let genesis_ms = store.genesis_time.saturating_mul(1000);
+        let timestamp_ms = wall_secs.saturating_mul(1000);
+        if timestamp_ms < genesis_ms || store.milliseconds_per_interval == 0 {
+            0
+        } else {
+            (timestamp_ms - genesis_ms) / store.milliseconds_per_interval
+        }
+    } else {
+        return Err(FcRunError::Step(
+            "tick step missing interval/time".into(),
+        ));
+    };
     let has_proposal = step
         .get("hasProposal")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    if target < store.time {
+        // Fixtures may pin time behind the clock for later checks; structural
+        // runner treats a past tick as a no-op once the store has already advanced.
+        return Ok(());
+    }
     store
-        .on_tick_with(interval, has_proposal)
-        .map_err(|e| FcRunError::Step(format!("on_tick({interval}): {e}")))?;
+        .on_tick_with(target, has_proposal)
+        .map_err(|e| FcRunError::Step(format!("on_tick({target}): {e}")))?;
     Ok(())
 }
 
