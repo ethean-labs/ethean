@@ -23,6 +23,7 @@ cargo test -p ethean-network --lib collect_ --features libp2p-quic
 
 ## Follow-ups
 
-- Seed serve cache from durable `--data-dir` when present
+- Seed serve cache from durable `--data-dir` when present — **landed**
+  ([serve-cache-seed-from-data-dir-2026-09-20.md](./serve-cache-seed-from-data-dir-2026-09-20.md))
 - Metric counters for found/missing (observability scrape)
 - Operator A2/A3 still required for a live mesh
