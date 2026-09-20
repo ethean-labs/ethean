@@ -105,9 +105,18 @@ impl EtheanClient {
             );
         }
 
-        let (_port, swarm) =
-            crate::boot_network::prepare_boot_network(&fork_segment, listen_port).await?;
-        info!(listen_port = _port, "network listen port ready");
+        let attestation_subnets = self.profile.attestation_subnet_count();
+        let (_port, swarm) = crate::boot_network::prepare_boot_network(
+            &fork_segment,
+            listen_port,
+            attestation_subnets,
+        )
+        .await?;
+        info!(
+            listen_port = _port,
+            attestation_subnets,
+            "network listen port ready"
+        );
         #[cfg(feature = "libp2p-quic")]
         {
             self.swarm = swarm;
