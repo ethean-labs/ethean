@@ -25,6 +25,6 @@ COPY docker/hive/ethean.sh /ethean.sh
 RUN chmod +x /ethean.sh \
  && /usr/local/bin/ethean version > /version.txt || true
 
-# Metrics scrape (Hive may enable via HIVE_METRICS_ENABLED). QUIC bind is OS-assigned today.
-EXPOSE 9100
+# Lean HTTP API (:5052) + metrics scrape. QUIC bind is still OS-assigned today.
+EXPOSE 5052 9100
 ENTRYPOINT ["/ethean.sh"]
