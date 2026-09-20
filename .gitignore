@@ -21,3 +21,6 @@ bazalinacaklar/**
 notlar.txt
 *.research.md
 test-devnet/
+# Local leanSpec fixture cache (fetch-leanspec-fixtures.ps1)
+.cache/
+.cache/**
