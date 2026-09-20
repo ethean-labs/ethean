@@ -1,7 +1,10 @@
 //! Run leanSpec `fork_choice_test` steps against Ethean fork-choice.
 
 use crate::envelope::FixtureCase;
-use crate::fc_steps::{apply_attestation_step, apply_block_step, apply_tick, BlockStepKind};
+use crate::fc_steps::{
+    apply_attestation_step, apply_block_step, apply_gossip_aggregated_step, apply_tick,
+    BlockStepKind,
+};
 use crate::json_types::{block_from_value, state_from_value, JsonTypesError};
 use ethean_fork_choice::{create_store, ForkChoiceError, ForkChoiceOpts, ForkChoiceStore};
 use ethean_profile::lstar_devnet;
@@ -90,8 +93,14 @@ pub fn run_fork_choice_case(case: &FixtureCase) -> Result<FcRunReport, FcRunErro
                 BlockStepKind::Imported => report.attestations += 1,
                 BlockStepKind::Rejected => report.rejections += 1,
             },
+            Some("gossipAggregatedAttestation") => {
+                match apply_gossip_aggregated_step(&mut store, &step_v)? {
+                    BlockStepKind::Imported => report.attestations += 1,
+                    BlockStepKind::Rejected => report.rejections += 1,
+                }
+            }
             _ => {
-                // aggregated_attestation / other steps land later.
+                // Other step types land later.
             }
         }
     }
@@ -249,5 +258,32 @@ mod tests {
         let reports = run_fork_choice_file(&bytes).unwrap();
         assert_eq!(reports[0].1.imports, 9);
         assert_eq!(reports[0].1.rejections, 0);
+    }
+
+    #[test]
+    fn runs_gossip_aggregate_head_slot_mismatch() {
+        let Some(path) = fixture(
+            "test_gossip_aggregated_attestation_validation/test_aggregated_attestation_head_slot_mismatch_rejected.json",
+        ) else {
+            eprintln!("skip: cache missing");
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let reports = run_fork_choice_file(&bytes).unwrap();
+        assert!(reports[0].1.imports >= 1);
+        assert_eq!(reports[0].1.rejections, 1);
+    }
+
+    #[test]
+    fn runs_gossip_aggregate_empty_participants() {
+        let Some(path) = fixture(
+            "test_gossip_aggregated_empty_participants/test_gossip_aggregated_attestation_empty_participants_rejected.json",
+        ) else {
+            eprintln!("skip: cache missing");
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let reports = run_fork_choice_file(&bytes).unwrap();
+        assert_eq!(reports[0].1.rejections, 1);
     }
 }
