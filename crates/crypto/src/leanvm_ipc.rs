@@ -1,11 +1,12 @@
 //! leanVM process-isolated prover IPC status (feature `leanvm-backend`).
 //!
-//! Phase 08 requires proving outside the chain-owner process. Until a pinned
-//! prover binary and framed protocol ship, calls fail closed and never exec
-//! an arbitrary `ETHEAN_LEANVM_PROVER` path.
+//! Phase 08 requires proving outside the chain-owner process. Frame codec is
+//! ready ([`crate::leanvm_ipc_frame`]); spawn stays fail-closed until a sandbox
+//! round-trip against the pinned leanVM rev lands.
 
 use crate::aggregation::AggregateStatement;
 use crate::error::{CryptoError, Result};
+use crate::leanvm_ipc_frame::{IpcFrame, FRAME_CODEC_READY};
 use std::path::PathBuf;
 
 /// Env var naming a candidate leanVM prover executable (observability only today).
@@ -18,7 +19,9 @@ pub struct LeanVmIpcStatus {
     pub binary_path: Option<PathBuf>,
     /// True when the path exists on disk (does not imply a compatible ABI).
     pub binary_present: bool,
-    /// Framed prove/verify IPC is implemented and version-checked.
+    /// Versioned request/response frame codec is compiled in.
+    pub frame_abi_ready: bool,
+    /// Framed prove/verify spawn + round-trip is implemented and version-checked.
     pub protocol_ready: bool,
 }
 
@@ -33,7 +36,8 @@ impl LeanVmIpcStatus {
         Self {
             binary_path,
             binary_present,
-            // Flip only after a versioned request/response round-trip lands.
+            frame_abi_ready: FRAME_CODEC_READY,
+            // Flip only after spawn + round-trip against LEANVM_REV.
             protocol_ready: false,
         }
     }
@@ -53,12 +57,11 @@ pub fn prove_ipc(statement: &AggregateStatement) -> Result<Vec<u8>> {
             "leanVM prover binary not configured (set ETHEAN_LEANVM_PROVER)",
         ));
     }
+    // Always build the framed request so the statement wire path is exercised.
+    let _request = IpcFrame::prove_request(statement)?.encode()?;
     if !status.protocol_ready {
-        // Bind the wire encoding so callers exercise the real statement path,
-        // but refuse to spawn until the framed protocol is reviewed.
-        let _wire = statement.encode_wire();
         return Err(CryptoError::BackendUnavailable(
-            "leanVM IPC protocol not implemented; refuse process spawn",
+            "leanVM IPC frame ready but spawn/round-trip not wired; refuse process spawn",
         ));
     }
     Err(CryptoError::BackendUnavailable(
@@ -69,8 +72,8 @@ pub fn prove_ipc(statement: &AggregateStatement) -> Result<Vec<u8>> {
 /// Verify via process IPC (fail closed until protocol_ready).
 pub fn verify_ipc(statement: &AggregateStatement, proof: &[u8]) -> Result<bool> {
     statement.validate_shape()?;
-    let _ = proof;
     let status = LeanVmIpcStatus::probe();
+    let _request = IpcFrame::verify_request(statement, proof)?.encode()?;
     if !status.ready() {
         return Err(CryptoError::BackendUnavailable(
             "leanVM IPC not ready; refuse always-true verify",
@@ -88,10 +91,11 @@ mod tests {
 
     #[test]
     fn probe_without_env_is_not_ready() {
-        // Ensure our test does not inherit a host path.
         std::env::remove_var(PROVER_ENV);
         let s = LeanVmIpcStatus::probe();
         assert!(!s.binary_present);
+        assert!(s.frame_abi_ready);
+        assert!(!s.protocol_ready);
         assert!(!s.ready());
     }
 
