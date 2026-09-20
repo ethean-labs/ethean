@@ -104,6 +104,31 @@ pub fn ensure_core_families(reg: &mut Registry) -> Result<()> {
             "Configured slots kept below finalized before prune",
             MetricKind::Gauge,
         ),
+        (
+            "blocks_by_range_serve_found_total",
+            "Slots found while serving inbound blocks-by-range",
+            MetricKind::Counter,
+        ),
+        (
+            "blocks_by_range_serve_missing_total",
+            "Slots missing while serving inbound blocks-by-range",
+            MetricKind::Counter,
+        ),
+        (
+            "blocks_by_range_serve_cache_slots",
+            "In-memory blocks-by-range serve cache size",
+            MetricKind::Gauge,
+        ),
+        (
+            "serve_cache_seed_candidates",
+            "Durable blobs considered when seeding the serve cache",
+            MetricKind::Gauge,
+        ),
+        (
+            "serve_cache_seed_indexed",
+            "Durable blobs indexed into the serve cache at boot",
+            MetricKind::Gauge,
+        ),
         ("ready", "1 if process ready", MetricKind::Gauge),
         ("ready_storage", "1 if storage gate passed", MetricKind::Gauge),
         ("ready_crypto", "1 if crypto gate passed", MetricKind::Gauge),
@@ -217,6 +242,29 @@ pub fn record_durable_persist(
     Ok(())
 }
 
+/// Mirror blocks-by-range serve totals from the QuicSwarm atomics.
+pub fn record_range_serve(
+    reg: &mut Registry,
+    found_total: u64,
+    missing_total: u64,
+    cache_slots: u64,
+) -> Result<()> {
+    reg.set("blocks_by_range_serve_found_total", found_total as f64)?;
+    reg.set(
+        "blocks_by_range_serve_missing_total",
+        missing_total as f64,
+    )?;
+    reg.set("blocks_by_range_serve_cache_slots", cache_slots as f64)?;
+    Ok(())
+}
+
+/// Record boot-time durable serve-cache seed counts.
+pub fn record_serve_cache_seed(reg: &mut Registry, candidates: u64, indexed: u64) -> Result<()> {
+    reg.set("serve_cache_seed_candidates", candidates as f64)?;
+    reg.set("serve_cache_seed_indexed", indexed as f64)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,5 +279,7 @@ mod tests {
         record_role_gauges(&mut r, 4, true, true, 1_700_000_000, 4).unwrap();
         record_readiness_gauges(&mut r, true, true, true, true, true).unwrap();
         record_durable_persist(&mut r, 2, 44, 1, 1, 256).unwrap();
+        record_range_serve(&mut r, 5, 2, 8).unwrap();
+        record_serve_cache_seed(&mut r, 10, 9).unwrap();
     }
 }
