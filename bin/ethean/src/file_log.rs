@@ -10,28 +10,36 @@ use tracing::info;
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::EnvFilter;
 
 /// Install tracing: green-forward console; also a dated plain file when durable.
-pub fn install(data_dir: Option<&str>, ephemeral: bool) -> Result<(), String> {
+pub fn install(
+    data_dir: Option<&str>,
+    ephemeral: bool,
+    filter: EnvFilter,
+) -> Result<(), String> {
     match data_dir {
-        Some(dir) if !ephemeral => install_stdout_and_file(dir),
+        Some(dir) if !ephemeral => install_stdout_and_file(dir, filter),
         _ => {
-            install_stdout_only();
+            install_stdout_only(filter);
             Ok(())
         }
     }
 }
 
-/// Console-only (no data-dir), same Ethean palette.
-pub fn install_stdout_only() {
+/// Console-only (no data-dir), same Ethean palette and filter.
+pub fn install_stdout_only(filter: EnvFilter) {
     let stdout = fmt::layer()
         .event_format(EtheanConsole)
         .with_ansi(true)
         .with_writer(io::stdout);
-    tracing_subscriber::registry().with(stdout).init();
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(stdout)
+        .init();
 }
 
-fn install_stdout_and_file(data_dir: &str) -> Result<(), String> {
+fn install_stdout_and_file(data_dir: &str, filter: EnvFilter) -> Result<(), String> {
     let paths = PersistPaths::new(data_dir);
     paths
         .ensure_dir()
@@ -54,6 +62,7 @@ fn install_stdout_and_file(data_dir: &str) -> Result<(), String> {
         .with_writer(Mutex::new(file));
 
     tracing_subscriber::registry()
+        .with(filter)
         .with(stdout)
         .with(file_layer)
         .init();
