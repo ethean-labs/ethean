@@ -76,6 +76,7 @@ Planning session summaries:
 - [How Ream connects without public bootnodes](./how-ream-connects-without-public-bootnodes-2026-09-20.md)
 - [How Ream, ethlambda, and Zeam run pq-devnets](./peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
 - [Peer fixed genesis vs Ethean solo restart](./peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md)
+- [Peer storage vs Ethean JSON snapshots](./peer-clients-storage-vs-ethean-json-2026-09-20.md)
 - [Dual mode: durable data-dir + ephemeral smoke](./dual-mode-persist-and-ephemeral-2026-09-20.md)
 - [Recommended test baseline (Ream ops + ethlambda)](./recommend-test-baseline-ream-ethlambda-2026-09-20.md)
 - [Long-run metrics + Grafana (pq-devnet-4)](./long-run-metrics-grafana-2026-09-20.md)
