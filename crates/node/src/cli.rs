@@ -24,7 +24,7 @@ pub enum Command {
         /// Run until Ctrl-C (implies wall-clock sleeps). Long-run / Grafana path.
         #[arg(long, default_value_t = false)]
         until_signal: bool,
-        /// Durable directory: genesis.json/ssz, state.ssz, blocks/*.ssz, ethean.redb.
+        /// Durable directory: genesis SSZ, ethean.redb, and log/ethean-*-log.
         #[arg(long)]
         data_dir: Option<String>,
         /// Force ephemeral recent-genesis smoke (ignores --data-dir). Restarts start a new chain.
