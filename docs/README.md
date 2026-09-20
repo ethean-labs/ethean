@@ -32,6 +32,7 @@ Planning session summaries:
 - [Phase 01 identity cleanup](./lean-consensus-migration-phase-01-identity-2026-09-19.md)
 - [Phase 02 workspace / primitives / profile](./lean-consensus-migration-phase-02-workspace-2026-09-19.md)
 - [Phase 03 canonical SSZ and Lean types](./lean-consensus-migration-phase-03-ssz-types-2026-09-19.md)
+- [Full State SSZ encode/decode](./state-ssz-encode-decode-complete-2026-09-20.md)
 - [Phase 04 genesis and 4s slot clock](./lean-consensus-migration-phase-04-genesis-clock-2026-09-19.md)
 - [Phase 05 Lean state transition](./lean-consensus-migration-phase-05-state-transition-2026-09-19.md)
 - [Phase 06 Lean fork choice (3SF-mini / lstar)](./lean-consensus-migration-phase-06-fork-choice-2026-09-19.md)
