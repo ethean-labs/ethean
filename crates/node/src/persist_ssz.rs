@@ -95,6 +95,37 @@ pub fn save_block_ssz(paths: &PersistPaths, root: &Hash32, payload: &[u8]) -> Re
     write_atomic(&paths.block_ssz(&hex32(root)), payload)
 }
 
+/// Load all `blocks/<root>.ssz` blobs under the data-dir.
+pub fn load_block_ssz_dir(paths: &PersistPaths) -> Result<Vec<(Hash32, Vec<u8>)>> {
+    let dir = paths.blocks_dir();
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+    let entries = fs::read_dir(&dir)
+        .map_err(|e| Error::Config(format!("read blocks dir {}: {e}", dir.display())))?;
+    let mut out = Vec::new();
+    for entry in entries {
+        let entry = entry
+            .map_err(|e| Error::Config(format!("read blocks entry {}: {e}", dir.display())))?;
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("ssz") {
+            continue;
+        }
+        let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
+            continue;
+        };
+        let Ok(root) = parse_hex32(stem) else {
+            continue;
+        };
+        let bytes = fs::read(&path)
+            .map_err(|e| Error::Config(format!("read {}: {e}", path.display())))?;
+        if !bytes.is_empty() {
+            out.push((root, bytes));
+        }
+    }
+    Ok(out)
+}
+
 pub fn hex32(h: &Hash32) -> String {
     h.iter().map(|b| format!("{b:02x}")).collect()
 }
