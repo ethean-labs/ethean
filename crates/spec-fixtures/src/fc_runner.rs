@@ -1,6 +1,7 @@
 //! Run leanSpec `fork_choice_test` steps against Ethean fork-choice.
 
 use crate::envelope::FixtureCase;
+use crate::fc_checks::apply_step_assertions;
 use crate::fc_steps::{
     apply_attestation_step, apply_block_step, apply_gossip_aggregated_step, apply_tick,
     BlockStepKind,
@@ -43,6 +44,8 @@ pub struct FcRunReport {
     pub attestations: usize,
     /// Rejection steps that matched the expected error.
     pub rejections: usize,
+    /// Steps that carried `checks` and/or `storeSnapshot` and passed them.
+    pub assertions: usize,
 }
 
 /// Create a store from fixture anchors and run tick / block steps in order.
@@ -102,6 +105,11 @@ pub fn run_fork_choice_case(case: &FixtureCase) -> Result<FcRunReport, FcRunErro
             _ => {
                 // Other step types land later.
             }
+        }
+        let had_assert = step_v.get("checks").is_some() || step_v.get("storeSnapshot").is_some();
+        if had_assert {
+            apply_step_assertions(&store, &step_v)?;
+            report.assertions += 1;
         }
     }
     if report.rejections == 0
