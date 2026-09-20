@@ -124,3 +124,28 @@ fn finalization_prunes_stale_aggregated_payloads() {
     assert_eq!(r.attestations, 2);
     assert_eq!(r.rejections, 0);
 }
+
+#[test]
+fn finalization_prunes_vote_on_orphaned_branch() {
+    let Some(r) = run_ok(
+        "test_prune_finalized_orphaned_branch/test_finalization_prunes_vote_on_orphaned_branch.json",
+    ) else {
+        eprintln!("skip: cache missing");
+        return;
+    };
+    assert_eq!(r.imports, 7);
+    assert_eq!(r.attestations, 1);
+    assert_eq!(r.rejections, 0);
+}
+
+#[test]
+fn re_gossip_of_pruned_orphaned_vote_is_rejected() {
+    let Some(r) = run_ok(
+        "test_prune_finalized_orphaned_branch/test_re_gossip_of_pruned_orphaned_vote_is_rejected.json",
+    ) else {
+        eprintln!("skip: cache missing");
+        return;
+    };
+    assert_eq!(r.imports, 7);
+    assert!(r.rejections >= 1);
+}
