@@ -79,6 +79,26 @@ pub fn ensure_core_families(reg: &mut Registry) -> Result<()> {
             "Prover wall-time timeouts",
             MetricKind::Counter,
         ),
+        (
+            "durable_blocks_flushed_total",
+            "Applied blocks written to data-dir on flush",
+            MetricKind::Counter,
+        ),
+        (
+            "durable_blocks_pruned_files_total",
+            "SSZ block files removed by finalized prune",
+            MetricKind::Counter,
+        ),
+        (
+            "durable_blocks_pruned_redb_total",
+            "redb block rows removed by finalized prune",
+            MetricKind::Counter,
+        ),
+        (
+            "durable_blocks_prune_floor_slot",
+            "Lowest slot kept after the last prune pass",
+            MetricKind::Gauge,
+        ),
         ("ready", "1 if process ready", MetricKind::Gauge),
         ("ready_storage", "1 if storage gate passed", MetricKind::Gauge),
         ("ready_crypto", "1 if crypto gate passed", MetricKind::Gauge),
@@ -166,6 +186,30 @@ pub fn record_readiness_gauges(
     Ok(())
 }
 
+/// Accrue durable flush and prune counts after a successful data-dir save.
+pub fn record_durable_persist(
+    reg: &mut Registry,
+    flushed_blocks: u64,
+    floor_slot: u64,
+    files_removed: u64,
+    redb_removed: u64,
+) -> Result<()> {
+    if flushed_blocks > 0 {
+        reg.inc("durable_blocks_flushed_total", flushed_blocks as f64)?;
+    }
+    if files_removed > 0 {
+        reg.inc(
+            "durable_blocks_pruned_files_total",
+            files_removed as f64,
+        )?;
+    }
+    if redb_removed > 0 {
+        reg.inc("durable_blocks_pruned_redb_total", redb_removed as f64)?;
+    }
+    reg.set("durable_blocks_prune_floor_slot", floor_slot as f64)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,5 +223,6 @@ mod tests {
         record_slot_gauges(&mut r, 10, 8, 6, 11, 1).unwrap();
         record_role_gauges(&mut r, 4, true, true, 1_700_000_000, 4).unwrap();
         record_readiness_gauges(&mut r, true, true, true, true, true).unwrap();
+        record_durable_persist(&mut r, 2, 44, 1, 1).unwrap();
     }
 }
