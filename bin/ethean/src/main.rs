@@ -29,6 +29,8 @@ async fn main() -> Result<()> {
             wall_clock,
             until_signal,
             data_dir,
+            ephemeral,
+            reset_chain,
             network,
             bootnodes,
             fork_digest,
@@ -72,6 +74,8 @@ async fn main() -> Result<()> {
                 wall_clock,
                 until_signal,
                 ?data_dir,
+                ephemeral,
+                reset_chain,
                 network = network.id.as_str(),
                 bootnodes = network.bootnodes.len(),
                 fork_digest = network.fork_digest.as_deref().unwrap_or(""),
@@ -84,9 +88,22 @@ async fn main() -> Result<()> {
                 metrics_port,
                 "Starting lean consensus node"
             );
-            let client = match data_dir.as_deref() {
-                Some(path) => EtheanClient::open_data_dir_with_roles(path, roles).await?,
-                None => EtheanClient::with_local_roles(roles).await?,
+            if ephemeral && data_dir.is_some() {
+                warn!("--ephemeral set; ignoring --data-dir (recent genesis smoke)");
+            }
+            if reset_chain {
+                if let Some(ref path) = data_dir {
+                    if !ephemeral {
+                        ethean_node::chain_persist::reset_chain_files(std::path::Path::new(path))?;
+                    }
+                } else {
+                    warn!("--reset-chain ignored without --data-dir");
+                }
+            }
+            let client = if ephemeral || data_dir.is_none() {
+                EtheanClient::with_local_roles(roles).await?
+            } else {
+                EtheanClient::open_data_dir_with_roles(data_dir.as_deref().unwrap(), roles).await?
             };
             let cfg = if until_signal {
                 StartConfig::until_signal(true)
