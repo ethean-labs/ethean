@@ -18,6 +18,7 @@ pub mod hash;
 pub mod leanvm_ipc;
 mod leanvm_ipc_frame;
 mod leanvm_ipc_spawn;
+mod leanvm_ipc_split;
 pub mod signature;
 pub mod xmss;
 
@@ -44,6 +45,9 @@ pub use leanvm_ipc_frame::{
 };
 pub use leanvm_ipc_spawn::{
     encode_len_prefixed, read_len_prefixed, SPAWN_EXCHANGE_WIRED, DEFAULT_IPC_WALL, SERVING_ENV,
+};
+pub use leanvm_ipc_split::{
+    decode_type1_leaves, encode_type1_leaves, split_ipc, split_ipc_at,
 };
 pub use hash::{domain_digest, signature_hash, signing_root_digest, Digest32};
 pub use signature::{verify, PublicKey, Signature};
