@@ -21,6 +21,11 @@ pub mod storage {
     pub const DURABLE_BLOCKS_PRUNED_REDB: &str = "durable_blocks_pruned_redb_total";
     pub const DURABLE_BLOCKS_PRUNE_FLOOR: &str = "durable_blocks_prune_floor_slot";
     pub const DURABLE_BLOCKS_PRUNE_KEEP: &str = "durable_blocks_prune_keep_slots";
+    pub const RANGE_SERVE_FOUND: &str = "blocks_by_range_serve_found_total";
+    pub const RANGE_SERVE_MISSING: &str = "blocks_by_range_serve_missing_total";
+    pub const RANGE_SERVE_CACHE_SLOTS: &str = "blocks_by_range_serve_cache_slots";
+    pub const SERVE_CACHE_SEED_INDEXED: &str = "serve_cache_seed_indexed";
+    pub const SERVE_CACHE_SEED_CANDIDATES: &str = "serve_cache_seed_candidates";
 }
 
 pub mod validator {
