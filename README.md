@@ -179,6 +179,11 @@ Under `--data-dir` the node writes:
 - `genesis_pin.json` — fixed `genesis_time`, validator count, slot seconds
 - `head_snap.json` — head root + full local state (updated each duty step)
 
+That JSON dump is Ethean’s solo resume path. Peer clients (Ream, Zeam,
+qlean-mini, ethlambda, Lantern, gean, Peam) keep `historical_block_hashes`
+inside SSZ-encoded `State` and write a DB or `.ssz` files under `--data-dir`
+instead. See [docs/peer-clients-storage-vs-ethean-json-2026-09-20.md](docs/peer-clients-storage-vs-ethean-json-2026-09-20.md).
+
 `--ephemeral` wins over `--data-dir` if both are set (logs a warning).
 
 #### What the peer model (fixed genesis package) gives you
