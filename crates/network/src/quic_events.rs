@@ -127,8 +127,36 @@ impl QuicSwarm {
         channel: ResponseChannel<Vec<u8>>,
     ) {
         let blocks = match crate::reqresp::decode_blocks_by_range(request) {
-            Ok(req) => collect_slot_range(&self.blocks_by_slot, req.start_slot, req.count, req.step),
-            Err(_) => Vec::new(),
+            Ok(req) => {
+                let collected = collect_slot_range(
+                    &self.blocks_by_slot,
+                    req.start_slot,
+                    req.count,
+                    req.step,
+                );
+                if collected.missing > 0 || (req.count > 0 && collected.found == 0) {
+                    tracing::warn!(
+                        start_slot = req.start_slot,
+                        count = req.count,
+                        step = req.step.max(1),
+                        found = collected.found,
+                        missing = collected.missing,
+                        cache_slots = self.blocks_by_slot.len(),
+                        "blocks-by-range serve incomplete (cold cache or gaps)"
+                    );
+                } else {
+                    tracing::debug!(
+                        start_slot = req.start_slot,
+                        found = collected.found,
+                        "blocks-by-range serve ok"
+                    );
+                }
+                collected.blocks
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, "blocks-by-range request decode failed");
+                Vec::new()
+            }
         };
         let payload = crate::reqresp::encode_blocks_by_root_response(&blocks).unwrap_or_else(|_| {
             let mut empty = Vec::with_capacity(4);
@@ -215,21 +243,65 @@ fn decode_root_list(input: &[u8]) -> Vec<Hash32> {
     roots
 }
 
-/// Collect cached block bodies for start..start+count*step (missing slots skipped).
+/// Result of walking a slot range against the in-memory serve cache.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RangeCollect {
+    blocks: Vec<Vec<u8>>,
+    found: u64,
+    missing: u64,
+}
+
+/// Collect cached block bodies for start..start+count*step (missing slots counted).
 fn collect_slot_range(
     by_slot: &std::collections::HashMap<u64, Vec<u8>>,
     start: u64,
     count: u64,
     step: u64,
-) -> Vec<Vec<u8>> {
+) -> RangeCollect {
     let step = step.max(1);
-    let mut out = Vec::new();
+    let mut blocks = Vec::new();
+    let mut found = 0u64;
+    let mut missing = 0u64;
     let mut slot = start;
     for _ in 0..count {
         if let Some(bytes) = by_slot.get(&slot) {
-            out.push(bytes.clone());
+            blocks.push(bytes.clone());
+            found = found.saturating_add(1);
+        } else {
+            missing = missing.saturating_add(1);
         }
         slot = slot.saturating_add(step);
     }
-    out
+    RangeCollect {
+        blocks,
+        found,
+        missing,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn collect_counts_gaps() {
+        let mut map = HashMap::new();
+        map.insert(10, vec![1]);
+        map.insert(12, vec![2]);
+        let c = collect_slot_range(&map, 10, 3, 1);
+        assert_eq!(c.found, 2);
+        assert_eq!(c.missing, 1);
+        assert_eq!(c.blocks.len(), 2);
+    }
+
+    #[test]
+    fn collect_respects_step() {
+        let mut map = HashMap::new();
+        map.insert(0, vec![9]);
+        map.insert(4, vec![8]);
+        let c = collect_slot_range(&map, 0, 2, 4);
+        assert_eq!(c.found, 2);
+        assert_eq!(c.missing, 0);
+    }
 }
