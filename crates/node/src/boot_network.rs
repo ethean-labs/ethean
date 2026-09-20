@@ -9,9 +9,12 @@ use tracing::{info, warn};
 ///
 /// `listen_port == 0` asks the OS for an ephemeral UDP port. With QUIC enabled the
 /// probe socket stays ephemeral so it cannot steal the fixed swarm port.
+///
+/// `attestation_subnets` is the gossip subscription count (profile ACC / Hive).
 pub async fn prepare_boot_network(
     fork_segment: &str,
     listen_port: u16,
+    attestation_subnets: u16,
 ) -> Result<(u16, Option<SwarmFacade>)> {
     let identity = NodeIdentity::from_seed(b"ethean-local");
     let probe_port = if cfg!(feature = "libp2p-quic") {
@@ -31,12 +34,14 @@ pub async fn prepare_boot_network(
         port,
         requested = listen_port,
         fork_segment,
+        attestation_subnets,
         "UDP listen bind for QUIC facade"
     );
 
     #[cfg(feature = "libp2p-quic")]
     {
-        let facade = bind_quic_facade(bound, fork_segment, listen_port).await?;
+        let facade =
+            bind_quic_facade(bound, fork_segment, listen_port, attestation_subnets).await?;
         let quic_port = facade
             .quic
             .as_ref()
@@ -47,6 +52,7 @@ pub async fn prepare_boot_network(
     #[cfg(not(feature = "libp2p-quic"))]
     {
         let _ = fork_segment;
+        let _ = attestation_subnets;
         Ok((port, None))
     }
 }
@@ -105,16 +111,18 @@ async fn bind_quic_facade(
     bound: crate::network::BoundTransport,
     fork_segment: &str,
     listen_port: u16,
+    attestation_subnets: u16,
 ) -> Result<SwarmFacade> {
     let mut facade = SwarmFacade::default();
     facade.attach_transport(bound);
     facade
-        .bind_quic_swarm_for_fork_segment(
+        .bind_quic_swarm_for_fork_segment_subnets(
             &TransportConfig {
                 listen_port,
                 idle_timeout_ms: 30_000,
             },
             fork_segment,
+            attestation_subnets,
         )
         .await?;
     let topic_block = facade
@@ -143,6 +151,7 @@ async fn bind_quic_facade(
         %listen,
         %dialable,
         listen_port,
+        attestation_subnets,
         topic = %topic_block,
         fork_segment,
         "libp2p QuicSwarm bound with Lean gossip topics"
