@@ -26,7 +26,7 @@ Landed versioned leanVM process-IPC frames without enabling spawn:
 | Gap | Status |
 | --- | --- |
 | leanVM spawn + sandbox deadlines | Open (`protocol_ready=false`) |
-| Production leanSig XMSS (`leansig-backend` + vendor patch) | Open (B1) |
+| Production leanSig XMSS (`leansig-backend` + vendor patch) | Local compile OK; git dep still blocked (B1 residual) |
 | Production leanVM SNARK prove/verify | Open (B2/B3) |
 | Real `split_type_2` crypto bytes | Open |
 
