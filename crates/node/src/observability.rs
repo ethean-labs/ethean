@@ -1,8 +1,8 @@
 //! Metrics registry and Lean RPC smoke helpers for the node process.
 
 use ethean_metrics::{
-    ensure_core_families, record_slot_gauges, set_ready, MetricsError, Readiness, Registry,
-    SharedRegistry,
+    ensure_core_families, record_readiness_gauges, record_role_gauges, record_slot_gauges,
+    set_ready, MetricsError, Readiness, Registry, SharedRegistry,
 };
 use ethean_rpc::{dispatch, BindScope, IncomingRequest, Route, RpcError};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -111,6 +111,35 @@ impl NodeObservability {
             )?;
             reg.set("peer_count", peer_count as f64)?;
             Ok(())
+        })
+    }
+
+    /// Validator count, aggregator / local-finality flags, genesis clock.
+    pub fn record_roles(
+        &mut self,
+        validator_count: u64,
+        aggregator: bool,
+        local_finality: bool,
+        genesis_time_seconds: u64,
+        seconds_per_slot: u64,
+    ) -> Result<(), MetricsError> {
+        self.registry.with_mut(|reg| {
+            record_role_gauges(
+                reg,
+                validator_count,
+                aggregator,
+                local_finality,
+                genesis_time_seconds,
+                seconds_per_slot,
+            )
+        })
+    }
+
+    /// Mirror readiness subsystem bits into gauges for the ops dashboard.
+    pub fn record_readiness_bits(&mut self) -> Result<(), MetricsError> {
+        let r = self.readiness;
+        self.registry.with_mut(|reg| {
+            record_readiness_gauges(reg, r.storage, r.crypto, r.signer, r.network, r.prover)
         })
     }
 }
