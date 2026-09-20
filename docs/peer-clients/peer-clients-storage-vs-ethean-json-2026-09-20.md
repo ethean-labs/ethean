@@ -32,5 +32,5 @@ No RocksDB/`*.sst` and no `state.ssz`. Default `ethean` does not enable
 Genesis is a **separate** shared bundle (`genesis.ssz`, `config.yaml`, keys)
 from lean-quickstart. Data dir is per-node chain history.
 
-Related: [peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](./peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md),
-[dual-mode-persist-and-ephemeral-2026-09-20.md](./dual-mode-persist-and-ephemeral-2026-09-20.md).
+Related: [peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md),
+[dual-mode-persist-and-ephemeral-2026-09-20.md](../storage/dual-mode-persist-and-ephemeral-2026-09-20.md).

@@ -146,6 +146,6 @@ not a public D4/D5 ENR list. Operational default in this repo is
 `--network pq-devnet-4` with D5 files kept ready. Match peers on wire
 (SSZ, topics, Status, Type-2 body) from leanSpec; do not copy crate layout.
 
-Related notes: [how-ream-connects-without-public-bootnodes-2026-09-20.md](./how-ream-connects-without-public-bootnodes-2026-09-20.md),
-[pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-5-research-refresh-2026-09-19.md),
-[peer-reference-clients.md](./peer-reference-clients.md).
+Related notes: [how-ream-connects-without-public-bootnodes-2026-09-20.md](how-ream-connects-without-public-bootnodes-2026-09-20.md),
+[pq-devnet-5-research-refresh-2026-09-19.md](../pq-devnet/pq-devnet-5-research-refresh-2026-09-19.md),
+[peer-reference-clients.md](../peer-reference-clients.md).

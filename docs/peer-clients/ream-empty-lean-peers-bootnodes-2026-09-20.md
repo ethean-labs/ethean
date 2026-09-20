@@ -34,5 +34,5 @@ Lean CI / lean-quickstart pass **`--bootnodes $configDir/nodes.yaml`** generated
 
 ## Related
 
-- [default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](./default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md)
-- [pq-devnet-5-client-run-2026-09-19.md](./pq-devnet-5-client-run-2026-09-19.md) (same two-process pattern)
+- [default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](../pq-devnet/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md)
+- [pq-devnet-5-client-run-2026-09-19.md](../pq-devnet/pq-devnet-5-client-run-2026-09-19.md) (same two-process pattern)

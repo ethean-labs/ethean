@@ -42,7 +42,7 @@ starts a new chain.
   then restart near slot 4–5 is expected.
 - **Durable** (`--data-dir PATH`): pins `genesis_time` once and resumes
   `head_snap.json` (peer-like local analogue). See
-  [dual-mode-persist-and-ephemeral-2026-09-20.md](./dual-mode-persist-and-ephemeral-2026-09-20.md).
+  [dual-mode-persist-and-ephemeral-2026-09-20.md](../storage/dual-mode-persist-and-ephemeral-2026-09-20.md).
 
 Interop mesh import of a full lean-quickstart bundle remains a follow-up; wire
 contract (bootnodes, topics, aggregator) already matches peers.
@@ -52,4 +52,4 @@ contract (bootnodes, topics, aggregator) already matches peers.
 - lean-quickstart README (`--generateGenesis`, `--forceKeyGen`, `--cleanData`)
 - ReamLabs/local-pq-devnet README (`setup-genesis.sh`)
 - ethlambda README (`make run-devnet` generates fresh genesis for that run)
-- Prior note: [peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](./peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
+- Prior note: [peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
