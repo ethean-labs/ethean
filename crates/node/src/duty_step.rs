@@ -42,6 +42,8 @@ pub fn apply_wall_step(
         if let Err(reason) = evaluate_gate(&snap.duty_view) {
             events.push(ChainEvent::DutySuppressed { tick, reason });
         } else {
+            // Attest first so same-tick aggregator/prove can see the new pool entry.
+            events.extend(crate::duty_attest::try_local_attest(owner, tick));
             let ready = crate::duty_aggregator::evaluate_aggregator_duties(owner, tick, lag);
             for ev in &ready {
                 if let ChainEvent::AggregatorReady {
@@ -66,7 +68,6 @@ pub fn apply_wall_step(
                 }
             }
             events.extend(ready);
-            events.extend(crate::duty_attest::try_local_attest(owner, tick));
             events.extend(try_plan_proposal(owner, tick));
         }
     }
