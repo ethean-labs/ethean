@@ -100,6 +100,8 @@ pub struct StartConfig {
     pub listen_port: u16,
     /// Local genesis size and aggregator/finality flags.
     pub roles: LocalRoles,
+    /// Slots retained below finalized before durable block prune (default 256).
+    pub prune_keep_slots: u64,
 }
 
 impl Default for StartConfig {
@@ -111,6 +113,7 @@ impl Default for StartConfig {
             http: Some(RpcListen::default()),
             listen_port: 9000,
             roles: LocalRoles::default(),
+            prune_keep_slots: crate::block_prune::KEEP_BELOW_FINALIZED,
         }
     }
 }
@@ -172,6 +175,12 @@ impl StartConfig {
         self.roles = roles;
         self
     }
+
+    /// Slots to keep below the finalized checkpoint before pruning durable blobs.
+    pub fn with_prune_keep_slots(mut self, prune_keep_slots: u64) -> Self {
+        self.prune_keep_slots = prune_keep_slots;
+        self
+    }
 }
 
 #[cfg(test)]
@@ -189,6 +198,10 @@ mod tests {
         assert_eq!(cfg.listen_port, 9000);
         assert!(cfg.roles.local_finality);
         assert_eq!(cfg.roles.validators, 4);
+        assert_eq!(
+            cfg.prune_keep_slots,
+            crate::block_prune::KEEP_BELOW_FINALIZED
+        );
     }
 
     #[test]
