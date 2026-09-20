@@ -7,6 +7,17 @@ use ethean_types::{AttestationData, Block, Checkpoint, State};
 
 use crate::opts::ForkChoiceOpts;
 
+/// One aggregated payload keyed by attestation-data root.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AggregatedPayloadEntry {
+    /// `hash_tree_root(AttestationData)`.
+    pub data_root: Hash32,
+    /// Shared attestation data.
+    pub data: AttestationData,
+    /// Distinct participant bit-sets observed for this data root.
+    pub participant_sets: Vec<Vec<u64>>,
+}
+
 /// Local view of the chain for running fork choice (leanSpec `Store`).
 #[derive(Debug, Clone)]
 pub struct ForkChoiceStore {
@@ -30,6 +41,10 @@ pub struct ForkChoiceStore {
     pub latest_new_attestations: HashMap<ValidatorIndex, AttestationData>,
     /// Votes counted toward head selection.
     pub latest_known_attestations: HashMap<ValidatorIndex, AttestationData>,
+    /// Pending gossip aggregates (leanSpec `latest_new_aggregated_payloads`).
+    pub latest_new_payloads: HashMap<Hash32, AggregatedPayloadEntry>,
+    /// Known on-chain / promoted aggregates (`latest_known_aggregated_payloads`).
+    pub latest_known_payloads: HashMap<Hash32, AggregatedPayloadEntry>,
 }
 
 impl ForkChoiceStore {
