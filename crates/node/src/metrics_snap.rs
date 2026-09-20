@@ -3,6 +3,8 @@
 use crate::client::EtheanClient;
 use crate::Result;
 use ethean_genesis::SystemTimeSource;
+use ethean_primitives::{Hash32, Slot, HASH32_ZERO};
+use ethean_rpc::{ApiSnapshot, FinalizedView, HeadView, SyncView};
 use tracing::debug;
 
 impl EtheanClient {
@@ -26,6 +28,12 @@ impl EtheanClient {
                 )
             })
             .unwrap_or((0, 0));
+        let finalized_root = self
+            .owner
+            .head_state
+            .as_ref()
+            .map(|s| s.latest_finalized.root)
+            .unwrap_or(HASH32_ZERO);
         let current = self
             .clock
             .slot_now(&SystemTimeSource)
@@ -74,6 +82,7 @@ impl EtheanClient {
         self.observability.record_bootnodes(self.bootnode_count)?;
         self.observability.record_readiness_bits()?;
         self.observability.refresh_ready_gauge()?;
+        self.publish_lean_api(head_slot, finalized, finalized_root, peers);
         debug!(
             head_slot,
             justified,
@@ -85,5 +94,48 @@ impl EtheanClient {
             "metrics slot snapshot"
         );
         Ok(())
+    }
+
+    fn publish_lean_api(
+        &self,
+        head_slot: u64,
+        finalized_slot: u64,
+        finalized_root: Hash32,
+        peers: u64,
+    ) {
+        let Some(api) = self.api.as_ref() else {
+            return;
+        };
+        api.set_ready(
+            self.observability
+                .ready_flag
+                .load(std::sync::atomic::Ordering::Relaxed),
+        );
+        let peer_id = String::new();
+        let _ = peers;
+        let lag = self.sync.lag();
+        let horizon = head_slot.saturating_add(if peers > 0 { lag.max(1) } else { 0 });
+        api.publish(ApiSnapshot {
+            network: self.network_label.clone(),
+            peer_id,
+            head: HeadView {
+                slot: Slot::new(head_slot),
+                root: self.owner.head_root,
+            },
+            finalized: FinalizedView {
+                slot: Slot::new(finalized_slot),
+                root: finalized_root,
+                trust_source: if self.owner.local_finality {
+                    "local_finality".into()
+                } else {
+                    "checkpoint".into()
+                },
+            },
+            sync: SyncView {
+                syncing: lag > 0,
+                head_slot: Slot::new(head_slot),
+                peer_horizon_slot: Slot::new(horizon),
+            },
+        });
     }
 }

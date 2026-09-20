@@ -81,7 +81,7 @@ pub use observability::{smoke_health_route, NodeObservability};
 pub use shutdown::{ShutdownPhase, ShutdownState};
 pub use signal_loop::run_until_signal;
 pub use network_target::{NetworkId, NetworkTarget};
-pub use start_config::{LocalRoles, MetricsListen, RunMode, StartConfig};
+pub use start_config::{LocalRoles, MetricsListen, RpcListen, RunMode, StartConfig};
 pub use wall_loop::{run_wall_duty_loop, WallLoopConfig};
 pub use wall_tick::{ms_until_next_interval, tick_from_wall};
 

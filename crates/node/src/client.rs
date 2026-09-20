@@ -42,6 +42,10 @@ pub struct EtheanClient {
     pub(crate) persist_dir: Option<std::path::PathBuf>,
     /// Bootnode multiaddrs configured for this start (Grafana mesh expectation).
     pub(crate) bootnode_count: u64,
+    /// Shared Lean HTTP API snapshot (set when `--http` listener is enabled).
+    pub(crate) api: Option<std::sync::Arc<ethean_rpc::SharedApiState>>,
+    /// Network label mirrored into `/lean/v1/node/identity`.
+    pub(crate) network_label: String,
 }
 
 impl EtheanClient {
@@ -104,6 +108,8 @@ impl EtheanClient {
             swarm: None,
             persist_dir: None,
             bootnode_count: 0,
+            api: None,
+            network_label: String::new(),
         })
     }
 
@@ -197,6 +203,7 @@ impl EtheanClient {
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
         self.apply_local_roles(cfg.roles);
         self.bootnode_count = cfg.network.bootnodes.len() as u64;
+        self.network_label = cfg.network.id.as_str().to_string();
         if let Some(ref metrics) = cfg.metrics {
             let bound = ethean_metrics::spawn_metrics_server(
                 metrics.addr,
@@ -206,6 +213,14 @@ impl EtheanClient {
             .await
             .map_err(|e| Error::Config(format!("metrics bind {}: {e}", metrics.addr)))?;
             info!(%bound, "Prometheus scrape endpoint ready");
+        }
+        if let Some(ref http) = cfg.http {
+            let state = ethean_rpc::SharedApiState::new(http.admin_token.clone());
+            let bound = ethean_rpc::spawn_lean_http(http.addr, state.clone())
+                .await
+                .map_err(|e| Error::Config(format!("lean HTTP bind {}: {e}", http.addr)))?;
+            self.api = Some(state);
+            info!(%bound, "Lean HTTP API ready");
         }
         self.boot_gates(&cfg.network).await?;
         self.refresh_slot_metrics()?;

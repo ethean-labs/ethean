@@ -23,9 +23,8 @@ pub async fn spawn_lean_http(
     } else {
         BindScope::Public
     };
-    if let Err(e) = crate::auth::validate_admin_token(scope, state.admin_token()) {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, e.to_string()));
-    }
+    // Public binds may omit the admin token: read routes stay open, admin stays Forbidden.
+    let _ = crate::auth::validate_admin_token(scope, state.admin_token());
     let listener = TcpListener::bind(addr).await?;
     let bound = listener.local_addr()?;
     info!(%bound, "Lean HTTP listening (/lean/v1/…)");

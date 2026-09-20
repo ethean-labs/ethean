@@ -65,7 +65,7 @@ Ethean implements the Ethereum Beam/Lean Chain specification with the following 
 
 ```bash
 # Clone the repository
-git clone https://github.com/Pamenarti/Ethean.git
+git clone https://github.com/ethean-labs/ethean.git
 cd Ethean
 
 # Build (also publishes an `ethean` shim into ~/.cargo/bin)
@@ -79,7 +79,7 @@ ethean version
 
 ```bash
 # Clone with all dependencies
-git clone https://github.com/Pamenarti/Ethean.git
+git clone https://github.com/ethean-labs/ethean.git
 cd Ethean
 
 # Debug build also refreshes the PATH shim
@@ -745,7 +745,7 @@ Ethean database restore --latest-backup
 
 ```bash
 # Fork and clone
-git clone https://github.com/yourusername/Ethean.git
+git clone https://github.com/ethean-labs/ethean.git
 cd Ethean
 
 # Create feature branch
@@ -885,7 +885,7 @@ We welcome contributions to Ethean. Please follow these guidelines:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Pamenarti/Ethean.git
+git clone https://github.com/ethean-labs/ethean.git
 cd Ethean
 
 # Install dependencies
@@ -938,7 +938,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/lean-peer-client-research-library-2026-09-19.md)
 - **Language (English only)**: [docs/english.md](./docs/english.md)
 - **Commits (per file, English)**: [docs/commit-after-each-file.md](./docs/commit-after-each-file.md)
-- **GitHub Issues**: [Report bugs](https://github.com/Pamenarti/Ethean/issues)
+- **GitHub Issues**: [Report bugs](https://github.com/ethean-labs/ethean/issues)
 - **Email**: support@Ethean.io
 
 ---
@@ -947,7 +947,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ by the Ethean Team**
 
-[Website](https://Ethean.io) • [GitHub](https://github.com/Pamenarti/Ethean)
+[Website](https://Ethean.io) • [GitHub](https://github.com/ethean-labs/ethean)
 
 </div>
 

@@ -46,6 +46,24 @@ impl Default for MetricsListen {
     }
 }
 
+/// Optional Lean `/lean/v1` HTTP listener.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RpcListen {
+    /// Bind address (default `127.0.0.1:5052`).
+    pub addr: SocketAddr,
+    /// Bearer token for admin routes on non-loopback binds.
+    pub admin_token: String,
+}
+
+impl Default for RpcListen {
+    fn default() -> Self {
+        Self {
+            addr: "127.0.0.1:5052".parse().expect("static addr"),
+            admin_token: String::new(),
+        }
+    }
+}
+
 /// Local validator / finality roles for long-run smoke (no public mesh required).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LocalRoles {
@@ -76,6 +94,8 @@ pub struct StartConfig {
     pub network: NetworkTarget,
     /// When `Some`, spawn `/metrics` HTTP on this address.
     pub metrics: Option<MetricsListen>,
+    /// When `Some`, spawn Lean `/lean/v1` HTTP on this address.
+    pub http: Option<RpcListen>,
     /// Local genesis size and aggregator/finality flags.
     pub roles: LocalRoles,
 }
@@ -86,6 +106,7 @@ impl Default for StartConfig {
             mode: RunMode::default(),
             network: NetworkTarget::pq_devnet_4(),
             metrics: Some(MetricsListen::default()),
+            http: Some(RpcListen::default()),
             roles: LocalRoles::default(),
         }
     }
@@ -131,6 +152,12 @@ impl StartConfig {
         self
     }
 
+    /// Enable or disable the Lean HTTP API listener.
+    pub fn with_http(mut self, http: Option<RpcListen>) -> Self {
+        self.http = http;
+        self
+    }
+
     /// Set local validator count and aggregator/finality roles.
     pub fn with_roles(mut self, roles: LocalRoles) -> Self {
         self.roles = roles;
@@ -149,6 +176,7 @@ mod tests {
         assert_eq!(cfg.mode, RunMode::SmokeElapsed { ticks: 5 });
         assert_eq!(cfg.network.id, NetworkId::PqDevnet4);
         assert!(cfg.metrics.is_some());
+        assert!(cfg.http.is_some());
         assert!(cfg.roles.local_finality);
         assert_eq!(cfg.roles.validators, 4);
     }
