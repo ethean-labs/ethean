@@ -138,6 +138,7 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
                 has_type2_proof: gossip.has_type2_proof,
                 proposer_sig_len: gossip.proposer_sig_len,
             };
+            owner.remember_durable_block(gossip.block_root, gossip.payload.clone());
             owner.pending_block_gossip = Some(gossip);
             out.push(ready);
         }
