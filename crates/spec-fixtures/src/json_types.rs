@@ -164,3 +164,44 @@ pub fn block_from_value(v: &serde_json::Value) -> Result<Block, JsonTypesError> 
         body: BlockBody::default(),
     })
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsonAttestationData {
+    slot: u64,
+    head: JsonCheckpoint,
+    target: JsonCheckpoint,
+    source: JsonCheckpoint,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsonAttestation {
+    validator_index: u64,
+    data: JsonAttestationData,
+    /// Present in fixtures; ignored on the structural FC path.
+    #[serde(default)]
+    #[allow(dead_code)]
+    signature: Option<String>,
+}
+
+fn attestation_data(j: &JsonAttestationData) -> Result<ethean_types::AttestationData, JsonTypesError> {
+    Ok(ethean_types::AttestationData {
+        slot: Slot::new(j.slot),
+        head: checkpoint(&j.head)?,
+        target: checkpoint(&j.target)?,
+        source: checkpoint(&j.source)?,
+    })
+}
+
+/// Decode a leanSpec signed attestation JSON (signature ignored structurally).
+pub fn attestation_from_value(
+    v: &serde_json::Value,
+) -> Result<(ValidatorIndex, ethean_types::AttestationData), JsonTypesError> {
+    let j: JsonAttestation =
+        serde_json::from_value(v.clone()).map_err(|e| JsonTypesError::Serde(e.to_string()))?;
+    Ok((
+        ValidatorIndex::new(j.validator_index),
+        attestation_data(&j.data)?,
+    ))
+}
