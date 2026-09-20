@@ -20,8 +20,20 @@ async fn main() -> Result<()> {
         Command::Start {
             data_dir,
             ephemeral,
+            reset_chain,
             ..
-        } => file_log::install(data_dir.as_deref(), *ephemeral)?,
+        } => {
+            if *reset_chain {
+                if let Some(path) = data_dir.as_deref() {
+                    if !*ephemeral {
+                        ethean_node::chain_persist::reset_chain_files(std::path::Path::new(
+                            path,
+                        ))?;
+                    }
+                }
+            }
+            file_log::install(data_dir.as_deref(), *ephemeral)?;
+        }
         _ => tracing_subscriber::fmt().init(),
     }
 
@@ -99,12 +111,12 @@ async fn main() -> Result<()> {
                 warn!("--ephemeral set; ignoring --data-dir (recent genesis smoke)");
             }
             if reset_chain {
-                if let Some(ref path) = data_dir {
-                    if !ephemeral {
-                        ethean_node::chain_persist::reset_chain_files(std::path::Path::new(path))?;
-                    }
-                } else {
+                if data_dir.is_none() {
                     warn!("--reset-chain ignored without --data-dir");
+                } else if ephemeral {
+                    warn!("--reset-chain ignored with --ephemeral");
+                } else {
+                    info!("data-dir emptied before this start (--reset-chain)");
                 }
             }
             let client = if ephemeral || data_dir.is_none() {
