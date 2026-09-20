@@ -2,11 +2,12 @@
 
 use crate::client::EtheanClient;
 use crate::events::ChainEvent;
+use crate::fork_digest_policy::ForkDigestSource;
 use crate::observability::smoke_health_route;
 use crate::wall_tick::tick_from_wall;
 use crate::Result;
 use ethean_genesis::FakeTime;
-use tracing::info;
+use tracing::{info, warn};
 
 impl EtheanClient {
     pub(crate) async fn boot_gates(
@@ -33,6 +34,14 @@ impl EtheanClient {
             leansig_pin = leansig_gate.pinned_rev,
             "crypto backend gate probe"
         );
+        if network.has_bootnodes() && !leansig_gate.ready() {
+            warn!(
+                network = network.id.as_str(),
+                pin = leansig_gate.pinned_rev,
+                reason = leansig_gate.refuse_reason().unwrap_or("unavailable"),
+                "mesh dial without production leanSig; peer XMSS verify stays fail-closed"
+            );
+        }
         // Smoke crypto path is loaded even when production FFI is off.
         self.observability.mark_crypto_ok();
 
@@ -41,7 +50,21 @@ impl EtheanClient {
             network.fork_digest.as_deref(),
         )
         .map_err(|e| crate::Error::Config(format!("fork segment: {e}")))?;
-        info!(%fork_segment, "resolved gossip fork segment");
+        match network.fork_digest_source() {
+            ForkDigestSource::OperatorOverride => {
+                info!(%fork_segment, "resolved gossip fork segment from operator digest");
+            }
+            ForkDigestSource::InterimNameHash => {
+                info!(%fork_segment, "resolved interim gossip fork segment (SHA-256 name hash)");
+            }
+        }
+        if network.mesh_isolation_risk() {
+            warn!(
+                network = network.id.as_str(),
+                %fork_segment,
+                "dialing bootnodes without operator --fork-digest; Lean topics will not match peer mesh"
+            );
+        }
 
         let (_port, swarm) = crate::boot_network::prepare_boot_network(&fork_segment).await?;
         #[cfg(feature = "libp2p-quic")]
