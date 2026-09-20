@@ -30,4 +30,5 @@ cargo test -p ethean-node --lib blocks_sync
 
 - Cap / prune on-disk `blocks/` by finalized slot — done in
   [durable-block-prune-finalized-keep-2026-09-20.md](./durable-block-prune-finalized-keep-2026-09-20.md)
-- Observability counter for durable_blocks flushed
+- Observability counter for durable_blocks flushed — done in
+  [durable-persist-prune-metrics-2026-09-20.md](./durable-persist-prune-metrics-2026-09-20.md)
