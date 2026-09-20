@@ -67,6 +67,7 @@ Planning session summaries:
 - [leanSpec FC attestation steps](./leanspec-fc-attestation-steps-2026-09-20.md)
 - [leanSpec FC block body attestations](./leanspec-fc-block-body-attestations-2026-09-20.md)
 - [leanSpec FC gossipAggregatedAttestation](./leanspec-fc-gossip-aggregated-2026-09-20.md)
+- [leanSpec FC finality / reorg / LMD suites](./leanspec-fc-finality-reorg-lmd-2026-09-20.md)
 - [leanSpec FC wall-clock tick + justification](./leanspec-fc-wall-clock-tick-justification-2026-09-20.md)
 - [leanSpec FC checks + storeSnapshot](./leanspec-fc-checks-snapshot-2026-09-20.md)
 - [leanSpec STF runner scaffold](./leanspec-stf-runner-2026-09-20.md)
