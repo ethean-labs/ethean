@@ -236,4 +236,18 @@ mod tests {
         assert_eq!(reports[0].1.imports, 2);
         assert_eq!(reports[0].1.rejections, 1);
     }
+
+    #[test]
+    fn runs_block_with_maximum_body_attestations() {
+        let Some(path) = fixture(
+            "test_block_attestation_limits/test_block_with_maximum_attestations.json",
+        ) else {
+            eprintln!("skip: cache missing");
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let reports = run_fork_choice_file(&bytes).unwrap();
+        assert_eq!(reports[0].1.imports, 9);
+        assert_eq!(reports[0].1.rejections, 0);
+    }
 }
