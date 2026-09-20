@@ -34,4 +34,7 @@ pub enum SszError {
 
     #[error("invalid bitlist encoding")]
     InvalidBitlist,
+
+    #[error("fixed vector length {got} is not a multiple of element size {element}")]
+    InvalidFixedVector { got: usize, element: usize },
 }
