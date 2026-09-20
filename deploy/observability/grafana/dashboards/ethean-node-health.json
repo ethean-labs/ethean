@@ -248,8 +248,95 @@
       ]
     },
     {
+      "type": "stat", "id": 22, "title": "Range cache slots",
+      "gridPos": { "h": 4, "w": 5, "x": 0, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_blocks_by_range_serve_cache_slots", "refId": "A" }]
+    },
+    {
+      "type": "stat", "id": 23, "title": "Seed candidates",
+      "gridPos": { "h": 4, "w": 5, "x": 5, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "semi-dark-blue" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_serve_cache_seed_candidates", "refId": "A" }]
+    },
+    {
+      "type": "stat", "id": 24, "title": "Seed indexed",
+      "gridPos": { "h": 4, "w": 5, "x": 10, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "green" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_serve_cache_seed_indexed", "refId": "A" }]
+    },
+    {
+      "type": "stat", "id": 25, "title": "Range found",
+      "gridPos": { "h": 4, "w": 5, "x": 15, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "green" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_blocks_by_range_serve_found_total", "refId": "A" }]
+    },
+    {
+      "type": "stat", "id": 26, "title": "Range missing",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_blocks_by_range_serve_missing_total", "refId": "A" }]
+    },
+    {
+      "type": "timeseries", "id": 27, "title": "Blocks-by-range serve (rate)",
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "fillOpacity": 12, "lineInterpolation": "stepAfter" },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max", "lastNotNull"] } },
+      "targets": [
+        { "expr": "rate(ethean_blocks_by_range_serve_found_total[5m])", "legendFormat": "found/s", "refId": "A" },
+        { "expr": "rate(ethean_blocks_by_range_serve_missing_total[5m])", "legendFormat": "missing/s", "refId": "B" }
+      ]
+    },
+    {
       "type": "timeseries", "id": 14, "title": "Scrape up",
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 30 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 41 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -271,5 +358,5 @@
   "timezone": "browser",
   "title": "Ethean Node Health",
   "uid": "ethean-node-health",
-  "version": 3
+  "version": 4
 }
