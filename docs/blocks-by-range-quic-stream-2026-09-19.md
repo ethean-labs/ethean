@@ -31,6 +31,8 @@ Range replies reuse the scaffold blocks-by-root response encoding (`u32` count +
 
 - Status sync prefer-range on deep lag — **landed**
   ([status-sync-prefer-range-on-deep-lag-2026-09-20.md](./status-sync-prefer-range-on-deep-lag-2026-09-20.md))
+- Serve-cache gap visibility — **landed**
+  ([blocks-by-range-serve-gap-warn-2026-09-20.md](./blocks-by-range-serve-gap-warn-2026-09-20.md))
 - B1 leanSig production verify residual (upstream bigint); leanVM real SNARK binary.
 - Live operator bootnodes / fork-digest for a public D5 mesh.
 - Hive / leanSpec fixture consumer.
