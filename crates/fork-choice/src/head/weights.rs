@@ -47,4 +47,17 @@ impl ForkChoiceStore {
             .map(|(k, v)| (*k, *v))
             .collect()
     }
+
+    /// Ancestor weights from the finalized checkpoint using known votes.
+    ///
+    /// Fixture `storeSnapshot.blockWeights` are keyed from the finalized floor
+    /// (not the justified root), matching leanSpec store dumps.
+    pub fn block_weights_from_known(&self) -> HashMap<Hash32, u64> {
+        let start_slot = self
+            .blocks
+            .get(&self.latest_finalized.root)
+            .map(|b| b.slot.get())
+            .unwrap_or(0);
+        self.accumulate_ancestor_weights(&self.relevant_known_votes(), start_slot)
+    }
 }
