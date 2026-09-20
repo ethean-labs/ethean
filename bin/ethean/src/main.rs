@@ -1,5 +1,7 @@
 //! Ethean Lean Consensus Client main binary
 
+mod banner;
+mod banner_art;
 mod console_fmt;
 mod file_log;
 mod log_filter;
@@ -18,13 +20,21 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    let (verbose, log_level) = match &cli.command {
+    let (verbose, log_level, show_banner) = match &cli.command {
         Command::Start {
-            verbose, log_level, ..
-        } => (*verbose, log_level.as_deref()),
-        _ => (0, None),
+            verbose,
+            log_level,
+            no_banner,
+            ..
+        } => (*verbose, log_level.as_deref(), !*no_banner),
+        Command::Version => (0, None, true),
+        _ => (0, None, false),
     };
     let filter = log_filter::build_filter(verbose, log_level)?;
+
+    if show_banner {
+        banner::print_identity();
+    }
 
     match &cli.command {
         Command::Start {
@@ -62,6 +72,7 @@ async fn main() -> Result<()> {
             reset_chain,
             verbose,
             log_level,
+            no_banner,
             network,
             bootnodes,
             fork_digest,
@@ -145,9 +156,26 @@ async fn main() -> Result<()> {
             } else {
                 StartConfig::smoke(ticks)
             }
-            .with_network(network)
-            .with_metrics(metrics_listen)
+            .with_network(network.clone())
+            .with_metrics(metrics_listen.clone())
             .with_roles(roles);
+            if !no_banner {
+                let bind = format!("{metrics_address}:{metrics_port}");
+                banner::print_start_card(
+                    &client,
+                    &banner::StartCard {
+                        network: &network,
+                        roles,
+                        cfg: &cfg,
+                        data_dir: data_dir.as_deref(),
+                        ephemeral,
+                        metrics_stack: metrics,
+                        scrape,
+                        metrics_bind: scrape.then_some(bind.as_str()),
+                        verbose,
+                    },
+                );
+            }
             client.start_with(cfg).await?;
         }
         Command::Validator => {
