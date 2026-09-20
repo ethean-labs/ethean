@@ -27,5 +27,7 @@ New module `fc_runner_extra_tests.rs` (cache-gated):
 | Gap | Notes |
 | --- | --- |
 | `test_fork_above_finalized_wins…` / `heavier_fork_below…` | `blockWeights` want 0 got 6 (`at_9` empty body vs 7-vote snapshot) |
-| `test_tick_interval_0_skips_acceptance…` | `safeTargetRoot` mismatch |
 | Node metrics | publish store `reorg_total` / real safe-target |
+
+Tick interval-0 acceptance is green — see
+[leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md](./leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md).
