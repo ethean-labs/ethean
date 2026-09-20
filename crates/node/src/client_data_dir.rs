@@ -44,6 +44,7 @@ impl EtheanClient {
             return;
         };
         let paths = PersistPaths::new(dir.clone());
+        let flushed = self.owner.durable_blocks.len() as u64;
         match chain_persist::save_head(&paths, &self.owner) {
             Ok(()) => {
                 self.owner.clear_durable_blocks();
@@ -57,8 +58,19 @@ impl EtheanClient {
                     finalized,
                     crate::block_prune::KEEP_BELOW_FINALIZED,
                 );
-                if let Err(e) = crate::block_prune::prune_below_floor(&paths, floor) {
-                    warn!(error = %e, "durable block prune failed");
+                let (files_removed, redb_removed) =
+                    match crate::block_prune::prune_below_floor(&paths, floor) {
+                        Ok(report) => (report.files_removed as u64, report.redb_removed as u64),
+                        Err(e) => {
+                            warn!(error = %e, "durable block prune failed");
+                            (0, 0)
+                        }
+                    };
+                if let Err(e) =
+                    self.observability
+                        .record_durable_persist(flushed, floor, files_removed, redb_removed)
+                {
+                    warn!(error = %e, "durable persist metrics failed");
                 }
             }
             Err(e) => warn!(error = %e, "failed to flush durable chain files"),
