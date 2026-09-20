@@ -75,6 +75,10 @@ pub struct ChainOwner {
     pub is_aggregator: bool,
     /// Self-apply proposals + inject full-registry votes for local finality smoke.
     pub local_finality: bool,
+    /// Safe-target root (tracks justified until ForkChoiceStore is live).
+    pub safe_target: Hash32,
+    /// Head moves onto a non-extending parent (leanMetrics `fc_reorg_total`).
+    pub reorg_total: u64,
 }
 
 impl Default for ChainOwner {
@@ -100,6 +104,8 @@ impl Default for ChainOwner {
             max_head_lag_slots: 0,
             is_aggregator: false,
             local_finality: false,
+            safe_target: Hash32::default(),
+            reorg_total: 0,
         }
     }
 }
@@ -139,14 +145,19 @@ impl ChainOwner {
             head_lag_slots,
             max_head_lag_slots: self.max_head_lag_slots,
         };
+        let (justified_root, finalized_root) = self
+            .head_state
+            .as_ref()
+            .map(|s| (s.latest_justified.root, s.latest_finalized.root))
+            .unwrap_or((self.head_root, self.head_root));
         ChainSnapshot {
             generation: self.generation,
             wall_slot,
             head_root: self.head_root,
             parent_root: self.head_root,
-            safe_target: self.head_root,
-            justified_root: self.head_root,
-            finalized_root: self.head_root,
+            safe_target: self.safe_target,
+            justified_root,
+            finalized_root,
             duty_view,
         }
     }
