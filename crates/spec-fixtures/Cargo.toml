@@ -9,6 +9,9 @@ description = "leanSpec / Hive fixture index and rejection-reason mapping for Et
 
 [dependencies]
 ethean-fork-choice = { workspace = true }
+ethean-primitives = { workspace = true }
+ethean-profile = { workspace = true }
+ethean-types = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
