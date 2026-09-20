@@ -104,6 +104,23 @@ impl LeanVmGate {
     pub fn ipc_ready(self) -> bool {
         self.ipc_binary_present && self.ipc_protocol_ready
     }
+
+    /// Human-readable gap when production leanVM cannot serve Type-1/Type-2 proofs.
+    pub fn refuse_reason(self) -> Option<&'static str> {
+        if self.ready() {
+            return None;
+        }
+        if !self.feature_enabled {
+            return Some("leanvm-backend feature disabled; refuse always-true aggregate verify");
+        }
+        if self.ipc_binary_present && !self.ipc_protocol_ready {
+            return Some("leanVM IPC binary present but framed protocol not ready");
+        }
+        if !self.ffi_linked && !self.ipc_ready() {
+            return Some("leanVM FFI unlinked and IPC prover not ready");
+        }
+        Some("leanVM production backend unavailable")
+    }
 }
 
 impl FfiStatus {
@@ -150,6 +167,7 @@ mod tests {
         assert_eq!(s.pinned_rev.len(), 40);
         assert!(!s.ready());
         assert!(s.refuse_reason().is_some());
+        assert!(g.refuse_reason().is_some());
     }
 
     #[cfg(feature = "leanvm-backend")]
