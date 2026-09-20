@@ -6,6 +6,9 @@ set -euo pipefail
 DEVNET_LABEL="${HIVE_LEAN_DEVNET_LABEL:-devnet5}"
 BOOTNODES="${HIVE_BOOTNODES:-}"
 FORK_DIGEST="${HIVE_FORK_DIGEST:-${HIVE_LEAN_FORK_DIGEST:-}}"
+NODE_ID="${HIVE_NODE_ID:-ethean_0}"
+NETWORK_CONFIG="${HIVE_LEAN_NETWORK_CONFIG:-}"
+VALIDATOR_REGISTRY="${HIVE_LEAN_VALIDATOR_REGISTRY_PATH:-}"
 ETHEAN_BIN="${ETHEAN_BIN:-/usr/local/bin/ethean}"
 
 case "$DEVNET_LABEL" in
@@ -65,11 +68,20 @@ if [ -n "${HIVE_HTTP_ADMIN_TOKEN:-}" ]; then
   FLAGS+=(--http-admin-token "$HIVE_HTTP_ADMIN_TOKEN")
 fi
 
-# Honesty: Hive prepares Ream-style config.yaml + validators.yaml under
-# HIVE_LEAN_NETWORK_CONFIG / HIVE_LEAN_VALIDATOR_REGISTRY_PATH. Ethean does not
-# yet consume those files; network label + bootnodes/fork-digest env are used.
-if [ -n "${HIVE_LEAN_NETWORK_CONFIG:-}" ]; then
-  echo "note: HIVE_LEAN_NETWORK_CONFIG is set but ignored by this Ethean scaffold" >&2
+if [ -n "$NETWORK_CONFIG" ]; then
+  if [ ! -f "$NETWORK_CONFIG" ]; then
+    echo "Missing prepared Lean network config at $NETWORK_CONFIG" >&2
+    exit 1
+  fi
+  FLAGS+=(--lean-config "$NETWORK_CONFIG")
+fi
+
+if [ -n "$VALIDATOR_REGISTRY" ]; then
+  if [ ! -f "$VALIDATOR_REGISTRY" ]; then
+    echo "Missing prepared Lean validator registry at $VALIDATOR_REGISTRY" >&2
+    exit 1
+  fi
+  FLAGS+=(--validator-registry "$VALIDATOR_REGISTRY" --node-id "$NODE_ID")
 fi
 
 export RUST_LOG="${RUST_LOG:-info}"
