@@ -9,6 +9,7 @@ use libp2p::gossipsub;
 use libp2p::identity::PeerId;
 use libp2p::request_response::{self, ResponseChannel};
 use sha2::{Digest, Sha256};
+use std::sync::atomic::Ordering;
 
 impl QuicSwarm {
     pub(crate) fn handle_status_event(
@@ -134,6 +135,10 @@ impl QuicSwarm {
                     req.count,
                     req.step,
                 );
+                self.range_serve_found
+                    .fetch_add(collected.found, Ordering::Relaxed);
+                self.range_serve_missing
+                    .fetch_add(collected.missing, Ordering::Relaxed);
                 if collected.missing > 0 || (req.count > 0 && collected.found == 0) {
                     tracing::warn!(
                         start_slot = req.start_slot,
