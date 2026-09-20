@@ -14,6 +14,7 @@ pub mod boot_network;
 pub mod chain_owner;
 pub mod chain_persist;
 pub mod chain_snap;
+pub mod persist_paths;
 pub mod cli;
 pub mod client;
 pub mod client_boot;
