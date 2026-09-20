@@ -21,7 +21,7 @@ pub fn map_fork_choice_rejection(reason: &str) -> Option<ForkChoiceRejection> {
     match reason.trim() {
         "BLOCK_TOO_FAR_IN_FUTURE" => Some(ForkChoiceRejection::BlockTooFarInFuture),
         "BLOCK_SLOT_GAP_TOO_LARGE" => Some(ForkChoiceRejection::BlockSlotGapTooLarge),
-        "UNKNOWN_PARENT" => Some(ForkChoiceRejection::UnknownParent),
+        "UNKNOWN_PARENT" | "UNKNOWN_PARENT_BLOCK" => Some(ForkChoiceRejection::UnknownParent),
         _ => None,
     }
 }
@@ -41,7 +41,7 @@ impl ForkChoiceRejection {
         match self {
             Self::BlockTooFarInFuture => "BLOCK_TOO_FAR_IN_FUTURE",
             Self::BlockSlotGapTooLarge => "BLOCK_SLOT_GAP_TOO_LARGE",
-            Self::UnknownParent => "UNKNOWN_PARENT",
+            Self::UnknownParent => "UNKNOWN_PARENT_BLOCK",
         }
     }
 }
