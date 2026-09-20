@@ -33,6 +33,13 @@ pub enum Command {
         /// Empty --data-dir (chain files, logs, leftovers) before start.
         #[arg(long, default_value_t = false)]
         reset_chain: bool,
+        /// More console detail (`-v` Ethean DEBUG, `-vv` include libp2p, `-vvv` TRACE).
+        #[arg(short = 'v', long = "verbose", action = clap::ArgAction::Count)]
+        verbose: u8,
+        /// Max log level (error|warn|info|debug|trace|off). Overrides `-v` base level.
+        /// `RUST_LOG` still wins when set.
+        #[arg(long = "log-level", value_name = "LEVEL")]
+        log_level: Option<String>,
         /// Network label (default: pq-devnet-4). Use `pq-devnet-5` when operator mesh is up; `local` for smoke-only.
         #[arg(long, default_value = "pq-devnet-4")]
         network: String,
