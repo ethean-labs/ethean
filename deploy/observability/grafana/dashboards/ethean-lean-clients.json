@@ -1,10 +1,7 @@
 {
-  "annotations": { "list": [] },
   "editable": true,
-  "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
   "panels": [
     {
       "type": "stat", "id": 1, "title": "Latest start time",
