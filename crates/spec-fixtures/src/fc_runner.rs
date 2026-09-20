@@ -1,7 +1,7 @@
 //! Run leanSpec `fork_choice_test` steps against Ethean fork-choice.
 
 use crate::envelope::FixtureCase;
-use crate::fc_steps::{apply_block_step, apply_tick, BlockStepKind};
+use crate::fc_steps::{apply_attestation_step, apply_block_step, apply_tick, BlockStepKind};
 use crate::json_types::{block_from_value, state_from_value, JsonTypesError};
 use ethean_fork_choice::{create_store, ForkChoiceError, ForkChoiceOpts, ForkChoiceStore};
 use ethean_profile::lstar_devnet;
@@ -36,6 +36,8 @@ pub struct FcRunReport {
     pub ticks: usize,
     /// Successful valid block imports.
     pub imports: usize,
+    /// Successful valid attestation / vote ingests.
+    pub attestations: usize,
     /// Rejection steps that matched the expected error.
     pub rejections: usize,
 }
@@ -84,12 +86,20 @@ pub fn run_fork_choice_case(case: &FixtureCase) -> Result<FcRunReport, FcRunErro
                 BlockStepKind::Imported => report.imports += 1,
                 BlockStepKind::Rejected => report.rejections += 1,
             },
+            Some("attestation") => match apply_attestation_step(&mut store, &step_v)? {
+                BlockStepKind::Imported => report.attestations += 1,
+                BlockStepKind::Rejected => report.rejections += 1,
+            },
             _ => {
-                // Ignore attestation/vote steps until those runners land.
+                // aggregated_attestation / other steps land later.
             }
         }
     }
-    if report.rejections == 0 && report.imports == 0 && report.ticks == 0 {
+    if report.rejections == 0
+        && report.imports == 0
+        && report.ticks == 0
+        && report.attestations == 0
+    {
         return Err(FcRunError::NoSteps);
     }
     Ok(report)
@@ -196,6 +206,34 @@ mod tests {
         let bytes = std::fs::read(&path).unwrap();
         let reports = run_fork_choice_file(&bytes).unwrap();
         assert_eq!(reports[0].1.imports, 1);
+        assert_eq!(reports[0].1.rejections, 1);
+    }
+
+    #[test]
+    fn runs_attestation_unknown_source() {
+        let Some(path) = fixture(
+            "test_gossip_attestation_validation/test_attestation_unknown_source_block_rejected.json",
+        ) else {
+            eprintln!("skip: cache missing");
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let reports = run_fork_choice_file(&bytes).unwrap();
+        assert_eq!(reports[0].1.imports, 2);
+        assert_eq!(reports[0].1.rejections, 1);
+    }
+
+    #[test]
+    fn runs_attestation_too_far_in_future() {
+        let Some(path) = fixture(
+            "test_gossip_attestation_validation/test_attestation_too_far_in_future_rejected.json",
+        ) else {
+            eprintln!("skip: cache missing");
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let reports = run_fork_choice_file(&bytes).unwrap();
+        assert_eq!(reports[0].1.imports, 2);
         assert_eq!(reports[0].1.rejections, 1);
     }
 }
