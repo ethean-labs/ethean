@@ -28,6 +28,7 @@ impl EtheanClient {
             leanvm_feature = leanvm_gate.feature_enabled,
             leanvm_ffi = leanvm_gate.ffi_linked,
             leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
+            leanvm_ipc_frame = leanvm_gate.ipc_frame_abi_ready,
             leanvm_ipc_ready = leanvm_gate.ipc_protocol_ready,
             leanvm_pin = leanvm_gate.pinned_rev,
             leansig_feature = leansig_gate.feature_enabled,
@@ -49,6 +50,32 @@ impl EtheanClient {
                 reason = leanvm_gate.refuse_reason().unwrap_or("unavailable"),
                 "mesh dial without production leanVM; Type-2 proof verify stays fail-closed"
             );
+        }
+        if let Some(stem) = network.id.config_stem() {
+            let path = crate::agg_pin::aggpin_path_for_stem(stem);
+            if let Some(pin) = crate::agg_pin::AggPin::load_file(&path) {
+                for m in pin.mismatches() {
+                    warn!(
+                        network = network.id.as_str(),
+                        field = m.field,
+                        operator = %m.operator,
+                        local = %m.local,
+                        path = %path.display(),
+                        "operator aggregation pin mismatches this build"
+                    );
+                }
+                if pin.mismatches().is_empty()
+                    && (pin.log_inv_rate.is_some()
+                        || pin.leanvm_rev.is_some()
+                        || pin.leansig_rev.is_some())
+                {
+                    info!(
+                        network = network.id.as_str(),
+                        path = %path.display(),
+                        "operator aggregation pin matches local LOG_INV_RATE / leanVM / leanSig"
+                    );
+                }
+            }
         }
         // Smoke crypto path is loaded even when production FFI is off.
         self.observability.mark_crypto_ok();
