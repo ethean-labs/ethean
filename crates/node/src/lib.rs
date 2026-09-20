@@ -12,6 +12,7 @@ pub mod block_builder;
 pub mod blocks_sync;
 pub mod boot_network;
 pub mod chain_owner;
+pub mod chain_head;
 pub mod chain_persist;
 pub mod chain_redb;
 pub mod chain_snap;
