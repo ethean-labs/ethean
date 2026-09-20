@@ -13,6 +13,10 @@ pub struct ForkChoiceStore {
     /// Interval counter since genesis: `slot * intervals_per_slot + interval`.
     pub time: u64,
     pub intervals_per_slot: u64,
+    /// Wall-clock genesis (Unix seconds) for fixture `tick.time` conversion.
+    pub genesis_time: u64,
+    /// Interval length in milliseconds (profile timing).
+    pub milliseconds_per_interval: u64,
     pub gossip_disparity_intervals: u64,
     pub historical_roots_limit: u64,
     pub opts: ForkChoiceOpts,
