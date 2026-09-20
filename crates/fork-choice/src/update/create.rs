@@ -28,6 +28,7 @@ pub fn create_store(
         slot: anchor_block.slot,
     };
     let time = anchor_block.slot.get() * profile.intervals_per_slot;
+    let genesis_time = anchor_state.config.genesis_time;
 
     let mut blocks = std::collections::HashMap::new();
     blocks.insert(anchor_root, anchor_block);
@@ -37,6 +38,8 @@ pub fn create_store(
     Ok(ForkChoiceStore {
         time,
         intervals_per_slot: profile.intervals_per_slot,
+        genesis_time,
+        milliseconds_per_interval: profile.milliseconds_per_interval,
         gossip_disparity_intervals: profile.gossip_disparity_intervals,
         historical_roots_limit: profile.historical_roots_limit,
         opts,
