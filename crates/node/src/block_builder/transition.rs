@@ -15,7 +15,7 @@ pub struct PlanTransition {
     pub parent_root: Hash32,
     /// Block with computed state root after structural transition.
     pub block: Block,
-    /// Best multi-message proof bytes from the pool (may be empty).
+    /// Type-2 multi-message proof bytes (empty until D3 cache-aware attach).
     pub aggregate_proof: Vec<u8>,
     /// Proposer XMSS/HMAC signature over the block root (not a leanVM Type-2 proof).
     pub proposer_signature: Option<Vec<u8>>,
@@ -46,17 +46,8 @@ pub fn plan_from_pool(
     max_attestations: usize,
 ) -> Result<PlanTransition, String> {
     let body = body_from_pool(pool, max_attestations);
-    let aggregate_proof = best_pool_proof(pool);
-    plan_with_body(parent_root, slot, proposer_index, body, aggregate_proof, pre, profile)
-}
-
-fn best_pool_proof(pool: &AggregatePool) -> Vec<u8> {
-    pool.best_entries()
-        .into_iter()
-        .map(|(_, e)| e)
-        .max_by_key(|e| e.coverage)
-        .map(|e| e.proof)
-        .unwrap_or_default()
+    // Type-2 envelope starts empty; D3 attach fills it from the Type-1 cache + prove.
+    plan_with_body(parent_root, slot, proposer_index, body, Vec::new(), pre, profile)
 }
 
 fn plan_with_body(
