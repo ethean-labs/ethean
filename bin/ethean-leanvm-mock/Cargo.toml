@@ -1,0 +1,15 @@
+[package]
+name = "ethean-leanvm-mock"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "ELVM length-prefixed leanVM IPC mock prover (dev/CI only)"
+
+[[bin]]
+name = "ethean-leanvm-mock"
+path = "src/main.rs"
+
+[dependencies]
+ethean-crypto = { workspace = true }
