@@ -47,10 +47,12 @@ Set-Content -Path $cargoPath -Value $updated -NoNewline
 
 if (Test-Path $lockPath) {
     # Only ethean* package stanzas — never blanket-replace (breaks crates.io pins).
-    $lock = [System.IO.File]::ReadAllText($lockPath)
-    if ($lock.StartsWith([char]0xFEFF)) {
-        $lock = $lock.Substring(1)
+    $bytes = [System.IO.File]::ReadAllBytes($lockPath)
+    $offset = 0
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        $offset = 3
     }
+    $lock = [System.Text.Encoding]::UTF8.GetString($bytes, $offset, $bytes.Length - $offset)
     $lockPattern = "(?m)(^\[\[package\]\]\r?\nname = `"ethean[^`"]*`"\r?\n)version = `"$([regex]::Escape($prev))`""
     $lockUpdated = [regex]::Replace($lock, $lockPattern, "`${1}version = `"$next`"")
     $replaced = [regex]::Matches(
@@ -59,6 +61,9 @@ if (Test-Path $lockPath) {
     ).Count
     if ($replaced -eq 0) {
         throw "Cargo.lock has no ethean packages at $prev to bump"
+    }
+    if (-not $lockUpdated.StartsWith("# This file")) {
+        throw "Cargo.lock rewrite lost the leading Cargo header comment"
     }
     $utf8 = New-Object System.Text.UTF8Encoding $false
     [System.IO.File]::WriteAllText($lockPath, $lockUpdated, $utf8)
