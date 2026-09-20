@@ -30,7 +30,7 @@ pub enum Command {
         /// Force ephemeral recent-genesis smoke (ignores --data-dir). Restarts start a new chain.
         #[arg(long, default_value_t = false)]
         ephemeral: bool,
-        /// Delete genesis/head/SSZ/redb files under --data-dir before start (new fixed chain).
+        /// Empty --data-dir (chain files, logs, leftovers) before start.
         #[arg(long, default_value_t = false)]
         reset_chain: bool,
         /// Network label (default: pq-devnet-4). Use `pq-devnet-5` when operator mesh is up; `local` for smoke-only.
