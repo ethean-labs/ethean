@@ -39,7 +39,7 @@ docker build -f docker/hive/Dockerfile \
 | `HIVE_LEANVM_IPC_PROBE` | exports `ETHEAN_LEANVM_IPC_PROBE` (optional live probe) |
 
 Operator plug-in order (fork-digest, bootnodes, leanVM, leansig, Hive):
-[`docs/pq-devnet-operator-plug-in-checklist-2026-09-20.md`](../../docs/pq-devnet-operator-plug-in-checklist-2026-09-20.md).
+[`docs/pq-devnet-operator-plug-in-checklist-2026-09-20.md`](../../docs/pq-devnet/pq-devnet-operator-plug-in-checklist-2026-09-20.md).
 
 Always runs `ethean start --until-signal --ephemeral` with Lean HTTP on `0.0.0.0:5052`
 and QUIC on UDP `:9000` (override via `HIVE_LISTEN_PORT`). When Hive injects prepared
@@ -51,7 +51,7 @@ Drop-in files live in [`upstream-clients-ethean/`](./upstream-clients-ethean/) â
 copy that folder to ethereum/hive `clients/ethean/`, append
 [`client-devnet5.yaml`](./client-devnet5.yaml) into `simulators/lean/clients/devnet5.yaml`,
 and add the lean-devnets snippet. Details:
-[`docs/hive-upstream-clients-ethean-dropin-2026-09-20.md`](../../docs/hive-upstream-clients-ethean-dropin-2026-09-20.md).
+[`docs/hive-upstream-clients-ethean-dropin-2026-09-20.md`](../../docs/hive-testing/hive-upstream-clients-ethean-dropin-2026-09-20.md).
 
 ## Known gaps vs Ream Hive client
 
@@ -60,4 +60,4 @@ and add the lean-devnets snippet. Details:
 - Upstream ethereum/hive merge still required (drop-in is ready to copy).
 - `ATTESTATION_COMMITTEE_COUNT` from prepared `config.yaml` lands on the profile and
   gossip subnet count (see
-  [`docs/attestation-committee-count-profile-subnets-2026-09-20.md`](../../docs/attestation-committee-count-profile-subnets-2026-09-20.md)).
+  [`docs/attestation-committee-count-profile-subnets-2026-09-20.md`](../../docs/networking/attestation-committee-count-profile-subnets-2026-09-20.md)).

@@ -13,4 +13,4 @@ Node crate re-exports the Lean network API (`ethean-node/libp2p-quic` forwards t
 Legacy libp2p Beacon modules were deleted.
 
 See Phase 10 notes under `docs/lean-consensus-migration-phase-10-quic-gossip-2026-09-19.md`
-and [external-gates-quic-rocksdb-leansig-2026-09-19.md](./external-gates-quic-rocksdb-leansig-2026-09-19.md).
+and [external-gates-quic-rocksdb-leansig-2026-09-19.md](lean-crypto/external-gates-quic-rocksdb-leansig-2026-09-19.md).

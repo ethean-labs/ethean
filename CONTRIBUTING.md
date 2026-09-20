@@ -37,7 +37,7 @@ cargo fmt --check
 ```
 
 After `cargo build -p ethean`, the `ethean` command is available via a PATH shim
-under `~/.cargo/bin` (see [docs/ethean-path-command-after-build-2026-09-20.md](./docs/ethean-path-command-after-build-2026-09-20.md)).
+under `~/.cargo/bin` (see [docs/ethean-path-command-after-build-2026-09-20.md](./docs/pq-devnet/ethean-path-command-after-build-2026-09-20.md)).
 
 ### Local run (operational default)
 
@@ -103,7 +103,7 @@ re-export from `mod.rs` when a file would grow past that. See
 - **No AI git attribution**: no `Co-authored-by: Cursor`, no
   `cursoragent@cursor.com`, no `Made-with: Cursor`. Commits must use your normal
   `user.name` / `user.email`. See
-  [docs/no-ai-git-attribution-2026-09-19.md](./docs/no-ai-git-attribution-2026-09-19.md).
+  [docs/no-ai-git-attribution-2026-09-19.md](./docs/process/no-ai-git-attribution-2026-09-19.md).
 - Enable the repo hook when developing locally:
 
 ```bash

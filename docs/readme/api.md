@@ -27,4 +27,4 @@ curl -s http://127.0.0.1:5052/lean/v1/chain/sync
 Route matching stays under `/lean/v1/…` only (no Beacon `/eth/v1`).
 Disable with `--no-http`; Hive binds `0.0.0.0:5052`.
 
-More route notes: [lean-http-api-5052-2026-09-20.md](../lean-http-api-5052-2026-09-20.md).
+More route notes: [lean-http-api-5052-2026-09-20.md](../networking/lean-http-api-5052-2026-09-20.md).

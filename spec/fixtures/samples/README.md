@@ -9,4 +9,4 @@ Tiny JSON envelopes for CI without the ~154 MiB production archive.
 Full filled vectors: run `tools/release/fetch-leanspec-fixtures.ps1`, then set
 `ETHEAN_LEANSPEC_FIXTURES` to the extract root. See
 [`../phase-00/README.md`](../phase-00/README.md) and
-[`../../../docs/hive-leanspec-fixture-consumer-2026-09-20.md`](../../../docs/hive-leanspec-fixture-consumer-2026-09-20.md).
+[`../../../docs/hive-leanspec-fixture-consumer-2026-09-20.md`](../../../docs/hive-testing/hive-leanspec-fixture-consumer-2026-09-20.md).

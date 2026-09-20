@@ -36,7 +36,7 @@ Empty bootnodes → offline local duties with a clear warning log.
 
 When eth/pq-devnets publish live digests, multiaddrs, and prover binaries, follow
 the plug-in checklist (no fabricated bootnodes):
-[pq-devnet-operator-plug-in-checklist-2026-09-20.md](./pq-devnet-operator-plug-in-checklist-2026-09-20.md).
+[pq-devnet-operator-plug-in-checklist-2026-09-20.md](pq-devnet/pq-devnet-operator-plug-in-checklist-2026-09-20.md).
 
 Peer baseline: **Zeam** and **Ream** for current interop. **Peam** is older. **Beam** is historical naming only.
 
@@ -76,4 +76,4 @@ Terminal tracing only (network label, dials, crypto gates, ticks). No `ethean mo
 
 ## Release tooling
 
-See [release/README.md](./release/README.md). Working-client plan: [working-client-pq-devnet-5-plan-2026-09-19.md](./working-client-pq-devnet-5-plan-2026-09-19.md). Default-network note: [default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](./default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md).
+See [release/README.md](./release/README.md). Working-client plan: [working-client-pq-devnet-5-plan-2026-09-19.md](pq-devnet/working-client-pq-devnet-5-plan-2026-09-19.md). Default-network note: [default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](pq-devnet/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md).

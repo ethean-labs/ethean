@@ -99,20 +99,20 @@ Under `--data-dir` the node writes:
 - `log/ethean-YYYY-MM-DD-HHMMSS-log` — process log for that start (console still prints in green-forward ANSI; file is plain; wiped by `--reset-chain`)
 
 A prior `genesis_pin.json` / `head_snap.json` in the same folder is still read once
-and migrated. See [docs/ethean-redb-ssz-data-dir-2026-09-20.md](../ethean-redb-ssz-data-dir-2026-09-20.md)
-and [docs/ethean-data-dir-run-logs-2026-09-20.md](../ethean-data-dir-run-logs-2026-09-20.md).
-Console colors: [docs/ethean-console-log-colors-2026-09-20.md](../ethean-console-log-colors-2026-09-20.md).
-`--reset-chain` empties the folder first: [docs/reset-chain-wipes-data-dir-2026-09-20.md](../reset-chain-wipes-data-dir-2026-09-20.md).
+and migrated. See [docs/ethean-redb-ssz-data-dir-2026-09-20.md](../storage/ethean-redb-ssz-data-dir-2026-09-20.md)
+and [docs/ethean-data-dir-run-logs-2026-09-20.md](../pq-devnet/ethean-data-dir-run-logs-2026-09-20.md).
+Console colors: [docs/ethean-console-log-colors-2026-09-20.md](../observability/ethean-console-log-colors-2026-09-20.md).
+`--reset-chain` empties the folder first: [docs/reset-chain-wipes-data-dir-2026-09-20.md](../storage/reset-chain-wipes-data-dir-2026-09-20.md).
 
 `--ephemeral` wins over `--data-dir` if both are set (logs a warning).
 
 Console log level defaults to **INFO** (libp2p heartbeats stay quiet). Pass `-v`
 for Ethean DEBUG, `-vv` for libp2p DEBUG, or set `RUST_LOG`. See
-[docs/ethean-log-verbosity-2026-09-20.md](../ethean-log-verbosity-2026-09-20.md).
+[docs/ethean-log-verbosity-2026-09-20.md](../observability/ethean-log-verbosity-2026-09-20.md).
 
 On start, Ethean prints an ASCII identity banner and a start snapshot (network,
 slots, roles, metrics) before the normal log dump — see
-[docs/ethean-startup-banner-2026-09-20.md](../ethean-startup-banner-2026-09-20.md)
+[docs/ethean-startup-banner-2026-09-20.md](../observability/ethean-startup-banner-2026-09-20.md)
 (`--no-banner` to skip).
 
 #### What the peer model (fixed genesis package) gives you
@@ -144,8 +144,8 @@ pq-devnets (lean-quickstart / `setup-genesis.sh`):
 | ~30s local finality smoke | Ephemeral (`--ephemeral`) |
 | Production-like Lean client direction | Fixed package (`--data-dir`) |
 
-Related: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](../peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md),
-[docs/dual-mode-persist-and-ephemeral-2026-09-20.md](../dual-mode-persist-and-ephemeral-2026-09-20.md).
+Related: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](../peer-clients/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md),
+[docs/dual-mode-persist-and-ephemeral-2026-09-20.md](../storage/dual-mode-persist-and-ephemeral-2026-09-20.md).
 
 ### Local private mesh (no public bootnodes)
 
@@ -160,7 +160,7 @@ peer A’s dialable address to `target/local-pq-mesh/nodes.multiaddrs`, then dia
 ./scripts/local-pq-mesh.sh
 ```
 
-Details: [docs/local-pq-mesh-private-dial-2026-09-20.md](../local-pq-mesh-private-dial-2026-09-20.md).
+Details: [docs/local-pq-mesh-private-dial-2026-09-20.md](../pq-devnet/local-pq-mesh-private-dial-2026-09-20.md).
 
 ### Join an operator mesh (pq-devnet-4)
 
@@ -205,7 +205,7 @@ ethean start --until-signal --network pq-devnet-5
 - There is **no** `ethean monitor` subcommand and no Grafana UI in this binary yet.
 - Health surface used internally: Lean `/lean/v1/…` (not Beacon `/eth/v1`).
 
-More detail: [docs/deployment.md](../deployment.md), [docs/pq-devnet-operator-plug-in-checklist-2026-09-20.md](../pq-devnet-operator-plug-in-checklist-2026-09-20.md), [docs/ethean-path-command-after-build-2026-09-20.md](../ethean-path-command-after-build-2026-09-20.md), [docs/build-path-shim-quiet-success-2026-09-20.md](../build-path-shim-quiet-success-2026-09-20.md), [docs/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](../default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md), [docs/ream-empty-lean-peers-bootnodes-2026-09-20.md](../ream-empty-lean-peers-bootnodes-2026-09-20.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](../working-client-pq-devnet-5-plan-2026-09-19.md), [docs/pq-devnet-5-research-refresh-2026-09-19.md](../pq-devnet-5-research-refresh-2026-09-19.md), [docs/blocks-by-range-quic-stream-2026-09-19.md](../blocks-by-range-quic-stream-2026-09-19.md), [docs/blocks-by-range-serve-gap-warn-2026-09-20.md](../blocks-by-range-serve-gap-warn-2026-09-20.md), [docs/serve-cache-seed-from-data-dir-2026-09-20.md](../serve-cache-seed-from-data-dir-2026-09-20.md), [docs/persist-applied-blocks-durable-2026-09-20.md](../persist-applied-blocks-durable-2026-09-20.md), [docs/durable-block-prune-finalized-keep-2026-09-20.md](../durable-block-prune-finalized-keep-2026-09-20.md), [docs/durable-persist-prune-metrics-2026-09-20.md](../durable-persist-prune-metrics-2026-09-20.md), [docs/grafana-durable-persist-prune-panels-2026-09-20.md](../grafana-durable-persist-prune-panels-2026-09-20.md), [docs/prune-keep-slots-config-2026-09-20.md](../prune-keep-slots-config-2026-09-20.md), [docs/durable-prune-stall-alert-2026-09-20.md](../durable-prune-stall-alert-2026-09-20.md), [docs/range-serve-seed-metrics-2026-09-20.md](../range-serve-seed-metrics-2026-09-20.md), [docs/grafana-range-serve-seed-panels-2026-09-20.md](../grafana-range-serve-seed-panels-2026-09-20.md), [docs/c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md](../c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md), [docs/b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md](../b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md), [docs/d2-type1-aggregation-gossip-publish-2026-09-20.md](../d2-type1-aggregation-gossip-publish-2026-09-20.md), [docs/d3-type2-from-type1-cache-2026-09-20.md](../d3-type2-from-type1-cache-2026-09-20.md), [docs/b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md](../b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md), [docs/b2-leanvm-ipc-spawn-exchange-2026-09-20.md](../b2-leanvm-ipc-spawn-exchange-2026-09-20.md), [docs/b2-leanvm-mock-ipc-roundtrip-2026-09-20.md](../b2-leanvm-mock-ipc-roundtrip-2026-09-20.md), [docs/b1-leansig-vendor-backend-compile-2026-09-20.md](../b1-leansig-vendor-backend-compile-2026-09-20.md), [docs/b2-leanvm-ipc-live-probe-2026-09-20.md](../b2-leanvm-ipc-live-probe-2026-09-20.md), [docs/attestation-committee-count-profile-subnets-2026-09-20.md](../attestation-committee-count-profile-subnets-2026-09-20.md), [docs/hive-upstream-clients-ethean-dropin-2026-09-20.md](../hive-upstream-clients-ethean-dropin-2026-09-20.md), [docs/hive-leansig-cargo-features-2026-09-20.md](../hive-leansig-cargo-features-2026-09-20.md), [docs/attest-before-prove-empty-type1-2026-09-20.md](../attest-before-prove-empty-type1-2026-09-20.md), [docs/b2-leanvm-ipc-split-ops-2026-09-20.md](../b2-leanvm-ipc-split-ops-2026-09-20.md).
+More detail: [docs/deployment.md](../deployment.md), [docs/pq-devnet-operator-plug-in-checklist-2026-09-20.md](../pq-devnet/pq-devnet-operator-plug-in-checklist-2026-09-20.md), [docs/ethean-path-command-after-build-2026-09-20.md](../pq-devnet/ethean-path-command-after-build-2026-09-20.md), [docs/build-path-shim-quiet-success-2026-09-20.md](../process/build-path-shim-quiet-success-2026-09-20.md), [docs/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](../pq-devnet/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md), [docs/ream-empty-lean-peers-bootnodes-2026-09-20.md](../peer-clients/ream-empty-lean-peers-bootnodes-2026-09-20.md), [docs/working-client-pq-devnet-5-plan-2026-09-19.md](../pq-devnet/working-client-pq-devnet-5-plan-2026-09-19.md), [docs/pq-devnet-5-research-refresh-2026-09-19.md](../pq-devnet/pq-devnet-5-research-refresh-2026-09-19.md), [docs/blocks-by-range-quic-stream-2026-09-19.md](../networking/blocks-by-range-quic-stream-2026-09-19.md), [docs/blocks-by-range-serve-gap-warn-2026-09-20.md](../networking/blocks-by-range-serve-gap-warn-2026-09-20.md), [docs/serve-cache-seed-from-data-dir-2026-09-20.md](../networking/serve-cache-seed-from-data-dir-2026-09-20.md), [docs/persist-applied-blocks-durable-2026-09-20.md](../storage/persist-applied-blocks-durable-2026-09-20.md), [docs/durable-block-prune-finalized-keep-2026-09-20.md](../storage/durable-block-prune-finalized-keep-2026-09-20.md), [docs/durable-persist-prune-metrics-2026-09-20.md](../observability/durable-persist-prune-metrics-2026-09-20.md), [docs/grafana-durable-persist-prune-panels-2026-09-20.md](../observability/grafana-durable-persist-prune-panels-2026-09-20.md), [docs/prune-keep-slots-config-2026-09-20.md](../storage/prune-keep-slots-config-2026-09-20.md), [docs/durable-prune-stall-alert-2026-09-20.md](../observability/durable-prune-stall-alert-2026-09-20.md), [docs/range-serve-seed-metrics-2026-09-20.md](../observability/range-serve-seed-metrics-2026-09-20.md), [docs/grafana-range-serve-seed-panels-2026-09-20.md](../observability/grafana-range-serve-seed-panels-2026-09-20.md), [docs/c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md](../networking/c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md), [docs/b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md](../lean-crypto/b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md), [docs/d2-type1-aggregation-gossip-publish-2026-09-20.md](../networking/d2-type1-aggregation-gossip-publish-2026-09-20.md), [docs/d3-type2-from-type1-cache-2026-09-20.md](../lean-crypto/d3-type2-from-type1-cache-2026-09-20.md), [docs/b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md](../lean-crypto/b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md), [docs/b2-leanvm-ipc-spawn-exchange-2026-09-20.md](../lean-crypto/b2-leanvm-ipc-spawn-exchange-2026-09-20.md), [docs/b2-leanvm-mock-ipc-roundtrip-2026-09-20.md](../lean-crypto/b2-leanvm-mock-ipc-roundtrip-2026-09-20.md), [docs/b1-leansig-vendor-backend-compile-2026-09-20.md](../lean-crypto/b1-leansig-vendor-backend-compile-2026-09-20.md), [docs/b2-leanvm-ipc-live-probe-2026-09-20.md](../lean-crypto/b2-leanvm-ipc-live-probe-2026-09-20.md), [docs/attestation-committee-count-profile-subnets-2026-09-20.md](../networking/attestation-committee-count-profile-subnets-2026-09-20.md), [docs/hive-upstream-clients-ethean-dropin-2026-09-20.md](../hive-testing/hive-upstream-clients-ethean-dropin-2026-09-20.md), [docs/hive-leansig-cargo-features-2026-09-20.md](../hive-testing/hive-leansig-cargo-features-2026-09-20.md), [docs/attest-before-prove-empty-type1-2026-09-20.md](../lean-crypto/attest-before-prove-empty-type1-2026-09-20.md), [docs/b2-leanvm-ipc-split-ops-2026-09-20.md](../lean-crypto/b2-leanvm-ipc-split-ops-2026-09-20.md).
 
 ### Validator stub
 
@@ -217,7 +217,7 @@ Reports leanSig / leanVM gate status (fail-closed until production backends link
 Boot logs `leansig_vendor_patch=true` until upstream leanSig ships `num-bigint` 0.5;
 operators enable production XMSS with
 [`tools/release/check-leansig-backend.ps1`](../../tools/release/check-leansig-backend.ps1)
-(see [`docs/b1-leansig-vendor-backend-compile-2026-09-20.md`](../b1-leansig-vendor-backend-compile-2026-09-20.md)).
+(see [`docs/b1-leansig-vendor-backend-compile-2026-09-20.md`](../lean-crypto/b1-leansig-vendor-backend-compile-2026-09-20.md)).
 
 ## Monitoring and metrics
 
@@ -258,7 +258,7 @@ Useful gauges: `ethean_head_slot`, `ethean_justified_slot`, `ethean_finalized_sl
 
 If Grafana shows **1970** dates or **No data** on validators/roles, rebuild the
 binary and reload dashboards:
-[docs/grafana-no-data-and-1970-fix-2026-09-20.md](../grafana-no-data-and-1970-fix-2026-09-20.md).
+[docs/grafana-no-data-and-1970-fix-2026-09-20.md](../observability/grafana-no-data-and-1970-fix-2026-09-20.md).
 
 ### Start with Grafana + Prometheus
 
@@ -308,9 +308,9 @@ Healthy long-run: `ethean_slot_current` and `ethean_head_slot` climb; justified 
 finalized follow when a mesh + aggregator exists. Flat finalized while head climbs
 = finality stall (same failure mode Shariq caught on a 5-day Ream run).
 
-Details: [docs/long-run-metrics-grafana-2026-09-20.md](../long-run-metrics-grafana-2026-09-20.md),
-[docs/ethean-grafana-richer-monitors-2026-09-20.md](../ethean-grafana-richer-monitors-2026-09-20.md),
-[docs/metrics-flag-starts-grafana-prometheus-2026-09-20.md](../metrics-flag-starts-grafana-prometheus-2026-09-20.md),
+Details: [docs/long-run-metrics-grafana-2026-09-20.md](../observability/long-run-metrics-grafana-2026-09-20.md),
+[docs/ethean-grafana-richer-monitors-2026-09-20.md](../observability/ethean-grafana-richer-monitors-2026-09-20.md),
+[docs/metrics-flag-starts-grafana-prometheus-2026-09-20.md](../observability/metrics-flag-starts-grafana-prometheus-2026-09-20.md),
 [deploy/observability/README.md](../../deploy/observability/README.md).
 
 There is no `ethean monitor` CLI. Do not use Beacon `/eth/v1/node/health` paths.
@@ -458,4 +458,4 @@ RUST_BACKTRACE=1 Ethean start
 - ethean not found: ensure ~/.cargo/bin is on PATH after cargo build -p ethean.
 
 See also [deployment.md](../deployment.md) and
-[default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](../default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md).
+[default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](../pq-devnet/default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md).

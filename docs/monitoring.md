@@ -35,6 +35,6 @@ Lean JSON-RPC HTTP on `:5052` is not bound yet; operator health checks use the
 metrics URLs above. In-process smoke still validates `GET /lean/v1/health`.
 
 See root [README.md](../README.md#monitoring--metrics),
-[metrics-flag-starts-grafana-prometheus-2026-09-20.md](./metrics-flag-starts-grafana-prometheus-2026-09-20.md),
-and [long-run-metrics-grafana-2026-09-20.md](./long-run-metrics-grafana-2026-09-20.md),
-[ethean-grafana-richer-monitors-2026-09-20.md](./ethean-grafana-richer-monitors-2026-09-20.md).
+[metrics-flag-starts-grafana-prometheus-2026-09-20.md](observability/metrics-flag-starts-grafana-prometheus-2026-09-20.md),
+and [long-run-metrics-grafana-2026-09-20.md](observability/long-run-metrics-grafana-2026-09-20.md),
+[ethean-grafana-richer-monitors-2026-09-20.md](observability/ethean-grafana-richer-monitors-2026-09-20.md).
