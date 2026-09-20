@@ -34,6 +34,7 @@ FLAGS=(
   --metrics-port 9100
   --http-address 0.0.0.0
   --http-port 5052
+  --listen-port "${HIVE_LISTEN_PORT:-9000}"
 )
 
 if [ -n "$BOOTNODES" ] && [ "$BOOTNODES" != "none" ]; then
