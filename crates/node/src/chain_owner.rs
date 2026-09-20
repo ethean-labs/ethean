@@ -1,6 +1,7 @@
 //! Chain owner: sole writer of transition, fork choice, and import status.
 
 use crate::aggregation::AggregatePool;
+use crate::aggregation_gossip::AggregationGossip;
 use crate::block_builder::{PlanTransition, ProposalGossip};
 use crate::local_proposer::LocalProposer;
 use crate::sync_orphan::SyncOrphanCache;
@@ -55,6 +56,8 @@ pub struct ChainOwner {
     pub planned_tick: Option<DutyTick>,
     /// Encoded SignedBlock waiting for network gossip publish.
     pub pending_block_gossip: Option<ProposalGossip>,
+    /// Encoded Type-1 aggregates waiting for `/aggregation/` / attestation publish.
+    pub pending_aggregation_gossip: Vec<AggregationGossip>,
     /// Optional local proposal signer (test-hmac smoke key).
     pub proposer: Option<LocalProposer>,
     /// Sync blobs waiting for a missing parent (blocks-by-root catch-up).
@@ -81,6 +84,7 @@ impl Default for ChainOwner {
             planned_proposal: None,
             planned_tick: None,
             pending_block_gossip: None,
+            pending_aggregation_gossip: Vec::new(),
             proposer: None,
             sync_orphans: SyncOrphanCache::default(),
             max_head_lag_slots: 0,
