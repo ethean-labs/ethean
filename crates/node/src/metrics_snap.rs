@@ -82,6 +82,16 @@ impl EtheanClient {
         self.observability.record_bootnodes(self.bootnode_count)?;
         self.observability.record_readiness_bits()?;
         self.observability.refresh_ready_gauge()?;
+        #[cfg(feature = "libp2p-quic")]
+        {
+            let (found, missing, cache_slots) = self
+                .swarm
+                .as_ref()
+                .map(|s| s.range_serve_stats())
+                .unwrap_or((0, 0, 0));
+            self.observability
+                .record_range_serve(found, missing, cache_slots)?;
+        }
         self.publish_lean_api(head_slot, finalized, finalized_root, peers);
         debug!(
             head_slot,
