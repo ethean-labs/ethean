@@ -5,7 +5,7 @@ use crate::{Error, Result};
 use ethean_primitives::Hash32;
 use ethean_storage::SCHEMA_ID;
 use ethean_types::State;
-use redb::{Database, TableDefinition};
+use redb::{Database, ReadableTable, TableDefinition};
 use tracing::info;
 
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("ethean_meta");
@@ -116,6 +116,35 @@ pub fn load_head(paths: &PersistPaths) -> Result<Option<RedbHead>> {
         "loaded head from ethean.redb"
     );
     Ok(Some(RedbHead { head_root, state }))
+}
+
+/// Load every block blob from the `ethean_blocks` table (root → SSZ bytes).
+pub fn load_all_blocks(paths: &PersistPaths) -> Result<Vec<(Hash32, Vec<u8>)>> {
+    if !paths.redb().exists() {
+        return Ok(Vec::new());
+    }
+    let db = open_db(paths)?;
+    let txn = db.begin_read().map_err(map_redb)?;
+    let blocks = match txn.open_table(BLOCKS) {
+        Ok(t) => t,
+        Err(_) => return Ok(Vec::new()),
+    };
+    let mut out = Vec::new();
+    let iter = blocks.iter().map_err(map_redb)?;
+    for item in iter {
+        let (k, v) = item.map_err(map_redb)?;
+        let key = k.value();
+        if key.len() != 32 {
+            continue;
+        }
+        let mut root = [0u8; 32];
+        root.copy_from_slice(key);
+        let payload = v.value().to_vec();
+        if !payload.is_empty() {
+            out.push((root, payload));
+        }
+    }
+    Ok(out)
 }
 
 /// Persist genesis SSZ on first open (no head yet).
