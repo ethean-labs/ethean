@@ -1,7 +1,7 @@
 //! Apply individual leanSpec fork-choice fixture steps.
 
 use crate::fc_runner::FcRunError;
-use crate::json_types::{attestation_from_value, block_from_value};
+use crate::json_types::{attestation_from_value, block_from_value, signed_aggregated_from_value};
 use crate::rejection::map_fork_choice_rejection;
 use ethean_fork_choice::{ForkChoiceError, ForkChoiceStore};
 use ethean_transition::{apply_block_unverified, TransitionContext};
@@ -125,6 +125,48 @@ pub fn apply_attestation_step(
     } else {
         Err(FcRunError::Step(
             "attestation step has invalid valid flag".into(),
+        ))
+    }
+}
+
+/// Apply a `stepType=gossipAggregatedAttestation` (structural aggregate ingest).
+pub fn apply_gossip_aggregated_step(
+    store: &mut ForkChoiceStore,
+    step: &Value,
+) -> Result<BlockStepKind, FcRunError> {
+    let valid = step.get("valid").and_then(|v| v.as_bool());
+    let att_v = step
+        .get("attestation")
+        .ok_or_else(|| FcRunError::Step("gossipAggregatedAttestation missing attestation".into()))?;
+    let (data, participants) = signed_aggregated_from_value(att_v)?;
+    maybe_tick_to_slot(store, step, data.slot.get())?;
+
+    if valid == Some(false) {
+        let reason = step
+            .get("rejectionReason")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                FcRunError::Step("rejected gossip aggregate missing rejectionReason".into())
+            })?;
+        let token = map_fork_choice_rejection(reason)
+            .ok_or_else(|| FcRunError::Unmapped(reason.to_string()))?;
+        let got = store.on_aggregated_attestation(data, &participants);
+        let expected = token.to_error();
+        match &got {
+            Err(e) if e == &expected => Ok(BlockStepKind::Rejected),
+            other => Err(FcRunError::WrongOutcome {
+                expected: reason.to_string(),
+                got: other.clone(),
+            }),
+        }
+    } else if valid == Some(true) || valid.is_none() {
+        store
+            .on_aggregated_attestation(data, &participants)
+            .map_err(|e| FcRunError::Step(format!("on_aggregated_attestation: {e}")))?;
+        Ok(BlockStepKind::Imported)
+    } else {
+        Err(FcRunError::Step(
+            "gossipAggregatedAttestation has invalid valid flag".into(),
         ))
     }
 }
