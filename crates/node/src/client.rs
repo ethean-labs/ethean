@@ -46,6 +46,8 @@ pub struct EtheanClient {
     pub(crate) api: Option<std::sync::Arc<ethean_rpc::SharedApiState>>,
     /// Network label mirrored into `/lean/v1/node/identity`.
     pub(crate) network_label: String,
+    /// Slots retained below finalized before durable prune (see `--prune-keep-slots`).
+    pub(crate) prune_keep_slots: u64,
 }
 
 impl EtheanClient {
@@ -110,6 +112,7 @@ impl EtheanClient {
             bootnode_count: 0,
             api: None,
             network_label: String::new(),
+            prune_keep_slots: crate::block_prune::KEEP_BELOW_FINALIZED,
         })
     }
 
@@ -204,6 +207,7 @@ impl EtheanClient {
         self.apply_local_roles(cfg.roles);
         self.bootnode_count = cfg.network.bootnodes.len() as u64;
         self.network_label = cfg.network.id.as_str().to_string();
+        self.prune_keep_slots = cfg.prune_keep_slots;
         if let Some(ref metrics) = cfg.metrics {
             let bound = ethean_metrics::spawn_metrics_server(
                 metrics.addr,
