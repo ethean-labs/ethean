@@ -33,6 +33,19 @@ pub fn prune_floor(finalized_slot: u64, keep_below_finalized: u64) -> u64 {
     finalized_slot.saturating_sub(keep_below_finalized)
 }
 
+/// Resolve keep window: CLI flag, then `ETHEAN_PRUNE_KEEP_SLOTS`, else [`KEEP_BELOW_FINALIZED`].
+pub fn resolve_prune_keep_slots(cli: Option<u64>) -> u64 {
+    if let Some(v) = cli {
+        return v;
+    }
+    if let Ok(raw) = std::env::var("ETHEAN_PRUNE_KEEP_SLOTS") {
+        if let Ok(v) = raw.trim().parse::<u64>() {
+            return v;
+        }
+    }
+    KEEP_BELOW_FINALIZED
+}
+
 /// Delete SSZ files and redb rows whose block slot is strictly below `floor_slot`.
 pub fn prune_below_floor(paths: &PersistPaths, floor_slot: u64) -> Result<BlockPruneReport> {
     let mut report = BlockPruneReport {
@@ -159,6 +172,14 @@ mod tests {
     fn floor_saturates() {
         assert_eq!(prune_floor(10, 256), 0);
         assert_eq!(prune_floor(300, 256), 44);
+    }
+
+    #[test]
+    fn resolve_prefers_cli_over_default() {
+        assert_eq!(resolve_prune_keep_slots(Some(64)), 64);
+        // Without CLI and without a valid env override, default keep applies.
+        let _ = std::env::remove_var("ETHEAN_PRUNE_KEEP_SLOTS");
+        assert_eq!(resolve_prune_keep_slots(None), KEEP_BELOW_FINALIZED);
     }
 
     #[test]
