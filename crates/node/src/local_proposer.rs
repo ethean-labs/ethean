@@ -8,7 +8,7 @@ use ethean_crypto::TestHmacBackend;
 use ethean_crypto::ProductionBackend;
 use ethean_primitives::Hash32;
 use ethean_validator::{
-    record_from_keygen, run_proposer, DutyTick, DutyView, InMemorySignerStore, KeyId,
+    record_from_keygen, run_proposer, DutyTick, DutyView, InMemorySignerStore, KeyId, KeyRecord,
     ProposerOutcome, ProposerPlan, Signer, SigningDuty, SigningRole, SigningRoot,
 };
 use std::sync::Arc;
@@ -93,6 +93,40 @@ impl LocalProposer {
             key_id,
             production: true,
         })
+    }
+
+    /// Import a pre-loaded proposal [`KeyRecord`] (Hive registry privkey).
+    ///
+    /// Uses leanSig when `leansig-backend` is enabled; otherwise returns an error so
+    /// callers can fall back to smoke keys without silently mismatching XMSS pubkeys.
+    pub fn from_key_record(record: KeyRecord) -> Result<Self, String> {
+        if record.role != SigningRole::Proposal {
+            return Err(format!(
+                "expected Proposal key record, got {:?}",
+                record.role
+            ));
+        }
+        #[cfg(feature = "leansig-backend")]
+        {
+            let crypto = Arc::new(ProductionBackend);
+            let key_id = record.key_id;
+            let mut signer = Signer::new(crypto, InMemorySignerStore::default());
+            signer.import_key(record).map_err(|e| e.to_string())?;
+            return Ok(Self {
+                backend: ProposerBackend::LeanSig(signer),
+                key_id,
+                production: true,
+            });
+        }
+        #[cfg(not(feature = "leansig-backend"))]
+        {
+            let _ = record;
+            Err(
+                "registry proposal privkeys require the leansig-backend feature \
+                 (refusing HMAC fallback against XMSS genesis pubkeys)"
+                    .into(),
+            )
+        }
     }
 
     /// True when this instance uses leanSig production keys.
