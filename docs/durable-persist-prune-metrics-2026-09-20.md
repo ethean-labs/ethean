@@ -31,5 +31,5 @@ cargo test -p ethean-metrics --lib
 
 | Gap | Notes |
 | --- | --- |
-| Grafana panel for durable row | Compose dashboards still slot-centric |
+| Grafana panel for durable row | Done — [grafana-durable-persist-prune-panels-2026-09-20.md](./grafana-durable-persist-prune-panels-2026-09-20.md) |
 | Configurable keep window | Still fixed at 256 |
