@@ -1,0 +1,7 @@
+.git
+.cache
+target
+bazalinacaklar
+.cursor
+agent-transcripts
+*.pdb
