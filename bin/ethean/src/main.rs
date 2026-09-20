@@ -83,6 +83,10 @@ async fn main() -> Result<()> {
             no_metrics,
             metrics_address,
             metrics_port,
+            no_http,
+            http_address,
+            http_port,
+            http_admin_token,
         } => {
             let network = NetworkTarget::from_cli(
                 &network,
@@ -111,6 +115,15 @@ async fn main() -> Result<()> {
             } else {
                 None
             };
+            let http_listen = if no_http {
+                None
+            } else {
+                let addr = format!("{http_address}:{http_port}").parse()?;
+                Some(ethean_node::RpcListen {
+                    addr,
+                    admin_token: http_admin_token,
+                })
+            };
             info!(
                 ticks,
                 wall_clock,
@@ -130,6 +143,9 @@ async fn main() -> Result<()> {
                 scrape,
                 metrics_address = metrics_address.as_str(),
                 metrics_port,
+                http = http_listen.is_some(),
+                http_address = http_address.as_str(),
+                http_port,
                 "Starting lean consensus node"
             );
             if ephemeral && data_dir.is_some() {
@@ -158,6 +174,7 @@ async fn main() -> Result<()> {
             }
             .with_network(network.clone())
             .with_metrics(metrics_listen.clone())
+            .with_http(http_listen)
             .with_roles(roles);
             if !no_banner {
                 let bind = format!("{metrics_address}:{metrics_port}");
