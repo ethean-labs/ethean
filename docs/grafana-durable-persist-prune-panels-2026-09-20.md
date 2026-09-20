@@ -10,6 +10,7 @@ dashboard so soak operators do not need to curl `/metrics`.
 | Panel | Metric / query |
 | --- | --- |
 | Prune floor slot | `ethean_durable_blocks_prune_floor_slot` |
+| Prune keep slots | `ethean_durable_blocks_prune_keep_slots` |
 | Durable flushed | `ethean_durable_blocks_flushed_total` |
 | Pruned SSZ files | `ethean_durable_blocks_pruned_files_total` |
 | Pruned redb rows | `ethean_durable_blocks_pruned_redb_total` |
@@ -23,5 +24,5 @@ provisioned JSON.
 
 | Gap | Notes |
 | --- | --- |
-| Configurable keep window | Still fixed at 256 |
+| Configurable keep window | Done — [prune-keep-slots-config-2026-09-20.md](./prune-keep-slots-config-2026-09-20.md) |
 | Alert on prune stall while finalized climbs | Optional later |
