@@ -38,8 +38,10 @@ impl EtheanClient {
             )?);
             self.flush_chain_persist();
             #[cfg(feature = "libp2p-quic")]
-            if let Some(ev) = self.flush_pending_event()? {
-                events.push(ev);
+            {
+                for ev in self.flush_pending_events()? {
+                    events.push(ev);
+                }
             }
             let _ = self.refresh_slot_metrics();
             if enable_sleep && i + 1 < ticks {
@@ -114,7 +116,7 @@ impl EtheanClient {
         self.flush_chain_persist();
         #[cfg(feature = "libp2p-quic")]
         {
-            if let Some(ev) = self.flush_pending_event()? {
+            for ev in self.flush_pending_events()? {
                 step_events.push(ev);
             }
         }
@@ -128,10 +130,10 @@ impl EtheanClient {
     }
 
     #[cfg(feature = "libp2p-quic")]
-    fn flush_pending_event(&mut self) -> Result<Option<ChainEvent>> {
+    fn flush_pending_events(&mut self) -> Result<Vec<ChainEvent>> {
         let Some(facade) = self.swarm.as_mut() else {
-            return Ok(None);
+            return Ok(Vec::new());
         };
-        crate::swarm_pump::flush_pending_event(facade, &mut self.owner)
+        crate::swarm_pump::flush_all_pending_gossip(facade, &mut self.owner)
     }
 }
