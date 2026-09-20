@@ -15,6 +15,8 @@ Confirmed vectors:
 
 - `test_aggregated_attestation_head_slot_mismatch_rejected` → `HEAD_SLOT_MISMATCH`
 - `test_gossip_aggregated_attestation_empty_participants_rejected` → `EMPTY_AGGREGATION_BITS`
+- `test_valid_gossip_aggregated_attestation` → accept (≥1 attestation ingest)
+- `test_block_includes_genesis_self_vote` → imports with body attestation
 
 ## Recipe
 
@@ -27,6 +29,6 @@ cargo test -p ethean-spec-fixtures --lib fc_runner
 
 | Gap | Notes |
 | --- | --- |
-| Broader gossip-aggregate suite (disparity / valid accept) | Expand case-by-case |
+| Broader gossip-aggregate suite (disparity / valid accept) | Valid accept landed; disparity cases still selective |
 | Finality / reorg / LMD FC suites | Decode + steps mostly ready |
 | STF runner / Hive image / A2/A3 / leanVM / bigint | External or separate tracks |
