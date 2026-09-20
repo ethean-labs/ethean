@@ -16,6 +16,7 @@ On wall ticks with interval `1`, an installed attester signs attestation-data
 
 ## Still open
 
-- Propose only when `slot % n` matches an owned index
 - Replace interim XMSS-as-proof with real leanVM Type-1 for gossip
 - Upstream ethereum/hive `clients/ethean`
+- Propose only when `slot % n` matches an owned index — **landed**
+  (see [`owned-index-proposer-gate-2026-09-20.md`](../docs/owned-index-proposer-gate-2026-09-20.md))

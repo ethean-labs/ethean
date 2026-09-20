@@ -78,6 +78,7 @@ Planning session summaries:
 - [Hive config.yaml / validators.yaml consume](./hive-lean-config-consume-2026-09-20.md)
 - [Registry privkey load](./registry-privkey-load-2026-09-20.md)
 - [Local attester duty wiring](./local-attester-duty-2026-09-20.md)
+- [Owned-index proposer gate](./owned-index-proposer-gate-2026-09-20.md)
 - [Gossipsub mesh on QuicSwarm](./gossipsub-quic-mesh-2026-09-19.md)
 - [Gossip ingest and peer score feedback](./gossip-ingest-peer-score-2026-09-19.md)
 - [SSZ gossip decode into ImportBlock](./ssz-gossip-import-block-2026-09-19.md)
