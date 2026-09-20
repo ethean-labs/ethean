@@ -32,4 +32,4 @@ cargo test -p ethean-network --lib collect_ --features libp2p-quic
 | Gap | Notes |
 | --- | --- |
 | Slot index table for faster seed | Full blob decode at boot remains |
-| Grafana panels for range-serve row | Optional next |
+| Grafana panels for range-serve row | Done — [grafana-range-serve-seed-panels-2026-09-20.md](./grafana-range-serve-seed-panels-2026-09-20.md) |
