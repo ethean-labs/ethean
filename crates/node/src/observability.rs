@@ -1,8 +1,8 @@
 //! Metrics registry and Lean RPC smoke helpers for the node process.
 
 use ethean_metrics::{
-    ensure_core_families, record_readiness_gauges, record_role_gauges, record_slot_gauges,
-    set_ready, MetricsError, Readiness, Registry, SharedRegistry,
+    ensure_core_families, record_bootnode_count, record_readiness_gauges, record_role_gauges,
+    record_slot_gauges, set_ready, MetricsError, Readiness, Registry, SharedRegistry,
 };
 use ethean_rpc::{dispatch, BindScope, IncomingRequest, Route, RpcError};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -141,6 +141,12 @@ impl NodeObservability {
         self.registry.with_mut(|reg| {
             record_readiness_gauges(reg, r.storage, r.crypto, r.signer, r.network, r.prover)
         })
+    }
+
+    /// How many bootnode multiaddrs were configured for this process.
+    pub fn record_bootnodes(&mut self, bootnode_count: u64) -> Result<(), MetricsError> {
+        self.registry
+            .with_mut(|reg| record_bootnode_count(reg, bootnode_count))
     }
 }
 
