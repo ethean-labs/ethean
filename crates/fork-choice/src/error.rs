@@ -53,6 +53,9 @@ pub enum ForkChoiceError {
     #[error("duplicate AttestationData in block body")]
     DuplicateAttestationData,
 
+    #[error("aggregated attestation has no participants")]
+    EmptyAggregationBits,
+
     #[error("missing block or state for root")]
     MissingBlockOrState,
 
