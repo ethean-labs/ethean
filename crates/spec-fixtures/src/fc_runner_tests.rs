@@ -56,6 +56,7 @@ fn runs_one_past_horizon_after_tick() {
     let reports = run_fork_choice_file(&bytes).unwrap();
     assert_eq!(reports[0].1.ticks, 1);
     assert_eq!(reports[0].1.rejections, 1);
+    assert!(reports[0].1.assertions >= 1);
 }
 
 #[test]
