@@ -51,5 +51,7 @@ pub fn create_store(
         block_states,
         latest_new_attestations: std::collections::HashMap::new(),
         latest_known_attestations: std::collections::HashMap::new(),
+        latest_new_payloads: std::collections::HashMap::new(),
+        latest_known_payloads: std::collections::HashMap::new(),
     })
 }
