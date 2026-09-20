@@ -40,6 +40,8 @@ pub struct EtheanClient {
     pub(crate) swarm: Option<crate::network::SwarmFacade>,
     /// When set, flush head snapshots under this directory after duty steps.
     pub(crate) persist_dir: Option<std::path::PathBuf>,
+    /// Bootnode multiaddrs configured for this start (Grafana mesh expectation).
+    pub(crate) bootnode_count: u64,
 }
 
 impl EtheanClient {
@@ -101,6 +103,7 @@ impl EtheanClient {
             #[cfg(feature = "libp2p-quic")]
             swarm: None,
             persist_dir: None,
+            bootnode_count: 0,
         })
     }
 
@@ -193,6 +196,7 @@ impl EtheanClient {
     /// Verify schema, smoke health, run the configured duty loop, record metrics.
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
         self.apply_local_roles(cfg.roles);
+        self.bootnode_count = cfg.network.bootnodes.len() as u64;
         if let Some(ref metrics) = cfg.metrics {
             let bound = ethean_metrics::spawn_metrics_server(
                 metrics.addr,
