@@ -81,6 +81,7 @@ Planning session summaries:
 - [Peer storage vs Ethean JSON snapshots](./peer-clients-storage-vs-ethean-json-2026-09-20.md)
 - [Durable data-dir: genesis.json, SSZ, ethean.redb](./ethean-redb-ssz-data-dir-2026-09-20.md)
 - [Data-dir process logs](./ethean-data-dir-run-logs-2026-09-20.md)
+- [Console log colors](./ethean-console-log-colors-2026-09-20.md)
 - [--reset-chain empties data-dir](./reset-chain-wipes-data-dir-2026-09-20.md)
 - [Dual mode: durable data-dir + ephemeral smoke](./dual-mode-persist-and-ephemeral-2026-09-20.md)
 - [Recommended test baseline (Ream ops + ethlambda)](./recommend-test-baseline-ream-ethlambda-2026-09-20.md)
