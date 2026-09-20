@@ -19,6 +19,7 @@ clap = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+nu-ansi-term = "0.46"
 
 [features]
 # Default enables QUIC so `ethean start --bootnodes …` can dial pq-devnet peers.
