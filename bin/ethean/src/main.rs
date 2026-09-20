@@ -4,6 +4,7 @@ mod banner;
 mod banner_art;
 mod console_fmt;
 mod file_log;
+mod lean_assets;
 mod log_filter;
 mod observability;
 
@@ -128,18 +129,8 @@ async fn main() -> Result<()> {
                     admin_token: http_admin_token,
                 })
             };
-            if let Some(ref registry_path) = validator_registry {
-                let assignment = ethean_node::load_validator_assignment(
-                    std::path::Path::new(registry_path),
-                    &node_id,
-                )?;
-                info!(
-                    node_id = %assignment.node_id,
-                    indices = ?assignment.indices,
-                    path = %registry_path,
-                    "loaded validator registry assignment"
-                );
-            }
+            let registry_keys =
+                lean_assets::load_optional_registry(validator_registry.as_deref(), &node_id)?;
             info!(
                 ticks,
                 wall_clock,
@@ -201,6 +192,8 @@ async fn main() -> Result<()> {
             } else {
                 EtheanClient::open_data_dir_with_roles(data_dir.as_deref().unwrap(), roles).await?
             };
+            let mut client = client;
+            lean_assets::apply_registry_keys(&mut client, registry_keys.as_ref());
             let cfg = if until_signal {
                 StartConfig::until_signal(true)
             } else if wall_clock {
