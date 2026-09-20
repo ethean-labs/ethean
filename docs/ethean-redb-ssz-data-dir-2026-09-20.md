@@ -12,8 +12,10 @@
 | `head.root` | 32-byte head root as hex |
 | `blocks/<root>.ssz` | Signed block payload when a proposal is flushed |
 | `ethean.redb` | Local KV: schema, genesis SSZ, head root, states, blocks |
+| `log/ethean-YYYY-MM-DD-HHMMSS-log` | Process tracing for that start (stdout still prints) |
 
-`--reset-chain` deletes this set (and leftover `genesis_pin.json` / `head_snap.json`).
+`--reset-chain` deletes chain files (and leftover `genesis_pin.json` / `head_snap.json`).
+It does **not** delete `log/`.
 
 Resume order: `ethean.redb` → `state.ssz` + `head.root` → legacy JSON snapshot.
 
@@ -30,3 +32,4 @@ are the durable store.
 - `crates/node/src/persist_ssz.rs` — SSZ files
 - `crates/node/src/chain_redb.rs` — `ethean.redb`
 - `crates/node/src/chain_persist.rs` — open / flush / restore
+- `bin/ethean/src/file_log.rs` — dated `log/ethean-*-log` files
