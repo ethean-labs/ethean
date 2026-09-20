@@ -88,13 +88,16 @@ async fn main() -> Result<()> {
             http_port,
             http_admin_token,
             listen_port,
+            lean_config,
+            validator_registry,
+            node_id,
         } => {
             let network = NetworkTarget::from_cli(
                 &network,
                 bootnodes.as_deref(),
                 fork_digest.as_deref(),
             )?;
-            let roles = LocalRoles {
+            let mut roles = LocalRoles {
                 validators: validators.max(1),
                 is_aggregator: !no_aggregator,
                 local_finality: !no_local_finality,
@@ -125,6 +128,18 @@ async fn main() -> Result<()> {
                     admin_token: http_admin_token,
                 })
             };
+            if let Some(ref registry_path) = validator_registry {
+                let assignment = ethean_node::load_validator_assignment(
+                    std::path::Path::new(registry_path),
+                    &node_id,
+                )?;
+                info!(
+                    node_id = %assignment.node_id,
+                    indices = ?assignment.indices,
+                    path = %registry_path,
+                    "loaded validator registry assignment"
+                );
+            }
             info!(
                 ticks,
                 wall_clock,
@@ -148,6 +163,8 @@ async fn main() -> Result<()> {
                 http_address = http_address.as_str(),
                 http_port,
                 listen_port,
+                lean_config = lean_config.as_deref().unwrap_or(""),
+                node_id = node_id.as_str(),
                 "Starting lean consensus node"
             );
             if ephemeral && data_dir.is_some() {
@@ -162,7 +179,24 @@ async fn main() -> Result<()> {
                     info!("data-dir emptied before this start (--reset-chain)");
                 }
             }
-            let client = if ephemeral || data_dir.is_none() {
+            let client = if let Some(ref cfg_path) = lean_config {
+                let lean = ethean_node::load_lean_network_config(std::path::Path::new(cfg_path))?;
+                roles.validators = lean.validators.len().max(1);
+                info!(
+                    path = %cfg_path,
+                    genesis_time = lean.genesis_time,
+                    validators = lean.validators.len(),
+                    attestation_committee_count = lean.attestation_committee_count,
+                    "loaded Lean network config.yaml genesis"
+                );
+                let built = ethean_node::GenesisBuilder::new(lean.genesis_time)
+                    .with_validator_keys(lean.validators)
+                    .build()?;
+                let profile = ethean_node::lstar_devnet()?;
+                let mut client = EtheanClient::with_genesis(profile, built.state).await?;
+                client.apply_local_roles(roles);
+                client
+            } else if ephemeral || data_dir.is_none() {
                 EtheanClient::with_local_roles(roles).await?
             } else {
                 EtheanClient::open_data_dir_with_roles(data_dir.as_deref().unwrap(), roles).await?
