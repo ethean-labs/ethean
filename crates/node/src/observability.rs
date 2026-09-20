@@ -1,9 +1,9 @@
 //! Metrics registry and Lean RPC smoke helpers for the node process.
 
 use ethean_metrics::{
-    ensure_core_families, record_bootnode_count, record_durable_persist, record_readiness_gauges,
-    record_role_gauges, record_slot_gauges, set_ready, MetricsError, Readiness, Registry,
-    SharedRegistry,
+    ensure_core_families, record_bootnode_count, record_durable_persist, record_range_serve,
+    record_readiness_gauges, record_role_gauges, record_serve_cache_seed, record_slot_gauges,
+    set_ready, MetricsError, Readiness, Registry, SharedRegistry,
 };
 use ethean_rpc::{dispatch, BindScope, IncomingRequest, Route, RpcError};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -169,6 +169,27 @@ impl NodeObservability {
                 keep_slots,
             )
         })
+    }
+
+    /// Mirror QuicSwarm blocks-by-range serve atomics into Prometheus.
+    pub fn record_range_serve(
+        &mut self,
+        found_total: u64,
+        missing_total: u64,
+        cache_slots: u64,
+    ) -> Result<(), MetricsError> {
+        self.registry
+            .with_mut(|reg| record_range_serve(reg, found_total, missing_total, cache_slots))
+    }
+
+    /// Record durable serve-cache seed counts from boot.
+    pub fn record_serve_cache_seed(
+        &mut self,
+        candidates: u64,
+        indexed: u64,
+    ) -> Result<(), MetricsError> {
+        self.registry
+            .with_mut(|reg| record_serve_cache_seed(reg, candidates, indexed))
     }
 }
 
