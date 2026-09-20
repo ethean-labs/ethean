@@ -29,5 +29,6 @@ cargo test -p ethean-node --lib serve_cache_seed
 ## Follow-ups
 
 - Slot index table for faster range walks (today: full blob decode at seed)
-- Metric for indexed count on scrape
+- Metric for indexed count on scrape — **landed**
+  ([range-serve-seed-metrics-2026-09-20.md](./range-serve-seed-metrics-2026-09-20.md))
 - Operator A2/A3 still required for a live mesh
