@@ -57,6 +57,15 @@ impl LeanSigGate {
     pub fn ready(self) -> bool {
         self.feature_enabled
     }
+
+    /// Human-readable gap when production leanSig cannot serve peer verify.
+    pub fn refuse_reason(self) -> Option<&'static str> {
+        if self.ready() {
+            None
+        } else {
+            Some("leansig-backend feature disabled; refuse always-true XMSS verify")
+        }
+    }
 }
 
 impl LeanVmGate {
@@ -140,6 +149,7 @@ mod tests {
         let s = LeanSigGate::probe();
         assert_eq!(s.pinned_rev.len(), 40);
         assert!(!s.ready());
+        assert!(s.refuse_reason().is_some());
     }
 
     #[cfg(feature = "leanvm-backend")]
