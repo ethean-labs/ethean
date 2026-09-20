@@ -2,7 +2,6 @@
 
 use crate::chain_owner::ChainOwner;
 use crate::events::ChainEvent;
-use ethean_network::SMOKE_ATTESTATION_SUBNETS;
 use ethean_primitives::Hash32;
 use ethean_validator::{run_aggregator, AggregatorOutcome, AggregatorPlan, DutyTick};
 
@@ -16,6 +15,15 @@ fn provisional_subnet(message_root: Hash32, subnet_count: u16) -> u16 {
     (u64::from_be_bytes(buf) % u64::from(subnet_count.max(1))) as u16
 }
 
+/// Subnet count from the pinned profile (Hive ACC), defaulting to 1.
+fn profile_subnet_count(owner: &ChainOwner) -> u16 {
+    owner
+        .profile
+        .as_ref()
+        .map(|p| p.attestation_subnet_count())
+        .unwrap_or(1)
+}
+
 /// Evaluate aggregator readiness for each retained pool key on this tick.
 pub fn evaluate_aggregator_duties(
     owner: &ChainOwner,
@@ -26,12 +34,13 @@ pub fn evaluate_aggregator_duties(
         return Vec::new();
     }
     let view = owner.snapshot(tick.slot, head_lag_slots).duty_view;
+    let subnets = profile_subnet_count(owner);
     let mut out = Vec::new();
     for (key, entry) in owner.aggregates.best_entries() {
         let plan = AggregatorPlan {
             tick,
             data_root: key.message_root,
-            subnet: provisional_subnet(key.message_root, SMOKE_ATTESTATION_SUBNETS),
+            subnet: provisional_subnet(key.message_root, subnets),
             coverage: entry.coverage.max(1),
             min_coverage: MIN_AGGREGATOR_COVERAGE,
         };
