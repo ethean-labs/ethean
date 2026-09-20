@@ -57,6 +57,8 @@ pub struct ChainOwner {
     pub planned_tick: Option<DutyTick>,
     /// Encoded SignedBlock waiting for network gossip publish.
     pub pending_block_gossip: Option<ProposalGossip>,
+    /// Recently applied block SSZ blobs waiting for `--data-dir` flush.
+    pub durable_blocks: Vec<(Hash32, Vec<u8>)>,
     /// Encoded Type-1 aggregates waiting for `/aggregation/` / attestation publish.
     pub pending_aggregation_gossip: Vec<AggregationGossip>,
     /// Optional local proposal signer (test-hmac smoke key).
@@ -89,6 +91,7 @@ impl Default for ChainOwner {
             planned_proposal: None,
             planned_tick: None,
             pending_block_gossip: None,
+            durable_blocks: Vec::new(),
             pending_aggregation_gossip: Vec::new(),
             proposer: None,
             attester: None,
@@ -151,6 +154,31 @@ impl ChainOwner {
     /// Reject a worker result when generation or parent drifted.
     pub fn accept_result(&self, generation: u64, parent_root: Hash32) -> bool {
         generation == self.generation && parent_root == self.head_root
+    }
+
+    /// Queue a block blob for durable flush (capped; newest wins on duplicate root).
+    pub fn remember_durable_block(&mut self, root: Hash32, payload: Vec<u8>) {
+        const CAP: usize = 64;
+        if payload.is_empty() {
+            return;
+        }
+        if let Some(slot) = self
+            .durable_blocks
+            .iter()
+            .position(|(r, _)| *r == root)
+        {
+            self.durable_blocks[slot] = (root, payload);
+            return;
+        }
+        self.durable_blocks.push((root, payload));
+        while self.durable_blocks.len() > CAP {
+            self.durable_blocks.remove(0);
+        }
+    }
+
+    /// Drop queued durable blobs after a successful data-dir flush.
+    pub fn clear_durable_blocks(&mut self) {
+        self.durable_blocks.clear();
     }
 }
 
