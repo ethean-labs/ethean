@@ -2,6 +2,7 @@
 
 mod console_fmt;
 mod file_log;
+mod log_filter;
 mod observability;
 
 use clap::Parser;
@@ -17,6 +18,14 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+    let (verbose, log_level) = match &cli.command {
+        Command::Start {
+            verbose, log_level, ..
+        } => (*verbose, log_level.as_deref()),
+        _ => (0, None),
+    };
+    let filter = log_filter::build_filter(verbose, log_level)?;
+
     match &cli.command {
         Command::Start {
             data_dir,
@@ -33,9 +42,9 @@ async fn main() -> Result<()> {
                     }
                 }
             }
-            file_log::install(data_dir.as_deref(), *ephemeral)?;
+            file_log::install(data_dir.as_deref(), *ephemeral, filter)?;
         }
-        _ => file_log::install_stdout_only(),
+        _ => file_log::install_stdout_only(filter),
     }
 
     info!(
@@ -51,6 +60,8 @@ async fn main() -> Result<()> {
             data_dir,
             ephemeral,
             reset_chain,
+            verbose,
+            log_level,
             network,
             bootnodes,
             fork_digest,
@@ -96,6 +107,8 @@ async fn main() -> Result<()> {
                 ?data_dir,
                 ephemeral,
                 reset_chain,
+                verbose,
+                ?log_level,
                 network = network.id.as_str(),
                 bootnodes = network.bootnodes.len(),
                 fork_digest = network.fork_digest.as_deref().unwrap_or(""),
