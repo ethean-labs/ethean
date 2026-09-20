@@ -11,6 +11,14 @@ From the repository root:
 docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
 ```
 
+Optional production XMSS (needs vendor `[patch]` in the build context first):
+
+```bash
+docker build -f docker/hive/Dockerfile \
+  --build-arg CARGO_FEATURES=leansig-backend \
+  -t ethpandaops/ethean:local-leansig .
+```
+
 ## Entrypoint env (Lean simulator)
 
 | Variable | Mapping |
