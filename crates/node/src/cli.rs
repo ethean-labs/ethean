@@ -24,9 +24,15 @@ pub enum Command {
         /// Run until Ctrl-C (implies wall-clock sleeps). Long-run / Grafana path.
         #[arg(long, default_value_t = false)]
         until_signal: bool,
-        /// Path-backed store (requires `ethean-storage/rocksdb` feature on the build).
+        /// Path-backed durable mode: fixed genesis pin + head resume under this directory.
         #[arg(long)]
         data_dir: Option<String>,
+        /// Force ephemeral recent-genesis smoke (ignores --data-dir). Restarts start a new chain.
+        #[arg(long, default_value_t = false)]
+        ephemeral: bool,
+        /// Delete genesis_pin.json / head_snap.json under --data-dir before start (new fixed chain).
+        #[arg(long, default_value_t = false)]
+        reset_chain: bool,
         /// Network label (default: pq-devnet-4). Use `pq-devnet-5` when operator mesh is up; `local` for smoke-only.
         #[arg(long, default_value = "pq-devnet-4")]
         network: String,
