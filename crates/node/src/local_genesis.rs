@@ -20,8 +20,18 @@ pub fn local_devnet_genesis(
     validator_count: usize,
     seconds_per_slot: u64,
 ) -> Result<BuiltGenesis, GenesisError> {
-    let n = validator_count.max(1);
     let genesis_time = recent_genesis_time_secs(4, seconds_per_slot);
+    fixed_devnet_genesis(validator_count, genesis_time)
+}
+
+/// Same registry shape as [`local_devnet_genesis`], but with a caller-fixed time.
+///
+/// Used by `--data-dir` so restarts keep the same chain identity.
+pub fn fixed_devnet_genesis(
+    validator_count: usize,
+    genesis_time: u64,
+) -> Result<BuiltGenesis, GenesisError> {
+    let n = validator_count.max(1);
     let mut builder = GenesisBuilder::new(genesis_time);
     for _ in 0..n {
         builder = builder.push_validator(Bytes52::ZERO, Bytes52::ZERO);
@@ -42,5 +52,12 @@ mod tests {
             .unwrap()
             .as_secs();
         assert!(g.state.config.genesis_time + 120 >= now);
+    }
+
+    #[test]
+    fn fixed_time_is_stable() {
+        let g = fixed_devnet_genesis(4, 1_700_000_000).unwrap();
+        assert_eq!(g.state.config.genesis_time, 1_700_000_000);
+        assert_eq!(g.state.validators.len(), 4);
     }
 }
