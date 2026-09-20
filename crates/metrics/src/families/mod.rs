@@ -16,6 +16,10 @@ pub mod network {
 
 pub mod storage {
     pub const SYNC_LAG: &str = "sync_lag_slots";
+    pub const DURABLE_BLOCKS_FLUSHED: &str = "durable_blocks_flushed_total";
+    pub const DURABLE_BLOCKS_PRUNED_FILES: &str = "durable_blocks_pruned_files_total";
+    pub const DURABLE_BLOCKS_PRUNED_REDB: &str = "durable_blocks_pruned_redb_total";
+    pub const DURABLE_BLOCKS_PRUNE_FLOOR: &str = "durable_blocks_prune_floor_slot";
 }
 
 pub mod validator {
