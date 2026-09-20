@@ -63,6 +63,10 @@ pub enum ChainEvent {
         root: Hash32,
         /// Proof byte length.
         proof_len: usize,
+        /// Body attestations that already had Type-1 proofs in the pool.
+        type1_hits: u32,
+        /// Body attestation count that needed Type-1 cache coverage.
+        type1_needed: u32,
     },
     /// Aggregator duty saw enough pool coverage to dispatch Type-1 prove.
     AggregatorReady {
