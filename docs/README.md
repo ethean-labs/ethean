@@ -9,7 +9,8 @@ Root README companion guides (short landing page + detail): [readme/README.md](.
 [readme-companion-guides-2026-09-20.md](./readme-companion-guides-2026-09-20.md),
 [readme-overview-architecture-2026-09-20.md](./readme-overview-architecture-2026-09-20.md),
 [readme-overview-expanded-2026-09-20.md](./readme-overview-expanded-2026-09-20.md),
-[readme-header-nav-2026-09-20.md](./readme-header-nav-2026-09-20.md).
+[readme-header-nav-2026-09-20.md](./readme-header-nav-2026-09-20.md),
+[readme-peer-wording-2026-09-20.md](./readme-peer-wording-2026-09-20.md).
 
 Contributor guide (root): [../CONTRIBUTING.md](../CONTRIBUTING.md). Session note: [contributing-guide-2026-09-20.md](./contributing-guide-2026-09-20.md).
 
