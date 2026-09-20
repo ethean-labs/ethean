@@ -30,5 +30,5 @@ cargo test -p ethean-spec-fixtures --lib fc_runner
 | Gap | Notes |
 | --- | --- |
 | Broader gossip-aggregate suite (disparity / valid accept) | Valid accept landed; disparity cases still selective |
-| Finality / reorg / LMD FC suites | Decode + steps mostly ready |
+| Finality / reorg / LMD FC suites | Partial — see [leanspec-fc-finality-reorg-lmd-2026-09-20.md](./leanspec-fc-finality-reorg-lmd-2026-09-20.md) |
 | STF runner / Hive image / A2/A3 / leanVM / bigint | External or separate tracks |
