@@ -17,6 +17,7 @@ members = [
     "crates/rpc",
     "crates/metrics",
     "bin/ethean",
+    "bin/ethean-leanvm-mock",
 ]
 resolver = "2"
 
