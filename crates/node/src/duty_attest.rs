@@ -91,8 +91,9 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
     owner.aggregates.insert_verified(
         key,
         PoolEntry {
-            // Individual XMSS sig stands in until leanVM Type-1 prove fills a real proof.
-            proof: sig.clone(),
+            // Empty until leanVM / test-aggregate Type-1 prove fills a real proof.
+            // Never stuff individual XMSS signatures into the aggregate proof field.
+            proof: Vec::new(),
             coverage: 1,
             inserted_slot: tick.slot.get(),
             attestation_ssz,
@@ -154,6 +155,11 @@ mod tests {
         let ev = try_local_attest(&mut owner, tick);
         assert_eq!(ev.len(), 1);
         assert!(!owner.aggregates.is_empty());
+        let key = owner.aggregates.best_entries()[0].0;
+        assert!(
+            owner.aggregates.best(&key).unwrap().proof.is_empty(),
+            "XMSS must not stand in as Type-1 proof"
+        );
         let _ = HASH32_ZERO;
     }
 }
