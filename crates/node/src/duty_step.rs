@@ -66,6 +66,7 @@ pub fn apply_wall_step(
                 }
             }
             events.extend(ready);
+            events.extend(crate::duty_attest::try_local_attest(owner, tick));
             events.extend(try_plan_proposal(owner, tick));
         }
     }
