@@ -31,5 +31,5 @@ Split payload-pool snapshot helpers into `fc_snapshot_payloads.rs`
 
 ## Still open
 
-- `finalized_safety` fork-above / heavier-below weight gaps (`want 0 got 6`)
-- Wire live `safe_target` / `reorg_total` into node metrics
+- Regenerate filled `at_9` / `dead_9` bodies (see finalized_safety empty-body gate)
+- Live `ForkChoiceStore.safe_target` / `reorg_total` inside the node

@@ -18,16 +18,16 @@ New module `fc_runner_extra_tests.rs` (cache-gated):
 | attestation_source_divergence | honest head-chain source; justified self-heal |
 | fork_choice_reorgs | newly justified reorg; deep chain-split depth |
 | checkpoint_sync | non-genesis anchor consistent |
-| finalized_safety | `losing_fork_higher_finalized_does_not_latch` |
+| finalized_safety | losing latch; fork-above wins; heavier-below never wins |
 
-`ethean-spec-fixtures` lib: **54** green (was 42).
+`ethean-spec-fixtures` lib: **58** green (was 54).
 
 ## Still open
 
 | Gap | Notes |
 | --- | --- |
-| `test_fork_above_finalized_wins…` / `heavier_fork_below…` | `blockWeights` want 0 got 6 (`at_9` empty body vs 7-vote snapshot) |
-| Node metrics | publish store `reorg_total` / real safe-target |
+| Filled `at_9` / `dead_9` empty bodies | Python BlockSpec has 7 votes; JSON body empty — weight dumps gated; see [empty-body gate](./leanspec-fc-finalized-safety-empty-body-gate-2026-09-20.md) |
+| Node metrics | live FC `safe_target` / `reorg_total` (justified used as safe stand-in) |
 
 Tick interval-0 acceptance is green — see
 [leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md](./leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md).
