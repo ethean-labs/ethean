@@ -19,7 +19,7 @@
         "overrides": []
       },
       "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" },
-      "targets": [{ "expr": "ethean_start_time_seconds", "legendFormat": "start", "refId": "A" }]
+      "targets": [{ "expr": "ethean_start_time_seconds * 1000", "legendFormat": "start", "refId": "A" }]
     },
     {
       "type": "stat", "id": 2, "title": "Validators",
@@ -69,12 +69,12 @@
     },
     {
       "type": "stat", "id": 5, "title": "Peers",
-      "gridPos": { "h": 4, "w": 3, "x": 13, "y": 0 },
+      "gridPos": { "h": 4, "w": 2, "x": 13, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 1 }, { "color": "green", "value": 2 }] }
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }, { "color": "green", "value": 1 }] }
         },
         "overrides": []
       },
@@ -82,8 +82,22 @@
       "targets": [{ "expr": "ethean_peer_count", "refId": "A" }]
     },
     {
+      "type": "stat", "id": 14, "title": "Bootnodes",
+      "gridPos": { "h": 4, "w": 2, "x": 15, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_bootnode_count", "refId": "A" }]
+    },
+    {
       "type": "stat", "id": 6, "title": "Ready",
-      "gridPos": { "h": 4, "w": 2, "x": 16, "y": 0 },
+      "gridPos": { "h": 4, "w": 2, "x": 17, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -99,7 +113,7 @@
     },
     {
       "type": "stat", "id": 7, "title": "Seconds / slot",
-      "gridPos": { "h": 4, "w": 3, "x": 18, "y": 0 },
+      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "semi-dark-green" } }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
@@ -250,14 +264,14 @@
         },
         "overrides": []
       },
-      "targets": [{ "expr": "ethean_genesis_time_seconds", "legendFormat": "genesis", "refId": "A" }]
+      "targets": [{ "expr": "ethean_genesis_time_seconds * 1000", "legendFormat": "genesis", "refId": "A" }]
     },
     {
       "type": "table", "id": 31, "title": "Node info",
       "gridPos": { "h": 6, "w": 12, "x": 12, "y": 16 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "options": { "showHeader": true },
-      "targets": [{ "expr": "ethean_build_info", "format": "table", "instant": true, "refId": "A" }],
+      "targets": [{ "expr": "max by (version, schema, client, network, job, instance) (ethean_build_info)", "format": "table", "instant": true, "refId": "A" }],
       "transformations": [
         { "id": "labelsToFields", "options": {} },
         {
@@ -284,5 +298,5 @@
   "timezone": "browser",
   "title": "Ethean Lean Clients Dashboard",
   "uid": "ethean-lean-clients",
-  "version": 2
+  "version": 3
 }
