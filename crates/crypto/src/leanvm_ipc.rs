@@ -1,15 +1,15 @@
 //! leanVM process-isolated prover IPC status (feature `leanvm-backend`).
 //!
-//! Phase 08 requires proving outside the chain-owner process. Frame codec is
-//! ready ([`crate::leanvm_ipc_frame`]); spawn stays fail-closed until a sandbox
-//! round-trip against the pinned leanVM rev lands.
+//! Frame codec + spawn exchange are wired. `protocol_ready` stays false until a
+//! pin-checked round-trip against a real leanVM binary succeeds in CI/ops.
 
-use crate::aggregation::AggregateStatement;
+use crate::aggregation::{AggregateStatement, LEANVM_REV};
 use crate::error::{CryptoError, Result};
-use crate::leanvm_ipc_frame::{IpcFrame, FRAME_CODEC_READY};
+use crate::leanvm_ipc_frame::{IpcFrame, IpcOp, FRAME_CODEC_READY};
+use crate::leanvm_ipc_spawn::{exchange_frame, SPAWN_EXCHANGE_WIRED, DEFAULT_IPC_WALL};
 use std::path::PathBuf;
 
-/// Env var naming a candidate leanVM prover executable (observability only today).
+/// Env var naming a candidate leanVM prover executable.
 pub const PROVER_ENV: &str = "ETHEAN_LEANVM_PROVER";
 
 /// Snapshot of process-prover wiring for gates / boot logs.
@@ -21,7 +21,9 @@ pub struct LeanVmIpcStatus {
     pub binary_present: bool,
     /// Versioned request/response frame codec is compiled in.
     pub frame_abi_ready: bool,
-    /// Framed prove/verify spawn + round-trip is implemented and version-checked.
+    /// Length-prefixed spawn exchange is compiled in (still fail-closed on bad peers).
+    pub spawn_exchange_wired: bool,
+    /// Live pin-checked round-trip against leanVM succeeded (ops/CI sets this path later).
     pub protocol_ready: bool,
 }
 
@@ -37,57 +39,120 @@ impl LeanVmIpcStatus {
             binary_path,
             binary_present,
             frame_abi_ready: FRAME_CODEC_READY,
-            // Flip only after spawn + round-trip against LEANVM_REV.
+            spawn_exchange_wired: SPAWN_EXCHANGE_WIRED,
+            // Flip only after a successful pin-checked round-trip in ops/CI.
             protocol_ready: false,
         }
     }
 
-    /// True when production IPC prove/verify may run.
+    /// True when production IPC prove/verify may be treated as green at boot.
     pub fn ready(&self) -> bool {
         self.binary_present && self.protocol_ready
     }
 }
 
-/// Prove via process IPC (fail closed until protocol_ready).
+/// Prove via process IPC (attempts spawn when binary present; fail-closed otherwise).
 pub fn prove_ipc(statement: &AggregateStatement) -> Result<Vec<u8>> {
     statement.validate_shape()?;
     let status = LeanVmIpcStatus::probe();
+    let Some(path) = status.binary_path.as_ref() else {
+        return Err(CryptoError::BackendUnavailable(
+            "leanVM prover binary not configured (set ETHEAN_LEANVM_PROVER)",
+        ));
+    };
     if !status.binary_present {
         return Err(CryptoError::BackendUnavailable(
             "leanVM prover binary not configured (set ETHEAN_LEANVM_PROVER)",
         ));
     }
-    // Always build the framed request so the statement wire path is exercised.
-    let _request = IpcFrame::prove_request(statement)?.encode()?;
-    if !status.protocol_ready {
+    if !status.spawn_exchange_wired {
         return Err(CryptoError::BackendUnavailable(
-            "leanVM IPC frame ready but spawn/round-trip not wired; refuse process spawn",
+            "leanVM IPC spawn exchange not wired",
         ));
     }
-    Err(CryptoError::BackendUnavailable(
-        "leanVM IPC protocol_ready but prove handler not wired",
-    ))
+    let request = IpcFrame::prove_request(statement)?;
+    let response = exchange_frame(path, &request, DEFAULT_IPC_WALL)?;
+    accept_prove_response(&request, response)
 }
 
-/// Verify via process IPC (fail closed until protocol_ready).
+/// Verify via process IPC (attempts spawn when binary present; fail-closed otherwise).
 pub fn verify_ipc(statement: &AggregateStatement, proof: &[u8]) -> Result<bool> {
     statement.validate_shape()?;
     let status = LeanVmIpcStatus::probe();
-    let _request = IpcFrame::verify_request(statement, proof)?.encode()?;
-    if !status.ready() {
+    let Some(path) = status.binary_path.as_ref() else {
+        return Err(CryptoError::BackendUnavailable(
+            "leanVM IPC not ready; refuse always-true verify",
+        ));
+    };
+    if !status.binary_present || !status.spawn_exchange_wired {
         return Err(CryptoError::BackendUnavailable(
             "leanVM IPC not ready; refuse always-true verify",
         ));
     }
-    Err(CryptoError::BackendUnavailable(
-        "leanVM IPC protocol_ready but verify handler not wired",
-    ))
+    let request = IpcFrame::verify_request(statement, proof)?;
+    let response = exchange_frame(path, &request, DEFAULT_IPC_WALL)?;
+    accept_verify_response(&request, response)
+}
+
+fn accept_prove_response(request: &IpcFrame, response: IpcFrame) -> Result<Vec<u8>> {
+    if response.op != IpcOp::ProveResponse {
+        return Err(CryptoError::InvalidAggregate(
+            "leanVM IPC expected ProveResponse".into(),
+        ));
+    }
+    if response.pin_rev != LEANVM_REV {
+        return Err(CryptoError::InvalidAggregate(
+            "leanVM IPC prove response pin mismatch".into(),
+        ));
+    }
+    if response.statement != request.statement {
+        return Err(CryptoError::InvalidAggregate(
+            "leanVM IPC prove response statement mismatch".into(),
+        ));
+    }
+    if !response.ok || response.proof.is_empty() {
+        return Err(CryptoError::InvalidAggregate(
+            "leanVM IPC prove response not ok or empty proof".into(),
+        ));
+    }
+    Ok(response.proof)
+}
+
+fn accept_verify_response(request: &IpcFrame, response: IpcFrame) -> Result<bool> {
+    if response.op != IpcOp::VerifyResponse {
+        return Err(CryptoError::InvalidAggregate(
+            "leanVM IPC expected VerifyResponse".into(),
+        ));
+    }
+    if response.pin_rev != LEANVM_REV {
+        return Err(CryptoError::InvalidAggregate(
+            "leanVM IPC verify response pin mismatch".into(),
+        ));
+    }
+    if response.statement != request.statement || response.proof != request.proof {
+        return Err(CryptoError::InvalidAggregate(
+            "leanVM IPC verify response binding mismatch".into(),
+        ));
+    }
+    Ok(response.ok)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::aggregation::{ParticipantSet, ProofKind};
+    use crate::leanvm_ipc_frame::IpcOp;
+
+    fn sample() -> AggregateStatement {
+        AggregateStatement {
+            kind: ProofKind::Type1,
+            profile_digest: [1u8; 32],
+            message_root: [2u8; 32],
+            slot: 1,
+            participants: ParticipantSet::try_from_ordered(vec![0]).unwrap(),
+            components: vec![],
+        }
+    }
 
     #[test]
     fn probe_without_env_is_not_ready() {
@@ -95,21 +160,34 @@ mod tests {
         let s = LeanVmIpcStatus::probe();
         assert!(!s.binary_present);
         assert!(s.frame_abi_ready);
+        assert!(s.spawn_exchange_wired);
         assert!(!s.protocol_ready);
         assert!(!s.ready());
     }
 
     #[test]
-    fn prove_ipc_fails_closed() {
+    fn prove_ipc_fails_closed_without_env() {
         std::env::remove_var(PROVER_ENV);
-        let statement = AggregateStatement {
-            kind: ProofKind::Type1,
-            profile_digest: [1u8; 32],
-            message_root: [2u8; 32],
-            slot: 1,
-            participants: ParticipantSet::try_from_ordered(vec![0]).unwrap(),
-            components: vec![],
+        assert!(prove_ipc(&sample()).is_err());
+    }
+
+    #[test]
+    fn accept_prove_response_checks_pin_and_op() {
+        let req = IpcFrame::prove_request(&sample()).unwrap();
+        let mut bad = req.clone();
+        bad.op = IpcOp::ProveResponse;
+        bad.ok = true;
+        bad.proof = vec![1];
+        bad.pin_rev = "0".repeat(40);
+        assert!(accept_prove_response(&req, bad).is_err());
+
+        let good = IpcFrame {
+            op: IpcOp::ProveResponse,
+            pin_rev: LEANVM_REV.to_string(),
+            statement: req.statement.clone(),
+            proof: vec![9, 9],
+            ok: true,
         };
-        assert!(prove_ipc(&statement).is_err());
+        assert_eq!(accept_prove_response(&req, good).unwrap(), vec![9, 9]);
     }
 }
