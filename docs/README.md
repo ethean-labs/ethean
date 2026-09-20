@@ -73,6 +73,7 @@ Planning session summaries:
 - [leanSpec FC blockWeights snapshot](./leanspec-fc-block-weights-snapshot-2026-09-20.md)
 - [leanSpec FC aggregated payload pools](./leanspec-fc-payload-pools-snapshot-2026-09-20.md)
 - [Hive client Docker scaffold](./hive-client-docker-scaffold-2026-09-20.md)
+- [Lean HTTP API on :5052](./lean-http-api-5052-2026-09-20.md)
 - [Gossipsub mesh on QuicSwarm](./gossipsub-quic-mesh-2026-09-19.md)
 - [Gossip ingest and peer score feedback](./gossip-ingest-peer-score-2026-09-19.md)
 - [SSZ gossip decode into ImportBlock](./ssz-gossip-import-block-2026-09-19.md)
