@@ -44,6 +44,18 @@ impl EtheanClient {
                 0u64
             }
         };
+        let validators = self
+            .owner
+            .head_state
+            .as_ref()
+            .map(|s| s.validators.len() as u64)
+            .unwrap_or(self.genesis.validators.len() as u64);
+        let genesis_time = self
+            .owner
+            .head_state
+            .as_ref()
+            .map(|s| s.genesis_time())
+            .unwrap_or_else(|| self.genesis.genesis_time());
         self.observability.record_slots(
             head_slot,
             justified,
@@ -52,6 +64,14 @@ impl EtheanClient {
             self.sync.lag(),
             peers,
         )?;
+        self.observability.record_roles(
+            validators,
+            self.owner.is_aggregator,
+            self.owner.local_finality,
+            genesis_time,
+            self.profile.seconds_per_slot as u64,
+        )?;
+        self.observability.record_readiness_bits()?;
         self.observability.refresh_ready_gauge()?;
         debug!(
             head_slot,
@@ -59,6 +79,7 @@ impl EtheanClient {
             finalized,
             current,
             peers,
+            validators,
             "metrics slot snapshot"
         );
         Ok(())
