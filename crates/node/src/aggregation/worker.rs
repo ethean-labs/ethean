@@ -22,7 +22,10 @@ pub enum ProverOutcome {
     Failed(String),
 }
 
-/// Synchronous worker used until a dedicated process exists.
+/// Synchronous worker used until a dedicated process owns long proves.
+///
+/// Routes through [`ethean_crypto::prove_type1`] / [`prove_type2`], which prefer
+/// process IPC when `ETHEAN_LEANVM_PROVER` points at an existing binary.
 ///
 /// Chain owner must not call this on the tick path without a timeout wrapper.
 #[derive(Debug, Default)]
