@@ -11,6 +11,10 @@ use std::io::{self, Write};
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    // Defense in depth: never re-enter process IPC from inside the mock.
+    std::env::remove_var("ETHEAN_LEANVM_PROVER");
+    std::env::remove_var("ETHEAN_LEANVM_IPC_PROBE");
+    std::env::set_var("ETHEAN_LEANVM_IPC_SERVING", "1");
     match serve_once() {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
