@@ -13,6 +13,7 @@ impl EtheanClient {
     pub(crate) async fn boot_gates(
         &mut self,
         network: &crate::network_target::NetworkTarget,
+        listen_port: u16,
     ) -> Result<()> {
         self.db.verify_schema()?;
         self.observability.mark_storage_ok();
@@ -104,7 +105,9 @@ impl EtheanClient {
             );
         }
 
-        let (_port, swarm) = crate::boot_network::prepare_boot_network(&fork_segment).await?;
+        let (_port, swarm) =
+            crate::boot_network::prepare_boot_network(&fork_segment, listen_port).await?;
+        info!(listen_port = _port, "network listen port ready");
         #[cfg(feature = "libp2p-quic")]
         {
             self.swarm = swarm;

@@ -222,7 +222,7 @@ impl EtheanClient {
             self.api = Some(state);
             info!(%bound, "Lean HTTP API ready");
         }
-        self.boot_gates(&cfg.network).await?;
+        self.boot_gates(&cfg.network, cfg.listen_port).await?;
         self.refresh_slot_metrics()?;
         #[cfg(feature = "libp2p-quic")]
         {
