@@ -90,6 +90,15 @@ pub enum Command {
         /// UDP/QUIC listen port (default 9000; `0` = OS ephemeral).
         #[arg(long, default_value_t = 9000)]
         listen_port: u16,
+        /// Path to Lean Hive / quickstart `config.yaml` (GENESIS_TIME + GENESIS_VALIDATORS).
+        #[arg(long = "lean-config", value_name = "PATH")]
+        lean_config: Option<String>,
+        /// Path to `validators.yaml` (node id → validator index assignments).
+        #[arg(long = "validator-registry", value_name = "PATH")]
+        validator_registry: Option<String>,
+        /// Node id used with `--validator-registry` (e.g. `ethean_0`).
+        #[arg(long = "node-id", default_value = "ethean_0")]
+        node_id: String,
     },
     /// Start the validator client
     Validator,
