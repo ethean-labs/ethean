@@ -22,3 +22,19 @@ groups:
           severity: warning
         annotations:
           summary: Prover wall-time timeouts observed
+      # Durable --data-dir only: keep gauge is set after the first flush.
+      - alert: EtheanDurablePruneStall
+        expr: |
+          ethean_durable_blocks_prune_keep_slots > 0
+          and (ethean_finalized_slot - ethean_durable_blocks_prune_keep_slots)
+              > ethean_durable_blocks_prune_floor_slot
+          and increase(ethean_finalized_slot[15m]) > 0
+          and increase(ethean_durable_blocks_prune_floor_slot[15m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Finalized climbing but durable prune floor is stuck
+          description: >
+            Prune floor should track finalized minus keep window under --data-dir.
+            Check flush errors and Node Health durable panels.
