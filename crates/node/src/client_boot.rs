@@ -104,6 +104,18 @@ impl EtheanClient {
                 "dialing bootnodes without operator --fork-digest; Lean topics will not match peer mesh"
             );
         }
+        info!(
+            network = network.id.as_str(),
+            bootnodes = network.bootnodes.len(),
+            fork_digest_source = ?network.fork_digest_source(),
+            mesh_isolation_risk = network.mesh_isolation_risk(),
+            leansig_ready = leansig_gate.ready(),
+            leansig_refuse = leansig_gate.refuse_reason().unwrap_or(""),
+            leanvm_ready = leanvm_gate.ready(),
+            leanvm_refuse = leanvm_gate.refuse_reason().unwrap_or(""),
+            leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
+            "operator plug-in status (paste A2/A3 + prover when eth/pq-devnet opens)"
+        );
 
         let attestation_subnets = self.profile.attestation_subnet_count();
         let (_port, swarm) = crate::boot_network::prepare_boot_network(
