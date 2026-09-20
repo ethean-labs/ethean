@@ -25,7 +25,7 @@ Or separately: `.\scripts\run-observability.ps1`
 
 | Service | URL |
 | --- | --- |
-| Grafana | http://localhost:3000 — **Ethean Lean Clients Dashboard** |
+| Grafana | http://localhost:3000 — **Ethean Lean Clients** + **Ethean Node Health** |
 | Prometheus | http://localhost:9090 |
 | Targets | http://localhost:9090/targets |
 
@@ -36,4 +36,5 @@ metrics URLs above. In-process smoke still validates `GET /lean/v1/health`.
 
 See root [README.md](../README.md#monitoring--metrics),
 [metrics-flag-starts-grafana-prometheus-2026-09-20.md](./metrics-flag-starts-grafana-prometheus-2026-09-20.md),
-and [long-run-metrics-grafana-2026-09-20.md](./long-run-metrics-grafana-2026-09-20.md).
+and [long-run-metrics-grafana-2026-09-20.md](./long-run-metrics-grafana-2026-09-20.md),
+[ethean-grafana-richer-monitors-2026-09-20.md](./ethean-grafana-richer-monitors-2026-09-20.md).
