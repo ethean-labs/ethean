@@ -68,12 +68,13 @@ impl EtheanClient {
             head_slot,
             justified,
             finalized,
-            // Interim: justified slot until ForkChoiceStore.safe_target is live in-node.
-            justified,
+            self.owner.safe_target_slot(),
             current,
             self.sync.lag(),
             peers,
         )?;
+        self.observability
+            .record_reorg_total(self.owner.reorg_total)?;
         self.observability.record_roles(
             validators,
             self.owner.is_aggregator,

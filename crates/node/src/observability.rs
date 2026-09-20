@@ -2,8 +2,9 @@
 
 use ethean_metrics::{
     ensure_core_families, record_bootnode_count, record_durable_persist, record_fc_reorg,
-    record_range_serve, record_readiness_gauges, record_role_gauges, record_serve_cache_seed,
-    record_slot_gauges, set_ready, MetricsError, Readiness, Registry, SharedRegistry,
+    record_fc_reorg_total, record_range_serve, record_readiness_gauges, record_role_gauges,
+    record_serve_cache_seed, record_slot_gauges, set_ready, MetricsError, Readiness, Registry,
+    SharedRegistry,
 };
 use ethean_rpc::{dispatch, BindScope, IncomingRequest, Route, RpcError};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -120,6 +121,12 @@ impl NodeObservability {
     /// Increment when the canonical head moves onto a competing branch.
     pub fn record_reorg(&mut self) -> Result<(), MetricsError> {
         self.registry.with_mut(record_fc_reorg)
+    }
+
+    /// Publish the absolute reorg counter from the chain owner.
+    pub fn record_reorg_total(&mut self, total: u64) -> Result<(), MetricsError> {
+        self.registry
+            .with_mut(|reg| record_fc_reorg_total(reg, total))
     }
 
     /// Validator count, aggregator / local-finality flags, genesis clock.
