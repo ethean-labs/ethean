@@ -56,7 +56,7 @@ impl EtheanClient {
                     .unwrap_or(0);
                 let floor = crate::block_prune::prune_floor(
                     finalized,
-                    crate::block_prune::KEEP_BELOW_FINALIZED,
+                    self.prune_keep_slots,
                 );
                 let (files_removed, redb_removed) =
                     match crate::block_prune::prune_below_floor(&paths, floor) {
@@ -66,10 +66,13 @@ impl EtheanClient {
                             (0, 0)
                         }
                     };
-                if let Err(e) =
-                    self.observability
-                        .record_durable_persist(flushed, floor, files_removed, redb_removed)
-                {
+                if let Err(e) = self.observability.record_durable_persist(
+                    flushed,
+                    floor,
+                    files_removed,
+                    redb_removed,
+                    self.prune_keep_slots,
+                ) {
                     warn!(error = %e, "durable persist metrics failed");
                 }
             }
