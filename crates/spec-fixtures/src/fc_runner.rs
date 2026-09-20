@@ -164,3 +164,7 @@ mod finality_tests;
 #[path = "fc_runner_safe_target_tests.rs"]
 mod safe_target_tests;
 
+#[cfg(test)]
+#[path = "fc_runner_extra_tests.rs"]
+mod extra_tests;
+
