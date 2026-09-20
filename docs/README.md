@@ -70,6 +70,7 @@ Planning session summaries:
 - [leanSpec FC checks + storeSnapshot](./leanspec-fc-checks-snapshot-2026-09-20.md)
 - [leanSpec STF runner scaffold](./leanspec-stf-runner-2026-09-20.md)
 - [leanSpec STF full suite green](./leanspec-stf-full-suite-green-2026-09-20.md)
+- [leanSpec FC blockWeights snapshot](./leanspec-fc-block-weights-snapshot-2026-09-20.md)
 - [Gossipsub mesh on QuicSwarm](./gossipsub-quic-mesh-2026-09-19.md)
 - [Gossip ingest and peer score feedback](./gossip-ingest-peer-score-2026-09-19.md)
 - [SSZ gossip decode into ImportBlock](./ssz-gossip-import-block-2026-09-19.md)
