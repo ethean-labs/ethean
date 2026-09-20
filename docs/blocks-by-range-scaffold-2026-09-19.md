@@ -12,10 +12,10 @@ contiguous slot fetch. This lands the **request codec only**:
 
 ## Still open
 
-- QuicSwarm `request_response` behaviour + framed codec (mirror blocks-by-root)
-- Slot→SignedBlock serve cache for replies
-- Duty-network policy: prefer range when lag ≫ 1, else single-root parent walk
-- Response ingest into `blocks_sync` / orphan drain
+- Duty-network policy: prefer range when lag ≫ 1 — **landed**
+  ([status-sync-prefer-range-on-deep-lag-2026-09-20.md](./status-sync-prefer-range-on-deep-lag-2026-09-20.md))
+- QuicSwarm stream + ingest — **landed**
+  ([blocks-by-range-quic-stream-2026-09-19.md](./blocks-by-range-quic-stream-2026-09-19.md))
 
 ## Plan mapping
 
