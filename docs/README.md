@@ -86,6 +86,7 @@ Planning session summaries:
 - [Dual mode: durable data-dir + ephemeral smoke](./dual-mode-persist-and-ephemeral-2026-09-20.md)
 - [Recommended test baseline (Ream ops + ethlambda)](./recommend-test-baseline-ream-ethlambda-2026-09-20.md)
 - [Long-run metrics + Grafana (pq-devnet-4)](./long-run-metrics-grafana-2026-09-20.md)
+- [Richer Grafana monitors from live metrics](./ethean-grafana-richer-monitors-2026-09-20.md)
 - [Local finality solo long-run](./local-finality-solo-long-run-2026-09-20.md)
 - [`--metrics` starts Grafana + Prometheus](./metrics-flag-starts-grafana-prometheus-2026-09-20.md)
 - [Why :3000 / :9090 stay blank without Docker](./grafana-prometheus-need-docker-2026-09-20.md)
