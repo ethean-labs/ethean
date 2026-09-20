@@ -16,6 +16,7 @@ Keep both operator paths:
 | `crates/node/src/chain_redb.rs` | `ethean.redb` |
 | `crates/node/src/chain_persist.rs` | Open / flush / restore / `--reset-chain` |
 | `crates/node/src/client_data_dir.rs` | Durable open + flush |
+| `crates/node/src/block_prune.rs` | After flush, drop blobs older than finalized − 256 |
 
 Files under `--data-dir PATH`:
 
