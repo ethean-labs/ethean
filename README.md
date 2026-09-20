@@ -184,7 +184,8 @@ Under `--data-dir` the node writes:
 - `log/ethean-YYYY-MM-DD-HHMMSS-log` — process log for that start (console still prints)
 
 A prior `genesis_pin.json` / `head_snap.json` in the same folder is still read once
-and migrated. See [docs/ethean-redb-ssz-data-dir-2026-09-20.md](docs/ethean-redb-ssz-data-dir-2026-09-20.md).
+and migrated. See [docs/ethean-redb-ssz-data-dir-2026-09-20.md](docs/ethean-redb-ssz-data-dir-2026-09-20.md)
+and [docs/ethean-data-dir-run-logs-2026-09-20.md](docs/ethean-data-dir-run-logs-2026-09-20.md).
 
 `--ephemeral` wins over `--data-dir` if both are set (logs a warning).
 
