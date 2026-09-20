@@ -26,6 +26,7 @@ ethean start --until-signal --ephemeral \
 
 - Wire attestation registry key into attester duties — **landed**
   (see [`local-attester-duty-2026-09-20.md`](./local-attester-duty-2026-09-20.md))
+- Propose only when slot proposer matches an owned registry index — **landed**
+  (see [`owned-index-proposer-gate-2026-09-20.md`](./owned-index-proposer-gate-2026-09-20.md))
 - Upstream ethereum/hive `clients/ethean` (+ add `ethean` to prepare_lean_client_assets.py)
 - Apply `ATTESTATION_COMMITTEE_COUNT` into the live profile when Hive sets it
-- Propose only when slot proposer matches an owned registry index
