@@ -104,6 +104,7 @@ impl EtheanClient {
         let _ = self
             .apply_network_budget(32, Duration::from_millis(20))
             .await?;
+        #[cfg_attr(not(feature = "libp2p-quic"), allow(unused_mut))]
         let mut step_events = apply_wall_step(
             &self.clock,
             &mut self.owner,
