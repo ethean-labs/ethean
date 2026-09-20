@@ -36,7 +36,8 @@ pub use ffi_status::{
     BackendGap, FfiStatus, LeanSigGate, LeanVmGate, LEANSIG_VENDOR_BIGINT_PATCH_REQUIRED,
 };
 pub use leanvm_ipc::{
-    try_roundtrip_prove, LeanVmIpcStatus, PROVER_ENV as LEANVM_PROVER_ENV,
+    try_roundtrip_prove, LeanVmIpcStatus, PROBE_ENV as LEANVM_IPC_PROBE_ENV,
+    PROVER_ENV as LEANVM_PROVER_ENV,
 };
 pub use leanvm_ipc_frame::{
     IpcFrame, IpcOp, FRAME_CODEC_READY, FRAME_MAGIC, FRAME_VERSION,
