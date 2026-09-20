@@ -95,6 +95,17 @@ pub enum ChainEvent {
         /// Proof byte length.
         proof_len: usize,
     },
+    /// Local attester signed attestation data for an owned validator index.
+    AttestationSigned {
+        /// Attestation-data tree root that was signed.
+        data_root: Hash32,
+        /// Validator index that voted.
+        validator_index: ethean_primitives::ValidatorIndex,
+        /// Signature wire length in bytes.
+        signature_len: usize,
+        /// Attestation subnet.
+        subnet: u16,
+    },
     /// Type-1 aggregate published on QuicSwarm gossip.
     AggregationPublished {
         /// Lean gossip topic string.
