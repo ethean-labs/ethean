@@ -45,7 +45,22 @@ impl EtheanClient {
         };
         let paths = PersistPaths::new(dir.clone());
         match chain_persist::save_head(&paths, &self.owner) {
-            Ok(()) => self.owner.clear_durable_blocks(),
+            Ok(()) => {
+                self.owner.clear_durable_blocks();
+                let finalized = self
+                    .owner
+                    .head_state
+                    .as_ref()
+                    .map(|s| s.latest_finalized.slot.get())
+                    .unwrap_or(0);
+                let floor = crate::block_prune::prune_floor(
+                    finalized,
+                    crate::block_prune::KEEP_BELOW_FINALIZED,
+                );
+                if let Err(e) = crate::block_prune::prune_below_floor(&paths, floor) {
+                    warn!(error = %e, "durable block prune failed");
+                }
+            }
             Err(e) => warn!(error = %e, "failed to flush durable chain files"),
         }
     }
