@@ -111,5 +111,7 @@ Like the Ream/ethlambda Grafana panels:
 - Flat finalized while head climbs = finality stall (debug before multi-day runs)
 - With `--data-dir`: `ethean_durable_blocks_*` counters move on flush; prune floor
   climbs after finality (see Node Health durable row)
+- `EtheanDurablePruneStall` fires if finalized climbs while the prune floor is
+  stuck behind `finalized − keep` for 15m (durable mode only)
 
 Solo Ethean without a peer mesh will still advance **current** wall slot; head/finality need gossip + aggregator peers for a full Shariq-style curve.
