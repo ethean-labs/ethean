@@ -152,19 +152,24 @@ pub fn save_head(paths: &PersistPaths, owner: &ChainOwner) -> Result<()> {
     };
     persist_ssz::save_state_ssz(paths, state)?;
     persist_ssz::save_head_root(paths, &owner.head_root)?;
-    let block = owner.pending_block_gossip.as_ref().map(|g| {
-        (g.block_root.as_slice(), g.payload.as_slice())
-    });
+
+    let mut blocks: Vec<(Hash32, Vec<u8>)> = owner.durable_blocks.clone();
     if let Some(g) = owner.pending_block_gossip.as_ref() {
-        persist_ssz::save_block_ssz(paths, &g.block_root, &g.payload)?;
+        if !blocks.iter().any(|(r, _)| *r == g.block_root) {
+            blocks.push((g.block_root, g.payload.clone()));
+        }
     }
+    for (root, payload) in &blocks {
+        persist_ssz::save_block_ssz(paths, root, payload)?;
+    }
+
     let genesis_bytes = fs::read(paths.genesis_ssz()).ok();
     chain_redb::save_head(
         paths,
         &owner.head_root,
         state,
         genesis_bytes.as_deref(),
-        block,
+        &blocks,
     )
 }
 
@@ -245,10 +250,16 @@ mod tests {
         let mut owner = ChainOwner::new(0);
         owner.head_root = HASH32_ZERO;
         owner.head_state = Some(g.state);
+        let blob = vec![1u8, 2, 3, 4];
+        owner.remember_durable_block([7u8; 32], blob.clone());
         save_head(&paths, &owner).unwrap();
         let loaded = load_head(&paths).unwrap().unwrap();
         restore_owner(&mut owner, loaded).unwrap();
         assert_eq!(owner.head_root, HASH32_ZERO);
         assert!(paths.state_ssz().exists());
+        let blocks = chain_redb::load_all_blocks(&paths).unwrap();
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0].0, [7u8; 32]);
+        assert_eq!(blocks[0].1, blob);
     }
 }
