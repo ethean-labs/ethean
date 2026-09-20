@@ -4,6 +4,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $versionPath = Join-Path $root "VERSION"
 $cargoPath = Join-Path $root "Cargo.toml"
+$lockPath = Join-Path $root "Cargo.lock"
 
 if (-not (Test-Path $versionPath)) {
     throw "VERSION file missing at $versionPath"
@@ -17,6 +18,7 @@ if ($raw -notmatch '^(\d+)\.(\d+)\.(\d+)$') {
 $major = [int]$Matches[1]
 $minor = [int]$Matches[2]
 $patch = [int]$Matches[3]
+$prev = "$major.$minor.$patch"
 
 $patch++
 if ($patch -gt 99) {
@@ -43,4 +45,24 @@ if ($updated -eq $cargo) {
 }
 Set-Content -Path $cargoPath -Value $updated -NoNewline
 
-Write-Host "Bumped version to $next (VERSION + Cargo.toml)"
+if (Test-Path $lockPath) {
+    # Only ethean* package stanzas — never blanket-replace (breaks crates.io pins).
+    $lock = [System.IO.File]::ReadAllText($lockPath)
+    if ($lock.StartsWith([char]0xFEFF)) {
+        $lock = $lock.Substring(1)
+    }
+    $lockPattern = "(?m)(^\[\[package\]\]\r?\nname = `"ethean[^`"]*`"\r?\n)version = `"$([regex]::Escape($prev))`""
+    $lockUpdated = [regex]::Replace($lock, $lockPattern, "`${1}version = `"$next`"")
+    $replaced = [regex]::Matches(
+        $lockUpdated,
+        "(?m)^name = `"ethean[^`"]*`"\r?\nversion = `"$([regex]::Escape($next))`""
+    ).Count
+    if ($replaced -eq 0) {
+        throw "Cargo.lock has no ethean packages at $prev to bump"
+    }
+    $utf8 = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($lockPath, $lockUpdated, $utf8)
+    Write-Host "Bumped version to $next (VERSION + Cargo.toml + Cargo.lock ethean* x$replaced)"
+} else {
+    Write-Host "Bumped version to $next (VERSION + Cargo.toml)"
+}
