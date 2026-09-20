@@ -36,7 +36,7 @@ impl EtheanClient {
             {
                 self.swarm
                     .as_ref()
-                    .map(|s| s.peers.len() as u64)
+                    .map(|s| s.connected_peer_count())
                     .unwrap_or(0)
             }
             #[cfg(not(feature = "libp2p-quic"))]
@@ -69,8 +69,9 @@ impl EtheanClient {
             self.owner.is_aggregator,
             self.owner.local_finality,
             genesis_time,
-            self.profile.seconds_per_slot as u64,
+            self.profile.seconds_per_slot,
         )?;
+        self.observability.record_bootnodes(self.bootnode_count)?;
         self.observability.record_readiness_bits()?;
         self.observability.refresh_ready_gauge()?;
         debug!(
@@ -80,6 +81,7 @@ impl EtheanClient {
             current,
             peers,
             validators,
+            bootnodes = self.bootnode_count,
             "metrics slot snapshot"
         );
         Ok(())
