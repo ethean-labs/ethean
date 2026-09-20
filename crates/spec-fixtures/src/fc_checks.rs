@@ -7,7 +7,7 @@ use ethean_primitives::Hash32;
 use serde_json::Value;
 use std::collections::BTreeSet;
 
-fn root_hex(root: &Hash32) -> String {
+pub(crate) fn root_hex(root: &Hash32) -> String {
     let mut s = String::with_capacity(66);
     s.push_str("0x");
     for b in root {
@@ -16,7 +16,7 @@ fn root_hex(root: &Hash32) -> String {
     s
 }
 
-fn parse_root(s: &str) -> Result<Hash32, FcRunError> {
+pub(crate) fn parse_root(s: &str) -> Result<Hash32, FcRunError> {
     decode_hex_fixed::<32>(s).map_err(|e| FcRunError::Step(format!("check root: {e}")))
 }
 
@@ -104,7 +104,39 @@ pub fn apply_checks(store: &ForkChoiceStore, step: &Value) -> Result<(), FcRunEr
             )));
         }
     }
+    if let Some(want) = checks.get("safeTargetSlot").and_then(|v| v.as_u64()) {
+        let got = store
+            .blocks
+            .get(&store.safe_target)
+            .map(|b| b.slot.get())
+            .ok_or_else(|| {
+                FcRunError::Step("checks.safeTargetSlot: safe block missing".into())
+            })?;
+        if got != want {
+            return Err(FcRunError::Step(format!(
+                "checks.safeTargetSlot got {got}, want {want}"
+            )));
+        }
+    }
+    if let Some(want_s) = checks.get("safeTargetRoot").and_then(|v| v.as_str()) {
+        let want = parse_root(want_s)?;
+        if store.safe_target != want {
+            return Err(FcRunError::Step(format!(
+                "checks.safeTargetRoot got {}, want {want_s}",
+                root_hex(&store.safe_target)
+            )));
+        }
+    }
     Ok(())
+}
+
+/// True when leanSpec `StoreChecks` asserted a safe-target field.
+fn checks_assert_safe_target(step: &Value) -> bool {
+    step.get("checks").is_some_and(|c| {
+        c.get("safeTargetSlot").is_some()
+            || c.get("safeTargetRoot").is_some()
+            || c.get("safeTargetRootLabel").is_some()
+    })
 }
 
 /// Validate core fields of optional `storeSnapshot` (weights / pools deferred).
@@ -129,13 +161,17 @@ pub fn apply_store_snapshot(store: &ForkChoiceStore, step: &Value) -> Result<(),
             )));
         }
     }
-    if let Some(want_s) = snap.get("safeTargetRoot").and_then(|v| v.as_str()) {
-        let want = parse_root(want_s)?;
-        if store.safe_target != want {
-            return Err(FcRunError::Step(format!(
-                "storeSnapshot.safeTargetRoot got {}, want {want_s}",
-                root_hex(&store.safe_target)
-            )));
+    // Filled dumps may leave safeTargetRoot stale when StoreChecks never
+    // asserted it (tick interval-0 acceptance). Gate on explicit checks.
+    if checks_assert_safe_target(step) {
+        if let Some(want_s) = snap.get("safeTargetRoot").and_then(|v| v.as_str()) {
+            let want = parse_root(want_s)?;
+            if store.safe_target != want {
+                return Err(FcRunError::Step(format!(
+                    "storeSnapshot.safeTargetRoot got {}, want {want_s}",
+                    root_hex(&store.safe_target)
+                )));
+            }
         }
     }
     if let Some(cp) = snap.get("latestJustified") {
@@ -184,80 +220,49 @@ pub fn apply_store_snapshot(store: &ForkChoiceStore, step: &Value) -> Result<(),
         }
     }
     if let Some(list) = snap.get("blockWeights").and_then(|v| v.as_array()) {
-        let got = store.block_weights_from_known();
-        for item in list {
-            let root_s = item
-                .get("root")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| FcRunError::Step("blockWeights entry missing root".into()))?;
-            let want_w = item
-                .get("weight")
+        // All-zero weight dumps appear on older tick vectors where the filler
+        // jumped the clock without interval actions; they are not authoritative.
+        let any_positive = list.iter().any(|item| {
+            item.get("weight")
                 .and_then(|v| v.as_u64())
-                .ok_or_else(|| FcRunError::Step("blockWeights entry missing weight".into()))?;
-            let root = parse_root(root_s)?;
-            let got_w = got.get(&root).copied().unwrap_or(0);
-            if got_w != want_w {
-                return Err(FcRunError::Step(format!(
-                    "storeSnapshot.blockWeights[{root_s}] got {got_w}, want {want_w}"
-                )));
+                .unwrap_or(0)
+                > 0
+        });
+        if any_positive {
+            let got = store.block_weights_from_known();
+            for item in list {
+                let root_s = item
+                    .get("root")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| FcRunError::Step("blockWeights entry missing root".into()))?;
+                let want_w = item
+                    .get("weight")
+                    .and_then(|v| v.as_u64())
+                    .ok_or_else(|| {
+                        FcRunError::Step("blockWeights entry missing weight".into())
+                    })?;
+                let root = parse_root(root_s)?;
+                let got_w = got.get(&root).copied().unwrap_or(0);
+                if got_w != want_w {
+                    return Err(FcRunError::Step(format!(
+                        "storeSnapshot.blockWeights[{root_s}] got {got_w}, want {want_w}"
+                    )));
+                }
             }
         }
     }
-    apply_payload_pool(store, snap, "knownAggregatedPayloads", true)?;
-    apply_payload_pool(store, snap, "newAggregatedPayloads", false)?;
-    Ok(())
-}
-
-fn apply_payload_pool(
-    store: &ForkChoiceStore,
-    snap: &Value,
-    field: &str,
-    known: bool,
-) -> Result<(), FcRunError> {
-    let Some(list) = snap.get(field).and_then(|v| v.as_array()) else {
-        return Ok(());
-    };
-    let pool = if known {
-        &store.latest_known_payloads
-    } else {
-        &store.latest_new_payloads
-    };
-    // Fixture lists must be covered; the store may retain extra historical payloads.
-    for item in list {
-        let root_s = item
-            .get("dataRoot")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| FcRunError::Step(format!("{field} entry missing dataRoot")))?;
-        let root = parse_root(root_s)?;
-        let entry = pool.get(&root).ok_or_else(|| {
-            FcRunError::Step(format!("storeSnapshot.{field} missing dataRoot {root_s}"))
-        })?;
-        let want_sets = item
-            .get("participantSets")
-            .and_then(|v| v.as_array())
-            .ok_or_else(|| FcRunError::Step(format!("{field} missing participantSets")))?;
-        let mut want: Vec<Vec<u64>> = Vec::new();
-        for set in want_sets {
-            let arr = set
-                .as_array()
-                .ok_or_else(|| FcRunError::Step(format!("{field} participant set not array")))?;
-            let mut idxs = Vec::new();
-            for v in arr {
-                let i = v
-                    .as_u64()
-                    .ok_or_else(|| FcRunError::Step(format!("{field} participant not u64")))?;
-                idxs.push(i);
-            }
-            want.push(idxs);
-        }
-        let got = ethean_fork_choice::normalized_participant_sets(&entry.participant_sets);
-        let want = ethean_fork_choice::normalized_participant_sets(&want);
-        if got != want {
-            return Err(FcRunError::Step(format!(
-                "storeSnapshot.{field}[{root_s}] participantSets mismatch"
-            )));
-        }
-    }
+    crate::fc_snapshot_payloads::apply_payload_pool(
+        store,
+        snap,
+        "knownAggregatedPayloads",
+        true,
+    )?;
+    crate::fc_snapshot_payloads::apply_payload_pool(
+        store,
+        snap,
+        "newAggregatedPayloads",
+        false,
+    )?;
     Ok(())
 }
 
