@@ -15,4 +15,5 @@ pub use config_yaml::{
     genesis_from_lean_config, load_lean_network_config, parse_lean_network_config, LeanNetworkConfig,
 };
 pub use error::{ClockError, GenesisError};
+pub use hex::decode_hex_fixed;
 pub use loader::load_genesis_ssz;
