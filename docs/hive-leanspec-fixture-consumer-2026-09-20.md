@@ -24,11 +24,12 @@ cargo test -p ethean-spec-fixtures
 ## Hive matrix (still open)
 
 ethereum/hive `simulators/lean` launches **client Docker images**
-(`ream_devnet5`, …). Ethean is not registered there yet. Next matrix steps:
+(`ream_devnet5`, …). Local scaffold: [`hive-client-docker-scaffold-2026-09-20.md`](./hive-client-docker-scaffold-2026-09-20.md)
+(`docker/hive/`). Still needed for matrix green:
 
-1. Dockerfile + Hive client YAML nametag for Ethean (devnet4/5)
-2. Expose Lean HTTP endpoints Hive RPC suite expects
-3. Full fork-choice / STF step runners against filled vectors (beyond rejection mapping)
+1. Upstream `clients/ethean` registration + published image
+2. Lean HTTP endpoints Hive RPC suite expects
+3. Consume simulator `config.yaml` / validator registry files
 
 Authority: leanSpec pin in `spec/fixtures/phase-00/manifest.toml`; peer
 `ReamLabs/lean-spec-tests` is a secondary vector source.
