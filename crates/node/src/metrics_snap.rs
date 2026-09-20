@@ -68,6 +68,7 @@ impl EtheanClient {
             head_slot,
             justified,
             finalized,
+            head_slot, // safe_target stub == head until ForkChoiceStore is wired in-node
             current,
             self.sync.lag(),
             peers,

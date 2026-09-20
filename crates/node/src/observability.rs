@@ -1,9 +1,9 @@
 //! Metrics registry and Lean RPC smoke helpers for the node process.
 
 use ethean_metrics::{
-    ensure_core_families, record_bootnode_count, record_durable_persist, record_range_serve,
-    record_readiness_gauges, record_role_gauges, record_serve_cache_seed, record_slot_gauges,
-    set_ready, MetricsError, Readiness, Registry, SharedRegistry,
+    ensure_core_families, record_bootnode_count, record_durable_persist, record_fc_reorg,
+    record_range_serve, record_readiness_gauges, record_role_gauges, record_serve_cache_seed,
+    record_slot_gauges, set_ready, MetricsError, Readiness, Registry, SharedRegistry,
 };
 use ethean_rpc::{dispatch, BindScope, IncomingRequest, Route, RpcError};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -91,12 +91,13 @@ impl NodeObservability {
         })
     }
 
-    /// Full slot panel snapshot for Grafana (head / justified / finalized / current).
+    /// Full slot panel snapshot for Grafana (head / justified / finalized / safe / current).
     pub fn record_slots(
         &mut self,
         head_slot: u64,
         justified_slot: u64,
         finalized_slot: u64,
+        safe_target_slot: u64,
         current_slot: u64,
         sync_lag: u64,
         peer_count: u64,
@@ -107,12 +108,18 @@ impl NodeObservability {
                 head_slot,
                 justified_slot,
                 finalized_slot,
+                safe_target_slot,
                 current_slot,
                 sync_lag,
             )?;
             reg.set("peer_count", peer_count as f64)?;
             Ok(())
         })
+    }
+
+    /// Increment when the canonical head moves onto a competing branch.
+    pub fn record_reorg(&mut self) -> Result<(), MetricsError> {
+        self.registry.with_mut(record_fc_reorg)
     }
 
     /// Validator count, aggregator / local-finality flags, genesis clock.
