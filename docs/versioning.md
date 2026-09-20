@@ -18,4 +18,8 @@ Bump with:
 ./scripts/bump-version.sh
 ```
 
-Then commit `VERSION` + `Cargo.toml` (+ `Cargo.lock` if cargo rewrites it).
+The scripts update `VERSION`, root `Cargo.toml`, and **only** `ethean*` package
+stanzas in `Cargo.lock`. Do not blanket-replace version strings in the lockfile
+(that can overwrite crates.io pins such as `tracing-attributes`).
+
+Then commit `VERSION` + `Cargo.toml` + `Cargo.lock`.
