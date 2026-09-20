@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 pub mod aggregation;
+pub mod aggregation_gossip;
 pub mod block_builder;
 pub mod blocks_sync;
 pub mod boot_network;
@@ -49,6 +50,8 @@ pub mod status_handshake;
 pub mod sync_orphan;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump;
+#[cfg(feature = "libp2p-quic")]
+pub mod swarm_pump_agg;
 pub mod wall_loop;
 pub mod wall_tick;
 
