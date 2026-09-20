@@ -155,3 +155,8 @@ pub type _Store = ForkChoiceStore;
 #[cfg(test)]
 #[path = "fc_runner_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "fc_runner_finality_tests.rs"]
+mod finality_tests;
+
