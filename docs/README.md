@@ -2,6 +2,11 @@
 
 Design notes, sprint write-ups, and working plans for the client. Root README should link anything here that a new contributor actually needs.
 
+Root README companion guides (short landing page + detail): [readme/README.md](./readme/README.md)
+([architecture](./readme/architecture.md), [installation](./readme/installation.md),
+[usage](./readme/usage.md), [api](./readme/api.md), [development](./readme/development.md),
+[testing](./readme/testing.md)). Session note: [readme-companion-guides-2026-09-20.md](./readme-companion-guides-2026-09-20.md).
+
 Contributor guide (root): [../CONTRIBUTING.md](../CONTRIBUTING.md). Session note: [contributing-guide-2026-09-20.md](./contributing-guide-2026-09-20.md).
 
 Code of conduct (root): [../CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md). Session note: [code-of-conduct-2026-09-20.md](./code-of-conduct-2026-09-20.md).
