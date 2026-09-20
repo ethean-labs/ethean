@@ -1,6 +1,6 @@
 //! Serde shapes for leanSpec filled JSON fixtures (partial).
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// One filled fixture file: map of pytest id → case body.
@@ -29,13 +29,13 @@ pub struct FixtureCase {
 }
 
 /// One step inside a fixture case.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FixtureStep {
     /// Whether the step is expected to succeed.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub valid: Option<bool>,
     /// leanSpec `SpecRejectionError` name when `valid` is false.
-    #[serde(rename = "rejectionReason", default)]
+    #[serde(rename = "rejectionReason", default, skip_serializing_if = "Option::is_none")]
     pub rejection_reason: Option<String>,
     /// Opaque checks / block payloads until typed runners land.
     #[serde(flatten)]
