@@ -60,6 +60,7 @@ impl ForkChoiceStore {
                     self.insert_known_vote(ValidatorIndex::new(i as u64), data);
                 }
             }
+            self.record_known_payload(data, &bits);
         }
 
         self.update_head()?;
