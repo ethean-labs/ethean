@@ -35,6 +35,6 @@ cargo test -p ethean-spec-fixtures --lib fc_runner
 
 | Gap | Notes |
 | --- | --- |
-| Weight / payload snapshot fields | Need pool mirroring |
+| Weight / payload snapshot fields | **blockWeights landed** — see `leanspec-fc-block-weights-snapshot-2026-09-20.md`; payload pools still open |
 | STF fixture runner | Scaffold landed — see `leanspec-stf-runner-2026-09-20.md` |
 | Hive image / A2/A3 / leanVM / bigint | External |
