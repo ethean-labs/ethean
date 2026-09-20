@@ -42,6 +42,14 @@ impl EtheanClient {
                 "mesh dial without production leanSig; peer XMSS verify stays fail-closed"
             );
         }
+        if network.has_bootnodes() && !leanvm_gate.ready() {
+            warn!(
+                network = network.id.as_str(),
+                pin = leanvm_gate.pinned_rev,
+                reason = leanvm_gate.refuse_reason().unwrap_or("unavailable"),
+                "mesh dial without production leanVM; Type-2 proof verify stays fail-closed"
+            );
+        }
         // Smoke crypto path is loaded even when production FFI is off.
         self.observability.mark_crypto_ok();
 
