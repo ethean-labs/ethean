@@ -87,7 +87,8 @@ section, then re-run `--metrics` or `.\scripts\run-observability.ps1`.
 stays down.
 
 - Grafana: http://localhost:3000 (anonymous viewer)
-- Dashboard: **Ethean Lean Clients Dashboard**
+- Dashboards: **Ethean Lean Clients Dashboard**, **Ethean Node Health**
+  (Node Health includes durable flush / prune floor and rates)
 - Prometheus: http://localhost:9090
 
 ## Health check URLs
@@ -108,5 +109,7 @@ Like the Ream/ethlambda Grafana panels:
 - `ethean_slot_current` and `ethean_head_slot` climb over hours/days
 - `ethean_justified_slot` / `ethean_finalized_slot` advance when finality works
 - Flat finalized while head climbs = finality stall (debug before multi-day runs)
+- With `--data-dir`: `ethean_durable_blocks_*` counters move on flush; prune floor
+  climbs after finality (see Node Health durable row)
 
 Solo Ethean without a peer mesh will still advance **current** wall slot; head/finality need gossip + aggregator peers for a full Shariq-style curve.
