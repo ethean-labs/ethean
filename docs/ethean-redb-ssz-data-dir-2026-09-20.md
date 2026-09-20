@@ -14,8 +14,9 @@
 | `ethean.redb` | Local KV: schema, genesis SSZ, head root, states, blocks |
 | `log/ethean-YYYY-MM-DD-HHMMSS-log` | Process tracing for that start (stdout still prints) |
 
-`--reset-chain` deletes chain files (and leftover `genesis_pin.json` / `head_snap.json`).
-It does **not** delete `log/`.
+`--reset-chain` deletes **everything** under the data-dir (chain files, `log/`,
+leftovers). The folder itself stays. Wipe happens before this start opens a new
+process log. See [reset-chain-wipes-data-dir-2026-09-20.md](./reset-chain-wipes-data-dir-2026-09-20.md).
 
 Resume order: `ethean.redb` → `state.ssz` + `head.root` → legacy JSON snapshot.
 
