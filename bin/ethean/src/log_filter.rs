@@ -65,15 +65,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_parses() {
-        assert!(build_filter(0, None).is_ok());
-        assert!(build_filter(1, None).is_ok());
-        assert!(build_filter(2, None).is_ok());
-        assert!(build_filter(3, None).is_ok());
+    fn directives_parse() {
+        assert!(EnvFilter::try_new(DEFAULT_FILTER).is_ok());
+        assert!(EnvFilter::try_new(VERBOSE_FILTER).is_ok());
+        assert!(EnvFilter::try_new("debug").is_ok());
+        assert!(EnvFilter::try_new("trace").is_ok());
     }
 
     #[test]
     fn rejects_bad_level() {
+        std::env::remove_var("RUST_LOG");
         assert!(build_filter(0, Some("loud")).is_err());
+        assert!(build_filter(0, Some("info")).is_ok());
     }
 }
