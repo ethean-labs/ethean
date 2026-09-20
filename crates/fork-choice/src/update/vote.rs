@@ -60,6 +60,16 @@ impl ForkChoiceStore {
         }
     }
 
+    /// LMD update into the known (counted) pool — used for on-chain body attestations.
+    pub(crate) fn insert_known_vote(&mut self, validator: ValidatorIndex, data: AttestationData) {
+        match self.latest_known_attestations.get(&validator) {
+            Some(existing) if !vote_is_newer(existing, &data) => {}
+            _ => {
+                self.latest_known_attestations.insert(validator, data);
+            }
+        }
+    }
+
     pub(crate) fn validate_attestation(
         &self,
         data: &AttestationData,
