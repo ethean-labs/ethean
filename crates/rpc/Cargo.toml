@@ -10,6 +10,9 @@ description = "Lean Consensus HTTP/JSON-RPC API (Phase 12)"
 [dependencies]
 ethean-primitives = { workspace = true }
 thiserror = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
 
 [lib]
 name = "ethean_rpc"
