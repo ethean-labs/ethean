@@ -30,4 +30,4 @@ ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data
 
 | Gap | Notes |
 | --- | --- |
-| Alert on prune stall while finalized climbs | Optional Grafana/alert rule |
+| Alert on prune stall while finalized climbs | Done — [durable-prune-stall-alert-2026-09-20.md](./durable-prune-stall-alert-2026-09-20.md) |
