@@ -29,7 +29,9 @@ pub struct LeanVmGate {
     pub ffi_linked: bool,
     /// `ETHEAN_LEANVM_PROVER` points at an existing file.
     pub ipc_binary_present: bool,
-    /// Framed process IPC protocol is implemented.
+    /// Versioned IPC frame codec is compiled in.
+    pub ipc_frame_abi_ready: bool,
+    /// Framed process IPC spawn/round-trip is implemented.
     pub ipc_protocol_ready: bool,
 }
 
@@ -80,6 +82,7 @@ impl LeanVmGate {
                 feature_enabled: s.feature_enabled,
                 ffi_linked: s.ffi_linked,
                 ipc_binary_present: ipc.binary_present,
+                ipc_frame_abi_ready: ipc.frame_abi_ready,
                 ipc_protocol_ready: ipc.protocol_ready,
             }
         }
@@ -90,6 +93,7 @@ impl LeanVmGate {
                 feature_enabled: false,
                 ffi_linked: false,
                 ipc_binary_present: ipc.binary_present,
+                ipc_frame_abi_ready: ipc.frame_abi_ready,
                 ipc_protocol_ready: ipc.protocol_ready,
             }
         }
