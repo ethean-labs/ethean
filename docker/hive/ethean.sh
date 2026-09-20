@@ -32,6 +32,8 @@ FLAGS=(
   --network "$NETWORK"
   --metrics-address 0.0.0.0
   --metrics-port 9100
+  --http-address 0.0.0.0
+  --http-port 5052
 )
 
 if [ -n "$BOOTNODES" ] && [ "$BOOTNODES" != "none" ]; then
@@ -52,6 +54,14 @@ fi
 
 if [ "${HIVE_METRICS_ENABLED:-0}" != "1" ]; then
   FLAGS+=(--no-metrics)
+fi
+
+if [ "${HIVE_HTTP_ENABLED:-1}" = "0" ]; then
+  FLAGS+=(--no-http)
+fi
+
+if [ -n "${HIVE_HTTP_ADMIN_TOKEN:-}" ]; then
+  FLAGS+=(--http-admin-token "$HIVE_HTTP_ADMIN_TOKEN")
 fi
 
 # Honesty: Hive prepares Ream-style config.yaml + validators.yaml under
