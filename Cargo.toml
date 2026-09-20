@@ -16,6 +16,7 @@ members = [
     "crates/node",
     "crates/rpc",
     "crates/metrics",
+    "crates/spec-fixtures",
     "bin/ethean",
     "bin/ethean-leanvm-mock",
 ]
