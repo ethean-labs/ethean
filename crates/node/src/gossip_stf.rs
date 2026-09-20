@@ -3,6 +3,7 @@
 use crate::aggregation::seed_pool_from_signed_block;
 use crate::chain_owner::ChainOwner;
 use crate::gossip_decode::DecodedBlockGossip;
+use crate::gossip_type2::require_type2_envelope;
 use crate::shutdown::{ShutdownPhase, ShutdownState};
 use ethean_primitives::Hash32;
 use ethean_transition::{
@@ -39,8 +40,8 @@ pub fn import_decoded_block(
     }
 
     let (Some(pre), Some(profile)) = (owner.head_state.clone(), owner.profile.clone()) else {
-        if let Some(signed) = &decoded.signed {
-            if !signed.proof.proof.is_empty() {
+        if require_type2_envelope(decoded).is_ok() {
+            if let Some(signed) = &decoded.signed {
                 let _ = seed_pool_from_signed_block(&mut owner.aggregates, signed);
             }
         }
@@ -57,20 +58,23 @@ pub fn import_decoded_block(
             return GossipStfResult::Rejected;
         }
     }
-    if let Some(signed) = &decoded.signed {
-        if !signed.proof.proof.is_empty() {
-            return match apply_block(&pre, signed, &ctx) {
-                Ok(out) => {
-                    owner.head_state = Some(out.post_state);
-                    owner.head_root = decoded.root;
-                    let _ = seed_pool_from_signed_block(&mut owner.aggregates, signed);
-                    GossipStfResult::AppliedVerified {
-                        root: decoded.root,
-                    }
-                }
-                Err(_) => GossipStfResult::Rejected,
-            };
+    // D5 wire: SignedBlock must carry a single non-empty Type-2 proof field.
+    if decoded.signed.is_some() {
+        if require_type2_envelope(decoded).is_err() {
+            return GossipStfResult::Rejected;
         }
+        let signed = decoded.signed.as_ref().expect("checked");
+        return match apply_block(&pre, signed, &ctx) {
+            Ok(out) => {
+                owner.head_state = Some(out.post_state);
+                owner.head_root = decoded.root;
+                let _ = seed_pool_from_signed_block(&mut owner.aggregates, signed);
+                GossipStfResult::AppliedVerified {
+                    root: decoded.root,
+                }
+            }
+            Err(_) => GossipStfResult::Rejected,
+        };
     }
 
     match apply_block_unverified(&pre, &decoded.block, &ctx) {
