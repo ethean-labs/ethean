@@ -153,7 +153,7 @@ mod tests {
     use super::*;
     use crate::block_builder::plan_from_pool;
     use crate::aggregation::AggregatePool;
-    use ethean_primitives::{Bytes52, ValidatorIndex};
+    use ethean_primitives::{Bytes52, Slot, ValidatorIndex};
     use ethean_profile::lstar_devnet;
     use ethean_types::{BlockHeader, GenesisConfig, Validator};
 
