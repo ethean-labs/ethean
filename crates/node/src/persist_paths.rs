@@ -10,6 +10,7 @@ const STATE_SSZ: &str = "state.ssz";
 const HEAD_ROOT: &str = "head.root";
 const REDB_FILE: &str = "ethean.redb";
 const BLOCKS_DIR: &str = "blocks";
+const LOG_DIR: &str = "log";
 const LEGACY_PIN: &str = "genesis_pin.json";
 const LEGACY_HEAD: &str = "head_snap.json";
 
@@ -48,6 +49,15 @@ impl PersistPaths {
         self.root.join(BLOCKS_DIR)
     }
 
+    pub fn log_dir(&self) -> PathBuf {
+        self.root.join(LOG_DIR)
+    }
+
+    /// `log/ethean-{YYYY-MM-DD-HHMMSS}-log` for one process start.
+    pub fn run_log_path(&self, stamp: &str) -> PathBuf {
+        self.log_dir().join(format!("ethean-{stamp}-log"))
+    }
+
     pub fn block_ssz(&self, root_hex: &str) -> PathBuf {
         self.blocks_dir().join(format!("{root_hex}.ssz"))
     }
@@ -69,8 +79,35 @@ impl PersistPaths {
                 "create blocks dir {}: {e}",
                 self.blocks_dir().display()
             ))
+        })?;
+        fs::create_dir_all(self.log_dir()).map_err(|e| {
+            Error::Config(format!("create log dir {}: {e}", self.log_dir().display()))
         })
     }
+}
+
+/// UTC `YYYY-MM-DD-HHMMSS` used in `ethean-{stamp}-log` names.
+pub fn utc_run_stamp(unix_secs: u64) -> String {
+    let sod = (unix_secs % 86_400) as u32;
+    let hh = sod / 3600;
+    let mm = (sod % 3600) / 60;
+    let ss = sod % 60;
+    let (year, month, day) = civil_from_unix_days((unix_secs / 86_400) as i64);
+    format!("{year:04}-{month:02}-{day:02}-{hh:02}{mm:02}{ss:02}")
+}
+
+fn civil_from_unix_days(days: i64) -> (i32, u32, u32) {
+    let z = days + 719_468;
+    let era = z / 146_097;
+    let doe = (z - era * 146_097) as u32;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let year = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = if month <= 2 { year + 1 } else { year };
+    (year as i32, month, day)
 }
 
 /// Wipe durable chain files so the next start creates a new genesis.
@@ -133,6 +170,16 @@ mod tests {
         assert!(p.genesis_json().ends_with("genesis.json"));
         assert!(p.state_ssz().ends_with("state.ssz"));
         assert!(p.block_ssz("ab").ends_with("blocks/ab.ssz") || p.block_ssz("ab").ends_with("blocks\\ab.ssz"));
+        assert!(p.log_dir().ends_with("log"));
+        let log = p.run_log_path("2026-09-20-040512");
+        let name = log.file_name().unwrap().to_string_lossy();
+        assert_eq!(name, "ethean-2026-09-20-040512-log");
+    }
+
+    #[test]
+    fn utc_stamp_known_unix() {
+        assert_eq!(utc_run_stamp(0), "1970-01-01-000000");
+        assert_eq!(utc_run_stamp(1_000_000_000), "2001-09-09-014640");
     }
 
     #[test]
