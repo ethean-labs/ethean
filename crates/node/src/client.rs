@@ -38,6 +38,8 @@ pub struct EtheanClient {
     /// Durable libp2p QUIC facade (feature `libp2p-quic`).
     #[cfg(feature = "libp2p-quic")]
     pub(crate) swarm: Option<crate::network::SwarmFacade>,
+    /// When set, flush head snapshots under this directory after duty steps.
+    pub(crate) persist_dir: Option<std::path::PathBuf>,
 }
 
 impl EtheanClient {
@@ -98,6 +100,7 @@ impl EtheanClient {
             local_status: None,
             #[cfg(feature = "libp2p-quic")]
             swarm: None,
+            persist_dir: None,
         })
     }
 
@@ -135,27 +138,6 @@ impl EtheanClient {
             local_finality = roles.local_finality,
             "local roles applied"
         );
-    }
-
-    /// Smoke genesis with a path-backed store (`ethean_storage::open_path`).
-    pub async fn open_data_dir(path: &str) -> Result<Self> {
-        Self::open_data_dir_with_roles(path, crate::start_config::LocalRoles::default()).await
-    }
-
-    /// Path-backed store with explicit local roles / validator count.
-    pub async fn open_data_dir_with_roles(
-        path: &str,
-        roles: crate::start_config::LocalRoles,
-    ) -> Result<Self> {
-        let profile = lstar_devnet()?;
-        let built = crate::local_genesis::local_devnet_genesis(
-            roles.validators,
-            profile.seconds_per_slot,
-        )?;
-        let db = ethean_storage::open_path(path)?;
-        let mut client = Self::with_genesis_store(profile, built.state, db).await?;
-        client.apply_local_roles(roles);
-        Ok(client)
     }
 
     /// Access the chain owner (sole writer of head/sync flags).
@@ -246,6 +228,8 @@ impl EtheanClient {
                 self.run_until_signal_with_flush(enable_sleep).await?
             }
         };
-        self.finish_observability(&events)
+        self.finish_observability(&events)?;
+        self.flush_chain_persist();
+        Ok(())
     }
 }
