@@ -27,9 +27,17 @@
 ## Still open
 
 - Production leanVM prove/verify (real B2/B3 close).
-- Dispatch Type-1 prove + aggregation gossip publish on `AggregatorReady`.
+- Aggregation gossip **publish** of proved Type-1 payloads on `/aggregation/` topics.
 - Operator / leanSpec subnet count pin (may exceed smoke 4).
 - Committee assignment table instead of provisional root hashing.
+
+## Type-1 prove dispatch (follow-on)
+
+- `duty_aggregator_prove::try_prove_type1_for_root` builds a Type-1 statement from retained
+  attestation SSZ, proves via `ProverWorker`, re-verifies, and refreshes the pool.
+- Emits `ChainEvent::AggregatorType1Proved` on success.
+- Hooked from `duty_step` immediately after each `AggregatorReady`.
+
 
 ## Tests
 
