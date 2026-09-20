@@ -24,9 +24,13 @@ docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
 | `HIVE_HTTP_ENABLED` | `0` → `--no-http` (default on `:5052`) |
 | `HIVE_HTTP_ADMIN_TOKEN` | `--http-admin-token` for admin routes |
 | `HIVE_LISTEN_PORT` | `--listen-port` (default `9000`) |
+| `HIVE_LEAN_NETWORK_CONFIG` | `--lean-config` (`config.yaml`) |
+| `HIVE_LEAN_VALIDATOR_REGISTRY_PATH` | `--validator-registry` |
+| `HIVE_NODE_ID` | `--node-id` (default `ethean_0`) |
 
 Always runs `ethean start --until-signal --ephemeral` with Lean HTTP on `0.0.0.0:5052`
-and QUIC on UDP `:9000` (override via `HIVE_LISTEN_PORT`).
+and QUIC on UDP `:9000` (override via `HIVE_LISTEN_PORT`). When Hive injects prepared
+assets, genesis comes from `config.yaml` instead of the ephemeral smoke registry.
 
 ## Upstream registration (not in this repo)
 
@@ -42,5 +46,6 @@ Snippet also kept as [`client-devnet5.yaml`](./client-devnet5.yaml).
 
 ## Known gaps vs Ream Hive client
 
-- Prepared `config.yaml` / `validators.yaml` from the simulator are **ignored** until Ethean grows file-based network config flags.
 - Lean HTTP serves `/lean/v1/…` only (no Beacon `/eth/v1`).
+- Validator private keys from the registry are not loaded yet (indices are logged; signing still uses local smoke keys when present).
+- Upstream ethereum/hive `clients/ethean` registration still required.
