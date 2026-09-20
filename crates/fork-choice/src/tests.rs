@@ -95,8 +95,10 @@ fn import_child(
 fn create_store_and_chain_advances_head() {
     let (mut store, anchor, state) = anchor_store(3);
     assert_eq!(store.head(), anchor);
+    assert_eq!(store.reorg_total(), 0);
     let (child, _) = import_child(&mut store, &state, 1, 1);
     assert_eq!(store.head(), child);
+    assert_eq!(store.reorg_total(), 0); // linear extension is not a reorg
     assert!(store.blocks.contains_key(&child));
 }
 
