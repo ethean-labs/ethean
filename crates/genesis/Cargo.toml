@@ -13,3 +13,5 @@ ethean-profile = { workspace = true }
 ethean-types = { workspace = true }
 ethean-ssz = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }

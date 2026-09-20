@@ -52,4 +52,7 @@ pub enum GenesisError {
 
     #[error("profile error: {0}")]
     Profile(String),
+
+    #[error("lean config: {0}")]
+    LeanConfig(String),
 }
