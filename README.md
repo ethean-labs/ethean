@@ -949,6 +949,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Range-serve / serve-cache seed metrics**: [docs/range-serve-seed-metrics-2026-09-20.md](./docs/range-serve-seed-metrics-2026-09-20.md)
 - **Grafana range-serve / seed panels**: [docs/grafana-range-serve-seed-panels-2026-09-20.md](./docs/grafana-range-serve-seed-panels-2026-09-20.md)
 - **leanSpec FC finality / reorg / LMD**: [docs/leanspec-fc-finality-reorg-lmd-2026-09-20.md](./docs/leanspec-fc-finality-reorg-lmd-2026-09-20.md)
+- **leanEthereum official repos plan**: [docs/lean-ethereum-official-repos-plan-2026-09-20.md](./docs/lean-ethereum-official-repos-plan-2026-09-20.md)
 - **Full State SSZ encode/decode**: [docs/state-ssz-encode-decode-complete-2026-09-20.md](./docs/state-ssz-encode-decode-complete-2026-09-20.md)
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/lean-peer-client-research-library-2026-09-19.md)
 - **Language (English only)**: [docs/english.md](./docs/english.md)
