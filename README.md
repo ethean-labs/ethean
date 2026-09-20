@@ -167,7 +167,7 @@ ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data
 # Stop with Ctrl-C, then restart — same genesis, resumed head
 ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data
 
-# Wipe pin + head and start a new fixed chain under the same directory
+# Wipe the data-dir (chain + logs) and start a new fixed chain
 ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data --reset-chain
 
 # Fast solo smoke (no disk chain identity)
@@ -181,11 +181,12 @@ Under `--data-dir` the node writes:
 - `state.ssz` / `head.root` — current head (updated each duty step)
 - `blocks/<root>.ssz` — signed block blobs when a proposal is in flight
 - `ethean.redb` — same SSZ blobs in a local KV (`historical_block_hashes` lives inside state SSZ)
-- `log/ethean-YYYY-MM-DD-HHMMSS-log` — process log for that start (console still prints)
+- `log/ethean-YYYY-MM-DD-HHMMSS-log` — process log for that start (console still prints; wiped by `--reset-chain`)
 
 A prior `genesis_pin.json` / `head_snap.json` in the same folder is still read once
 and migrated. See [docs/ethean-redb-ssz-data-dir-2026-09-20.md](docs/ethean-redb-ssz-data-dir-2026-09-20.md)
 and [docs/ethean-data-dir-run-logs-2026-09-20.md](docs/ethean-data-dir-run-logs-2026-09-20.md).
+`--reset-chain` empties the folder first: [docs/reset-chain-wipes-data-dir-2026-09-20.md](docs/reset-chain-wipes-data-dir-2026-09-20.md).
 
 `--ephemeral` wins over `--data-dir` if both are set (logs a warning).
 
@@ -207,7 +208,7 @@ pq-devnets (lean-quickstart / `setup-genesis.sh`):
 - First start needs a durable path (`--data-dir`); files appear under that folder.
 - Quick “does finality move?” smoke is slightly less one-liner friendly unless
   you pass `--ephemeral`.
-- Regenerating genesis (`--reset-chain` or deleting the pin) starts a **new**
+- Regenerating genesis (`--reset-chain`, which empties `--data-dir`) starts a **new**
   chain — same as peers when they re-run `--generateGenesis`.
 
 #### When to use which
@@ -508,7 +509,7 @@ ethean start --until-signal --network pq-devnet-5 --metrics
 | `--network` | `pq-devnet-4` | Network label |
 | `--data-dir` | unset | Durable fixed genesis + head resume |
 | `--ephemeral` | off | Force recent-genesis smoke (ignore `--data-dir`) |
-| `--reset-chain` | off | Delete pin/head under `--data-dir` before start |
+| `--reset-chain` | off | Empty `--data-dir` (chain + logs) before start |
 | `--validators` | `4` | Local registry size |
 | `--no-aggregator` | off | Disable aggregator role (default **on**) |
 | `--no-local-finality` | off | Disable solo head/finality advance (default **on**) |
