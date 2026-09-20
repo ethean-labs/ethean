@@ -13,6 +13,7 @@ pub mod blocks_sync;
 pub mod boot_network;
 pub mod chain_owner;
 pub mod chain_persist;
+pub mod chain_redb;
 pub mod chain_snap;
 pub mod persist_paths;
 pub mod persist_ssz;
