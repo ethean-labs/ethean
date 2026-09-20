@@ -1,7 +1,10 @@
 //! QuicSwarm accessors and boot-time network pump for [`EtheanClient`].
 
+#[cfg(feature = "libp2p-quic")]
 use crate::client::EtheanClient;
+#[cfg(feature = "libp2p-quic")]
 use crate::Result;
+#[cfg(feature = "libp2p-quic")]
 use tracing::info;
 
 #[cfg(feature = "libp2p-quic")]
