@@ -7,7 +7,8 @@ Root README companion guides (short landing page + detail): [readme/README.md](.
 [usage](./readme/usage.md), [api](./readme/api.md), [development](./readme/development.md),
 [testing](./readme/testing.md)). Session notes:
 [readme-companion-guides-2026-09-20.md](./readme-companion-guides-2026-09-20.md),
-[readme-overview-architecture-2026-09-20.md](./readme-overview-architecture-2026-09-20.md).
+[readme-overview-architecture-2026-09-20.md](./readme-overview-architecture-2026-09-20.md),
+[readme-overview-expanded-2026-09-20.md](./readme-overview-expanded-2026-09-20.md).
 
 Contributor guide (root): [../CONTRIBUTING.md](../CONTRIBUTING.md). Session note: [contributing-guide-2026-09-20.md](./contributing-guide-2026-09-20.md).
 
