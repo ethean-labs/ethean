@@ -132,6 +132,12 @@ impl EtheanClient {
         #[cfg(feature = "libp2p-quic")]
         {
             self.swarm = swarm;
+            if let Some(ref dir) = self.persist_dir {
+                let paths = crate::persist_paths::PersistPaths::new(dir);
+                if let Some(facade) = self.swarm.as_mut() {
+                    let _ = crate::serve_cache_seed::seed_facade_from_data_dir(facade, &paths);
+                }
+            }
             crate::boot_network::dial_bootnodes(network, self.swarm.as_mut());
         }
         #[cfg(not(feature = "libp2p-quic"))]
