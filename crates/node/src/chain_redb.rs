@@ -5,7 +5,7 @@ use crate::{Error, Result};
 use ethean_primitives::Hash32;
 use ethean_storage::SCHEMA_ID;
 use ethean_types::State;
-use redb::{Database, ReadableTable, TableDefinition};
+use redb::{Database, TableDefinition};
 use tracing::info;
 
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("ethean_meta");
