@@ -44,8 +44,9 @@ impl EtheanClient {
             return;
         };
         let paths = PersistPaths::new(dir.clone());
-        if let Err(e) = chain_persist::save_head(&paths, &self.owner) {
-            warn!(error = %e, "failed to flush durable chain files");
+        match chain_persist::save_head(&paths, &self.owner) {
+            Ok(()) => self.owner.clear_durable_blocks(),
+            Err(e) => warn!(error = %e, "failed to flush durable chain files"),
         }
     }
 }
