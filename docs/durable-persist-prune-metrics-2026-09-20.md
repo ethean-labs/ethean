@@ -32,4 +32,4 @@ cargo test -p ethean-metrics --lib
 | Gap | Notes |
 | --- | --- |
 | Grafana panel for durable row | Done — [grafana-durable-persist-prune-panels-2026-09-20.md](./grafana-durable-persist-prune-panels-2026-09-20.md) |
-| Configurable keep window | Still fixed at 256 |
+| Configurable keep window | Done — [prune-keep-slots-config-2026-09-20.md](./prune-keep-slots-config-2026-09-20.md) |
