@@ -35,39 +35,39 @@ Ethereum’s current consensus layer works at mainnet scale, but the research
 direction captured on [leanroadmap.org](https://leanroadmap.org/) is a deliberate
 rewrite for a world where:
 
-- **Signatures must survive quantum computers** — hash-based leanSig / XMSS-style
+- **Signatures must survive quantum computers** : hash-based leanSig / XMSS-style
   schemes instead of long-lived BLS assumptions.
-- **Validator sets may explode** — if the stake floor moves toward ~1 ETH, peer
+- **Validator sets may explode** : if the stake floor moves toward ~1 ETH, peer
   count and attestation volume jump; aggregation and P2P have to change shape.
-- **Finality should be seconds, not minutes** — 3SF (and later PQ heartbeat /
+- **Finality should be seconds, not minutes** : 3SF (and later PQ heartbeat /
   Goldfish-style ideas) instead of today’s longer confirmation story.
-- **Slots get tighter** — interop discussion around ~4s slots pushes networking
+- **Slots get tighter** : interop discussion around ~4s slots pushes networking
   toward QUIC and evolving Gossipsub / set-reconciliation designs.
-- **Roles may split** — attester–proposer separation (APS) and “rainbow staking”
+- **Roles may split** : attester–proposer separation (APS) and “rainbow staking”
   show up in the research tracks; clients need room for those duties.
 
 That work is not a single repo: leanSpec, leanSig, leanVM, leanMultisig, leanMetrics,
 pq-devnets, and several independent clients evolve together. Ethean’s job is to be
-**one honest Rust client** in that set — interoperable where it matters, distinct
+**one honest Rust client** in that set  interoperable where it matters, distinct
 in layout and style.
 
 ### What Ethean is trying to become
 
 In practical terms, Ethean should eventually:
 
-1. **Speak the Lean wire and types** — canonical SSZ containers, fork-choice /
+1. **Speak the Lean wire and types** : canonical SSZ containers, fork-choice /
    state-transition behavior pinned to leanSpec (and operator digests on live meshes).
-2. **Sign and verify with leanSig** — production XMSS backends when linked; until
+2. **Sign and verify with leanSig** : production XMSS backends when linked; until
    then, gates stay **fail-closed** rather than silently falling back to BLS.
-3. **Aggregate toward leanMultisig / leanVM** — aggregator duties and prove/verify
+3. **Aggregate toward leanMultisig / leanVM** : aggregator duties and prove/verify
    IPC as backends mature (mock and refuse paths are intentional, not accidental).
-4. **Run on pq-devnets like peer operators** — network labels, bootnode multiaddrs,
+4. **Run on pq-devnets like peer operators** : network labels, bootnode multiaddrs,
    fork digests, durable genesis packages, and metrics that operators can scrape.
-5. **Stay operable solo** — local finality / aggregator smoke so contributors can
+5. **Stay operable solo** : local finality / aggregator smoke so contributors can
    advance head → justified → finalized without waiting for a public mesh.
 
 Other Lean client implementations are useful **interop references** when wiring
-wire formats or pq-devnet operator pins — not templates to copy crate layout or
+wire formats or pq-devnet operator pins  not templates to copy crate layout or
 style from. When peers disagree, leanSpec and the current pq-devnet pin win.
 The reference list lives in
 [docs/peer-reference-clients.md](./docs/peer-reference-clients.md).
@@ -76,24 +76,24 @@ The reference list lives in
 
 The `ethean` binary is already useful for day-to-day Lean client work:
 
-- **Network labels** — operational default **pq-devnet-4** (offline under that label
+- **Network labels** : operational default **pq-devnet-4** (offline under that label
   when bootnodes are empty; dial when you paste QUIC multiaddrs). **pq-devnet-5**
   remains a prepared path (`config/networks/pq-devnet-5.*`, run scripts) for when
   operators publish a live mesh.
-- **Solo chain progress** — with local finality and aggregator roles enabled by
+- **Solo chain progress** : with local finality and aggregator roles enabled by
   default, a long-run process advances **head / justified / finalized** without
   public peers. That is for development and Grafana, not a claim of mainnet safety.
-- **Dual persistence modes** — `--data-dir` keeps a peer-like fixed genesis and
+- **Dual persistence modes** : `--data-dir` keeps a peer-like fixed genesis and
   resumes head after restart; `--ephemeral` rebuilds a recent genesis each start for
   fast smoke. See [docs/readme/usage.md](./docs/readme/usage.md).
-- **Lean P2P surface** — QUIC swarm paths for Status, blocks-by-root, and
+- **Lean P2P surface** : QUIC swarm paths for Status, blocks-by-root, and
   blocks-by-range, plus gossip admission as it hardens against mesh digests.
-- **HTTP that matches Lean, not Beacon** — scrape `:9100` (`/metrics`, `/healthz`,
+- **HTTP that matches Lean, not Beacon** : scrape `:9100` (`/metrics`, `/healthz`,
   `/readyz`) and Lean REST under `/lean/v1` on `:5052`. There is no supported
   Beacon `/eth/v1` compatibility goal.
-- **Spec fixtures** — `crates/spec-fixtures` locks fork-choice and related leanSpec
+- **Spec fixtures** : `crates/spec-fixtures` locks fork-choice and related leanSpec
   vectors so regressions show up in `cargo test`, not only on a live mesh.
-- **Observability** — process metrics are on by default; `ethean start … --metrics`
+- **Observability** : process metrics are on by default; `ethean start … --metrics`
   can start Docker Compose Grafana + Prometheus when Docker Desktop is available.
 
 Honest limits matter: empty bootnodes mean **private / offline**, not “joined public
@@ -115,20 +115,20 @@ Contributors are expected to keep the tree **English-only**, split source files 
 
 ### Key features
 
-- **Lean-first workspace** — types, SSZ, genesis, state transition, 3SF-mini fork
+- **Lean-first workspace** : types, SSZ, genesis, state transition, 3SF-mini fork
   choice, validator duties, network, storage, RPC, and metrics, wired by
   `ethean-node` and `bin/ethean`.
-- **ChainOwner ownership** — a single writer for head/sync; workers read snapshots
+- **ChainOwner ownership** : a single writer for head/sync; workers read snapshots
   and send `ChainCommand`s.
-- **Dual local modes** — durable fixed genesis (`--data-dir`) or ephemeral smoke
+- **Dual local modes** : durable fixed genesis (`--data-dir`) or ephemeral smoke
   (`--ephemeral`), matching how peer clients think about pq-devnet packages.
-- **Operator-shaped networking** — labels, bootnodes / fork-digest files, private
+- **Operator-shaped networking** : labels, bootnodes / fork-digest files, private
   mesh helpers; empty bootnodes are offline by design.
-- **Observability** — `ethean_` Prometheus gauges on `:9100`; optional Docker
+- **Observability** : `ethean_` Prometheus gauges on `:9100`; optional Docker
   Grafana / Prometheus via `--metrics`.
-- **Spec alignment** — leanSpec FC/STF runners and fail-closed leanSig / leanVM
+- **Spec alignment** : leanSpec FC/STF runners and fail-closed leanSig / leanVM
   gates instead of Beacon shortcuts.
-- **House rules** — English-only tree, ≤300-line sources, clean human git history.
+- **House rules** : English-only tree, ≤300-line sources, clean human git history.
 
 ### Where to go next
 
@@ -158,7 +158,7 @@ Ethean is a **crate-per-concern** Rust workspace behind a single CLI.
 
 | Layer | What lives here |
 | --- | --- |
-| Primitives / profile | Slots, forks, pinned `lstar`-style chain profile |
+| Primitives / profile | Slots, forks, pinned `lstar` style chain profile |
 | Types + SSZ | Canonical Lean containers and encode/decode |
 | Crypto | leanSig / XMSS surface (fail-closed without FFI) |
 | Consensus | Genesis, state transition, **3SF-mini** fork choice |
