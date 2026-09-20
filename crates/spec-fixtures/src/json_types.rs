@@ -193,6 +193,23 @@ struct JsonAggregatedAttestation {
     data: JsonAttestationData,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsonAggregateProof {
+    participants: JsonList<bool>,
+    /// Present in fixtures; ignored on the structural FC path.
+    #[serde(default)]
+    #[allow(dead_code)]
+    proof: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsonSignedAggregatedAttestation {
+    data: JsonAttestationData,
+    proof: JsonAggregateProof,
+}
+
 fn attestation_data(j: &JsonAttestationData) -> Result<ethean_types::AttestationData, JsonTypesError> {
     Ok(ethean_types::AttestationData {
         slot: Slot::new(j.slot),
@@ -214,6 +231,15 @@ pub fn aggregated_attestation_from_value(
         aggregation_bits: bits,
         data: attestation_data(&j.data)?,
     })
+}
+
+/// Decode a leanSpec signed aggregated attestation (proof bytes ignored structurally).
+pub fn signed_aggregated_from_value(
+    v: &serde_json::Value,
+) -> Result<(ethean_types::AttestationData, Vec<bool>), JsonTypesError> {
+    let j: JsonSignedAggregatedAttestation =
+        serde_json::from_value(v.clone()).map_err(|e| JsonTypesError::Serde(e.to_string()))?;
+    Ok((attestation_data(&j.data)?, j.proof.participants.data))
 }
 
 /// Decode a leanSpec signed attestation JSON (signature ignored structurally).
