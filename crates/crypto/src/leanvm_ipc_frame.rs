@@ -3,7 +3,7 @@
 //! Codec only: prove/verify still refuse to spawn until a sandbox round-trip
 //! against [`crate::aggregation::LEANVM_REV`] lands (`protocol_ready`).
 
-use crate::aggregation::{AggregateStatement, LEANVM_REV};
+use crate::aggregation::{AggregateStatement, ProofKind, LEANVM_REV};
 use crate::error::{CryptoError, Result};
 
 /// ASCII magic for Ethean leanVM IPC frames.
@@ -27,6 +27,10 @@ pub enum IpcOp {
     VerifyRequest = 3,
     /// Prover → client: accept/reject.
     VerifyResponse = 4,
+    /// Client → prover: split Type-2 proof into Type-1 leaf descriptors.
+    SplitRequest = 5,
+    /// Prover → client: encoded Type-1 leaves (may be structural-only).
+    SplitResponse = 6,
 }
 
 impl IpcOp {
@@ -36,6 +40,8 @@ impl IpcOp {
             2 => Ok(Self::ProveResponse),
             3 => Ok(Self::VerifyRequest),
             4 => Ok(Self::VerifyResponse),
+            5 => Ok(Self::SplitRequest),
+            6 => Ok(Self::SplitResponse),
             other => Err(CryptoError::InvalidAggregate(format!(
                 "unknown leanVM IPC op {other}"
             ))),
@@ -79,6 +85,23 @@ impl IpcFrame {
             pin_rev: LEANVM_REV.to_string(),
             statement: statement.encode_wire(),
             proof: proof.to_vec(),
+            ok: false,
+        })
+    }
+
+    /// Build a Type-2 → Type-1 split request (`proof` carries the Type-2 blob).
+    pub fn split_request(statement: &AggregateStatement, type2_proof: &[u8]) -> Result<Self> {
+        statement.validate_shape()?;
+        if statement.kind != ProofKind::Type2 {
+            return Err(CryptoError::InvalidAggregate(
+                "leanVM IPC split_request requires ProofKind::Type2".into(),
+            ));
+        }
+        Ok(Self {
+            op: IpcOp::SplitRequest,
+            pin_rev: LEANVM_REV.to_string(),
+            statement: statement.encode_wire(),
+            proof: type2_proof.to_vec(),
             ok: false,
         })
     }
@@ -212,6 +235,27 @@ mod tests {
         let decoded = IpcFrame::decode(&frame.encode().unwrap()).unwrap();
         assert_eq!(decoded.op, IpcOp::VerifyRequest);
         assert_eq!(decoded.proof, vec![9, 9, 9]);
+    }
+
+    #[test]
+    fn split_request_requires_type2() {
+        assert!(IpcFrame::split_request(&sample(), &[1]).is_err());
+        let type2 = AggregateStatement {
+            kind: ProofKind::Type2,
+            profile_digest: [1u8; 32],
+            message_root: [2u8; 32],
+            slot: 3,
+            participants: ParticipantSet::empty(),
+            components: vec![crate::aggregation::Type2ComponentRef {
+                message_root: [3u8; 32],
+                slot: 3,
+            }],
+        };
+        let frame = IpcFrame::split_request(&type2, &[7, 7]).unwrap();
+        assert_eq!(frame.op, IpcOp::SplitRequest);
+        assert_eq!(frame.proof, vec![7, 7]);
+        let decoded = IpcFrame::decode(&frame.encode().unwrap()).unwrap();
+        assert_eq!(decoded.op, IpcOp::SplitRequest);
     }
 
     #[test]
