@@ -157,6 +157,7 @@ impl NodeObservability {
         floor_slot: u64,
         files_removed: u64,
         redb_removed: u64,
+        keep_slots: u64,
     ) -> Result<(), MetricsError> {
         self.registry.with_mut(|reg| {
             record_durable_persist(
@@ -165,6 +166,7 @@ impl NodeObservability {
                 floor_slot,
                 files_removed,
                 redb_removed,
+                keep_slots,
             )
         })
     }
