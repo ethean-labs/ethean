@@ -22,7 +22,7 @@
 **Ethean** is a Rust **Lean Consensus** client for Ethereum’s post-quantum consensus
 redesign (historically discussed as Beam Chain / leanEthereum). The product name
 you see here is **Ethean Lean Consensus Client**; some crate paths may still carry
-older packaging names — treat those as history, not a second product.
+older packaging names treat those as history, not a second product.
 
 Ethean is **consensus-only**. It does not run an execution engine, does not aim to
 be a full L1 “everything node,” and does **not** treat today’s Beacon Chain (BLS
