@@ -1,6 +1,6 @@
 # README companion guides (2026-09-20)
 
-Shortened the root [README.md](../README.md) so the Table of Contents anchors
+Shortened the root [README.md](../../README.md) so the Table of Contents anchors
 work, and moved long operator detail under [readme/](./readme/).
 
 ## Problem

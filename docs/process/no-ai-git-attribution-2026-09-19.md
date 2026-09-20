@@ -19,7 +19,7 @@ That marks history as AI-authored. We do not want that in public or shared git h
 ## Repo controls
 
 - Local Cursor rules (gitignored): `11-no-ai-git-attribution.mdc`, plus updates to the git / human-code / commit-after-each-file rules. After every agent commit, the agent must inspect HEAD and amend-scrub if a Cursor trailer slipped in.
-- Hook: [`.githooks/commit-msg`](../.githooks/commit-msg) deletes common Cursor / `cursoragent@cursor.com` trailers from the commit message before the commit is finalized.
+- Hook: [`.githooks/commit-msg`](../../.githooks/commit-msg) deletes common Cursor / `cursoragent@cursor.com` trailers from the commit message before the commit is finalized.
 
 Enable the hook path once per clone:
 
@@ -55,4 +55,4 @@ Hosted / cloud agent commits may still force a Cursor author identity; IDE toggl
 
 All **unpublished** commits (`origin/master..HEAD`, 625 commits) were message-rewritten to drop Cursor trailers / `cursoragent@cursor.com`. Trees, authors (`Paro <pamenarti@gmail.com>`), dates, and file contents were kept. `origin/master` was not rewritten (about 25 older pushed commits may still carry the trailer; changing those would need a force push).
 
-Safety ref (local only): `backup/pre-cursor-trailer-scrub-2` points at the pre-scrub tip. Details: [scrub-unpublished-cursor-trailers-2026-09-19.md](./scrub-unpublished-cursor-trailers-2026-09-19.md).
+Safety ref (local only): `backup/pre-cursor-trailer-scrub-2` points at the pre-scrub tip. Details: [scrub-unpublished-cursor-trailers-2026-09-19.md](scrub-unpublished-cursor-trailers-2026-09-19.md).

@@ -1,6 +1,6 @@
 # Root README overview / architecture rewrite (2026-09-20)
 
-Expanded the early root [README.md](../README.md) so newcomers see **what Ethean
+Expanded the early root [README.md](../../README.md) so newcomers see **what Ethean
 is trying to do**, not generic Beacon marketing copy.
 
 ## Changes

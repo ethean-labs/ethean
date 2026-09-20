@@ -1,6 +1,6 @@
 # README Overview expansion (2026-09-20)
 
-Expanded the root [README.md](../README.md) **Overview** beyond the short bullet
+Expanded the root [README.md](../../README.md) **Overview** beyond the short bullet
 list so newcomers get a fuller story before Installation.
 
 ## Added subsections

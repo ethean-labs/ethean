@@ -1,6 +1,6 @@
 # CONTRIBUTING.md guide (2026-09-20)
 
-Added a root [CONTRIBUTING.md](../CONTRIBUTING.md) as the single contributor entry
+Added a root [CONTRIBUTING.md](../../CONTRIBUTING.md) as the single contributor entry
 point for Ethean Lean Consensus Client.
 
 ## Contents
@@ -23,4 +23,4 @@ API response examples was removed so that section reads as API docs again.
 
 ## Index
 
-Linked from [docs/README.md](./README.md) and the root README table of contents.
+Linked from [docs/README.md](../../README.md) and the root README table of contents.
