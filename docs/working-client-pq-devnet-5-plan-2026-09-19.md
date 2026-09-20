@@ -35,6 +35,7 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 - D2 smoke: four attestation subnet subscribe + `AggregatorReady` + Type-1 prove + **aggregation gossip publish** ([d2-type1-aggregation-gossip-publish-2026-09-20.md](./d2-type1-aggregation-gossip-publish-2026-09-20.md)).
 - D3: proposer Type-2 from Type-1 cache ([d3-type2-from-type1-cache-2026-09-20.md](./d3-type2-from-type1-cache-2026-09-20.md)); production leanVM SNARK still open.
 - B2 IPC frame ABI + B4 aggpin boot checks ([b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md](./b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md)); spawn/round-trip and production backends still open.
+- B2 IPC spawn + wall-deadline exchange ([b2-leanvm-ipc-spawn-exchange-2026-09-20.md](./b2-leanvm-ipc-spawn-exchange-2026-09-20.md)); `protocol_ready` still false until live leanVM round-trip.
 - Hive / leanSpec fixture consumer for matrix inclusion.
 - Goldfish / PQ heartbeat **only** when leanSpec for the run requires it (may be D6).
 
