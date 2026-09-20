@@ -1,0 +1,6 @@
+# Copy to `.cargo/config.toml` (gitignored) after:
+#   tools/release/vendor-leansig-bigint-fix.ps1
+# Prefer: tools/release/check-leansig-backend.ps1 (writes + restores lock).
+
+[patch."https://github.com/leanEthereum/leanSig"]
+leansig = { path = "bazalinacaklar/leanSig-patched" }

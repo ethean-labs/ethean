@@ -33,6 +33,7 @@ impl EtheanClient {
             leanvm_ipc_ready = leanvm_gate.ipc_protocol_ready,
             leanvm_pin = leanvm_gate.pinned_rev,
             leansig_feature = leansig_gate.feature_enabled,
+            leansig_vendor_patch = leansig_gate.vendor_bigint_patch_required,
             leansig_pin = leansig_gate.pinned_rev,
             "crypto backend gate probe"
         );

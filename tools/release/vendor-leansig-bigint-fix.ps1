@@ -47,9 +47,8 @@ if (-not $applied) {
 }
 
 Write-Host ""
-Write-Host "Verified path (from repo root, local only — do not commit Cargo.toml change):"
-Write-Host '  In crates/crypto/Cargo.toml temporarily replace the git leansig dep with:'
-Write-Host '  leansig = { path = "../../bazalinacaklar/leanSig-patched", package = "leansig", optional = true }'
-Write-Host "Then: cargo check -p ethean-crypto --features leansig-backend"
-Write-Host "Restore the git dep before committing. Keep rand 0.10 on ethean-crypto."
+Write-Host "Next (local only — do not commit .cargo/config.toml or a patched Cargo.lock):"
+Write-Host "  tools/release/check-leansig-backend.ps1 -Test"
+Write-Host "Or copy .cargo/config.toml.example to .cargo/config.toml and:"
+Write-Host "  cargo check -p ethean-crypto --features leansig-backend"
 Write-Host "Upstream still needs num-bigint 0.5 alignment with Plonky3 before git dep works alone."

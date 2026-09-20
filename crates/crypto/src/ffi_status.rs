@@ -37,6 +37,13 @@ pub struct LeanVmGate {
     pub ipc_protocol_ready: bool,
 }
 
+/// Upstream leanSig still pins `num-bigint` 0.4 while Plonky3 pulls 0.5.
+///
+/// Enabling `leansig-backend` against the git dep alone fails to unify `BigUint`.
+/// Operators must run `tools/release/vendor-leansig-bigint-fix.ps1` (or
+/// `check-leansig-backend.ps1`) until upstream bumps the pin.
+pub const LEANSIG_VENDOR_BIGINT_PATCH_REQUIRED: bool = true;
+
 /// Detailed leanSig gate (compile feature + recorded upstream pin).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LeanSigGate {
@@ -44,6 +51,8 @@ pub struct LeanSigGate {
     pub pinned_rev: &'static str,
     /// Cargo feature `leansig-backend` compiled in.
     pub feature_enabled: bool,
+    /// True until upstream leanSig ships `num-bigint` 0.5 with Plonky3.
+    pub vendor_bigint_patch_required: bool,
 }
 
 impl LeanSigGate {
@@ -52,12 +61,14 @@ impl LeanSigGate {
         Self {
             pinned_rev: crate::xmss::LEANSIG_REV,
             feature_enabled: cfg!(feature = "leansig-backend"),
+            vendor_bigint_patch_required: LEANSIG_VENDOR_BIGINT_PATCH_REQUIRED,
         }
     }
 
-    /// True when the production XMSS backend is compiled in.
+    /// True when the production XMSS backend is compiled into this binary.
     ///
-    /// Does not guarantee the git dep resolves without the local num-bigint vendor patch.
+    /// Compile success still requires the local num-bigint vendor patch (or an
+    /// equivalent `[patch]`) until [`LEANSIG_VENDOR_BIGINT_PATCH_REQUIRED`] is false.
     pub fn ready(self) -> bool {
         self.feature_enabled
     }
@@ -66,6 +77,10 @@ impl LeanSigGate {
     pub fn refuse_reason(self) -> Option<&'static str> {
         if self.ready() {
             None
+        } else if self.vendor_bigint_patch_required {
+            Some(
+                "leansig-backend feature disabled (git dep needs local num-bigint 0.5 vendor patch); refuse always-true XMSS verify",
+            )
         } else {
             Some("leansig-backend feature disabled; refuse always-true XMSS verify")
         }
@@ -176,11 +191,30 @@ mod tests {
         let g = LeanVmGate::probe();
         assert!(!g.ready());
         assert_eq!(g.pinned_rev.len(), 40);
-        let s = LeanSigGate::probe();
-        assert_eq!(s.pinned_rev.len(), 40);
-        assert!(!s.ready());
-        assert!(s.refuse_reason().is_some());
+        let sig = LeanSigGate::probe();
+        assert_eq!(sig.pinned_rev.len(), 40);
+        assert!(sig.vendor_bigint_patch_required);
+        #[cfg(not(feature = "leansig-backend"))]
+        {
+            assert!(!sig.ready());
+            assert!(sig.refuse_reason().is_some());
+        }
+        #[cfg(feature = "leansig-backend")]
+        {
+            assert!(sig.ready());
+            assert!(sig.refuse_reason().is_none());
+        }
         assert!(g.refuse_reason().is_some());
+    }
+
+    #[cfg(feature = "leansig-backend")]
+    #[test]
+    fn leansig_feature_reports_ready() {
+        let g = LeanSigGate::probe();
+        assert!(g.feature_enabled);
+        assert!(g.ready());
+        assert!(g.vendor_bigint_patch_required);
+        assert!(FfiStatus::probe().leansig);
     }
 
     #[cfg(feature = "leanvm-backend")]

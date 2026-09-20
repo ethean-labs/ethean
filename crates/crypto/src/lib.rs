@@ -32,7 +32,9 @@ pub use backend::{CryptoBackend, ProductionBackend, SecretKeyMaterial};
 #[cfg(any(test, feature = "test-hmac"))]
 pub use backend::TestHmacBackend;
 pub use error::{CryptoError, Result};
-pub use ffi_status::{BackendGap, FfiStatus, LeanSigGate, LeanVmGate};
+pub use ffi_status::{
+    BackendGap, FfiStatus, LeanSigGate, LeanVmGate, LEANSIG_VENDOR_BIGINT_PATCH_REQUIRED,
+};
 pub use leanvm_ipc::{
     try_roundtrip_prove, LeanVmIpcStatus, PROVER_ENV as LEANVM_PROVER_ENV,
 };

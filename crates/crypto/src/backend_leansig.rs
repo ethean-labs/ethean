@@ -105,3 +105,48 @@ fn leansig_bytes_from_wire(wire: &[u8; SIGNATURE_BYTES]) -> Result<Vec<u8>> {
     }
     Ok(wire.to_vec())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::backend::{CryptoBackend, ProductionBackend};
+
+    #[test]
+    fn prod_rejects_invalid_active_epoch_counts() {
+        let backend = ProductionBackend;
+        assert!(backend.key_gen(0, 0).is_err());
+        assert!(backend
+            .key_gen(0, MAX_WRAPPER_ACTIVE_EPOCHS + 1)
+            .is_err());
+    }
+
+    /// Full PROD keygen for lifetime 2^32 is minutes-class even with one active epoch.
+    /// Enable locally: `cargo test -p ethean-crypto --features leansig-backend -- --ignored`
+    #[test]
+    #[ignore = "leansig PROD key_gen is too slow for default CI"]
+    fn prod_keygen_sign_verify_one_epoch() {
+        let backend = ProductionBackend;
+        let (pk, sk) = backend
+            .key_gen(0, 1)
+            .expect("leansig PROD key_gen with 1 active epoch");
+        assert_eq!(pk.as_bytes().len(), PUBLIC_KEY_BYTES);
+        let mut message = [0u8; MESSAGE_BYTES];
+        message[0] = 0xA5;
+        let signature = backend
+            .sign(&sk, 0, &message)
+            .expect("leansig PROD sign at epoch 0");
+        assert!(
+            backend
+                .verify(&pk, 0, &message, &signature)
+                .expect("leansig PROD verify"),
+            "valid signature must verify"
+        );
+        message[0] ^= 1;
+        assert!(
+            !backend
+                .verify(&pk, 0, &message, &signature)
+                .expect("leansig PROD verify wrong message"),
+            "tampered message must fail verify"
+        );
+    }
+}

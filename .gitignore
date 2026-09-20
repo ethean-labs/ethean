@@ -1,4 +1,7 @@
 target
+# Local cargo patch (leanSig num-bigint vendor); example may be committed.
+.cargo/config.toml
+Cargo.lock.leansig-check.bak
 # Keep Cursor/local agent config out of git; allow CI workflows.
 .github/*
 !.github/workflows/
