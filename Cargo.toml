@@ -50,6 +50,7 @@ ethean-metrics = { path = "crates/metrics" }
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"
 sha2 = "0.10"
 rocksdb = "0.21"
 redb = "2.6"
