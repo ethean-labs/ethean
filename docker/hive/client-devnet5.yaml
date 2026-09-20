@@ -1,0 +1,3 @@
+# Snippet for ethereum/hive simulators/lean/clients/devnet5.yaml
+- client: ethean
+  nametag: devnet5
