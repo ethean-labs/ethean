@@ -40,6 +40,9 @@ pub enum Command {
         /// `RUST_LOG` still wins when set.
         #[arg(long = "log-level", value_name = "LEVEL")]
         log_level: Option<String>,
+        /// Skip the ASCII startup banner and start snapshot card.
+        #[arg(long, default_value_t = false)]
+        no_banner: bool,
         /// Network label (default: pq-devnet-4). Use `pq-devnet-5` when operator mesh is up; `local` for smoke-only.
         #[arg(long, default_value = "pq-devnet-4")]
         network: String,
