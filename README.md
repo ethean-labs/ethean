@@ -896,6 +896,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **leanSpec FC prune votes not blocks**: [docs/leanspec-fc-prune-votes-not-blocks-2026-09-20.md](./docs/leanspec-fc-prune-votes-not-blocks-2026-09-20.md)
 - **leanSpec FC extra suite**: [docs/leanspec-fc-extra-suite-2026-09-20.md](./docs/leanspec-fc-extra-suite-2026-09-20.md)
 - **leanSpec FC tick safe snapshot gate**: [docs/leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md](./docs/leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md)
+- **leanSpec FC finalized_safety empty-body gate**: [docs/leanspec-fc-finalized-safety-empty-body-gate-2026-09-20.md](./docs/leanspec-fc-finalized-safety-empty-body-gate-2026-09-20.md)
 - **leanEthereum official repos plan**: [docs/lean-ethereum-official-repos-plan-2026-09-20.md](./docs/lean-ethereum-official-repos-plan-2026-09-20.md)
 - **leanEthereum/pm indexed**: [docs/lean-ethereum-pm-indexed-2026-09-20.md](./docs/lean-ethereum-pm-indexed-2026-09-20.md)
 - **FC MAX_ATTESTATIONS_DATA / D4 rate**: [docs/fc-max-attestations-d4-log-inv-rate-2026-09-20.md](./docs/fc-max-attestations-d4-log-inv-rate-2026-09-20.md)
