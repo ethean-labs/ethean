@@ -33,6 +33,7 @@ pub use error::{NetworkError, Result};
 pub use gossip::{
     decode_gossip, delta_for, encode_gossip, validate_gossip_payload, GossipAction, GossipIngress,
     LeanGossipTopics, PumpEvent, SCORE_ACCEPT, SCORE_IGNORE, SCORE_REJECT,
+    SMOKE_ATTESTATION_SUBNETS,
 };
 pub use identity::NodeIdentity;
 pub use multiaddr::{parse_quic_udp, QuicUdpAddr};
