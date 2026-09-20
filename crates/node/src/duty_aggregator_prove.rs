@@ -1,4 +1,7 @@
 //! Type-1 prove dispatch when aggregator coverage clears.
+//!
+//! Uses [`ProverWorker`] → `prove_type1`, which prefers leanVM process IPC when
+//! `ETHEAN_LEANVM_PROVER` is set (else test-aggregate smoke proofs).
 
 use crate::aggregation::{AggregationBudget, PoolEntry, PoolKey, ProverJob, ProverOutcome, ProverWorker};
 use crate::chain_owner::ChainOwner;
