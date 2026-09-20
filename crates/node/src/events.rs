@@ -80,6 +80,26 @@ pub enum ChainEvent {
         /// Proof byte length.
         proof_len: usize,
     },
+    /// Type-1 aggregate SSZ queued for Lean aggregation / attestation gossip.
+    AggregationGossipReady {
+        /// Lean gossip topic string.
+        topic: String,
+        /// Attestation-data tree root.
+        data_root: Hash32,
+        /// Uncompressed payload length.
+        payload_len: usize,
+        /// Proof byte length.
+        proof_len: usize,
+    },
+    /// Type-1 aggregate published on QuicSwarm gossip.
+    AggregationPublished {
+        /// Lean gossip topic string.
+        topic: String,
+        /// Attestation-data tree root.
+        data_root: Hash32,
+        /// Uncompressed payload length.
+        payload_len: usize,
+    },
     /// Pending proposal was published on QuicSwarm gossip.
     ProposalPublished {
         /// Lean gossip topic string.
