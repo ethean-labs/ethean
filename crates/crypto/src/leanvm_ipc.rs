@@ -137,11 +137,30 @@ fn accept_verify_response(request: &IpcFrame, response: IpcFrame) -> Result<bool
     Ok(response.ok)
 }
 
+/// Attempt one Type-1 prove round-trip against `prover` (dev/CI helper).
+///
+/// Does not flip [`LeanVmIpcStatus::protocol_ready`]; callers decide trust policy.
+pub fn try_roundtrip_prove(prover: &std::path::Path) -> Result<Vec<u8>> {
+    use crate::aggregation::{ParticipantSet, ProofKind};
+    let statement = AggregateStatement {
+        kind: ProofKind::Type1,
+        profile_digest: [9u8; 32],
+        message_root: [8u8; 32],
+        slot: 1,
+        participants: ParticipantSet::try_from_ordered(vec![0, 1]).unwrap(),
+        components: vec![],
+    };
+    let request = IpcFrame::prove_request(&statement)?;
+    let response = exchange_frame(prover, &request, DEFAULT_IPC_WALL)?;
+    accept_prove_response(&request, response)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::aggregation::{ParticipantSet, ProofKind};
     use crate::leanvm_ipc_frame::IpcOp;
+    use crate::verify_type1;
 
     fn sample() -> AggregateStatement {
         AggregateStatement {
@@ -189,5 +208,43 @@ mod tests {
             ok: true,
         };
         assert_eq!(accept_prove_response(&req, good).unwrap(), vec![9, 9]);
+    }
+
+    #[test]
+    fn roundtrip_against_workspace_mock_if_built() {
+        let mock = mock_prover_path();
+        if !mock.is_file() {
+            eprintln!("skip: build ethean-leanvm-mock first ({})", mock.display());
+            return;
+        }
+        let proof = try_roundtrip_prove(&mock).expect("mock prove round-trip");
+        assert!(!proof.is_empty());
+        let statement = AggregateStatement {
+            kind: ProofKind::Type1,
+            profile_digest: [9u8; 32],
+            message_root: [8u8; 32],
+            slot: 1,
+            participants: ParticipantSet::try_from_ordered(vec![0, 1]).unwrap(),
+            components: vec![],
+        };
+        verify_type1(&statement, &proof).expect("mock proof verifies");
+        // Also exercise env-based prove_ipc path.
+        std::env::set_var(PROVER_ENV, &mock);
+        let via_env = prove_ipc(&statement).expect("prove_ipc via mock env");
+        assert_eq!(via_env, proof);
+        std::env::remove_var(PROVER_ENV);
+    }
+
+    fn mock_prover_path() -> std::path::PathBuf {
+        let mut p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        p.pop(); // crates
+        p.pop(); // repo root
+        p.push("target");
+        p.push("debug");
+        #[cfg(windows)]
+        p.push("ethean-leanvm-mock.exe");
+        #[cfg(not(windows))]
+        p.push("ethean-leanvm-mock");
+        p
     }
 }
