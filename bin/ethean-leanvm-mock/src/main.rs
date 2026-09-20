@@ -4,8 +4,9 @@
 //! so local IPC spawn round-trips can go green without linking Plonky3.
 
 use ethean_crypto::{
-    encode_len_prefixed, prove_type1, prove_type2, read_len_prefixed, verify_type1, verify_type2,
-    AggregateStatement, IpcFrame, IpcOp, ProofKind, LEANVM_REV,
+    encode_len_prefixed, encode_type1_leaves, prove_type1, prove_type2, read_len_prefixed,
+    split_type2_to_type1, verify_type1, verify_type2, AggregateStatement, IpcFrame, IpcOp,
+    ProofKind, LEANVM_REV,
 };
 use std::io::{self, Write};
 use std::process::ExitCode;
@@ -39,6 +40,7 @@ fn serve_once() -> Result<(), String> {
     let response = match request.op {
         IpcOp::ProveRequest => handle_prove(statement)?,
         IpcOp::VerifyRequest => handle_verify(statement, &request.proof)?,
+        IpcOp::SplitRequest => handle_split(statement, &request.proof)?,
         other => return Err(format!("unsupported op {other:?}")),
     };
     let encoded = response.encode().map_err(|e| e.to_string())?;
@@ -76,5 +78,17 @@ fn handle_verify(statement: AggregateStatement, proof: &[u8]) -> Result<IpcFrame
         statement: statement.encode_wire(),
         proof: proof.to_vec(),
         ok,
+    })
+}
+
+fn handle_split(statement: AggregateStatement, type2_proof: &[u8]) -> Result<IpcFrame, String> {
+    // Structural-only: crypto_split stays false until a real leanVM decomposes SNARKs.
+    let leaves = split_type2_to_type1(&statement, type2_proof).map_err(|e| e.to_string())?;
+    Ok(IpcFrame {
+        op: IpcOp::SplitResponse,
+        pin_rev: LEANVM_REV.to_string(),
+        statement: statement.encode_wire(),
+        proof: encode_type1_leaves(&leaves),
+        ok: true,
     })
 }
