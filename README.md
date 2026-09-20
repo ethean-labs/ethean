@@ -10,7 +10,7 @@
 
 **Rust consensus client for Ethereum Lean Consensus (Beam / leanEthereum)**
 
-[Installation](#installation) • [Quick Start](#quick-start) • [Development](#development) • [Testing](#testing) • [Documentation](#documentation)
+[Installation](#installation) • [Quick Start](#quick-start) • [Development](#development) • [Contributing](./CONTRIBUTING.md) • [Documentation](#documentation)
 
 </div>
 
@@ -42,7 +42,7 @@ Ethean is a modern, high-performance Ethereum Beam/Lean Chain client written in 
 - [API Documentation](#api-documentation)
 - [Development](#development)
 - [Testing](#testing)
-- [Contributing](#contributing)
+- [Contributing](./CONTRIBUTING.md)
 - [License](#license)
 
 ## Overview
@@ -746,30 +746,6 @@ Ethean database verify --repair
 Ethean database restore --latest-backup
 ```
 
-##  Contributing
-
-### Development Setup
-
-```bash
-# Fork and clone
-git clone https://github.com/ethean-labs/ethean.git
-cd Ethean
-
-# Create feature branch
-git checkout -b feature/new-feature
-
-# Make changes and test
-cargo test
-cargo clippy
-cargo fmt
-
-# Commit and push
-git commit -m "Add new feature"
-git push origin feature/new-feature
-```
-
-
-
 ```json
 {
   "execution_optimistic": false,
@@ -880,41 +856,8 @@ Current test coverage includes:
 
 ## Contributing
 
-We welcome contributions to Ethean. Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch
-3. Write comprehensive tests
-4. Update documentation
-5. Submit a pull request
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/ethean-labs/ethean.git
-cd Ethean
-
-# Install dependencies
-cargo build
-
-# Run tests
-cargo test
-
-# Run linting
-cargo clippy
-
-# Format code
-cargo fmt
-```
-
-### Code Standards
-
-- **Rust Style**: Follow official Rust style guidelines
-- **Documentation**: Document all public APIs
-- **Testing**: Maintain >95% test coverage
-- **Performance**: Benchmark critical paths
-- **Security**: Follow secure coding practices
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, code guidelines (300-line
+files, English-only), git/PR rules, and no AI git attribution.
 
 ##  License
 
