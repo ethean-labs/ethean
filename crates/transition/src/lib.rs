@@ -26,6 +26,7 @@ pub use slot::process_slots;
 pub use type2_statement::type2_statement_for_block;
 
 pub use block::{process_block, process_block_header};
+pub use helpers::proposer_for_slot;
 pub use operation::{
     check_attestation_data_structure, distinct_attestation_data_count, process_attestations,
 };
@@ -60,6 +61,28 @@ pub fn apply_block_unverified(
     let mut state = pre.clone();
     process_slots(&mut state, block.slot)?;
     process_block(&mut state, block, ctx)?;
+    finish_unverified(state, block)
+}
+
+/// Structural apply at the current store slot (no `process_slots`).
+///
+/// Used by STF fixtures that intentionally skip slot processing (same-slot /
+/// older-than-header rejection paths) and by runners remapping placeholder
+/// zero state-roots onto `BLOCK_SLOT_MISMATCH` when `pre.slot != block.slot`.
+pub fn apply_block_unverified_no_slots(
+    pre: &State,
+    block: &Block,
+    ctx: &TransitionContext,
+) -> Result<TransitionOutcome, TransitionError> {
+    let mut state = pre.clone();
+    process_block(&mut state, block, ctx)?;
+    finish_unverified(state, block)
+}
+
+fn finish_unverified(
+    state: State,
+    block: &Block,
+) -> Result<TransitionOutcome, TransitionError> {
     let post_state_root = state
         .hash_tree_root()
         .map_err(|e| TransitionError::Types(e.to_string()))?;
