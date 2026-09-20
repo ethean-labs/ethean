@@ -25,12 +25,14 @@ ethean start --network pq-devnet-4 --until-signal
 .\scripts\run-observability.ps1
 ```
 
-Open http://localhost:3000 → **Ethean Lean Clients Dashboard**.
+Open http://localhost:3000 → **Ethean Lean Clients Dashboard** (and
+**Ethean Node Health** for readiness / lag / peers). See
+[ethean-grafana-richer-monitors-2026-09-20.md](./ethean-grafana-richer-monitors-2026-09-20.md).
 
-## Honest limits vs Shariq's Ream/ethlambda mesh
+## Honest limits vs a multi-client mesh board
 
 - Solo Ethean advances **wall current slot** immediately.
-- Head / justified / finalized climb like his healthy 24-validator run only when
+- Head / justified / finalized climb like a healthy multi-validator run only when
   peers + aggregator + STF/finality path are live (local mesh or operator paste).
-- His multi-day stall (head climbing, finalized stuck) is exactly what this
-  dashboard is for: catch finality lag before scaling the mesh.
+- Finality stall (head climbing, finalized stuck) is exactly what the lag panels
+  catch before scaling the mesh.
