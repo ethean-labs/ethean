@@ -85,6 +85,7 @@ Planning session summaries:
 - [Data-dir process logs](./ethean-data-dir-run-logs-2026-09-20.md)
 - [Console log colors](./ethean-console-log-colors-2026-09-20.md)
 - [Console log verbosity](./ethean-log-verbosity-2026-09-20.md)
+- [Startup ASCII banner](./ethean-startup-banner-2026-09-20.md)
 - [--reset-chain empties data-dir](./reset-chain-wipes-data-dir-2026-09-20.md)
 - [Dual mode: durable data-dir + ephemeral smoke](./dual-mode-persist-and-ephemeral-2026-09-20.md)
 - [Recommended test baseline (Ream ops + ethlambda)](./recommend-test-baseline-ream-ethlambda-2026-09-20.md)
