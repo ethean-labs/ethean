@@ -11,6 +11,7 @@ pub mod chain {
 
 pub mod network {
     pub const PEER_COUNT: &str = "peer_count";
+    pub const BOOTNODE_COUNT: &str = "bootnode_count";
 }
 
 pub mod storage {
