@@ -65,6 +65,7 @@ Planning session summaries:
 - [leanSpec FC ticks, imports, more rejections](./leanspec-fc-tick-import-rejections-2026-09-20.md)
 - [leanSpec FC attestation steps](./leanspec-fc-attestation-steps-2026-09-20.md)
 - [leanSpec FC block body attestations](./leanspec-fc-block-body-attestations-2026-09-20.md)
+- [leanSpec FC gossipAggregatedAttestation](./leanspec-fc-gossip-aggregated-2026-09-20.md)
 - [Gossipsub mesh on QuicSwarm](./gossipsub-quic-mesh-2026-09-19.md)
 - [Gossip ingest and peer score feedback](./gossip-ingest-peer-score-2026-09-19.md)
 - [SSZ gossip decode into ImportBlock](./ssz-gossip-import-block-2026-09-19.md)
