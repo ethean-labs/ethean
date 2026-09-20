@@ -45,6 +45,8 @@ pub struct ForkChoiceStore {
     pub latest_new_payloads: HashMap<Hash32, AggregatedPayloadEntry>,
     /// Known on-chain / promoted aggregates (`latest_known_aggregated_payloads`).
     pub latest_known_payloads: HashMap<Hash32, AggregatedPayloadEntry>,
+    /// Times the head moved onto a competing branch (not an extension of the prior head).
+    pub reorg_total: u64,
 }
 
 impl ForkChoiceStore {
@@ -66,5 +68,10 @@ impl ForkChoiceStore {
 
     pub fn current_slot(&self) -> u64 {
         self.time / self.intervals_per_slot
+    }
+
+    /// Cumulative reorg count for metrics (`ethean_fc_reorg_total`).
+    pub fn reorg_total(&self) -> u64 {
+        self.reorg_total
     }
 }

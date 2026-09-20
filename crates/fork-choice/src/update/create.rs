@@ -53,5 +53,6 @@ pub fn create_store(
         latest_known_attestations: std::collections::HashMap::new(),
         latest_new_payloads: std::collections::HashMap::new(),
         latest_known_payloads: std::collections::HashMap::new(),
+        reorg_total: 0,
     })
 }
