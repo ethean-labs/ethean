@@ -2,6 +2,7 @@
 
 use crate::client::EtheanClient;
 use crate::Result;
+#[cfg(feature = "libp2p-quic")]
 use tracing::info;
 
 impl EtheanClient {
@@ -22,6 +23,7 @@ impl EtheanClient {
         #[cfg(not(feature = "libp2p-quic"))]
         {
             let _ = (max_events, idle);
+            let _ = self.status_sessions.pending_len();
             Ok(0)
         }
     }
