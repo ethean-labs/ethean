@@ -90,6 +90,10 @@ pub enum Command {
         /// UDP/QUIC listen port (default 9000; `0` = OS ephemeral).
         #[arg(long, default_value_t = 9000)]
         listen_port: u16,
+        /// Slots kept below finalized before pruning `--data-dir` block blobs (default 256).
+        /// Override with `ETHEAN_PRUNE_KEEP_SLOTS` when the flag is omitted.
+        #[arg(long = "prune-keep-slots", value_name = "SLOTS")]
+        prune_keep_slots: Option<u64>,
         /// Path to Lean Hive / quickstart `config.yaml` (GENESIS_TIME + GENESIS_VALIDATORS).
         #[arg(long = "lean-config", value_name = "PATH")]
         lean_config: Option<String>,
