@@ -53,6 +53,9 @@ pub enum ForkChoiceError {
     #[error("duplicate AttestationData in block body")]
     DuplicateAttestationData,
 
+    #[error("too many AttestationData entries in block body")]
+    TooManyAttestationData,
+
     #[error("aggregated attestation has no participants")]
     EmptyAggregationBits,
 
