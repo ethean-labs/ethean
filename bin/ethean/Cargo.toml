@@ -25,4 +25,8 @@ nu-ansi-term = "0.46"
 # Default enables QUIC so `ethean start --bootnodes …` can dial pq-devnet peers.
 default = ["libp2p-quic"]
 libp2p-quic = ["ethean-node/libp2p-quic"]
+# Optional production XMSS (needs local leanSig num-bigint patch; see docs/b1-…).
+leansig-backend = ["ethean-node/leansig-backend"]
+# Optional leanVM surface (fail-closed until FFI linked).
+leanvm-backend = ["ethean-node/leanvm-backend"]
 
