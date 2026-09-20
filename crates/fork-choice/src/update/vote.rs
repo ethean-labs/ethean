@@ -48,6 +48,7 @@ impl ForkChoiceStore {
                 self.insert_pending_vote(ValidatorIndex::new(i as u64), data.clone());
             }
         }
+        self.record_new_payload(data, participants);
         Ok(())
     }
 
