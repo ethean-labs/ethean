@@ -178,3 +178,29 @@ fn losing_fork_higher_finalized_does_not_latch() {
     assert!(r.imports >= 1);
     assert_eq!(r.rejections, 0);
 }
+
+#[test]
+fn tick_interval_0_skips_acceptance_when_not_proposer() {
+    let Some(r) = run_ok(
+        "test_tick_system/test_tick_interval_0_skips_acceptance_when_not_proposer.json",
+    ) else {
+        eprintln!("skip: cache missing");
+        return;
+    };
+    assert_eq!(r.imports, 2);
+    assert_eq!(r.ticks, 6);
+    assert_eq!(r.attestations, 3);
+}
+
+#[test]
+fn tick_interval_progression_advances_safe_target() {
+    let Some(r) = run_ok(
+        "test_tick_system/test_tick_interval_progression_through_full_slot.json",
+    ) else {
+        eprintln!("skip: cache missing");
+        return;
+    };
+    assert_eq!(r.imports, 2);
+    assert_eq!(r.ticks, 5);
+    assert_eq!(r.attestations, 1);
+}
