@@ -32,6 +32,6 @@ cargo test -p ethean-spec-fixtures --lib fc_runner
 | Gap | Notes |
 | --- | --- |
 | `aggregated_attestation` gossip steps | Landed as `gossipAggregatedAttestation` — see `leanspec-fc-gossip-aggregated-2026-09-20.md` |
-| Broader FC suite (finality / reorg / LMD) | Decode ready; expand case-by-case |
+| Broader FC suite (finality / reorg / LMD) | Partial — [leanspec-fc-finality-reorg-lmd-2026-09-20.md](./leanspec-fc-finality-reorg-lmd-2026-09-20.md) |
 | STF fixture runner | Separate track |
 | Hive client image / A2/A3 / leanVM / bigint | External gates |
