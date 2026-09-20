@@ -88,6 +88,7 @@ Planning session summaries:
 - [Status handshake outboxes (Status + blocks-by-root staging)](./status-handshake-outbox-2026-09-19.md)
 - [QuicSwarm Status request_response wire](./quic-status-reqresp-wire-2026-09-19.md)
 - [Blocks-by-root request_response wire](./blocks-by-root-reqresp-wire-2026-09-19.md)
+- [D5 Type-2 gossip envelope gate](./d5-type2-gossip-envelope-gate-2026-09-19.md)
 - [Blocks-by-root SignedBlock ingest](./blocks-by-root-signedblock-ingest-2026-09-19.md)
 - [Blocks-by-root multi-hop parent catch-up](./blocks-by-root-multihop-catchup-2026-09-19.md)
 - [Type-2 structural split and pool reseed](./type2-structural-split-pool-reseed-2026-09-19.md)
