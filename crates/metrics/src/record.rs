@@ -17,6 +17,16 @@ pub fn ensure_core_families(reg: &mut Registry) -> Result<()> {
             "Finalized checkpoint slot",
             MetricKind::Gauge,
         ),
+        (
+            "safe_target_slot",
+            "Fork-choice safe-target slot (leanMetrics lean_safe_target_slot)",
+            MetricKind::Gauge,
+        ),
+        (
+            "fc_reorg_total",
+            "Fork-choice head reorgs detected",
+            MetricKind::Counter,
+        ),
         ("slot_current", "Wall-clock current slot", MetricKind::Gauge),
         (
             "sync_lag_slots",
@@ -155,12 +165,14 @@ pub fn record_slot_gauges(
     head_slot: u64,
     justified_slot: u64,
     finalized_slot: u64,
+    safe_target_slot: u64,
     current_slot: u64,
     sync_lag: u64,
 ) -> Result<()> {
     reg.set("head_slot", head_slot as f64)?;
     reg.set("justified_slot", justified_slot as f64)?;
     reg.set("finalized_slot", finalized_slot as f64)?;
+    reg.set("safe_target_slot", safe_target_slot as f64)?;
     reg.set("slot_current", current_slot as f64)?;
     reg.set("sync_lag_slots", sync_lag as f64)?;
     reg.set(
@@ -172,6 +184,11 @@ pub fn record_slot_gauges(
         head_slot.saturating_sub(justified_slot) as f64,
     )?;
     Ok(())
+}
+
+/// Accrue a fork-choice reorg when the head root moves off the prior ancestry.
+pub fn record_fc_reorg(reg: &mut Registry) -> Result<()> {
+    reg.inc("fc_reorg_total", 1.0)
 }
 
 /// Local registry size and role flags for Grafana overview panels.
@@ -275,11 +292,12 @@ mod tests {
         ensure_core_families(&mut r).unwrap();
         ensure_core_families(&mut r).unwrap();
         set_ready(&mut r, true).unwrap();
-        record_slot_gauges(&mut r, 10, 8, 6, 11, 1).unwrap();
+        record_slot_gauges(&mut r, 10, 8, 6, 9, 11, 1).unwrap();
         record_role_gauges(&mut r, 4, true, true, 1_700_000_000, 4).unwrap();
         record_readiness_gauges(&mut r, true, true, true, true, true).unwrap();
         record_durable_persist(&mut r, 2, 44, 1, 1, 256).unwrap();
         record_range_serve(&mut r, 5, 2, 8).unwrap();
         record_serve_cache_seed(&mut r, 10, 9).unwrap();
+        record_fc_reorg(&mut r).unwrap();
     }
 }

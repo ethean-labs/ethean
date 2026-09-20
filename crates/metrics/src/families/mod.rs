@@ -4,9 +4,11 @@ pub mod chain {
     pub const HEAD_SLOT: &str = "head_slot";
     pub const FINALIZED_SLOT: &str = "finalized_slot";
     pub const JUSTIFIED_SLOT: &str = "justified_slot";
+    pub const SAFE_TARGET_SLOT: &str = "safe_target_slot";
     pub const SLOT_CURRENT: &str = "slot_current";
     pub const FINALITY_LAG: &str = "finality_lag_slots";
     pub const JUSTIFICATION_LAG: &str = "justification_lag_slots";
+    pub const REORG_TOTAL: &str = "fc_reorg_total";
 }
 
 pub mod network {
