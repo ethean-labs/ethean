@@ -33,6 +33,7 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 - Decode/validate D5 block body: single Type-2 proof gate landed ([d5-type2-gossip-envelope-gate-2026-09-19.md](./d5-type2-gossip-envelope-gate-2026-09-19.md)); leanVM SNARK verify + re-agg cache from split still open.
 - Fork-digest mesh isolation warn + leanSig/leanVM refuse_reason boot honesty ([c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md](./c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md), [b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md](./b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md)).
 - D2 smoke: four attestation subnet subscribe + `AggregatorReady` + Type-1 prove + **aggregation gossip publish** ([d2-type1-aggregation-gossip-publish-2026-09-20.md](./d2-type1-aggregation-gossip-publish-2026-09-20.md)).
+- D3: proposer Type-2 from Type-1 cache ([d3-type2-from-type1-cache-2026-09-20.md](./d3-type2-from-type1-cache-2026-09-20.md)); production leanVM SNARK still open.
 - Hive / leanSpec fixture consumer for matrix inclusion.
 - Goldfish / PQ heartbeat **only** when leanSpec for the run requires it (may be D6).
 
