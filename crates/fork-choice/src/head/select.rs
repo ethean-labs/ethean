@@ -53,6 +53,7 @@ impl ForkChoiceStore {
     pub(crate) fn update_head(&mut self) -> Result<(), ForkChoiceError> {
         let votes = self.relevant_known_votes();
         let new_head = self.compute_weighted_head(self.latest_justified.root, &votes, None)?;
+        let previous_head = self.head;
 
         let head_state = self
             .block_states
@@ -84,6 +85,26 @@ impl ForkChoiceStore {
         } else {
             self.latest_finalized
         };
+
+        if new_head != previous_head {
+            if let (Some(prev_block), Some(new_block)) = (
+                self.blocks.get(&previous_head),
+                self.blocks.get(&new_head),
+            ) {
+                let prev_cp = Checkpoint {
+                    root: previous_head,
+                    slot: prev_block.slot,
+                };
+                let new_cp = Checkpoint {
+                    root: new_head,
+                    slot: new_block.slot,
+                };
+                // Extension keeps the old head on the ancestry; a competing tip is a reorg.
+                if !self.checkpoint_is_ancestor(prev_cp, new_cp) {
+                    self.reorg_total = self.reorg_total.saturating_add(1);
+                }
+            }
+        }
 
         self.head = new_head;
         self.latest_finalized = latest_finalized;
