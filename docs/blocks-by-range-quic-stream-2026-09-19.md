@@ -29,6 +29,8 @@ Range replies reuse the scaffold blocks-by-root response encoding (`u32` count +
 
 ## Still open (related)
 
-- B1 leanSig production verify, leanVM Type-2 SNARK prove/verify (fail-closed).
-- C3 operator fork-digest gossip isolation.
-- Live operator bootnodes for a public D5 mesh.
+- Status sync prefer-range on deep lag — **landed**
+  ([status-sync-prefer-range-on-deep-lag-2026-09-20.md](./status-sync-prefer-range-on-deep-lag-2026-09-20.md))
+- B1 leanSig production verify residual (upstream bigint); leanVM real SNARK binary.
+- Live operator bootnodes / fork-digest for a public D5 mesh.
+- Hive / leanSpec fixture consumer.
