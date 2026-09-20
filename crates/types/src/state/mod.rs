@@ -1,10 +1,11 @@
 //! Consensus state container (leanSpec lstar `State`).
 
+mod codec;
+
 use ethean_primitives::{Hash32, Slot};
 use ethean_ssz::{
-    decode_bitlist, decode_offset_list, encode_bitlist, encode_fixed_bytes, encode_offset_list,
-    encode_u32, encode_u64, hash_tree_root_bitlist, hash_tree_root_bytes, hash_tree_root_container,
-    hash_tree_root_list, hash_tree_root_u64, Root,
+    hash_tree_root_bitlist, hash_tree_root_bytes, hash_tree_root_container, hash_tree_root_list,
+    hash_tree_root_u64, Root,
 };
 
 use crate::block::BlockHeader;
@@ -17,6 +18,8 @@ use crate::limits::{
 use crate::validator::Validator;
 
 /// Main consensus state object.
+///
+/// Field order matches ethlambda `State` and Ream `LeanState` for SSZ interop.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct State {
     pub config: GenesisConfig,
@@ -25,11 +28,11 @@ pub struct State {
     pub latest_justified: Checkpoint,
     pub latest_finalized: Checkpoint,
     pub historical_block_hashes: Vec<Hash32>,
-    /// Justified-slot bitlist (TODO: full window helpers in Phase 05).
+    /// Justified-slot bitlist (window helpers live in transition).
     pub justified_slots: Vec<bool>,
     pub validators: Vec<Validator>,
     pub justifications_roots: Vec<Hash32>,
-    /// Flattened per-root validator vote bits (TODO: index helpers).
+    /// Flattened per-root validator vote bits.
     pub justifications_validators: Vec<bool>,
 }
 
@@ -57,58 +60,6 @@ impl State {
 
     pub fn validator(&self, index: usize) -> Option<&Validator> {
         self.validators.get(index)
-    }
-
-    /// Encode state for persistence (variable-heavy; not fully differential-tested yet).
-    pub fn ssz_encode(&self) -> Result<Vec<u8>, TypesError> {
-        self.validate_bounds()?;
-        let mut fixed = Vec::new();
-        // Fixed-size fields first, then offsets for variable collections.
-        fixed.extend_from_slice(&self.config.ssz_encode());
-        encode_u64(&mut fixed, self.slot.get());
-        fixed.extend_from_slice(&self.latest_block_header.ssz_encode());
-        fixed.extend_from_slice(&self.latest_justified.ssz_encode());
-        fixed.extend_from_slice(&self.latest_finalized.ssz_encode());
-
-        let hist = encode_hash_list(&self.historical_block_hashes);
-        let just_bits = encode_bitlist(&self.justified_slots);
-        let mut vals = Vec::new();
-        for v in &self.validators {
-            vals.push(v.ssz_encode());
-        }
-        let vals_enc = encode_offset_list(&vals)?;
-        let j_roots = encode_hash_list(&self.justifications_roots);
-        let j_vals = encode_bitlist(&self.justifications_validators);
-
-        let var_parts = [hist, just_bits, vals_enc, j_roots, j_vals];
-        let mut offsets = Vec::new();
-        let mut cursor = fixed.len() + 5 * 4;
-        for part in &var_parts {
-            offsets.push(cursor as u32);
-            cursor += part.len();
-        }
-        for off in offsets {
-            encode_u32(&mut fixed, off);
-        }
-        for part in &var_parts {
-            fixed.extend_from_slice(part);
-        }
-        Ok(fixed)
-    }
-
-    pub fn ssz_decode(input: &[u8]) -> Result<Self, TypesError> {
-        // Minimal decode path for empty/default-sized states used in tests.
-        // Full offset parsing for production states is Phase 05 work.
-        if input.is_empty() {
-            return Ok(Self::default());
-        }
-        let parts = decode_offset_list(input, 16);
-        let _ = parts;
-        let _ = decode_bitlist;
-        // Until full container decode is wired, reject non-empty as incomplete.
-        Err(TypesError::Profile(
-            "State::ssz_decode full path deferred; use Default or field builders".into(),
-        ))
     }
 
     pub fn hash_tree_root(&self) -> Result<Root, TypesError> {
@@ -141,7 +92,7 @@ impl State {
         ]))
     }
 
-    fn validate_bounds(&self) -> Result<(), TypesError> {
+    pub(crate) fn validate_bounds(&self) -> Result<(), TypesError> {
         if self.historical_block_hashes.len() > HISTORICAL_ROOTS_LIMIT {
             return Err(TypesError::ListTooLong {
                 got: self.historical_block_hashes.len(),
@@ -174,12 +125,4 @@ impl State {
         }
         Ok(())
     }
-}
-
-fn encode_hash_list(hashes: &[Hash32]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(hashes.len() * 32);
-    for h in hashes {
-        encode_fixed_bytes(&mut out, h);
-    }
-    out
 }
