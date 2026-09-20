@@ -28,6 +28,6 @@ cargo test -p ethean-spec-fixtures --lib stf_runner
 
 | Gap | Notes |
 | --- | --- |
-| Broader STF suite (~74 vectors) | Expand case-by-case |
+| Broader STF suite (~74 vectors) | **Landed — 74/74 green** (`leanspec-stf-full-suite-green-2026-09-20.md`) |
 | Partial `post` field matrix beyond slot | As fixtures need them |
 | Hive client image / A2/A3 / leanVM / bigint | External |
