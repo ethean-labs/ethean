@@ -49,6 +49,17 @@ impl SwarmFacade {
         self.quic.is_some()
     }
 
+    /// Connected mesh peers (QUIC map preferred; PeerManager is score-only).
+    pub fn connected_peer_count(&self) -> u64 {
+        #[cfg(feature = "libp2p-quic")]
+        {
+            if let Some(q) = self.quic.as_ref() {
+                return q.peers.len() as u64;
+            }
+        }
+        self.peers.len() as u64
+    }
+
     /// Bind a real libp2p QUIC-v1 swarm (replaces UDP-only facade for dial).
     #[cfg(feature = "libp2p-quic")]
     pub async fn bind_quic_swarm(&mut self, cfg: &TransportConfig) -> Result<()> {
