@@ -45,7 +45,12 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         source,
     };
     let data_root = data.hash_tree_root();
-    let subnet = (index % 64) as u16;
+    let committees = owner
+        .profile
+        .as_ref()
+        .map(|p| p.attestation_committee_count.max(1))
+        .unwrap_or(1);
+    let subnet = (index % committees) as u16;
     let lag = 0u64;
     let duty_view = owner.snapshot(tick.slot, lag).duty_view;
 
