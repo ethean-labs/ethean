@@ -58,6 +58,7 @@ Planning session summaries:
 - [B2 leanVM IPC live probe (protocol_ready)](./b2-leanvm-ipc-live-probe-2026-09-20.md)
 - [Aggregator prove routes to leanVM IPC](./aggregator-prove-ipc-route-2026-09-20.md)
 - [Status sync prefers blocks-by-range on deep lag](./status-sync-prefer-range-on-deep-lag-2026-09-20.md)
+- [Hive / leanSpec fixture consumer scaffold](./hive-leanspec-fixture-consumer-2026-09-20.md)
 - [Gossipsub mesh on QuicSwarm](./gossipsub-quic-mesh-2026-09-19.md)
 - [Gossip ingest and peer score feedback](./gossip-ingest-peer-score-2026-09-19.md)
 - [SSZ gossip decode into ImportBlock](./ssz-gossip-import-block-2026-09-19.md)
