@@ -16,6 +16,7 @@ pub mod error;
 pub mod ffi_status;
 pub mod hash;
 pub mod leanvm_ipc;
+mod leanvm_ipc_frame;
 pub mod signature;
 pub mod xmss;
 
@@ -32,6 +33,9 @@ pub use backend::TestHmacBackend;
 pub use error::{CryptoError, Result};
 pub use ffi_status::{BackendGap, FfiStatus, LeanSigGate, LeanVmGate};
 pub use leanvm_ipc::{LeanVmIpcStatus, PROVER_ENV as LEANVM_PROVER_ENV};
+pub use leanvm_ipc_frame::{
+    IpcFrame, IpcOp, FRAME_CODEC_READY, FRAME_MAGIC, FRAME_VERSION,
+};
 pub use hash::{domain_digest, signature_hash, signing_root_digest, Digest32};
 pub use signature::{verify, PublicKey, Signature};
 pub use xmss::{
