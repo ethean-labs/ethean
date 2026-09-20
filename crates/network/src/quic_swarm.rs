@@ -17,6 +17,7 @@ use libp2p::request_response;
 use libp2p::swarm::SwarmEvent;
 use libp2p::{identity, ping, Multiaddr, PeerId, SwarmBuilder};
 use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 type NetResult<T> = std::result::Result<T, NetworkError>;
@@ -49,6 +50,10 @@ pub struct QuicSwarm {
     pub(crate) blocks_by_root: HashMap<Hash32, Vec<u8>>,
     /// Signed-block bytes keyed by slot for inbound blocks-by-range replies.
     pub(crate) blocks_by_slot: HashMap<u64, Vec<u8>>,
+    /// Cumulative slots found when serving blocks-by-range.
+    pub(crate) range_serve_found: AtomicU64,
+    /// Cumulative slots missing when serving blocks-by-range.
+    pub(crate) range_serve_missing: AtomicU64,
 }
 
 impl std::fmt::Debug for QuicSwarm {
@@ -136,7 +141,18 @@ impl QuicSwarm {
             local_status: None,
             blocks_by_root: HashMap::new(),
             blocks_by_slot: HashMap::new(),
+            range_serve_found: AtomicU64::new(0),
+            range_serve_missing: AtomicU64::new(0),
         })
+    }
+
+    /// Cumulative range-serve found/missing totals and current cache size.
+    pub fn range_serve_stats(&self) -> (u64, u64, u64) {
+        (
+            self.range_serve_found.load(Ordering::Relaxed),
+            self.range_serve_missing.load(Ordering::Relaxed),
+            self.blocks_by_slot.len() as u64,
+        )
     }
 
     /// Cache local Status SSZ for inbound Status replies.
