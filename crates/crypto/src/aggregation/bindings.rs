@@ -4,6 +4,9 @@
 pub const LEANVM_REV: &str = "e2592df4e30fdddbbf8ae26a333116c68cec7026";
 
 /// Inverse-rate exponent for production SNARK backend (leanSpec PROD).
+///
+/// pq-devnet-4 high-level plan (`leanEthereum/pm`) allows protocol values in
+/// `1..=4`; Ethean's pinned generation uses `2` (leanBench default).
 pub const LOG_INV_RATE: u32 = 2;
 
 /// Maximum proof payload bytes (`ByteList512KiB` / Phase 08 bound).
@@ -28,6 +31,7 @@ pub fn aggregation_fingerprint() -> &'static str {
 pub fn assert_aggregation_invariants() {
     assert_eq!(MAX_PROOF_BYTES, 512 * 1024);
     assert_eq!(LOG_INV_RATE, 2);
+    assert!((1..=4).contains(&LOG_INV_RATE), "LOG_INV_RATE outside D4 1..=4");
     assert_eq!(MAX_TYPE2_COMPONENTS, 9);
 }
 
