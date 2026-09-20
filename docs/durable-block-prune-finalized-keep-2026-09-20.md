@@ -28,6 +28,6 @@ cargo test -p ethean-node --lib block_prune
 
 | Gap | Notes |
 | --- | --- |
-| Metrics for prune counts | Useful for soak / Grafana |
+| Metrics for prune counts | Done — [durable-persist-prune-metrics-2026-09-20.md](./durable-persist-prune-metrics-2026-09-20.md) |
 | Configurable keep window | Fixed 256 for now |
 | Genesis catch-up honesty past prune | Peers below floor must sync elsewhere |
