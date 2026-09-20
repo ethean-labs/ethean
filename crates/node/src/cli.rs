@@ -87,6 +87,9 @@ pub enum Command {
         /// Bearer token for `/lean/v1/admin/*` on non-loopback HTTP binds.
         #[arg(long, default_value = "")]
         http_admin_token: String,
+        /// UDP/QUIC listen port (default 9000; `0` = OS ephemeral).
+        #[arg(long, default_value_t = 9000)]
+        listen_port: u16,
     },
     /// Start the validator client
     Validator,
