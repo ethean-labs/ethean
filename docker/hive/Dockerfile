@@ -25,6 +25,6 @@ COPY docker/hive/ethean.sh /ethean.sh
 RUN chmod +x /ethean.sh \
  && /usr/local/bin/ethean version > /version.txt || true
 
-# Lean HTTP API (:5052) + metrics scrape. QUIC bind is still OS-assigned today.
-EXPOSE 5052 9100
+# Lean HTTP (:5052), metrics (:9100), QUIC/UDP (:9000 default).
+EXPOSE 5052 9000/udp 9100
 ENTRYPOINT ["/ethean.sh"]
