@@ -7,9 +7,7 @@ use crate::error::GenesisError;
 
 /// Decode genesis from SSZ and optionally verify the state root.
 ///
-/// Rejects empty/truncated payloads. Full `State::ssz_decode` for non-trivial
-/// containers remains incomplete until Phase 05; loaders still refuse silent
-/// `State::default()` substitution.
+/// Uses full [`State::ssz_decode`] (same field order as ethlambda / Ream Lean).
 pub fn load_genesis_ssz(
     bytes: &[u8],
     expected_root: Option<&Root>,
@@ -18,15 +16,7 @@ pub fn load_genesis_ssz(
         return Err(GenesisError::TruncatedOrEmpty);
     }
 
-    let state = State::ssz_decode(bytes).map_err(|e| {
-        // Incomplete decode path surfaces as Types / Profile errors today.
-        let msg = e.to_string();
-        if msg.contains("deferred") || msg.contains("truncated") {
-            GenesisError::TruncatedOrEmpty
-        } else {
-            GenesisError::Types(msg)
-        }
-    })?;
+    let state = State::ssz_decode(bytes).map_err(|e| GenesisError::Types(e.to_string()))?;
 
     if state.validators.is_empty() {
         return Err(GenesisError::EmptyValidators);
@@ -47,6 +37,8 @@ pub fn load_genesis_ssz(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::GenesisBuilder;
+    use ethean_primitives::Bytes52;
 
     #[test]
     fn rejects_empty_bytes() {
@@ -57,12 +49,24 @@ mod tests {
     }
 
     #[test]
-    fn rejects_nonempty_until_full_decode() {
-        // Non-empty bytes currently hit the deferred decode path.
+    fn rejects_garbage_bytes() {
         let err = load_genesis_ssz(&[1, 2, 3, 4], None).unwrap_err();
         assert!(matches!(
             err,
             GenesisError::TruncatedOrEmpty | GenesisError::Types(_)
         ));
+    }
+
+    #[test]
+    fn roundtrip_builder_genesis() {
+        let built = GenesisBuilder::new(1_700_000_000)
+            .push_validator(Bytes52::ZERO, Bytes52::ZERO)
+            .push_validator(Bytes52([1u8; 52]), Bytes52([2u8; 52]))
+            .build()
+            .unwrap();
+        let enc = built.state.ssz_encode().unwrap();
+        let loaded = load_genesis_ssz(&enc, Some(&built.state_root)).unwrap();
+        assert_eq!(loaded.validators.len(), 2);
+        assert_eq!(loaded.hash_tree_root().unwrap(), built.state_root);
     }
 }
