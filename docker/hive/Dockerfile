@@ -12,7 +12,14 @@ RUN apt-get update \
 
 COPY . .
 # Default features include libp2p-quic (see bin/ethean/Cargo.toml).
-RUN cargo build --release -p ethean \
+# Optional Hive builds: --build-arg CARGO_FEATURES=leansig-backend
+# (requires a local leanSig num-bigint vendor [patch] in the build context).
+ARG CARGO_FEATURES=
+RUN if [ -n "$CARGO_FEATURES" ]; then \
+      cargo build --release -p ethean --features "$CARGO_FEATURES"; \
+    else \
+      cargo build --release -p ethean; \
+    fi \
  && cp /src/target/release/ethean /src/ethean
 
 FROM debian:bookworm-slim AS runtime
