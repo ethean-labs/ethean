@@ -181,11 +181,12 @@ Under `--data-dir` the node writes:
 - `state.ssz` / `head.root` — current head (updated each duty step)
 - `blocks/<root>.ssz` — signed block blobs when a proposal is in flight
 - `ethean.redb` — same SSZ blobs in a local KV (`historical_block_hashes` lives inside state SSZ)
-- `log/ethean-YYYY-MM-DD-HHMMSS-log` — process log for that start (console still prints; wiped by `--reset-chain`)
+- `log/ethean-YYYY-MM-DD-HHMMSS-log` — process log for that start (console still prints in green-forward ANSI; file is plain; wiped by `--reset-chain`)
 
 A prior `genesis_pin.json` / `head_snap.json` in the same folder is still read once
 and migrated. See [docs/ethean-redb-ssz-data-dir-2026-09-20.md](docs/ethean-redb-ssz-data-dir-2026-09-20.md)
 and [docs/ethean-data-dir-run-logs-2026-09-20.md](docs/ethean-data-dir-run-logs-2026-09-20.md).
+Console colors: [docs/ethean-console-log-colors-2026-09-20.md](docs/ethean-console-log-colors-2026-09-20.md).
 `--reset-chain` empties the folder first: [docs/reset-chain-wipes-data-dir-2026-09-20.md](docs/reset-chain-wipes-data-dir-2026-09-20.md).
 
 `--ephemeral` wins over `--data-dir` if both are set (logs a warning).
