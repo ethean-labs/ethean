@@ -27,6 +27,21 @@ Rustup normally puts Cargo's `bin` on `PATH`. If the command is not found, add
 
 Do not use a separate `install.sh` / `cargo install` step for day-to-day runs.
 
+## Version bump
+
+Workspace version lives in root [`VERSION`](../VERSION) and
+`[workspace.package] version` in `Cargo.toml`. After each development update:
+
+```powershell
+.\scripts\bump-version.ps1
+```
+
+```bash
+./scripts/bump-version.sh
+```
+
+Patch goes `0.1.0` → `0.1.1` → … → `0.1.99` → `0.2.0`. See [docs/versioning.md](../docs/versioning.md).
+
 ## Network runners
 
 | Script | Target | Notes |
