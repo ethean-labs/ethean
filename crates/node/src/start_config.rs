@@ -96,6 +96,8 @@ pub struct StartConfig {
     pub metrics: Option<MetricsListen>,
     /// When `Some`, spawn Lean `/lean/v1` HTTP on this address.
     pub http: Option<RpcListen>,
+    /// UDP/QUIC listen port (`0` = OS ephemeral; default `9000` for Hive/mesh).
+    pub listen_port: u16,
     /// Local genesis size and aggregator/finality flags.
     pub roles: LocalRoles,
 }
@@ -107,6 +109,7 @@ impl Default for StartConfig {
             network: NetworkTarget::pq_devnet_4(),
             metrics: Some(MetricsListen::default()),
             http: Some(RpcListen::default()),
+            listen_port: 9000,
             roles: LocalRoles::default(),
         }
     }
@@ -158,6 +161,12 @@ impl StartConfig {
         self
     }
 
+    /// Set UDP/QUIC listen port (`0` = ephemeral).
+    pub fn with_listen_port(mut self, listen_port: u16) -> Self {
+        self.listen_port = listen_port;
+        self
+    }
+
     /// Set local validator count and aggregator/finality roles.
     pub fn with_roles(mut self, roles: LocalRoles) -> Self {
         self.roles = roles;
@@ -177,6 +186,7 @@ mod tests {
         assert_eq!(cfg.network.id, NetworkId::PqDevnet4);
         assert!(cfg.metrics.is_some());
         assert!(cfg.http.is_some());
+        assert_eq!(cfg.listen_port, 9000);
         assert!(cfg.roles.local_finality);
         assert_eq!(cfg.roles.validators, 4);
     }
