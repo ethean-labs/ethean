@@ -13,9 +13,9 @@ contiguous slot fetch. This lands the **request codec only**:
 ## Still open
 
 - Duty-network policy: prefer range when lag ≫ 1 — **landed**
-  ([status-sync-prefer-range-on-deep-lag-2026-09-20.md](./status-sync-prefer-range-on-deep-lag-2026-09-20.md))
+  ([status-sync-prefer-range-on-deep-lag-2026-09-20.md](status-sync-prefer-range-on-deep-lag-2026-09-20.md))
 - QuicSwarm stream + ingest — **landed**
-  ([blocks-by-range-quic-stream-2026-09-19.md](./blocks-by-range-quic-stream-2026-09-19.md))
+  ([blocks-by-range-quic-stream-2026-09-19.md](blocks-by-range-quic-stream-2026-09-19.md))
 
 ## Plan mapping
 
