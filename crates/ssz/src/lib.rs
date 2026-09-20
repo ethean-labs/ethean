@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 mod decode;
+mod decode_lists;
 mod encode;
 mod error;
 mod tree_hash;
@@ -14,6 +15,7 @@ pub use decode::{
     decode_bitlist, decode_bool, decode_fixed_bytes, decode_offset_list, decode_u16, decode_u32,
     decode_u64, decode_u8, expect_exhausted, need,
 };
+pub use decode_lists::{decode_container_offsets, decode_hash32_list};
 pub use encode::{
     encode_bitlist, encode_bool, encode_byte_list, encode_fixed_bytes, encode_offset_list,
     encode_u16, encode_u32, encode_u64, encode_u8,
