@@ -37,3 +37,5 @@ Authority: leanSpec pin in `spec/fixtures/phase-00/manifest.toml`; peer
 
 - Sample JSON is structural only (no full `anchorState` / block execution yet)
 - Fetch script does not vendor the tarball into git
+- Fork-choice **rejection** steps against filled vectors: see
+  [`leanspec-fc-rejection-runner-2026-09-20.md`](./leanspec-fc-rejection-runner-2026-09-20.md)
