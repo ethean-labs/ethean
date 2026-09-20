@@ -27,6 +27,8 @@ No AI / Cursor attribution: [no-ai-git-attribution-2026-09-19.md](./no-ai-git-at
 
 Unpublished Cursor trailer scrub: [scrub-unpublished-cursor-trailers-2026-09-19.md](./scrub-unpublished-cursor-trailers-2026-09-19.md).
 
+Full master history trailer scrub: [full-cursor-trailer-scrub-2026-09-20.md](./full-cursor-trailer-scrub-2026-09-20.md) (local master clean; remote needs force-with-lease if approved).
+
 Active migration planning library: [../road-to/lean-consensus-migration/README.md](../road-to/lean-consensus-migration/README.md) (charter, baseline, protocol pins, architecture, risks, retirement, observability, phases 00–13).
 
 Planning session summaries:
@@ -75,6 +77,7 @@ Planning session summaries:
 - [leanSpec FC safe-target + reorg_total](./leanspec-fc-safe-target-reorg-total-2026-09-20.md)
 - [leanSpec FC prune votes not blocks](./leanspec-fc-prune-votes-not-blocks-2026-09-20.md)
 - [leanSpec FC extra suite expansion](./leanspec-fc-extra-suite-2026-09-20.md)
+- [leanSpec FC tick safe-target snapshot gate](./leanspec-fc-tick-safe-snapshot-gate-2026-09-20.md)
 - [leanEthereum official repos plan](./lean-ethereum-official-repos-plan-2026-09-20.md)
 - [leanEthereum/pm indexed](./lean-ethereum-pm-indexed-2026-09-20.md)
 - [FC MAX_ATTESTATIONS_DATA + D4 log_inv_rate](./fc-max-attestations-d4-log-inv-rate-2026-09-20.md)
