@@ -48,11 +48,24 @@ pub fn apply_wall_step(
         } else {
             let ready = crate::duty_aggregator::evaluate_aggregator_duties(owner, tick, lag);
             for ev in &ready {
-                if let ChainEvent::AggregatorReady { data_root, .. } = ev {
+                if let ChainEvent::AggregatorReady {
+                    data_root, subnet, ..
+                } = ev
+                {
                     if let Some(proved) =
                         crate::duty_aggregator_prove::try_prove_type1_for_root(owner, *data_root)
                     {
                         events.push(proved);
+                        for g in crate::aggregation_gossip::queue_type1_aggregation_gossip(
+                            owner, *data_root, *subnet,
+                        ) {
+                            events.push(ChainEvent::AggregationGossipReady {
+                                topic: g.topic,
+                                data_root: g.data_root,
+                                payload_len: g.payload.len(),
+                                proof_len: g.proof_len,
+                            });
+                        }
                     }
                 }
             }
