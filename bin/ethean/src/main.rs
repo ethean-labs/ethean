@@ -1,5 +1,6 @@
 //! Ethean Lean Consensus Client main binary
 
+mod file_log;
 mod observability;
 
 use clap::Parser;
@@ -14,14 +15,20 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
+    let cli = Cli::parse();
+    match &cli.command {
+        Command::Start {
+            data_dir,
+            ephemeral,
+            ..
+        } => file_log::install(data_dir.as_deref(), *ephemeral)?,
+        _ => tracing_subscriber::fmt().init(),
+    }
 
     info!(
         "Starting Ethean Lean Consensus Client v{}",
         env!("CARGO_PKG_VERSION")
     );
-
-    let cli = Cli::parse();
 
     match cli.command {
         Command::Start {
