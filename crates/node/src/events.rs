@@ -73,6 +73,13 @@ pub enum ChainEvent {
         /// Observed participant coverage.
         coverage: u32,
     },
+    /// Local Type-1 proof produced and re-verified for an aggregator-ready root.
+    AggregatorType1Proved {
+        /// Attestation-data root that was proved.
+        data_root: Hash32,
+        /// Proof byte length.
+        proof_len: usize,
+    },
     /// Pending proposal was published on QuicSwarm gossip.
     ProposalPublished {
         /// Lean gossip topic string.
