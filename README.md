@@ -66,12 +66,11 @@ In practical terms, Ethean should eventually:
 5. **Stay operable solo** — local finality / aggregator smoke so contributors can
    advance head → justified → finalized without waiting for a public mesh.
 
-Peer clients ([Ream](https://github.com/ReamLabs/ream),
-[Zeam](https://github.com/blockblaz/zeam),
-[ethlambda](https://github.com/lambdaclass/ethlambda), and others listed in
-[docs/peer-reference-clients.md](./docs/peer-reference-clients.md)) are **references
-for interop**, not templates to copy. leanSpec / the current pq-devnet pin wins when
-peers disagree.
+Other Lean client implementations are useful **interop references** when wiring
+wire formats or pq-devnet operator pins — not templates to copy crate layout or
+style from. When peers disagree, leanSpec and the current pq-devnet pin win.
+The reference list lives in
+[docs/peer-reference-clients.md](./docs/peer-reference-clients.md).
 
 ### What this repo does today
 
