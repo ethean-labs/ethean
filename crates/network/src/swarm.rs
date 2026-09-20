@@ -89,7 +89,28 @@ impl SwarmFacade {
         cfg: &TransportConfig,
         fork_segment: &str,
     ) -> Result<()> {
-        let swarm = QuicSwarm::bind_for_fork_segment(cfg, fork_segment).await?;
+        self.bind_quic_swarm_for_fork_segment_subnets(
+            cfg,
+            fork_segment,
+            crate::SMOKE_ATTESTATION_SUBNETS,
+        )
+        .await
+    }
+
+    /// Bind QUIC with an explicit attestation subnet subscription count.
+    #[cfg(feature = "libp2p-quic")]
+    pub async fn bind_quic_swarm_for_fork_segment_subnets(
+        &mut self,
+        cfg: &TransportConfig,
+        fork_segment: &str,
+        attestation_subnets: u16,
+    ) -> Result<()> {
+        let swarm = QuicSwarm::bind_for_fork_segment_subnets(
+            cfg,
+            fork_segment,
+            attestation_subnets,
+        )
+        .await?;
         self.quic = Some(swarm);
         self.note_progress();
         Ok(())
