@@ -34,28 +34,28 @@ pub fn verify_type2(statement: &AggregateStatement, proof: &[u8]) -> Result<()> 
 }
 
 fn verify_bound_proof(statement: &AggregateStatement, proof: &[u8]) -> Result<()> {
-    #[cfg(all(feature = "leanvm-backend", feature = "test-aggregate"))]
-    {
-        if crate::backend_leanvm::LEANVM_FFI_LINKED {
-            return match crate::backend_leanvm::verify(statement, proof)? {
-                true => Ok(()),
-                false => Err(CryptoError::VerificationFailed),
-            };
-        }
-        return verify_test_aggregate(statement, proof);
-    }
-    #[cfg(all(feature = "leanvm-backend", not(feature = "test-aggregate")))]
-    {
+    #[cfg(feature = "leanvm-backend")]
+    if crate::backend_leanvm::LEANVM_FFI_LINKED {
         return match crate::backend_leanvm::verify(statement, proof)? {
             true => Ok(()),
             false => Err(CryptoError::VerificationFailed),
         };
     }
-    #[cfg(all(not(feature = "leanvm-backend"), feature = "test-aggregate"))]
+
+    let serving = std::env::var_os(crate::leanvm_ipc_spawn::SERVING_ENV).is_some();
+    let ipc = crate::leanvm_ipc::LeanVmIpcStatus::probe();
+    if !serving && ipc.binary_present {
+        return match crate::leanvm_ipc::verify_ipc(statement, proof)? {
+            true => Ok(()),
+            false => Err(CryptoError::VerificationFailed),
+        };
+    }
+
+    #[cfg(feature = "test-aggregate")]
     {
         return verify_test_aggregate(statement, proof);
     }
-    #[cfg(all(not(feature = "leanvm-backend"), not(feature = "test-aggregate")))]
+    #[cfg(not(feature = "test-aggregate"))]
     {
         let _ = statement;
         let _ = proof;
