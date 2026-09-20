@@ -16,15 +16,45 @@
 
 ## Overview
 
-**Ethean Lean Consensus Client** implements Ethereum's Lean Consensus layer: a
-consensus-only client (not execution). Lean Consensus is the post-quantum rewrite
-of Beacon consensus — hash-based signatures (leanSig), aggregate proofs
-(leanMultisig / zkVMs), ~4s slots, finality in seconds (3SF, later PQ heartbeat),
-and a much larger validator set if the stake floor moves toward 1 ETH.
+**Ethean** is a Rust **Lean Consensus** client for Ethereum’s post-quantum consensus
+redesign (historically “Beam Chain” / leanEthereum). It is **consensus-only**: no
+execution engine, no Beacon-chain compatibility layer, and no long-term BLS path.
 
-Work in this repo tracks the
-[Lean Consensus research tracks](https://leanroadmap.org/#research-tracks) and the
-pq-devnet sequence, not a frozen 2024 mainnet Beacon clone.
+### What we are building toward
+
+Lean Consensus aims to replace today’s Beacon stack with:
+
+- **Post-quantum signatures** — leanSig / XMSS-style hash-based signing instead of BLS
+- **Aggregation** — leanMultisig today, later recursive aggregates and zkVM proofs (leanVM)
+- **Faster finality** — seconds-scale 3SF (3SF-mini now; PQ heartbeat / Goldfish direction later)
+- **Tighter slots and P2P** — ~4s slots, QUIC transport, Gossipsub evolution under huge validator counts
+- **Lower stake floor** — roadmap target toward 1 ETH per validator, which stresses networking and aggregation
+
+Ethean tracks [leanroadmap.org](https://leanroadmap.org/) research tracks and the
+**pq-devnet** sequence (leanSpec / leanSig / leanVM pins), and treats peer clients
+(Ream, Zeam, ethlambda, …) as **interop references**, not templates.
+
+### What this repo does today
+
+The `ethean` binary can already:
+
+- Run under the **pq-devnet-4** label by default (offline smoke without bootnodes; dial when multiaddrs are set). **pq-devnet-5** stays a ready path.
+- Advance **head / justified / finalized** in solo mode (local finality + aggregator), or resume a durable chain under `--data-dir`.
+- Speak Lean **QUIC** req/resp (Status, blocks-by-root, blocks-by-range) and gossip admission paths as they harden.
+- Export **`ethean_` Prometheus metrics**, `/healthz` `/readyz`, and Lean REST under `/lean/v1` (not Beacon `/eth/v1`).
+- Lock behavior against **leanSpec fork-choice / STF fixtures** in `crates/spec-fixtures`.
+
+Crypto and prove backends stay **fail-closed** until leanSig / leanVM production links are real.
+
+### Key features
+
+- **Lean-first workspace** — `ethean-types`, SSZ, genesis, state transition, 3SF-mini fork choice, validator duties, network, storage, RPC, metrics; wired by `ethean-node` + `bin/ethean`.
+- **ChainOwner ownership** — one writer for head/sync; workers use snapshots and `ChainCommand`s.
+- **Dual local modes** — durable fixed genesis (`--data-dir`) like peer pq-devnet packages, or ephemeral smoke (`--ephemeral`).
+- **Operator-shaped networking** — network labels, bootnodes / fork-digest files, private mesh helpers; empty bootnodes mean offline, not a public join.
+- **Observability** — scrape `:9100` by default; `--metrics` brings up Docker Grafana + Prometheus when Docker is available.
+- **Spec alignment** — leanSpec FC/STF runners and fail-closed leanSig/leanVM gates instead of Beacon shortcuts.
+- **House rules** — English-only tree, ≤300-line source files, no AI git attribution ([CONTRIBUTING.md](./CONTRIBUTING.md)).
 
 ## Table of Contents
 
@@ -40,11 +70,25 @@ pq-devnet sequence, not a frozen 2024 mainnet Beacon clone.
 
 ## Architecture
 
-Ethean is a Rust workspace of Lean crates (`ethean-types`, `ethean-fork-choice`,
-`ethean-network`, `ethean-node`, …) behind the `ethean` binary. `ChainOwner` owns
-head/sync writes; P2P, duties, and storage talk through commands and snapshots.
+Ethean is a **crate-per-concern** Rust workspace behind a single CLI.
 
-Full crate map and gates: [docs/readme/architecture.md](./docs/readme/architecture.md).
+| Layer | What lives here |
+| --- | --- |
+| Primitives / profile | Slots, forks, pinned `lstar`-style chain profile |
+| Types + SSZ | Canonical Lean containers and encode/decode |
+| Crypto | leanSig / XMSS surface (fail-closed without FFI) |
+| Consensus | Genesis, state transition, **3SF-mini** fork choice |
+| Validator | ~4s / interval duties, local aggregator role |
+| Network | QUIC swarm, gossip admission, Status / blocks-by-root / range |
+| Storage + sync | Durable SSZ / redb under `--data-dir`, sync gates |
+| API + metrics | `/lean/v1`, `ethean_` gauges, health endpoints |
+| Node shell | `ChainOwner` + start gates + `ethean` binary |
+
+**Design intent:** stay aligned with leanSpec and pq-devnet operator pins; prefer Lean
+behavior over Beacon convenience; keep gates honest when backends are missing.
+
+Full crate map and open gates: [docs/readme/architecture.md](./docs/readme/architecture.md).
+Migration plan library: [road-to/lean-consensus-migration/README.md](./road-to/lean-consensus-migration/README.md).
 
 ## Installation
 
