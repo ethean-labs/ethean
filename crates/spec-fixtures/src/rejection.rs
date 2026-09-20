@@ -35,6 +35,8 @@ pub enum ForkChoiceRejection {
     AttestationTooFarInFuture,
     /// `DUPLICATE_ATTESTATION_DATA`
     DuplicateAttestationData,
+    /// `EMPTY_AGGREGATION_BITS`
+    EmptyAggregationBits,
 }
 
 /// Sentinel when the fixture string is not yet mapped.
@@ -67,6 +69,7 @@ pub fn map_fork_choice_rejection(reason: &str) -> Option<ForkChoiceRejection> {
         "ATTESTATION_SLOT_BEFORE_HEAD" => Some(ForkChoiceRejection::AttestationSlotBeforeHead),
         "ATTESTATION_TOO_FAR_IN_FUTURE" => Some(ForkChoiceRejection::AttestationTooFarInFuture),
         "DUPLICATE_ATTESTATION_DATA" => Some(ForkChoiceRejection::DuplicateAttestationData),
+        "EMPTY_AGGREGATION_BITS" => Some(ForkChoiceRejection::EmptyAggregationBits),
         _ => None,
     }
 }
@@ -90,6 +93,7 @@ impl ForkChoiceRejection {
             Self::AttestationSlotBeforeHead => ForkChoiceError::AttestationSlotBeforeHead,
             Self::AttestationTooFarInFuture => ForkChoiceError::AttestationTooFarInFuture,
             Self::DuplicateAttestationData => ForkChoiceError::DuplicateAttestationData,
+            Self::EmptyAggregationBits => ForkChoiceError::EmptyAggregationBits,
         }
     }
 
@@ -111,6 +115,7 @@ impl ForkChoiceRejection {
             Self::AttestationSlotBeforeHead => "ATTESTATION_SLOT_BEFORE_HEAD",
             Self::AttestationTooFarInFuture => "ATTESTATION_TOO_FAR_IN_FUTURE",
             Self::DuplicateAttestationData => "DUPLICATE_ATTESTATION_DATA",
+            Self::EmptyAggregationBits => "EMPTY_AGGREGATION_BITS",
         }
     }
 }
@@ -138,6 +143,12 @@ mod tests {
                 .unwrap()
                 .to_error(),
             ForkChoiceError::AttestationTooFarInFuture
+        );
+        assert_eq!(
+            map_fork_choice_rejection("EMPTY_AGGREGATION_BITS")
+                .unwrap()
+                .to_error(),
+            ForkChoiceError::EmptyAggregationBits
         );
     }
 
