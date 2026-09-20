@@ -10,6 +10,7 @@ mod discover;
 mod envelope;
 mod fc_checks;
 mod fc_snapshot_payloads;
+mod fc_store_snapshot;
 mod fc_runner;
 mod fc_steps;
 mod hex;
