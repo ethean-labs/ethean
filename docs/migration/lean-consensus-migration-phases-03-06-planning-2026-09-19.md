@@ -20,7 +20,7 @@ Added and refreshed English phase plan documents for the protocol foundation seg
 - Pinned evidence pattern: baseline `880982f`, leanSpec candidates `8b4ebbea` / `0b7d33ec` (Phase 00 verification required), seven peer commits, unresolved values marked as blockers.
 - `MAX_ATTESTATION_DATA` must be resolved in Phase 00 before Phase 03 starts.
 - Hand-written source files capped at 300 lines per repository modularity policy.
-- Crate paths aligned with [TARGET_WORKSPACE](../road-to/lean-consensus-migration/03-architecture/TARGET_WORKSPACE.md) (`crates/types`, `crates/ethean-ssz`, `crates/ethean-fork-choice`, etc.).
+- Crate paths aligned with [TARGET_WORKSPACE](../../road-to/lean-consensus-migration/03-architecture/TARGET_WORKSPACE.md) (`crates/types`, `crates/ethean-ssz`, `crates/ethean-fork-choice`, etc.).
 - `bazalinacaklar/` noted as present locally with peer library notes (corrects prior README claim of absence).
 
 ## Critical path (unchanged intent)

@@ -2,7 +2,7 @@
 
 Date: 2026-09-19  
 Branch: `plan/lean-consensus-migration`  
-Lock: [`spec/pins/phase-01.lock.toml`](../spec/pins/phase-01.lock.toml)
+Lock: [`spec/pins/phase-01.lock.toml`](../../spec/pins/phase-01.lock.toml)
 
 ## What changed
 

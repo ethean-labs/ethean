@@ -11,7 +11,7 @@
 - `QuicSwarm` + `SwarmFacade::bind_quic_swarm` / `dial_quic_peer` under `libp2p-quic`
 - TCP/WS still refused via `reject_non_quic`
 - Client boot binds ephemeral port `0` and marks network readiness
-- See also [external-gates-quic-rocksdb-leansig-2026-09-19.md](./external-gates-quic-rocksdb-leansig-2026-09-19.md)
+- See also [external-gates-quic-rocksdb-leansig-2026-09-19.md](../lean-crypto/external-gates-quic-rocksdb-leansig-2026-09-19.md)
 
 ## RocksDB
 

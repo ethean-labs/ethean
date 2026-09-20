@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-19  
 **Scope:** Planning documents only (no product code).  
-**Location:** [road-to/lean-consensus-migration/06-observability/](../road-to/lean-consensus-migration/06-observability/)
+**Location:** [road-to/lean-consensus-migration/06-observability/](../../road-to/lean-consensus-migration/06-observability/)
 
 ## Summary
 
@@ -31,7 +31,7 @@ Created the full observability planning folder for Phase 12 (Observability and f
 
 - Phases 03–11 (consensus, crypto, P2P, storage) supply instrumentation points.
 - Phase 00 baselines required before numeric scrape intervals, SLO targets, and histogram buckets are finalized.
-- `ethean-metrics` crate layout defined in [TARGET_WORKSPACE.md](../road-to/lean-consensus-migration/03-architecture/TARGET_WORKSPACE.md).
+- `ethean-metrics` crate layout defined in [TARGET_WORKSPACE.md](../../road-to/lean-consensus-migration/03-architecture/TARGET_WORKSPACE.md).
 
 ## Next implementation steps (Phase 12)
 

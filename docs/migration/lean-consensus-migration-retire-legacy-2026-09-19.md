@@ -14,7 +14,7 @@ Section 8 of the migration roadmap is closed for the planning library task:
 - Root `README.md` and `docs/README.md` link the migration library without rewriting product docs.
 
 Deletion status is recorded in
-[DELETION_REGISTER.md](../road-to/lean-consensus-migration/05-retirement/DELETION_REGISTER.md).
+[DELETION_REGISTER.md](../../road-to/lean-consensus-migration/05-retirement/DELETION_REGISTER.md).
 
 ## Explicitly deferred (not this task)
 
