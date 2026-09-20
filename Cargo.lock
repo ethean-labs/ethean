@@ -1069,6 +1069,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethean-leanvm-mock"
+version = "0.1.0"
+dependencies = [
+ "ethean-crypto",
+]
+
+[[package]]
 name = "ethean-metrics"
 version = "0.1.0"
 dependencies = [
