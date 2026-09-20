@@ -1,5 +1,6 @@
 //! Block import into the fork-choice store.
 
+use ethean_primitives::ValidatorIndex;
 use ethean_types::{Block, State};
 
 use crate::error::ForkChoiceError;
@@ -33,18 +34,33 @@ impl ForkChoiceStore {
             return Err(ForkChoiceError::BlockTooFarInFuture);
         }
 
-        let attestations = &block.body.attestations;
         let mut seen = std::collections::HashSet::new();
-        for att in attestations {
+        for att in &block.body.attestations {
             let root = att.data.hash_tree_root();
             if !seen.insert(root) {
                 return Err(ForkChoiceError::DuplicateAttestationData);
             }
         }
 
+        // On-chain aggregates feed the known pool before head recompute (leanSpec / Gean).
+        let body_votes: Vec<_> = block
+            .body
+            .attestations
+            .iter()
+            .map(|a| (a.aggregation_bits.bits.clone(), a.data))
+            .collect();
+
         self.latest_justified = self.latest_justified.advance_to(post_state.latest_justified);
         self.blocks.insert(block_root, block);
         self.block_states.insert(block_root, post_state);
+
+        for (bits, data) in body_votes {
+            for (i, bit) in bits.iter().enumerate() {
+                if *bit {
+                    self.insert_known_vote(ValidatorIndex::new(i as u64), data);
+                }
+            }
+        }
 
         self.update_head()?;
 
