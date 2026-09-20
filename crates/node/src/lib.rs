@@ -58,6 +58,8 @@ pub mod sync_orphan;
 pub mod swarm_pump;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump_agg;
+pub mod registry_apply;
+pub mod registry_keys;
 pub mod validator_registry;
 pub mod wall_loop;
 pub mod wall_tick;
@@ -84,7 +86,11 @@ pub use shutdown::{ShutdownPhase, ShutdownState};
 pub use signal_loop::run_until_signal;
 pub use network_target::{NetworkId, NetworkTarget};
 pub use start_config::{LocalRoles, MetricsListen, RpcListen, RunMode, StartConfig};
-pub use validator_registry::{load_validator_assignment, parse_validator_assignment, ValidatorAssignment};
+pub use registry_keys::{load_node_keys, LoadedNodeKeys};
+pub use validator_registry::{
+    load_registry_key_rows, load_validator_assignment, parse_registry_key_rows,
+    parse_validator_assignment, RegistryKeyRow, ValidatorAssignment,
+};
 pub use wall_loop::{run_wall_duty_loop, WallLoopConfig};
 pub use wall_tick::{ms_until_next_interval, tick_from_wall};
 
