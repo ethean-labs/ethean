@@ -2,29 +2,28 @@
 
 ## Goal
 
-Keep both operator paths that peer Lean clients already use in practice:
+Keep both operator paths:
 
-1. **Peer-like fixed genesis** under `--data-dir` (pin once, resume head).
+1. **Fixed genesis** under `--data-dir` (write once, resume head).
 2. **Ephemeral recent-genesis** smoke via `--ephemeral` (or no `--data-dir`).
 
-## What landed
+## What landed (updated)
 
 | Piece | Role |
 | --- | --- |
-| `crates/node/src/chain_snap.rs` | JSON DTOs for genesis pin + head state |
-| `crates/node/src/chain_persist.rs` | Load/create pin, save/restore head, `--reset-chain` |
-| `crates/node/src/client_data_dir.rs` | `open_data_dir_with_roles` uses fixed genesis + resume |
-| `crates/node/src/local_genesis.rs` | `fixed_devnet_genesis(validators, genesis_time)` |
-| CLI | `--ephemeral`, `--reset-chain`; `--data-dir` now resumes |
-| Duty loops | Flush `head_snap.json` after each wall/mesh step |
+| `crates/node/src/genesis_bundle.rs` | `ethean-genesis-v1` `genesis.json` |
+| `crates/node/src/persist_ssz.rs` | `genesis.ssz`, `state.ssz`, `blocks/*.ssz` |
+| `crates/node/src/chain_redb.rs` | `ethean.redb` |
+| `crates/node/src/chain_persist.rs` | Open / flush / restore / `--reset-chain` |
+| `crates/node/src/client_data_dir.rs` | Durable open + flush |
 
 Files under `--data-dir PATH`:
 
-- `genesis_pin.json` — `genesis_time`, `validators`, `seconds_per_slot`
-- `head_snap.json` — head root + local state (justified/finalized included)
+- `genesis.json` — profile + full genesis state
+- `genesis.ssz` / `state.ssz` / `head.root` / `blocks/<root>.ssz`
+- `ethean.redb` — SSZ blobs in a local KV
 
-RocksDB is optional. If `ethean-storage/rocksdb` is not enabled, the node still
-uses the JSON snapshots for resume and keeps an in-memory store.
+Legacy `genesis_pin.json` / `head_snap.json` are still read and migrated.
 
 ## Operator examples
 
@@ -34,11 +33,4 @@ ethean start --until-signal --network pq-devnet-4 --ephemeral
 ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data --reset-chain
 ```
 
-## Peer model (context)
-
-Ream / Zeam / ethlambda / qlean-mini / Lantern / gean / Peam generate a shared
-bundle once (`config.yaml`, genesis SSZ, `nodes.yaml`, keys) and reuse it.
-Ethean’s `--data-dir` is the local solo analogue of that pin; full lean-quickstart
-bundle import remains a follow-up for multi-client mesh.
-
-See also: [peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](./peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md).
+See [ethean-redb-ssz-data-dir-2026-09-20.md](./ethean-redb-ssz-data-dir-2026-09-20.md).
