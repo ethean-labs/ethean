@@ -24,5 +24,5 @@ provisioned JSON.
 
 | Gap | Notes |
 | --- | --- |
-| Configurable keep window | Done — [prune-keep-slots-config-2026-09-20.md](./prune-keep-slots-config-2026-09-20.md) |
-| Alert on prune stall while finalized climbs | Done — [durable-prune-stall-alert-2026-09-20.md](./durable-prune-stall-alert-2026-09-20.md) |
+| Configurable keep window | Done — [prune-keep-slots-config-2026-09-20.md](../storage/prune-keep-slots-config-2026-09-20.md) |
+| Alert on prune stall while finalized climbs | Done — [durable-prune-stall-alert-2026-09-20.md](durable-prune-stall-alert-2026-09-20.md) |

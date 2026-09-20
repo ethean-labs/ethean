@@ -17,8 +17,8 @@ for soak runs and Grafana, without high-cardinality labels.
 Wiring: `flush_chain_persist` records after `save_head` + `prune_below_floor`.
 Families live in `ethean-metrics` (`record_durable_persist`).
 
-Related: [durable-block-prune-finalized-keep-2026-09-20.md](./durable-block-prune-finalized-keep-2026-09-20.md),
-[persist-applied-blocks-durable-2026-09-20.md](./persist-applied-blocks-durable-2026-09-20.md).
+Related: [durable-block-prune-finalized-keep-2026-09-20.md](../storage/durable-block-prune-finalized-keep-2026-09-20.md),
+[persist-applied-blocks-durable-2026-09-20.md](../storage/persist-applied-blocks-durable-2026-09-20.md).
 
 ## Recipe
 
@@ -31,5 +31,5 @@ cargo test -p ethean-metrics --lib
 
 | Gap | Notes |
 | --- | --- |
-| Grafana panel for durable row | Done — [grafana-durable-persist-prune-panels-2026-09-20.md](./grafana-durable-persist-prune-panels-2026-09-20.md) |
-| Configurable keep window | Done — [prune-keep-slots-config-2026-09-20.md](./prune-keep-slots-config-2026-09-20.md) |
+| Grafana panel for durable row | Done — [grafana-durable-persist-prune-panels-2026-09-20.md](grafana-durable-persist-prune-panels-2026-09-20.md) |
+| Configurable keep window | Done — [prune-keep-slots-config-2026-09-20.md](../storage/prune-keep-slots-config-2026-09-20.md) |

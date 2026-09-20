@@ -19,7 +19,7 @@ Scraped from `http://127.0.0.1:9100/metrics` (`ethean-metrics-v2`):
 | `ethean_duty_suppressed_total` / `ethean_prover_timeout_total` | Ops counters |
 | `ethean_build_info` | Node info table |
 
-See also [grafana-no-data-and-1970-fix-2026-09-20.md](./grafana-no-data-and-1970-fix-2026-09-20.md).
+See also [grafana-no-data-and-1970-fix-2026-09-20.md](grafana-no-data-and-1970-fix-2026-09-20.md).
 
 ## Grafana (Ethean-branded, Ream-layout inspired)
 

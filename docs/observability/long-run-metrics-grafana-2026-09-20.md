@@ -27,7 +27,7 @@ ethean start --network pq-devnet-4 --until-signal
 
 Open http://localhost:3000 → **Ethean Lean Clients Dashboard** (and
 **Ethean Node Health** for readiness / lag / peers). See
-[ethean-grafana-richer-monitors-2026-09-20.md](./ethean-grafana-richer-monitors-2026-09-20.md).
+[ethean-grafana-richer-monitors-2026-09-20.md](ethean-grafana-richer-monitors-2026-09-20.md).
 
 ## Honest limits vs a multi-client mesh board
 

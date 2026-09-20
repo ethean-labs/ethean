@@ -14,6 +14,6 @@ Stdout dumps use an Ethean line format close to common Lean client logs
 `--data-dir` still tees a **plain** file under `log/ethean-*-log` (no ANSI).
 
 Default verbosity is quiet (INFO; libp2p WARN). Use `-v` / `-vv` / `--log-level`
-for dumps — see [ethean-log-verbosity-2026-09-20.md](./ethean-log-verbosity-2026-09-20.md).
+for dumps — see [ethean-log-verbosity-2026-09-20.md](ethean-log-verbosity-2026-09-20.md).
 
 Code: `bin/ethean/src/console_fmt.rs`, `bin/ethean/src/file_log.rs`.
