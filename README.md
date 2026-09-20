@@ -570,11 +570,18 @@ curl -s http://127.0.0.1:9100/readyz    # subsystem gates
 curl -s http://127.0.0.1:9100/metrics   # Prometheus exposition
 ```
 
-### Lean REST routes (dispatch library; HTTP listener not bound yet)
+### Lean REST routes (`/lean/v1`, default `:5052`)
 
-Route matching lives in `ethean-rpc` under `/lean/v1/…` only (no Beacon `/eth/v1`).
-Until a listener is wired, use the metrics health URLs above for operator checks.
-In-process smoke still validates `GET /lean/v1/health` at boot.
+```bash
+curl -s http://127.0.0.1:5052/lean/v1/health
+curl -s http://127.0.0.1:5052/lean/v1/ready
+curl -s http://127.0.0.1:5052/lean/v1/chain/head
+curl -s http://127.0.0.1:5052/lean/v1/chain/finalized
+curl -s http://127.0.0.1:5052/lean/v1/chain/sync
+```
+
+Route matching stays under `/lean/v1/…` only (no Beacon `/eth/v1`).
+Disable with `--no-http`; Hive binds `0.0.0.0:5052`.
 
 ##  Configuration
 
