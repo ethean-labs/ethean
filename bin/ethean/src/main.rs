@@ -87,6 +87,7 @@ async fn main() -> Result<()> {
             http_address,
             http_port,
             http_admin_token,
+            listen_port,
         } => {
             let network = NetworkTarget::from_cli(
                 &network,
@@ -146,6 +147,7 @@ async fn main() -> Result<()> {
                 http = http_listen.is_some(),
                 http_address = http_address.as_str(),
                 http_port,
+                listen_port,
                 "Starting lean consensus node"
             );
             if ephemeral && data_dir.is_some() {
@@ -175,6 +177,7 @@ async fn main() -> Result<()> {
             .with_network(network.clone())
             .with_metrics(metrics_listen.clone())
             .with_http(http_listen)
+            .with_listen_port(listen_port)
             .with_roles(roles);
             if !no_banner {
                 let bind = format!("{metrics_address}:{metrics_port}");
