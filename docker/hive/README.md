@@ -34,18 +34,17 @@ assets, genesis comes from `config.yaml` instead of the ephemeral smoke registry
 
 ## Upstream registration (not in this repo)
 
-1. Add `clients/ethean/` in ethereum/hive (Dockerfile that pulls `ethpandaops/ethean` or builds from git).
-2. Append to `simulators/lean/clients/devnet5.yaml`:
-
-```yaml
-- client: ethean
-  nametag: devnet5
-```
-
-Snippet also kept as [`client-devnet5.yaml`](./client-devnet5.yaml).
+Drop-in files live in [`upstream-clients-ethean/`](./upstream-clients-ethean/) —
+copy that folder to ethereum/hive `clients/ethean/`, append
+[`client-devnet5.yaml`](./client-devnet5.yaml) into `simulators/lean/clients/devnet5.yaml`,
+and add the lean-devnets snippet. Details:
+[`docs/hive-upstream-clients-ethean-dropin-2026-09-20.md`](../../docs/hive-upstream-clients-ethean-dropin-2026-09-20.md).
 
 ## Known gaps vs Ream Hive client
 
 - Lean HTTP serves `/lean/v1/…` only (no Beacon `/eth/v1`).
 - Registry privkeys load when present; proposal install needs a `leansig-backend` build.
-- Upstream ethereum/hive `clients/ethean` registration still required.
+- Upstream ethereum/hive merge still required (drop-in is ready to copy).
+- `ATTESTATION_COMMITTEE_COUNT` from prepared `config.yaml` lands on the profile and
+  gossip subnet count (see
+  [`docs/attestation-committee-count-profile-subnets-2026-09-20.md`](../../docs/attestation-committee-count-profile-subnets-2026-09-20.md)).
