@@ -5,29 +5,47 @@ use crate::network_target::NetworkTarget;
 use crate::Result;
 use tracing::{info, warn};
 
-/// Bind the UDP facade; with `libp2p-quic`, subscribe using a resolved fork segment.
+/// Bind the UDP facade and (with `libp2p-quic`) QuicSwarm on `listen_port`.
+///
+/// `listen_port == 0` asks the OS for an ephemeral UDP port. With QUIC enabled the
+/// probe socket stays ephemeral so it cannot steal the fixed swarm port.
 pub async fn prepare_boot_network(
     fork_segment: &str,
+    listen_port: u16,
 ) -> Result<(u16, Option<SwarmFacade>)> {
     let identity = NodeIdentity::from_seed(b"ethean-local");
+    let probe_port = if cfg!(feature = "libp2p-quic") {
+        0
+    } else {
+        listen_port
+    };
     let bound = crate::network::prepare_transport(
         &identity,
         &TransportConfig {
-            listen_port: 0,
+            listen_port: probe_port,
             idle_timeout_ms: 30_000,
         },
     )?;
     let port = bound.listen_port;
-    info!(port, fork_segment, "UDP listen bind for QUIC facade");
+    info!(
+        port,
+        requested = listen_port,
+        fork_segment,
+        "UDP listen bind for QUIC facade"
+    );
 
     #[cfg(feature = "libp2p-quic")]
     {
-        let facade = bind_quic_facade(bound, fork_segment).await?;
-        return Ok((port, Some(facade)));
+        let facade = bind_quic_facade(bound, fork_segment, listen_port).await?;
+        let quic_port = facade
+            .quic
+            .as_ref()
+            .and_then(|q| parse_udp_port(&q.listen_addr.to_string()))
+            .unwrap_or(listen_port);
+        return Ok((quic_port, Some(facade)));
     }
     #[cfg(not(feature = "libp2p-quic"))]
     {
-        let _ = bound;
         let _ = fork_segment;
         Ok((port, None))
     }
@@ -86,13 +104,14 @@ pub fn dial_bootnodes(target: &NetworkTarget, swarm: Option<&mut SwarmFacade>) {
 async fn bind_quic_facade(
     bound: crate::network::BoundTransport,
     fork_segment: &str,
+    listen_port: u16,
 ) -> Result<SwarmFacade> {
     let mut facade = SwarmFacade::default();
     facade.attach_transport(bound);
     facade
         .bind_quic_swarm_for_fork_segment(
             &TransportConfig {
-                listen_port: 0,
+                listen_port,
                 idle_timeout_ms: 30_000,
             },
             fork_segment,
@@ -123,9 +142,35 @@ async fn bind_quic_facade(
         %peer,
         %listen,
         %dialable,
+        listen_port,
         topic = %topic_block,
         fork_segment,
         "libp2p QuicSwarm bound with Lean gossip topics"
     );
     Ok(facade)
+}
+
+/// Extract `/udp/<port>` from a multiaddr string.
+fn parse_udp_port(multiaddr: &str) -> Option<u16> {
+    let mut parts = multiaddr.split('/');
+    while let Some(p) = parts.next() {
+        if p == "udp" {
+            return parts.next()?.parse().ok();
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_quic_udp_port() {
+        assert_eq!(
+            parse_udp_port("/ip4/0.0.0.0/udp/9000/quic-v1"),
+            Some(9000)
+        );
+        assert_eq!(parse_udp_port("/ip4/1.2.3.4/tcp/9000"), None);
+    }
 }
