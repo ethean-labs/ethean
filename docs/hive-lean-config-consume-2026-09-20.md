@@ -28,5 +28,8 @@ ethean start --until-signal --ephemeral \
   (see [`local-attester-duty-2026-09-20.md`](./local-attester-duty-2026-09-20.md))
 - Propose only when slot proposer matches an owned registry index — **landed**
   (see [`owned-index-proposer-gate-2026-09-20.md`](./owned-index-proposer-gate-2026-09-20.md))
-- Upstream ethereum/hive `clients/ethean` (+ add `ethean` to prepare_lean_client_assets.py)
-- Apply `ATTESTATION_COMMITTEE_COUNT` into the live profile when Hive sets it
+- Apply `ATTESTATION_COMMITTEE_COUNT` into the live profile when Hive sets it — **landed**
+  (see [`attestation-committee-count-profile-subnets-2026-09-20.md`](./attestation-committee-count-profile-subnets-2026-09-20.md))
+- Upstream ethereum/hive `clients/ethean` (+ lean-devnets / asset preparer) — drop-in ready under
+  [`docker/hive/upstream-clients-ethean/`](../docker/hive/upstream-clients-ethean/)
+  (see [`hive-upstream-clients-ethean-dropin-2026-09-20.md`](./hive-upstream-clients-ethean-dropin-2026-09-20.md))
