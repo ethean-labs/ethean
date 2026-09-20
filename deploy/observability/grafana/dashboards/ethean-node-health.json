@@ -160,8 +160,82 @@
       "targets": [{ "expr": "ethean_prover_timeout_total", "legendFormat": "timeouts", "refId": "A" }]
     },
     {
+      "type": "stat", "id": 15, "title": "Prune floor slot",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_durable_blocks_prune_floor_slot", "refId": "A" }]
+    },
+    {
+      "type": "stat", "id": 16, "title": "Durable flushed",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "green" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_durable_blocks_flushed_total", "refId": "A" }]
+    },
+    {
+      "type": "stat", "id": 17, "title": "Pruned SSZ files",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "orange" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_durable_blocks_pruned_files_total", "refId": "A" }]
+    },
+    {
+      "type": "stat", "id": 18, "title": "Pruned redb rows",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "purple" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{ "expr": "ethean_durable_blocks_pruned_redb_total", "refId": "A" }]
+    },
+    {
+      "type": "timeseries", "id": 19, "title": "Durable flush / prune (rate)",
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 23 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "fillOpacity": 12, "lineInterpolation": "stepAfter" },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max", "lastNotNull"] } },
+      "targets": [
+        { "expr": "rate(ethean_durable_blocks_flushed_total[5m])", "legendFormat": "flushed/s", "refId": "A" },
+        { "expr": "rate(ethean_durable_blocks_pruned_files_total[5m])", "legendFormat": "ssz prune/s", "refId": "B" },
+        { "expr": "rate(ethean_durable_blocks_pruned_redb_total[5m])", "legendFormat": "redb prune/s", "refId": "C" }
+      ]
+    },
+    {
       "type": "timeseries", "id": 14, "title": "Scrape up",
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 19 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 30 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -183,5 +257,5 @@
   "timezone": "browser",
   "title": "Ethean Node Health",
   "uid": "ethean-node-health",
-  "version": 1
+  "version": 2
 }
