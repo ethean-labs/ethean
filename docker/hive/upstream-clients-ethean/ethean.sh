@@ -84,4 +84,12 @@ fi
 
 export RUST_LOG="${RUST_LOG:-info}"
 
+# Optional process-IPC prover (Hive/operator-injected path; not a production leanVM claim).
+if [ -n "${HIVE_LEANVM_PROVER:-}" ]; then
+  export ETHEAN_LEANVM_PROVER="$HIVE_LEANVM_PROVER"
+fi
+if [ -n "${HIVE_LEANVM_IPC_PROBE:-}" ]; then
+  export ETHEAN_LEANVM_IPC_PROBE="$HIVE_LEANVM_IPC_PROBE"
+fi
+
 exec "$ETHEAN_BIN" "${FLAGS[@]}"
