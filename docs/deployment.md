@@ -34,6 +34,10 @@ That label alone does **not** attach to a public mesh. Supply QUIC multiaddrs:
 
 Empty bootnodes → offline local duties with a clear warning log.
 
+When eth/pq-devnets publish live digests, multiaddrs, and prover binaries, follow
+the plug-in checklist (no fabricated bootnodes):
+[pq-devnet-operator-plug-in-checklist-2026-09-20.md](./pq-devnet-operator-plug-in-checklist-2026-09-20.md).
+
 Peer baseline: **Zeam** and **Ream** for current interop. **Peam** is older. **Beam** is historical naming only.
 
 ## Run

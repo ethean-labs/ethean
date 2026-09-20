@@ -58,6 +58,7 @@ Planning session summaries:
 - [Durable QuicSwarm, leanVM stub, leanSig vendor patch](./durable-quic-leanvm-leansig-vendor-2026-09-19.md)
 - [B1 leanSig vendor backend compile path](./b1-leansig-vendor-backend-compile-2026-09-20.md)
 - [B2 leanVM IPC live probe (protocol_ready)](./b2-leanvm-ipc-live-probe-2026-09-20.md)
+- [pq-devnet operator plug-in checklist (A2/A3/leanVM/leansig/Hive)](./pq-devnet-operator-plug-in-checklist-2026-09-20.md)
 - [Aggregator prove routes to leanVM IPC](./aggregator-prove-ipc-route-2026-09-20.md)
 - [Status sync prefers blocks-by-range on deep lag](./status-sync-prefer-range-on-deep-lag-2026-09-20.md)
 - [Hive / leanSpec fixture consumer scaffold](./hive-leanspec-fixture-consumer-2026-09-20.md)
