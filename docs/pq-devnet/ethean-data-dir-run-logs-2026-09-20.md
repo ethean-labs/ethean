@@ -5,7 +5,7 @@ Durable `--data-dir` runs now tee tracing to:
 `PATH/log/ethean-YYYY-MM-DD-HHMMSS-log`
 
 UTC stamp, no colons (Windows-safe). Stdout still prints with green-forward
-ANSI colors (see [ethean-console-log-colors-2026-09-20.md](./ethean-console-log-colors-2026-09-20.md));
+ANSI colors (see [ethean-console-log-colors-2026-09-20.md](../observability/ethean-console-log-colors-2026-09-20.md));
 the file copy is plain text. `--ephemeral` (or no
 `--data-dir`) stays console-only.
 

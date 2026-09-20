@@ -65,7 +65,7 @@ docker build -f docker/hive/Dockerfile \
 3. Append client row + `ethean=devnet4,devnet5` in lean-devnets.
 4. Run lean simulator with `--client ethean`.
 
-Details: [hive-upstream-clients-ethean-dropin-2026-09-20.md](./hive-upstream-clients-ethean-dropin-2026-09-20.md).
+Details: [hive-upstream-clients-ethean-dropin-2026-09-20.md](../hive-testing/hive-upstream-clients-ethean-dropin-2026-09-20.md).
 
 ## After paste: short soak
 
@@ -76,7 +76,7 @@ Details: [hive-upstream-clients-ethean-dropin-2026-09-20.md](./hive-upstream-cli
 
 ## Related
 
-- [deployment.md](./deployment.md) — network tables and run recipes
-- [b2-leanvm-ipc-live-probe-2026-09-20.md](./b2-leanvm-ipc-live-probe-2026-09-20.md)
-- [b1-leansig-vendor-backend-compile-2026-09-20.md](./b1-leansig-vendor-backend-compile-2026-09-20.md)
-- [hive-leansig-cargo-features-2026-09-20.md](./hive-leansig-cargo-features-2026-09-20.md)
+- [deployment.md](../../deployment.md) — network tables and run recipes
+- [b2-leanvm-ipc-live-probe-2026-09-20.md](../lean-crypto/b2-leanvm-ipc-live-probe-2026-09-20.md)
+- [b1-leansig-vendor-backend-compile-2026-09-20.md](../lean-crypto/b1-leansig-vendor-backend-compile-2026-09-20.md)
+- [hive-leansig-cargo-features-2026-09-20.md](../hive-testing/hive-leansig-cargo-features-2026-09-20.md)

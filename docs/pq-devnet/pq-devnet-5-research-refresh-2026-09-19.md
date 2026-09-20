@@ -37,4 +37,4 @@ Keep default network label `pq-devnet-5`. Ordered gaps unchanged in spirit, shar
 6. Hive / leanSpec fixture consumer.
 7. Goldfish only when the run’s leanSpec fork requires it.
 
-See also: [working-client-pq-devnet-5-plan-2026-09-19.md](./working-client-pq-devnet-5-plan-2026-09-19.md).
+See also: [working-client-pq-devnet-5-plan-2026-09-19.md](working-client-pq-devnet-5-plan-2026-09-19.md).

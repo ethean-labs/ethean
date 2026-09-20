@@ -4,7 +4,7 @@
 
 pq-devnet-5 is the **current generation target**. leanroadmap still labels the card **Planned**, but leanSpec Type-2 work is merged and peers have been running private interop. There is **no** finished public mesh with published bootnodes. Ethean defaults `start` to that **network label** and dials only operator-supplied QUIC multiaddrs.
 
-Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-5-research-refresh-2026-09-19.md).
+Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](pq-devnet-5-research-refresh-2026-09-19.md).
 
 ## Peer baseline
 
@@ -26,34 +26,34 @@ Full research summary: [pq-devnet-5-research-refresh-2026-09-19.md](./pq-devnet-
 ## Follow-ups (D5-focused)
 
 - Fork digest override landed; still need the operator/leanSpec pin value for a live run.
-- Sync-lag duty gate: **`SYNC_LAG_THRESHOLD_SLOTS = 4`** on live ChainOwner ([sync-lag-threshold-2026-09-19.md](./sync-lag-threshold-2026-09-19.md)).
-- Blocks-by-range request encode scaffold landed; QuicSwarm stream still open ([blocks-by-range-scaffold-2026-09-19.md](./blocks-by-range-scaffold-2026-09-19.md)).
-- leanSig + leanVM production gates: **Type-1 merge API + pool coalesce landed** ([type1-recursive-merge-2026-09-19.md](./type1-recursive-merge-2026-09-19.md)); structural Type-2 split reseed landed; leanVM SNARK prove/split and leanSig production still open.
-- Status / blocks-by-root — wire + SignedBlock ingest + **multi-hop parent catch-up** landed ([blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md)); BlocksByRange still open.
-- Decode/validate D5 block body: single Type-2 proof gate landed ([d5-type2-gossip-envelope-gate-2026-09-19.md](./d5-type2-gossip-envelope-gate-2026-09-19.md)); leanVM SNARK verify + re-agg cache from split still open.
-- Fork-digest mesh isolation warn + leanSig/leanVM refuse_reason boot honesty ([c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md](./c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md), [b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md](./b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md)).
-- D2 smoke: four attestation subnet subscribe + `AggregatorReady` + Type-1 prove + **aggregation gossip publish** ([d2-type1-aggregation-gossip-publish-2026-09-20.md](./d2-type1-aggregation-gossip-publish-2026-09-20.md)).
-- D3: proposer Type-2 from Type-1 cache ([d3-type2-from-type1-cache-2026-09-20.md](./d3-type2-from-type1-cache-2026-09-20.md)); production leanVM SNARK still open.
-- B2 IPC frame ABI + B4 aggpin boot checks ([b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md](./b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md)); spawn/round-trip and production backends still open.
-- B2 IPC spawn + wall-deadline exchange ([b2-leanvm-ipc-spawn-exchange-2026-09-20.md](./b2-leanvm-ipc-spawn-exchange-2026-09-20.md)); `protocol_ready` still false until live leanVM round-trip.
-- B2 ELVM mock prover + spawn round-trip test ([b2-leanvm-mock-ipc-roundtrip-2026-09-20.md](./b2-leanvm-mock-ipc-roundtrip-2026-09-20.md)).
+- Sync-lag duty gate: **`SYNC_LAG_THRESHOLD_SLOTS = 4`** on live ChainOwner ([sync-lag-threshold-2026-09-19.md](../networking/sync-lag-threshold-2026-09-19.md)).
+- Blocks-by-range request encode scaffold landed; QuicSwarm stream still open ([blocks-by-range-scaffold-2026-09-19.md](../networking/blocks-by-range-scaffold-2026-09-19.md)).
+- leanSig + leanVM production gates: **Type-1 merge API + pool coalesce landed** ([type1-recursive-merge-2026-09-19.md](../lean-crypto/type1-recursive-merge-2026-09-19.md)); structural Type-2 split reseed landed; leanVM SNARK prove/split and leanSig production still open.
+- Status / blocks-by-root — wire + SignedBlock ingest + **multi-hop parent catch-up** landed ([blocks-by-root-multihop-catchup-2026-09-19.md](../networking/blocks-by-root-multihop-catchup-2026-09-19.md)); BlocksByRange still open.
+- Decode/validate D5 block body: single Type-2 proof gate landed ([d5-type2-gossip-envelope-gate-2026-09-19.md](../networking/d5-type2-gossip-envelope-gate-2026-09-19.md)); leanVM SNARK verify + re-agg cache from split still open.
+- Fork-digest mesh isolation warn + leanSig/leanVM refuse_reason boot honesty ([c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md](../networking/c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md), [b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md](../lean-crypto/b2-leanvm-refuse-d2-aggregator-subnets-2026-09-20.md)).
+- D2 smoke: four attestation subnet subscribe + `AggregatorReady` + Type-1 prove + **aggregation gossip publish** ([d2-type1-aggregation-gossip-publish-2026-09-20.md](../networking/d2-type1-aggregation-gossip-publish-2026-09-20.md)).
+- D3: proposer Type-2 from Type-1 cache ([d3-type2-from-type1-cache-2026-09-20.md](../lean-crypto/d3-type2-from-type1-cache-2026-09-20.md)); production leanVM SNARK still open.
+- B2 IPC frame ABI + B4 aggpin boot checks ([b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md](../lean-crypto/b2-leanvm-ipc-frames-b4-aggpin-2026-09-20.md)); spawn/round-trip and production backends still open.
+- B2 IPC spawn + wall-deadline exchange ([b2-leanvm-ipc-spawn-exchange-2026-09-20.md](../lean-crypto/b2-leanvm-ipc-spawn-exchange-2026-09-20.md)); `protocol_ready` still false until live leanVM round-trip.
+- B2 ELVM mock prover + spawn round-trip test ([b2-leanvm-mock-ipc-roundtrip-2026-09-20.md](../lean-crypto/b2-leanvm-mock-ipc-roundtrip-2026-09-20.md)).
 - Hive / leanSpec fixture consumer for matrix inclusion.
 - Goldfish / PQ heartbeat **only** when leanSpec for the run requires it (may be D6).
 
 ## Sprint landings (Status sync)
 
 5. Boot stores local Status, queues `StatusSessionBook`, stages Status/blocks outboxes
-6. See [status-handshake-outbox-2026-09-19.md](./status-handshake-outbox-2026-09-19.md)
-7. QuicSwarm Status request_response send/receive — [quic-status-reqresp-wire-2026-09-19.md](./quic-status-reqresp-wire-2026-09-19.md)
-8. Local client verification (offline + two-process Status mesh) — [pq-devnet-5-client-run-2026-09-19.md](./pq-devnet-5-client-run-2026-09-19.md)
-9. Blocks-by-root request_response wire — [blocks-by-root-reqresp-wire-2026-09-19.md](./blocks-by-root-reqresp-wire-2026-09-19.md)
-10. Blocks-by-root SignedBlock ingest — [blocks-by-root-signedblock-ingest-2026-09-19.md](./blocks-by-root-signedblock-ingest-2026-09-19.md)
-11. Multi-hop parent catch-up — [blocks-by-root-multihop-catchup-2026-09-19.md](./blocks-by-root-multihop-catchup-2026-09-19.md)
-12. Type-2 structural split / pool reseed — [type2-structural-split-pool-reseed-2026-09-19.md](./type2-structural-split-pool-reseed-2026-09-19.md)
-13. Type-1 recursive merge — [type1-recursive-merge-2026-09-19.md](./type1-recursive-merge-2026-09-19.md)
-14. Sync-lag threshold — [sync-lag-threshold-2026-09-19.md](./sync-lag-threshold-2026-09-19.md)
-15. Blocks-by-range scaffold — [blocks-by-range-scaffold-2026-09-19.md](./blocks-by-range-scaffold-2026-09-19.md)
+6. See [status-handshake-outbox-2026-09-19.md](../networking/status-handshake-outbox-2026-09-19.md)
+7. QuicSwarm Status request_response send/receive — [quic-status-reqresp-wire-2026-09-19.md](../networking/quic-status-reqresp-wire-2026-09-19.md)
+8. Local client verification (offline + two-process Status mesh) — [pq-devnet-5-client-run-2026-09-19.md](pq-devnet-5-client-run-2026-09-19.md)
+9. Blocks-by-root request_response wire — [blocks-by-root-reqresp-wire-2026-09-19.md](../networking/blocks-by-root-reqresp-wire-2026-09-19.md)
+10. Blocks-by-root SignedBlock ingest — [blocks-by-root-signedblock-ingest-2026-09-19.md](../networking/blocks-by-root-signedblock-ingest-2026-09-19.md)
+11. Multi-hop parent catch-up — [blocks-by-root-multihop-catchup-2026-09-19.md](../networking/blocks-by-root-multihop-catchup-2026-09-19.md)
+12. Type-2 structural split / pool reseed — [type2-structural-split-pool-reseed-2026-09-19.md](../lean-crypto/type2-structural-split-pool-reseed-2026-09-19.md)
+13. Type-1 recursive merge — [type1-recursive-merge-2026-09-19.md](../lean-crypto/type1-recursive-merge-2026-09-19.md)
+14. Sync-lag threshold — [sync-lag-threshold-2026-09-19.md](../networking/sync-lag-threshold-2026-09-19.md)
+15. Blocks-by-range scaffold — [blocks-by-range-scaffold-2026-09-19.md](../networking/blocks-by-range-scaffold-2026-09-19.md)
 
 ## How to run (summary)
 
-See root README Quick Start and [deployment.md](./deployment.md).
+See root README Quick Start and [deployment.md](../../deployment.md).

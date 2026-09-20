@@ -35,7 +35,7 @@ curl -s http://127.0.0.1:9100/metrics | findstr ethean_head_slot
 ```
 
 Skip Grafana until WSL is healthy. See also
-[grafana-prometheus-need-docker-2026-09-20.md](grafana-prometheus-need-docker-2026-09-20.md).
+[grafana-prometheus-need-docker-2026-09-20.md](../observability/grafana-prometheus-need-docker-2026-09-20.md).
 
 ## Fix WSL / Docker Desktop (operator)
 

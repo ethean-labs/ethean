@@ -5,7 +5,7 @@ Date: 2026-09-19 (superseded default: 2026-09-20)
 ## Current default (2026-09-20)
 
 CLI default is **`pq-devnet-4`**. See
-[default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](./default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md).
+[default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md](default-network-pq-devnet-4-keep-d5-ready-2026-09-20.md).
 
 ## pq-devnet-5 ready path (still supported)
 
