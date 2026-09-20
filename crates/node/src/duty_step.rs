@@ -46,9 +46,17 @@ pub fn apply_wall_step(
         if let Err(reason) = evaluate_gate(&snap.duty_view) {
             events.push(ChainEvent::DutySuppressed { tick, reason });
         } else {
-            events.extend(crate::duty_aggregator::evaluate_aggregator_duties(
-                owner, tick, lag,
-            ));
+            let ready = crate::duty_aggregator::evaluate_aggregator_duties(owner, tick, lag);
+            for ev in &ready {
+                if let ChainEvent::AggregatorReady { data_root, .. } = ev {
+                    if let Some(proved) =
+                        crate::duty_aggregator_prove::try_prove_type1_for_root(owner, *data_root)
+                    {
+                        events.push(proved);
+                    }
+                }
+            }
+            events.extend(ready);
             events.extend(try_plan_proposal(owner, tick));
         }
     }
