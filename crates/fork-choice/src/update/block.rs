@@ -1,7 +1,7 @@
 //! Block import into the fork-choice store.
 
 use ethean_primitives::ValidatorIndex;
-use ethean_types::{Block, State};
+use ethean_types::{Block, State, MAX_ATTESTATIONS_DATA};
 
 use crate::error::ForkChoiceError;
 use crate::prune::prune_finalized_away;
@@ -32,6 +32,10 @@ impl ForkChoiceStore {
         let current_slot = self.current_slot();
         if block.slot.get() > current_slot + 1 {
             return Err(ForkChoiceError::BlockTooFarInFuture);
+        }
+
+        if block.body.attestations.len() > MAX_ATTESTATIONS_DATA {
+            return Err(ForkChoiceError::TooManyAttestationData);
         }
 
         let mut seen = std::collections::HashSet::new();
