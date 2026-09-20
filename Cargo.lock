@@ -1023,7 +1023,7 @@ dependencies = [
 
 [[package]]
 name = "ethean"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "clap",
  "ethean-crypto",
@@ -1036,7 +1036,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-crypto"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "leansig",
@@ -1048,7 +1048,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-fork-choice"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "ethean-profile",
@@ -1060,7 +1060,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-genesis"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "ethean-profile",
@@ -1073,14 +1073,14 @@ dependencies = [
 
 [[package]]
 name = "ethean-leanvm-mock"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-crypto",
 ]
 
 [[package]]
 name = "ethean-metrics"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "thiserror 1.0.69",
@@ -1090,7 +1090,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-network"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "async-trait",
  "ethean-network-wire",
@@ -1104,7 +1104,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-network-wire"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "sha2",
@@ -1114,7 +1114,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-node"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "anyhow",
  "clap",
@@ -1149,7 +1149,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-primitives"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1157,7 +1157,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-profile"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "serde",
@@ -1166,7 +1166,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-rpc"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "serde_json",
@@ -1177,7 +1177,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-spec-fixtures"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-fork-choice",
  "ethean-primitives",
@@ -1191,7 +1191,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-ssz"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "sha2",
  "thiserror 1.0.69",
@@ -1199,7 +1199,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-storage"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "rocksdb",
@@ -1210,7 +1210,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-sync"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-network-wire",
  "ethean-primitives",
@@ -1219,7 +1219,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-transition"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-crypto",
  "ethean-primitives",
@@ -1231,7 +1231,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-types"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-primitives",
  "ethean-profile",
@@ -1241,7 +1241,7 @@ dependencies = [
 
 [[package]]
 name = "ethean-validator"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "ethean-crypto",
  "ethean-primitives",
