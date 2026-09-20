@@ -1,8 +1,9 @@
 //! Metrics registry and Lean RPC smoke helpers for the node process.
 
 use ethean_metrics::{
-    ensure_core_families, record_bootnode_count, record_readiness_gauges, record_role_gauges,
-    record_slot_gauges, set_ready, MetricsError, Readiness, Registry, SharedRegistry,
+    ensure_core_families, record_bootnode_count, record_durable_persist, record_readiness_gauges,
+    record_role_gauges, record_slot_gauges, set_ready, MetricsError, Readiness, Registry,
+    SharedRegistry,
 };
 use ethean_rpc::{dispatch, BindScope, IncomingRequest, Route, RpcError};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -147,6 +148,25 @@ impl NodeObservability {
     pub fn record_bootnodes(&mut self, bootnode_count: u64) -> Result<(), MetricsError> {
         self.registry
             .with_mut(|reg| record_bootnode_count(reg, bootnode_count))
+    }
+
+    /// Accrue durable flush / prune samples after a successful data-dir save.
+    pub fn record_durable_persist(
+        &mut self,
+        flushed_blocks: u64,
+        floor_slot: u64,
+        files_removed: u64,
+        redb_removed: u64,
+    ) -> Result<(), MetricsError> {
+        self.registry.with_mut(|reg| {
+            record_durable_persist(
+                reg,
+                flushed_blocks,
+                floor_slot,
+                files_removed,
+                redb_removed,
+            )
+        })
     }
 }
 
