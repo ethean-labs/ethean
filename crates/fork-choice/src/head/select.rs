@@ -147,6 +147,7 @@ impl ForkChoiceStore {
     }
 
     /// Roots on the ancestry of `root` (inclusive), walking to genesis.
+    #[allow(dead_code)] // retained for durable/store callers and future prune helpers
     pub(crate) fn ancestry_set(&self, root: Hash32) -> HashSet<Hash32> {
         let mut set = HashSet::new();
         let mut current = root;
