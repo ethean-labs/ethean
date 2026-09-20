@@ -28,10 +28,14 @@ impl ForkChoiceStore {
         weights
     }
 
-    /// Drop stale votes whose head is at or below the finalized slot.
+    /// Counted votes: prefer payload-pool LMD (leanSpec); fall back to the map.
     pub(crate) fn relevant_known_votes(
         &self,
     ) -> HashMap<ValidatorIndex, AttestationData> {
+        let from_payloads = self.votes_from_known_payloads();
+        if !from_payloads.is_empty() {
+            return from_payloads;
+        }
         self.latest_known_attestations
             .iter()
             .filter(|(_, data)| data.head.slot > self.latest_finalized.slot)
@@ -39,8 +43,12 @@ impl ForkChoiceStore {
             .collect()
     }
 
-    /// Relevant pending votes (for safe-target).
+    /// Pending votes for safe-target (payload pool first).
     pub(crate) fn relevant_new_votes(&self) -> HashMap<ValidatorIndex, AttestationData> {
+        let from_payloads = self.votes_from_new_payloads();
+        if !from_payloads.is_empty() {
+            return from_payloads;
+        }
         self.latest_new_attestations
             .iter()
             .filter(|(_, data)| data.head.slot > self.latest_finalized.slot)
@@ -48,16 +56,9 @@ impl ForkChoiceStore {
             .collect()
     }
 
-    /// Ancestor weights from the finalized checkpoint using known votes.
-    ///
-    /// Fixture `storeSnapshot.blockWeights` are keyed from the finalized floor
-    /// (not the justified root), matching leanSpec store dumps.
+    /// Ancestor weights from the finalized checkpoint (leanSpec `compute_block_weights`).
     pub fn block_weights_from_known(&self) -> HashMap<Hash32, u64> {
-        let start_slot = self
-            .blocks
-            .get(&self.latest_finalized.root)
-            .map(|b| b.slot.get())
-            .unwrap_or(0);
+        let start_slot = self.latest_finalized.slot.get();
         self.accumulate_ancestor_weights(&self.relevant_known_votes(), start_slot)
     }
 }
