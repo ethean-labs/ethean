@@ -35,6 +35,11 @@ pub fn ensure_core_families(reg: &mut Registry) -> Result<()> {
         ),
         ("peer_count", "Connected peers", MetricKind::Gauge),
         (
+            "bootnode_count",
+            "Configured bootnode multiaddrs for this start",
+            MetricKind::Gauge,
+        ),
+        (
             "validator_count",
             "Validators in local genesis / head state",
             MetricKind::Gauge,
@@ -137,6 +142,11 @@ pub fn record_role_gauges(
     reg.set("genesis_time_seconds", genesis_time_seconds as f64)?;
     reg.set("seconds_per_slot", seconds_per_slot as f64)?;
     Ok(())
+}
+
+/// Configured bootnodes (expected mesh size) for the Peers panel context.
+pub fn record_bootnode_count(reg: &mut Registry, bootnode_count: u64) -> Result<()> {
+    reg.set("bootnode_count", bootnode_count as f64)
 }
 
 /// Mirror readiness bits as separate gauges (dashboard “node health” row).
