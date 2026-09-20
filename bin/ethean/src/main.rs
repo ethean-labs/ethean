@@ -183,7 +183,14 @@ async fn main() -> Result<()> {
                 let built = ethean_node::GenesisBuilder::new(lean.genesis_time)
                     .with_validator_keys(lean.validators)
                     .build()?;
-                let profile = ethean_node::lstar_devnet()?;
+                let profile = ethean_node::lstar_devnet()?.with_attestation_committee_count(
+                    lean.attestation_committee_count.max(1),
+                )?;
+                info!(
+                    attestation_committee_count = profile.attestation_committee_count,
+                    attestation_subnets = profile.attestation_subnet_count(),
+                    "applied config.yaml ATTESTATION_COMMITTEE_COUNT onto chain profile"
+                );
                 let mut client = EtheanClient::with_genesis(profile, built.state).await?;
                 client.apply_local_roles(roles);
                 client
