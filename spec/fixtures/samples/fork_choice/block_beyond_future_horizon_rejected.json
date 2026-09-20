@@ -1,0 +1,17 @@
+{
+  "ethean/sample::test_block_beyond_future_horizon_rejected": {
+    "network": "Lstar",
+    "leanEnv": "prod",
+    "proofSetting": 0,
+    "steps": [
+      {
+        "valid": false,
+        "rejectionReason": "BLOCK_TOO_FAR_IN_FUTURE",
+        "checks": {
+          "time": 0,
+          "headSlot": 0
+        }
+      }
+    ]
+  }
+}
