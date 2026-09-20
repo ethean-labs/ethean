@@ -45,7 +45,7 @@ pub fn import_decoded_block(
                 let _ = seed_pool_from_signed_block(&mut owner.aggregates, signed);
             }
         }
-        owner.head_root = decoded.root;
+        owner.advance_head(decoded.root, decoded.parent);
         return GossipStfResult::RootOnly {
             root: decoded.root,
         };
@@ -67,7 +67,7 @@ pub fn import_decoded_block(
         return match apply_block(&pre, signed, &ctx) {
             Ok(out) => {
                 owner.head_state = Some(out.post_state);
-                owner.head_root = decoded.root;
+                owner.advance_head(decoded.root, decoded.parent);
                 let _ = seed_pool_from_signed_block(&mut owner.aggregates, signed);
                 GossipStfResult::AppliedVerified {
                     root: decoded.root,
@@ -80,7 +80,7 @@ pub fn import_decoded_block(
     match apply_block_unverified(&pre, &decoded.block, &ctx) {
         Ok(out) => {
             owner.head_state = Some(out.post_state);
-            owner.head_root = decoded.root;
+            owner.advance_head(decoded.root, decoded.parent);
             GossipStfResult::Applied {
                 root: decoded.root,
             }

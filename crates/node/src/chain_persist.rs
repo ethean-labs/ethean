@@ -217,6 +217,7 @@ pub fn restore_owner(owner: &mut ChainOwner, head: RestoredHead) -> Result<()> {
     );
     owner.head_root = head.head_root;
     owner.head_state = Some(head.state);
+    owner.refresh_fc_view();
     owner.bump_generation();
     Ok(())
 }

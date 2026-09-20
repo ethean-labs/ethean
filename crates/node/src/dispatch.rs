@@ -58,7 +58,7 @@ fn import_block(
             slot: owner.last_tick.map(|t| t.slot.get()).unwrap_or(0),
         };
     }
-    owner.head_root = root;
+    owner.advance_head(root, parent);
     ChainEvent::HeadUpdated {
         root,
         slot: owner.last_tick.map(|t| t.slot.get()).unwrap_or(0),

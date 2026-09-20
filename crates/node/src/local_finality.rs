@@ -26,6 +26,7 @@ pub fn seal_genesis_head(owner: &mut ChainOwner) {
         }
     }
     owner.head_root = state.latest_block_header.hash_tree_root();
+    owner.refresh_fc_view();
     info!(
         head_root = %hex32(&owner.head_root),
         "sealed genesis head_root from latest_block_header"
@@ -68,8 +69,9 @@ pub fn apply_planned_locally(
     let ctx = TransitionContext::new(profile);
     let out = apply_block_unverified(&pre, &plan.block, &ctx).map_err(|e| e.to_string())?;
     let root = plan.block_root()?;
+    let parent = plan.block.parent_root;
     owner.head_state = Some(out.post_state);
-    owner.head_root = root;
+    owner.advance_head(root, parent);
     Ok(root)
 }
 
@@ -104,6 +106,7 @@ pub fn promote_local_checkpoints(owner: &mut ChainOwner, applied_root: Hash32) {
         state.latest_block_header.state_root = sr;
     }
     owner.head_root = state.latest_block_header.hash_tree_root();
+    owner.refresh_fc_view();
 }
 
 /// When aggregating locally, attach a full-registry vote to the planned body.
