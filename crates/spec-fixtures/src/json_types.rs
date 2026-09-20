@@ -3,7 +3,8 @@
 use crate::hex::{decode_hex_fixed, HexError};
 use ethean_primitives::{Bytes52, Hash32, Slot, ValidatorIndex};
 use ethean_types::{
-    Block, BlockBody, BlockHeader, Checkpoint, GenesisConfig, State, Validator,
+    AggregatedAttestation, AggregationBits, Block, BlockBody, BlockHeader, Checkpoint,
+    GenesisConfig, State, Validator,
 };
 use serde::Deserialize;
 use thiserror::Error;
@@ -147,21 +148,21 @@ pub fn state_from_value(v: &serde_json::Value) -> Result<State, JsonTypesError> 
     })
 }
 
-/// Decode a leanSpec `Block` JSON object (attestations must be empty for now).
+/// Decode a leanSpec `Block` JSON object (including body aggregated attestations).
 pub fn block_from_value(v: &serde_json::Value) -> Result<Block, JsonTypesError> {
     let j: JsonBlock =
         serde_json::from_value(v.clone()).map_err(|e| JsonTypesError::Serde(e.to_string()))?;
-    if !j.body.attestations.data.is_empty() {
-        return Err(JsonTypesError::Types(
-            "fixture block attestations not supported yet".into(),
-        ));
+    let mut body_atts = Vec::with_capacity(j.body.attestations.data.len());
+    for row in &j.body.attestations.data {
+        body_atts.push(aggregated_attestation_from_value(row)?);
     }
+    let body = BlockBody::new(body_atts).map_err(|e| JsonTypesError::Types(e.to_string()))?;
     Ok(Block {
         slot: Slot::new(j.slot),
         proposer_index: ValidatorIndex::new(j.proposer_index),
         parent_root: hash32(&j.parent_root)?,
         state_root: hash32(&j.state_root)?,
-        body: BlockBody::default(),
+        body,
     })
 }
 
@@ -185,12 +186,33 @@ struct JsonAttestation {
     signature: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsonAggregatedAttestation {
+    aggregation_bits: JsonList<bool>,
+    data: JsonAttestationData,
+}
+
 fn attestation_data(j: &JsonAttestationData) -> Result<ethean_types::AttestationData, JsonTypesError> {
     Ok(ethean_types::AttestationData {
         slot: Slot::new(j.slot),
         head: checkpoint(&j.head)?,
         target: checkpoint(&j.target)?,
         source: checkpoint(&j.source)?,
+    })
+}
+
+/// Decode a leanSpec aggregated attestation (body / gossip aggregate payload).
+pub fn aggregated_attestation_from_value(
+    v: &serde_json::Value,
+) -> Result<AggregatedAttestation, JsonTypesError> {
+    let j: JsonAggregatedAttestation =
+        serde_json::from_value(v.clone()).map_err(|e| JsonTypesError::Serde(e.to_string()))?;
+    let bits = AggregationBits::new(j.aggregation_bits.data)
+        .map_err(|e| JsonTypesError::Types(e.to_string()))?;
+    Ok(AggregatedAttestation {
+        aggregation_bits: bits,
+        data: attestation_data(&j.data)?,
     })
 }
 
