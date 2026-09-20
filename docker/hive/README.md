@@ -21,8 +21,10 @@ docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
 | `HIVE_VALIDATORS` | `--validators` |
 | `HIVE_IS_AGGREGATOR` | `0` → `--no-aggregator` |
 | `HIVE_METRICS_ENABLED` | `1` keeps scrape on `:9100` |
+| `HIVE_HTTP_ENABLED` | `0` → `--no-http` (default on `:5052`) |
+| `HIVE_HTTP_ADMIN_TOKEN` | `--http-admin-token` for admin routes |
 
-Always runs `ethean start --until-signal --ephemeral`.
+Always runs `ethean start --until-signal --ephemeral` with Lean HTTP on `0.0.0.0:5052`.
 
 ## Upstream registration (not in this repo)
 
@@ -38,6 +40,6 @@ Snippet also kept as [`client-devnet5.yaml`](./client-devnet5.yaml).
 
 ## Known gaps vs Ream Hive client
 
-- No Beacon-style HTTP on `:5052` yet (Hive RPC suites will skip or fail).
 - QUIC listen port is OS-assigned (`listen_port: 0`), not fixed `:9000`.
 - Prepared `config.yaml` / `validators.yaml` from the simulator are **ignored** until Ethean grows file-based network config flags.
+- Lean HTTP serves `/lean/v1/…` only (no Beacon `/eth/v1`).
