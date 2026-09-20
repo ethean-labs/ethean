@@ -26,6 +26,31 @@ impl ForkChoiceStore {
         Ok(())
     }
 
+    /// Structural gossip aggregate: validate once, then pending-vote each participant.
+    ///
+    /// Proof bytes are ignored on the structural path; empty participation is rejected.
+    pub fn on_aggregated_attestation(
+        &mut self,
+        data: AttestationData,
+        participants: &[bool],
+    ) -> Result<(), ForkChoiceError> {
+        if self.opts.require_proofs {
+            return Err(ForkChoiceError::UnsupportedSignature(
+                "aggregate proofs / XMSS verify deferred to Phase 07/08".into(),
+            ));
+        }
+        if !participants.iter().any(|b| *b) {
+            return Err(ForkChoiceError::EmptyAggregationBits);
+        }
+        self.validate_attestation(&data)?;
+        for (i, bit) in participants.iter().enumerate() {
+            if *bit {
+                self.insert_pending_vote(ValidatorIndex::new(i as u64), data.clone());
+            }
+        }
+        Ok(())
+    }
+
     fn insert_pending_vote(&mut self, validator: ValidatorIndex, data: AttestationData) {
         match self.latest_new_attestations.get(&validator) {
             Some(existing) if !vote_is_newer(existing, &data) => {}
