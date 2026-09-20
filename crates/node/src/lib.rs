@@ -21,6 +21,7 @@ pub mod clock;
 pub mod commands;
 pub mod crypto;
 pub mod dispatch;
+pub mod duty_aggregator;
 pub mod duty_loop;
 pub mod duty_mesh;
 pub mod duty_network;
