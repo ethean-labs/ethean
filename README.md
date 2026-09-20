@@ -901,6 +901,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **How Ream / ethlambda / Zeam run pq-devnets**: [docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](./docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
 - **Peer fixed genesis vs Ethean solo restart**: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](./docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md)
 - **Dual mode (persist + ephemeral)**: [docs/dual-mode-persist-and-ephemeral-2026-09-20.md](./docs/dual-mode-persist-and-ephemeral-2026-09-20.md)
+- **Full State SSZ encode/decode**: [docs/state-ssz-encode-decode-complete-2026-09-20.md](./docs/state-ssz-encode-decode-complete-2026-09-20.md)
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/lean-peer-client-research-library-2026-09-19.md)
 - **Language (English only)**: [docs/english.md](./docs/english.md)
 - **Commits (per file, English)**: [docs/commit-after-each-file.md](./docs/commit-after-each-file.md)
