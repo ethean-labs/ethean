@@ -22,7 +22,7 @@ Files under `--data-dir PATH`:
 - `genesis.json` — profile + full genesis state
 - `genesis.ssz` / `state.ssz` / `head.root` / `blocks/<root>.ssz`
 - `ethean.redb` — SSZ blobs in a local KV
-- `log/ethean-YYYY-MM-DD-HHMMSS-log` — process log (kept across `--reset-chain`)
+- `log/ethean-YYYY-MM-DD-HHMMSS-log` — process log (removed with `--reset-chain`)
 
 Legacy `genesis_pin.json` / `head_snap.json` are still read and migrated.
 
@@ -34,4 +34,5 @@ ethean start --until-signal --network pq-devnet-4 --ephemeral
 ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data --reset-chain
 ```
 
-See [ethean-redb-ssz-data-dir-2026-09-20.md](./ethean-redb-ssz-data-dir-2026-09-20.md).
+See [ethean-redb-ssz-data-dir-2026-09-20.md](./ethean-redb-ssz-data-dir-2026-09-20.md)
+and [reset-chain-wipes-data-dir-2026-09-20.md](./reset-chain-wipes-data-dir-2026-09-20.md).
