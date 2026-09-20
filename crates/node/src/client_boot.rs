@@ -135,7 +135,12 @@ impl EtheanClient {
             if let Some(ref dir) = self.persist_dir {
                 let paths = crate::persist_paths::PersistPaths::new(dir);
                 if let Some(facade) = self.swarm.as_mut() {
-                    let _ = crate::serve_cache_seed::seed_facade_from_data_dir(facade, &paths);
+                    let seed =
+                        crate::serve_cache_seed::seed_facade_from_data_dir(facade, &paths);
+                    let _ = self.observability.record_serve_cache_seed(
+                        seed.candidates as u64,
+                        seed.indexed as u64,
+                    );
                 }
             }
             crate::boot_network::dial_bootnodes(network, self.swarm.as_mut());
