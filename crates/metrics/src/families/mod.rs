@@ -20,6 +20,7 @@ pub mod storage {
     pub const DURABLE_BLOCKS_PRUNED_FILES: &str = "durable_blocks_pruned_files_total";
     pub const DURABLE_BLOCKS_PRUNED_REDB: &str = "durable_blocks_pruned_redb_total";
     pub const DURABLE_BLOCKS_PRUNE_FLOOR: &str = "durable_blocks_prune_floor_slot";
+    pub const DURABLE_BLOCKS_PRUNE_KEEP: &str = "durable_blocks_prune_keep_slots";
 }
 
 pub mod validator {
