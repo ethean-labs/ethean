@@ -46,6 +46,9 @@ pub fn apply_wall_step(
         if let Err(reason) = evaluate_gate(&snap.duty_view) {
             events.push(ChainEvent::DutySuppressed { tick, reason });
         } else {
+            events.extend(crate::duty_aggregator::evaluate_aggregator_duties(
+                owner, tick, lag,
+            ));
             events.extend(try_plan_proposal(owner, tick));
         }
     }
