@@ -4,6 +4,8 @@ Design notes, sprint write-ups, and working plans for the client. Root README sh
 
 Contributor guide (root): [../CONTRIBUTING.md](../CONTRIBUTING.md). Session note: [contributing-guide-2026-09-20.md](./contributing-guide-2026-09-20.md).
 
+Code of conduct (root): [../CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md). Session note: [code-of-conduct-2026-09-20.md](./code-of-conduct-2026-09-20.md).
+
 Organization profile README draft (`gitreadme.md`): [org-profile-readme-gitreadme-2026-09-20.md](./org-profile-readme-gitreadme-2026-09-20.md).
 
 Lean R&D capture (public pointer only): [leanroadmap-local-notes.md](./leanroadmap-local-notes.md). The detailed extracts live in the local `bazalinacaklar/` folder.
