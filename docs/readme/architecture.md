@@ -5,6 +5,13 @@ an execution client.
 
 Short overview: [root README — Architecture](../../README.md#architecture).
 
+## Intent
+
+Build a consensus-only client that follows leanSpec / pq-devnet pins: post-quantum
+signing (leanSig), aggregation toward leanVM, 3SF-mini finality, QUIC gossip and
+req/resp, and operator-shaped network labels — without carrying Beacon BLS or
+`/eth/v1` compatibility as a long-term path.
+
 ## Crate map
 
 | Crate | Role |
