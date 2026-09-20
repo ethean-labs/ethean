@@ -183,6 +183,26 @@ pub fn apply_store_snapshot(store: &ForkChoiceStore, step: &Value) -> Result<(),
             )));
         }
     }
+    if let Some(list) = snap.get("blockWeights").and_then(|v| v.as_array()) {
+        let got = store.block_weights_from_known();
+        for item in list {
+            let root_s = item
+                .get("root")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| FcRunError::Step("blockWeights entry missing root".into()))?;
+            let want_w = item
+                .get("weight")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| FcRunError::Step("blockWeights entry missing weight".into()))?;
+            let root = parse_root(root_s)?;
+            let got_w = got.get(&root).copied().unwrap_or(0);
+            if got_w != want_w {
+                return Err(FcRunError::Step(format!(
+                    "storeSnapshot.blockWeights[{root_s}] got {got_w}, want {want_w}"
+                )));
+            }
+        }
+    }
     Ok(())
 }
 
