@@ -323,5 +323,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Version**: see [`VERSION`](./VERSION) (kept in sync with the Cargo workspace).
 How to bump: [docs/versioning.md](./docs/versioning.md).
+Release notes: [`CHANGELOG.md`](./CHANGELOG.md) · [GitHub Releases](https://github.com/Pamenarti/Ethean/releases).
 
 **Note**: This is a development version. For production use, please wait for the stable release and conduct thorough testing in your environment.
