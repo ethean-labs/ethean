@@ -5,6 +5,7 @@ Design notes, sprint write-ups, and working plans for the client.
 ## Quick links
 
 - Root README companion guides: [readme/README.md](./readme/README.md)
+- Changelog (milestones): [../CHANGELOG.md](../CHANGELOG.md)
 - Release notes: [release/README.md](./release/README.md)
 - Contributor guide: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - Code of conduct: [../CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)
