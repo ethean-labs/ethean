@@ -98,3 +98,23 @@ fn skips_slots_owned_by_other_validators() {
     owner.owned_validator_indices = vec![0];
     assert!(try_plan_proposal(&mut owner, tick(1)).is_empty());
 }
+
+#[test]
+fn local_finality_blocks_are_recorded_for_durable_flush() {
+    let mut owner = owner_at_slot_one();
+    owner.local_finality = true;
+    try_plan_proposal(&mut owner, tick(1));
+    assert_eq!(
+        owner.durable_blocks.len(),
+        1,
+        "solo block must reach the data dir"
+    );
+    let (root, payload) = &owner.durable_blocks[0];
+    let decoded = SignedBlock::ssz_decode(payload).unwrap();
+    assert_eq!(decoded.block.hash_tree_root().unwrap(), *root);
+    assert!(decoded.proof.proof.is_empty(), "solo blocks carry no proof");
+    assert!(
+        owner.pending_block_gossip.is_none(),
+        "solo blocks are never gossiped"
+    );
+}

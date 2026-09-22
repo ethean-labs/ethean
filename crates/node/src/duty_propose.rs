@@ -16,6 +16,7 @@ use ethean_crypto::Signature;
 use ethean_multisig::{KeyedProof, LeanMultisigVerifier};
 use ethean_primitives::ValidatorIndex;
 use ethean_transition::{apply_block, TransitionContext};
+use ethean_types::{MultiMessageAggregate, SignedBlock};
 use ethean_validator::DutyTick;
 
 /// Plan a proposal for an owned slot and request its block proof.
@@ -195,6 +196,12 @@ pub fn accept_block_proof(
 fn apply_locally(owner: &mut ChainOwner, plan: &PlanTransition, tick: DutyTick) {
     match crate::local_finality::apply_planned_locally(owner, plan) {
         Ok(applied) => {
+            // Persist the solo block for --data-dir resume and range serving. It
+            // carries no proof (injected votes are unsigned) and is never gossiped.
+            let local = SignedBlock::new(plan.block.clone(), MultiMessageAggregate::default());
+            if let Ok(payload) = local.ssz_encode() {
+                owner.remember_durable_block(applied, payload);
+            }
             crate::local_finality::promote_local_checkpoints(owner, applied);
             tracing::info!(
                 slot = tick.slot.get(),
