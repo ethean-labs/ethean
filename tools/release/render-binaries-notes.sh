@@ -64,5 +64,5 @@ Source archives are attached automatically by GitHub. Build locally with:
 cargo build -p ethean --release --locked
 \`\`\`
 
-See [docs/release/binaries.md](${REPO_URL}/blob/${TAG}/docs/release/binaries.md).
+See [docs/release/binaries.md](${REPO_URL}/blob/master/docs/release/binaries.md).
 EOF
