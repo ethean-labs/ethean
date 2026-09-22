@@ -68,7 +68,7 @@ and a native leanSpec XMSS production backend.
 ### Fixed
 
 - Cargo.lock BOM / header-hash corruption when bumping versions on Windows.
-- Grafana “no data” / epoch-1970 panel issues on long-run dashboards tied to
+- Grafana "no data" / epoch-1970 panel issues on long-run dashboards tied to
   range and durable metrics.
 
 ### Security
