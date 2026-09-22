@@ -1,12 +1,11 @@
 //! Local attester signer for duty-tick attestation binding.
 //!
 //! Mirrors [`crate::local_proposer::LocalProposer`]: smoke HMAC by default;
-//! Hive registry keys install via [`LocalAttester::from_key_record`] when
-//! `leansig-backend` is enabled.
+//! Hive registry keys install via [`LocalAttester::from_key_record`] on the
+//! native XMSS backend.
 
-use ethean_crypto::TestHmacBackend;
-#[cfg(feature = "leansig-backend")]
 use ethean_crypto::ProductionBackend;
+use ethean_crypto::TestHmacBackend;
 use ethean_primitives::Hash32;
 use ethean_validator::{
     record_from_keygen, run_attester, AttesterOutcome, AttesterPlan, DutyTick, DutyView,
@@ -16,7 +15,6 @@ use std::sync::Arc;
 
 enum AttesterBackend {
     Hmac(Signer<TestHmacBackend, InMemorySignerStore>),
-    #[cfg(feature = "leansig-backend")]
     LeanSig(Signer<ProductionBackend, InMemorySignerStore>),
 }
 
@@ -24,7 +22,7 @@ enum AttesterBackend {
 pub struct LocalAttester {
     backend: AttesterBackend,
     key_id: KeyId,
-    /// True when keys came from leanSig ProductionBackend / Hive import.
+    /// True when keys are native XMSS (generated or imported).
     production: bool,
 }
 
@@ -67,30 +65,18 @@ impl LocalAttester {
                 record.role
             ));
         }
-        #[cfg(feature = "leansig-backend")]
-        {
-            let crypto = Arc::new(ProductionBackend);
-            let key_id = record.key_id;
-            let mut signer = Signer::new(crypto, InMemorySignerStore::default());
-            signer.import_key(record).map_err(|e| e.to_string())?;
-            return Ok(Self {
-                backend: AttesterBackend::LeanSig(signer),
-                key_id,
-                production: true,
-            });
-        }
-        #[cfg(not(feature = "leansig-backend"))]
-        {
-            let _ = record;
-            Err(
-                "registry attestation privkeys require the leansig-backend feature \
-                 (refusing HMAC fallback against XMSS genesis pubkeys)"
-                    .into(),
-            )
-        }
+        let crypto = Arc::new(ProductionBackend);
+        let key_id = record.key_id;
+        let mut signer = Signer::new(crypto, InMemorySignerStore::default());
+        signer.import_key(record).map_err(|e| e.to_string())?;
+        Ok(Self {
+            backend: AttesterBackend::LeanSig(signer),
+            key_id,
+            production: true,
+        })
     }
 
-    /// True when this instance uses leanSig production / imported keys.
+    /// True when this instance uses native XMSS keys.
     pub fn is_production(&self) -> bool {
         self.production
     }
@@ -113,7 +99,6 @@ impl LocalAttester {
             AttesterBackend::Hmac(signer) => {
                 run_attester(signer, view, &plan).map_err(|e| e.to_string())?
             }
-            #[cfg(feature = "leansig-backend")]
             AttesterBackend::LeanSig(signer) => {
                 run_attester(signer, view, &plan).map_err(|e| e.to_string())?
             }
@@ -132,8 +117,7 @@ impl LocalAttester {
         signing_root: Hash32,
         signature: &[u8],
     ) -> Result<(), String> {
-        let sig = ethean_crypto::Signature::try_from_slice(signature)
-            .map_err(|e| e.to_string())?;
+        let sig = ethean_crypto::Signature::try_from_slice(signature).map_err(|e| e.to_string())?;
         let duty = SigningDuty {
             key_id: self.key_id,
             role: SigningRole::Attestation,
@@ -141,13 +125,12 @@ impl LocalAttester {
             root: SigningRoot::from_bytes(signing_root),
         };
         match &self.backend {
-            AttesterBackend::Hmac(signer) => signer
-                .verify_duty(&duty, &sig)
-                .map_err(|e| e.to_string()),
-            #[cfg(feature = "leansig-backend")]
-            AttesterBackend::LeanSig(signer) => signer
-                .verify_duty(&duty, &sig)
-                .map_err(|e| e.to_string()),
+            AttesterBackend::Hmac(signer) => {
+                signer.verify_duty(&duty, &sig).map_err(|e| e.to_string())
+            }
+            AttesterBackend::LeanSig(signer) => {
+                signer.verify_duty(&duty, &sig).map_err(|e| e.to_string())
+            }
         }
     }
 }

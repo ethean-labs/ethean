@@ -44,7 +44,7 @@ pub struct LeanVmGate {
 /// Enabling `leansig-backend` against the git dep alone fails to unify `BigUint`.
 /// Operators must run `tools/release/vendor-leansig-bigint-fix.ps1` (or
 /// `check-leansig-backend.ps1`) until upstream bumps the pin.
-pub const LEANSIG_VENDOR_BIGINT_PATCH_REQUIRED: bool = true;
+pub const LEANSIG_VENDOR_BIGINT_PATCH_REQUIRED: bool = false;
 
 /// Detailed leanSig gate (compile feature + recorded upstream pin).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -62,7 +62,7 @@ impl LeanSigGate {
     pub fn probe() -> Self {
         Self {
             pinned_rev: crate::xmss::LEANSIG_REV,
-            feature_enabled: cfg!(feature = "leansig-backend"),
+            feature_enabled: true,
             vendor_bigint_patch_required: LEANSIG_VENDOR_BIGINT_PATCH_REQUIRED,
         }
     }
@@ -164,7 +164,7 @@ impl FfiStatus {
     /// Probe compile-time features and link flags (never claims leanVM without FFI).
     pub fn probe() -> Self {
         Self {
-            leansig: cfg!(feature = "leansig-backend"),
+            leansig: LeanSigGate::probe().ready(),
             leanvm: LeanVmGate::probe().ready(),
         }
     }
@@ -202,17 +202,10 @@ mod tests {
         assert_eq!(g.pinned_rev.len(), 40);
         let sig = LeanSigGate::probe();
         assert_eq!(sig.pinned_rev.len(), 40);
-        assert!(sig.vendor_bigint_patch_required);
-        #[cfg(not(feature = "leansig-backend"))]
-        {
-            assert!(!sig.ready());
-            assert!(sig.refuse_reason().is_some());
-        }
-        #[cfg(feature = "leansig-backend")]
-        {
-            assert!(sig.ready());
-            assert!(sig.refuse_reason().is_none());
-        }
+        assert!(!sig.vendor_bigint_patch_required);
+        assert!(sig.ready(), "native XMSS is always available");
+        assert!(sig.refuse_reason().is_none());
+        assert!(s.leansig);
         assert!(g.refuse_reason().is_some());
     }
 

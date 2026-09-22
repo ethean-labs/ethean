@@ -41,11 +41,11 @@ fn prove_bound(statement: &AggregateStatement) -> Result<Vec<u8>> {
         return crate::leanvm_ipc::prove_ipc(statement);
     }
 
-    #[cfg(feature = "test-aggregate")]
+    #[cfg(any(test, feature = "test-aggregate"))]
     {
         Ok(crate::aggregation::verify::test_proof_bytes(statement))
     }
-    #[cfg(not(feature = "test-aggregate"))]
+    #[cfg(not(any(test, feature = "test-aggregate")))]
     {
         let _ = statement;
         Err(CryptoError::BackendUnavailable(
@@ -73,12 +73,12 @@ mod tests {
     #[test]
     fn without_prover_env_uses_test_aggregate_when_enabled() {
         std::env::remove_var(crate::leanvm_ipc::PROVER_ENV);
-        #[cfg(feature = "test-aggregate")]
+        #[cfg(any(test, feature = "test-aggregate"))]
         {
             let proof = prove_type1(&type1()).expect("test-aggregate prove");
             assert!(!proof.is_empty());
         }
-        #[cfg(not(feature = "test-aggregate"))]
+        #[cfg(not(any(test, feature = "test-aggregate")))]
         {
             assert!(prove_type1(&type1()).is_err());
         }

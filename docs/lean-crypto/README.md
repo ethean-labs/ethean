@@ -2,6 +2,7 @@
 
 Dated development notes for this topic. Index: [../README.md](../../README.md).
 
+- [native xmss backend](native-xmss-backend-2026-09-22.md)
 - [aggregator prove ipc route](aggregator-prove-ipc-route-2026-09-20.md)
 - [attest before prove empty type1](attest-before-prove-empty-type1-2026-09-20.md)
 - [b1 leansig vendor backend compile](b1-leansig-vendor-backend-compile-2026-09-20.md)

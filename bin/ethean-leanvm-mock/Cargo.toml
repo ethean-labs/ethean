@@ -12,4 +12,4 @@ name = "ethean-leanvm-mock"
 path = "src/main.rs"
 
 [dependencies]
-ethean-crypto = { workspace = true }
+ethean-crypto = { workspace = true, features = ["test-aggregate"] }

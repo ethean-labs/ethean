@@ -3,7 +3,7 @@
 /// Construction name matching Phase 00 lock.
 pub const CONSTRUCTION: &str = "leanSpec_internal_xmss";
 
-/// leanSig pin used for the production backend (when enabled).
+/// leanSig revision whose published keys and vectors the native backend is checked against.
 pub const LEANSIG_REV: &str = "c08a3bae74b0d85379cab72dcbefa4091546ecbb";
 
 /// Base-2 log of lifetime (2^32 epochs).

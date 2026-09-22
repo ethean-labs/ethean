@@ -245,7 +245,7 @@ async fn main() -> Result<()> {
             );
             if !ffi.both_selected() {
                 println!("Gaps: {:?}", ffi.gaps());
-                println!("Fail-closed: enable leansig-backend / leanvm-backend when pins link.");
+                println!("Fail-closed: aggregate proofs need a leanVM prover (leanvm-backend + IPC).");
             }
         }
         Command::Version => {

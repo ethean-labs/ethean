@@ -213,11 +213,12 @@ More detail: [docs/deployment.md](../deployment.md), [docs/pq-devnet-operator-pl
 ethean validator
 ```
 
-Reports leanSig / leanVM gate status (fail-closed until production backends link).
-Boot logs `leansig_vendor_patch=true` until upstream leanSig ships `num-bigint` 0.5;
-operators enable production XMSS with
-[`tools/release/check-leansig-backend.ps1`](../../tools/release/check-leansig-backend.ps1)
-(see [`docs/b1-leansig-vendor-backend-compile-2026-09-20.md`](../lean-crypto/b1-leansig-vendor-backend-compile-2026-09-20.md)).
+Reports the crypto gate status. XMSS signing and verification are native
+(`leansig=true` always); aggregate proofs stay fail-closed (`leanvm=false`) until a
+leanVM prover is linked or reachable over IPC. Registry keys from
+`--validator-registry` are decoded, checked against their `pubkey_hex`, and
+installed on the native backend (see
+[`docs/native-xmss-backend-2026-09-22.md`](../lean-crypto/native-xmss-backend-2026-09-22.md)).
 
 ## Monitoring and metrics
 

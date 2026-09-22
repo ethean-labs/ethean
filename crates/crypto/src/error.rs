@@ -37,6 +37,14 @@ pub enum CryptoError {
 
     #[error("parameter fingerprint mismatch")]
     FingerprintMismatch,
+    #[error("non-canonical KoalaBear field element")]
+    NonCanonicalFieldElement,
+    #[error("malformed SSZ encoding: {0}")]
+    MalformedEncoding(&'static str),
+    #[error("epoch {epoch} outside key activation window [{start}, {end})")]
+    EpochOutsideActivation { epoch: u64, start: u64, end: u64 },
+    #[error("randomness source failure: {0}")]
+    RandomnessUnavailable(String),
 }
 
 /// Result alias for this crate.

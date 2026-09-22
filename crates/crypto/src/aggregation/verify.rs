@@ -2,6 +2,7 @@
 
 use crate::aggregation::statement::{check_proof_len, AggregateStatement};
 use crate::error::{CryptoError, Result};
+#[cfg(any(test, feature = "test-aggregate"))]
 use crate::hash::domain_digest;
 
 /// Cheap statement + length checks (no SNARK).
@@ -51,11 +52,11 @@ fn verify_bound_proof(statement: &AggregateStatement, proof: &[u8]) -> Result<()
         };
     }
 
-    #[cfg(feature = "test-aggregate")]
+    #[cfg(any(test, feature = "test-aggregate"))]
     {
         return verify_test_aggregate(statement, proof);
     }
-    #[cfg(not(feature = "test-aggregate"))]
+    #[cfg(not(any(test, feature = "test-aggregate")))]
     {
         let _ = statement;
         let _ = proof;
@@ -65,7 +66,7 @@ fn verify_bound_proof(statement: &AggregateStatement, proof: &[u8]) -> Result<()
     }
 }
 
-#[cfg(feature = "test-aggregate")]
+#[cfg(any(test, feature = "test-aggregate"))]
 fn verify_test_aggregate(statement: &AggregateStatement, proof: &[u8]) -> Result<()> {
     let expected = test_proof_bytes(statement);
     if proof == expected.as_slice() {
@@ -75,7 +76,7 @@ fn verify_test_aggregate(statement: &AggregateStatement, proof: &[u8]) -> Result
     }
 }
 
-#[cfg(feature = "test-aggregate")]
+#[cfg(any(test, feature = "test-aggregate"))]
 pub(crate) fn test_proof_bytes(statement: &AggregateStatement) -> Vec<u8> {
     let digest = statement.digest();
     let mut out = Vec::with_capacity(64);

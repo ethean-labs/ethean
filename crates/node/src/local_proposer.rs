@@ -1,11 +1,11 @@
 //! Local proposer signer for duty-tick proposal binding.
 //!
-//! Default smoke path uses test-hmac. With `leansig-backend`, [`LocalProposer::try_production`]
-//! attempts the real leanSig ProductionBackend (still fail-closed if vendor/FFI is broken).
+//! Default smoke path uses test-hmac; [`LocalProposer::try_production`] generates a
+//! native XMSS key (seconds of CPU) and registry keys import via
+//! [`LocalProposer::from_key_record`].
 
-use ethean_crypto::TestHmacBackend;
-#[cfg(feature = "leansig-backend")]
 use ethean_crypto::ProductionBackend;
+use ethean_crypto::TestHmacBackend;
 use ethean_primitives::Hash32;
 use ethean_validator::{
     record_from_keygen, run_proposer, DutyTick, DutyView, InMemorySignerStore, KeyId, KeyRecord,
@@ -15,7 +15,6 @@ use std::sync::Arc;
 
 enum ProposerBackend {
     Hmac(Signer<TestHmacBackend, InMemorySignerStore>),
-    #[cfg(feature = "leansig-backend")]
     LeanSig(Signer<ProductionBackend, InMemorySignerStore>),
 }
 
@@ -23,7 +22,7 @@ enum ProposerBackend {
 pub struct LocalProposer {
     backend: ProposerBackend,
     key_id: KeyId,
-    /// True when keys came from leanSig ProductionBackend.
+    /// True when keys are native XMSS (generated or imported).
     production: bool,
 }
 
@@ -42,14 +41,9 @@ impl LocalProposer {
         let crypto = Arc::new(TestHmacBackend::new([0xe7; 32]));
         let key_id = KeyId::from_bytes([0x50; 16]);
         let mut signer = Signer::new(crypto.clone(), InMemorySignerStore::default());
-        let (rec, _) = record_from_keygen(
-            crypto.as_ref(),
-            key_id,
-            SigningRole::Proposal,
-            0,
-            1_000_000,
-        )
-        .map_err(|e| e.to_string())?;
+        let (rec, _) =
+            record_from_keygen(crypto.as_ref(), key_id, SigningRole::Proposal, 0, 1_000_000)
+                .map_err(|e| e.to_string())?;
         signer.import_key(rec).map_err(|e| e.to_string())?;
         Ok(Self {
             backend: ProposerBackend::Hmac(signer),
@@ -58,35 +52,27 @@ impl LocalProposer {
         })
     }
 
-    /// Prefer leanSig production keys when the feature is on; otherwise smoke.
+    /// Smoke key unless `ETHEAN_PRODUCTION_KEYGEN=1` asks for a fresh native
+    /// XMSS key at boot (full PROD keygen builds two 65536-leaf bottom trees).
     pub fn prefer_production() -> Result<Self, String> {
-        #[cfg(feature = "leansig-backend")]
+        if std::env::var("ETHEAN_PRODUCTION_KEYGEN")
+            .map(|v| v == "1")
+            .unwrap_or(false)
         {
-            match Self::try_production() {
-                Ok(p) => return Ok(p),
-                Err(e) => {
-                    // Fall back so the node still signs in smoke/dev builds.
-                    let _ = e;
-                }
+            if let Ok(p) = Self::try_production() {
+                return Ok(p);
             }
         }
         Self::smoke()
     }
 
-    /// Attempt leanSig ProductionBackend keygen (feature `leansig-backend` only).
-    #[cfg(feature = "leansig-backend")]
+    /// Generate a native PROD XMSS proposal key for 64 slots.
     pub fn try_production() -> Result<Self, String> {
         let crypto = Arc::new(ProductionBackend);
         let key_id = KeyId::from_bytes([0x51; 16]);
         let mut signer = Signer::new(crypto.clone(), InMemorySignerStore::default());
-        let (rec, _) = record_from_keygen(
-            crypto.as_ref(),
-            key_id,
-            SigningRole::Proposal,
-            0,
-            64,
-        )
-        .map_err(|e| e.to_string())?;
+        let (rec, _) = record_from_keygen(crypto.as_ref(), key_id, SigningRole::Proposal, 0, 64)
+            .map_err(|e| e.to_string())?;
         signer.import_key(rec).map_err(|e| e.to_string())?;
         Ok(Self {
             backend: ProposerBackend::LeanSig(signer),
@@ -95,10 +81,8 @@ impl LocalProposer {
         })
     }
 
-    /// Import a pre-loaded proposal [`KeyRecord`] (Hive registry privkey).
-    ///
-    /// Uses leanSig when `leansig-backend` is enabled; otherwise returns an error so
-    /// callers can fall back to smoke keys without silently mismatching XMSS pubkeys.
+    /// Import a pre-loaded proposal [`KeyRecord`] (Hive registry privkey) on the
+    /// native XMSS backend.
     pub fn from_key_record(record: KeyRecord) -> Result<Self, String> {
         if record.role != SigningRole::Proposal {
             return Err(format!(
@@ -106,30 +90,18 @@ impl LocalProposer {
                 record.role
             ));
         }
-        #[cfg(feature = "leansig-backend")]
-        {
-            let crypto = Arc::new(ProductionBackend);
-            let key_id = record.key_id;
-            let mut signer = Signer::new(crypto, InMemorySignerStore::default());
-            signer.import_key(record).map_err(|e| e.to_string())?;
-            return Ok(Self {
-                backend: ProposerBackend::LeanSig(signer),
-                key_id,
-                production: true,
-            });
-        }
-        #[cfg(not(feature = "leansig-backend"))]
-        {
-            let _ = record;
-            Err(
-                "registry proposal privkeys require the leansig-backend feature \
-                 (refusing HMAC fallback against XMSS genesis pubkeys)"
-                    .into(),
-            )
-        }
+        let crypto = Arc::new(ProductionBackend);
+        let key_id = record.key_id;
+        let mut signer = Signer::new(crypto, InMemorySignerStore::default());
+        signer.import_key(record).map_err(|e| e.to_string())?;
+        Ok(Self {
+            backend: ProposerBackend::LeanSig(signer),
+            key_id,
+            production: true,
+        })
     }
 
-    /// True when this instance uses leanSig production keys.
+    /// True when this instance uses native XMSS keys.
     pub fn is_production(&self) -> bool {
         self.production
     }
@@ -152,7 +124,6 @@ impl LocalProposer {
             ProposerBackend::Hmac(signer) => {
                 run_proposer(signer, view, &plan).map_err(|e| e.to_string())?
             }
-            #[cfg(feature = "leansig-backend")]
             ProposerBackend::LeanSig(signer) => {
                 run_proposer(signer, view, &plan).map_err(|e| e.to_string())?
             }
@@ -171,8 +142,7 @@ impl LocalProposer {
         block_signing_root: Hash32,
         signature: &[u8],
     ) -> Result<(), String> {
-        let sig = ethean_crypto::Signature::try_from_slice(signature)
-            .map_err(|e| e.to_string())?;
+        let sig = ethean_crypto::Signature::try_from_slice(signature).map_err(|e| e.to_string())?;
         let duty = SigningDuty {
             key_id: self.key_id,
             role: SigningRole::Proposal,
@@ -180,13 +150,12 @@ impl LocalProposer {
             root: SigningRoot::from_bytes(block_signing_root),
         };
         match &self.backend {
-            ProposerBackend::Hmac(signer) => signer
-                .verify_duty(&duty, &sig)
-                .map_err(|e| e.to_string()),
-            #[cfg(feature = "leansig-backend")]
-            ProposerBackend::LeanSig(signer) => signer
-                .verify_duty(&duty, &sig)
-                .map_err(|e| e.to_string()),
+            ProposerBackend::Hmac(signer) => {
+                signer.verify_duty(&duty, &sig).map_err(|e| e.to_string())
+            }
+            ProposerBackend::LeanSig(signer) => {
+                signer.verify_duty(&duty, &sig).map_err(|e| e.to_string())
+            }
         }
     }
 }

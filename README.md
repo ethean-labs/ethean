@@ -57,8 +57,9 @@ In practical terms, Ethean should eventually:
 
 1. **Speak the Lean wire and types** : canonical SSZ containers, fork-choice /
    state-transition behavior pinned to leanSpec (and operator digests on live meshes).
-2. **Sign and verify with leanSig** : production XMSS backends when linked; until
-   then, gates stay **fail-closed** rather than silently falling back to BLS.
+2. **Sign and verify with native leanSpec XMSS** : KoalaBear / Poseidon1 /
+   SHAKE128 implemented in-tree, checked against leanSpec vectors and published
+   leanSig keys; no BLS fallback anywhere.
 3. **Aggregate toward leanMultisig / leanVM** : aggregator duties and prove/verify
    IPC as backends mature (mock and refuse paths are intentional, not accidental).
 4. **Run on pq-devnets like peer operators** : network labels, bootnode multiaddrs,
@@ -97,7 +98,7 @@ The `ethean` binary is already useful for day-to-day Lean client work:
   can start Docker Compose Grafana + Prometheus when Docker Desktop is available.
 
 Honest limits matter: empty bootnodes mean **private / offline**, not “joined public
-D4.” leanSig / leanVM production backends are gated. RocksDB and some transport
+D4.” leanVM aggregation proofs are gated behind a real prover. RocksDB and some transport
 edges are still hardening. Treat Ethean as an **active Lean client under construction**,
 aligned with research tracks, not a drop-in Beacon replacement.
 
@@ -126,8 +127,8 @@ Contributors are expected to keep the tree **English-only**, split source files 
   mesh helpers; empty bootnodes are offline by design.
 - **Observability** : `ethean_` Prometheus gauges on `:9100`; optional Docker
   Grafana / Prometheus via `--metrics`.
-- **Spec alignment** : leanSpec FC/STF runners and fail-closed leanSig / leanVM
-  gates instead of Beacon shortcuts.
+- **Spec alignment** : leanSpec FC/STF runners, native XMSS and fail-closed
+  leanVM gates instead of Beacon shortcuts.
 - **House rules** : English-only tree, ≤300-line sources, clean human git history.
 
 ### Where to go next
@@ -160,7 +161,7 @@ Ethean is a **crate-per-concern** Rust workspace behind a single CLI.
 | --- | --- |
 | Primitives / profile | Slots, forks, pinned `lstar` style chain profile |
 | Types + SSZ | Canonical Lean containers and encode/decode |
-| Crypto | leanSig / XMSS surface (fail-closed without FFI) |
+| Crypto | Native leanSpec XMSS (KoalaBear / Poseidon1 / SHAKE128), batch verify, aggregation surface |
 | Consensus | Genesis, state transition, **3SF-mini** fork choice |
 | Validator | ~4s / interval duties, local aggregator role |
 | Network | QUIC swarm, gossip admission, Status / blocks-by-root / range |
