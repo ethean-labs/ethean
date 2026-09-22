@@ -12,6 +12,12 @@ the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
+### Added
+
+- Multi-platform `ethean` release archives (Windows x86_64, Linux x86_64/aarch64,
+  macOS aarch64/x86_64) via `.github/workflows/release-binaries.yml`, with
+  per-target `.sha256` files and a Binaries section on GitHub Release notes.
+
 ## [0.1.47] - 2026-09-20
 
 Milestone covering patch work from `0.1.28` through `0.1.47` (current tip),
