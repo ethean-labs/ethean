@@ -1,0 +1,190 @@
+name: release-binaries
+
+# Build ethean client archives for Windows / Linux / macOS and attach them
+# to an existing (or newly tagged) GitHub Release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach assets to (e.g. v0.1.47)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  REPO_URL: https://github.com/pamenarti/ethean
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            cross: false
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            cross: false
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            cross: true
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            cross: false
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            cross: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          if [[ ! "$TAG" =~ ^v ]]; then
+            echo "tag must start with v (got: $TAG)" >&2
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.98.1"
+          targets: ${{ matrix.target }}
+
+      - name: Install cross
+        if: matrix.cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      - name: Build ethean (native)
+        if: ${{ !matrix.cross }}
+        shell: bash
+        run: |
+          cargo build -p ethean --release --locked --target "${{ matrix.target }}"
+
+      - name: Build ethean (cross)
+        if: matrix.cross
+        shell: bash
+        run: |
+          cross build -p ethean --release --locked --target "${{ matrix.target }}"
+
+      - name: Package archive
+        shell: bash
+        run: |
+          chmod +x tools/release/package-ethean.sh
+          tools/release/package-ethean.sh \
+            "${{ steps.ver.outputs.version }}" \
+            "${{ matrix.target }}" \
+            "$GITHUB_WORKSPACE/dist"
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ethean-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: publish-assets
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download all archives
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-all
+          merge-multiple: true
+
+      - name: Collect into dist/
+        shell: bash
+        run: |
+          mkdir -p dist
+          find dist-all -type f -print -exec cp -f {} dist/ \;
+          ls -la dist
+          chmod +x tools/release/render-binaries-notes.sh
+          tools/release/render-binaries-notes.sh \
+            "${{ steps.ver.outputs.version }}" dist > binaries-section.md
+          cat binaries-section.md
+
+      - name: Upload assets to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          # Ensure the release exists (tag push creates notes-only release if missing).
+          if ! gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "${{ github.repository }}" \
+              --title "${{ steps.ver.outputs.version }}" \
+              --notes "Ethean Lean Consensus Client ${{ steps.ver.outputs.version }}" \
+              --latest
+          fi
+          gh release upload "$TAG" dist/* \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+      - name: Merge binaries section into release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          gh release view "$TAG" --repo "${{ github.repository }}" --json body \
+            --jq .body > old-body.md || echo -n "" > old-body.md
+          python3 - <<'PY'
+          from pathlib import Path
+          binaries = Path("binaries-section.md").read_text(encoding="utf-8").strip() + "\n"
+          old = Path("old-body.md").read_text(encoding="utf-8")
+          marker = "## Binaries"
+          if marker in old:
+              # Drop previous binaries block (until next ## or EOF).
+              parts = old.split(marker, 1)
+              head = parts[0].rstrip()
+              rest = parts[1]
+              if "\n## " in rest:
+                  rest = rest.split("\n## ", 1)[1]
+                  rest = "## " + rest
+              else:
+                  rest = ""
+              new = (head + "\n\n" + binaries + ("\n" + rest if rest.strip() else "")).strip() + "\n"
+          else:
+              new = (binaries + "\n" + old.lstrip()).strip() + "\n"
+          Path("new-body.md").write_text(new, encoding="utf-8")
+          PY
+          gh release edit "$TAG" \
+            --repo "${{ github.repository }}" \
+            --notes-file new-body.md
