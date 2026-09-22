@@ -27,7 +27,7 @@ Naming: `ethean-v<VERSION>-<target>.{zip|tar.gz}` plus a sibling
 
 ```powershell
 cargo build -p ethean --release --locked --target x86_64-pc-windows-msvc
-pwsh tools/release/package-ethean.ps1 -Version 0.1.47 -Target x86_64-pc-windows-msvc
+powershell -NoProfile -File tools/release/package-ethean.ps1 -Version 0.1.47 -Target x86_64-pc-windows-msvc
 ```
 
 ```bash
