@@ -17,3 +17,4 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [readme version footer](readme-version-footer-2026-09-20.md)
 - [scrub unpublished cursor trailers](scrub-unpublished-cursor-trailers-2026-09-19.md)
 - [docs topic folders](./docs-topic-folders-2026-09-20.md)
+- [changelog three milestone releases](./changelog-three-milestone-releases-2026-09-23.md)
