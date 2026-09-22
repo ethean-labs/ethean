@@ -12,15 +12,11 @@ RUN apt-get update \
 
 COPY . .
 # Default features include libp2p-quic (see bin/ethean/Cargo.toml).
-# Optional Hive builds: --build-arg CARGO_FEATURES=leansig-backend
-# (requires a local leanSig num-bigint vendor [patch] in the build context).
-ARG CARGO_FEATURES=
-RUN if [ -n "$CARGO_FEATURES" ]; then \
-      cargo build --release -p ethean --features "$CARGO_FEATURES"; \
-    else \
-      cargo build --release -p ethean; \
-    fi \
- && cp /src/target/release/ethean /src/ethean
+# ethean-prover is the leanMultisig prover process aggregators and proposers use;
+# the node finds it next to its own binary.
+RUN cargo build --release --locked -p ethean -p ethean-prover \
+ && cp /src/target/release/ethean /src/ethean \
+ && cp /src/target/release/ethean-prover /src/ethean-prover
 
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update \
@@ -28,6 +24,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /src/ethean /usr/local/bin/ethean
+COPY --from=builder /src/ethean-prover /usr/local/bin/ethean-prover
 COPY docker/hive/ethean.sh /ethean.sh
 RUN chmod +x /ethean.sh \
  && /usr/local/bin/ethean version > /version.txt || true

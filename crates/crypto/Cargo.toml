@@ -14,14 +14,7 @@ sha2 = { workspace = true }
 serde = { workspace = true, optional = true }
 
 [features]
-# Default: fail-closed production XMSS plus the HMAC test backend used by unit tests.
+# HMAC stand-in with PROD wire sizes for fast unit tests (never production).
 default = ["test-hmac"]
-# Kept for downstream feature forwarding; the XMSS backend is always native now.
-leansig-backend = []
-# leanVM prove/verify surface (fail-closed stub until LEANVM_FFI_LINKED; see backend_leanvm.rs).
-leanvm-backend = []
 test-hmac = []
-# Synthetic, statement-bound aggregate proofs for tests. Never enable in a
-# production binary: it makes `verify_type2` accept keyless proofs.
-test-aggregate = []
 serde = ["dep:serde"]

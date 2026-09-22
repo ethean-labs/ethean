@@ -84,12 +84,10 @@ fi
 
 export RUST_LOG="${RUST_LOG:-info}"
 
-# Optional process-IPC prover (Hive/operator-injected path; not a production leanVM claim).
-if [ -n "${HIVE_LEANVM_PROVER:-}" ]; then
-  export ETHEAN_LEANVM_PROVER="$HIVE_LEANVM_PROVER"
-fi
-if [ -n "${HIVE_LEANVM_IPC_PROBE:-}" ]; then
-  export ETHEAN_LEANVM_IPC_PROBE="$HIVE_LEANVM_IPC_PROBE"
+# leanMultisig prover: defaults to /usr/local/bin/ethean-prover beside the node;
+# HIVE_ETHEAN_PROVER_BIN overrides the path.
+if [ -n "${HIVE_ETHEAN_PROVER_BIN:-}" ]; then
+  export ETHEAN_PROVER_BIN="$HIVE_ETHEAN_PROVER_BIN"
 fi
 
 exec "$ETHEAN_BIN" "${FLAGS[@]}"

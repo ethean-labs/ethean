@@ -20,6 +20,7 @@ ethean-genesis = { workspace = true }
 ethean-transition = { workspace = true }
 ethean-fork-choice = { workspace = true }
 ethean-crypto = { workspace = true, features = ["test-hmac"] }
+ethean-multisig = { workspace = true }
 ethean-validator = { workspace = true }
 ethean-network = { workspace = true }
 ethean-network-wire = { workspace = true }
@@ -47,11 +48,5 @@ serde_yaml = { workspace = true }
 default = []
 # Forward optional libp2p QUIC swarm from ethean-network.
 libp2p-quic = ["ethean-network/libp2p-quic"]
-# XMSS is native in ethean-crypto; this flag is kept for forwarding only.
-leansig-backend = ["ethean-crypto/leansig-backend"]
-leanvm-backend = ["ethean-crypto/leanvm-backend"]
-# Synthetic aggregate proofs for local smoke and tests (never for a real mesh).
-test-aggregate = ["ethean-crypto/test-aggregate"]
 
 [dev-dependencies]
-ethean-crypto = { workspace = true, features = ["test-aggregate"] }

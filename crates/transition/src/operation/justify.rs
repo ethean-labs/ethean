@@ -29,9 +29,7 @@ fn lies_on_chain(data: &ethean_types::AttestationData, historical: &[Hash32]) ->
         && historical[head] == data.head.root
 }
 
-fn validator_indices_from_bits(
-    bits: &[bool],
-) -> Result<Vec<ValidatorIndex>, TransitionError> {
+fn validator_indices_from_bits(bits: &[bool]) -> Result<Vec<ValidatorIndex>, TransitionError> {
     let indices: Vec<_> = bits
         .iter()
         .enumerate()
@@ -65,11 +63,7 @@ pub fn apply_justifications(
         ));
     }
 
-    if state
-        .justifications_roots
-        .iter()
-        .any(|r| *r == HASH32_ZERO)
-    {
+    if state.justifications_roots.iter().any(|r| *r == HASH32_ZERO) {
         return Err(TransitionError::ZeroHashJustificationRoot(
             "Tracked justification roots contain the zero hash".into(),
         ));
@@ -89,7 +83,12 @@ pub fn apply_justifications(
 
     let start_slot = (finalized_slot.get() + 1) as usize;
     let mut root_to_slot: HashMap<Hash32, Slot> = HashMap::new();
-    for (i, root) in state.historical_block_hashes.iter().enumerate().skip(start_slot) {
+    for (i, root) in state
+        .historical_block_hashes
+        .iter()
+        .enumerate()
+        .skip(start_slot)
+    {
         root_to_slot.insert(*root, Slot::new(i as u64));
     }
 

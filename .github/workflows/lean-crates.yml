@@ -7,7 +7,7 @@ on:
 
 jobs:
   test-lean-crates:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -16,11 +16,11 @@ jobs:
           components: rustfmt, clippy
       - name: Test Lean crates
         run: |
-          cargo test --locked `
-            -p ethean-primitives -p ethean-profile -p ethean-ssz -p ethean-types `
-            -p ethean-crypto -p ethean-genesis -p ethean-transition -p ethean-fork-choice `
-            -p ethean-validator -p ethean-network-wire -p ethean-network `
-            -p ethean-storage -p ethean-sync -p ethean-rpc -p ethean-metrics
+          cargo test --locked \
+            -p ethean-primitives -p ethean-profile -p ethean-ssz -p ethean-types \
+            -p ethean-crypto -p ethean-genesis -p ethean-transition -p ethean-fork-choice \
+            -p ethean-validator -p ethean-network-wire -p ethean-network \
+            -p ethean-storage -p ethean-sync -p ethean-rpc -p ethean-metrics \
+            -p ethean-multisig -p ethean-prover
       - name: Legacy scan (soft)
-        shell: pwsh
-        run: ./tools/release/legacy-scan.ps1
+        run: ./tools/release/legacy-scan.sh

@@ -1,10 +1,11 @@
 //! Chain owner: sole writer of transition, fork choice, and import status.
 
-use crate::aggregation::AggregatePool;
+use crate::aggregation::{AggregatePool, AttestationSignaturePool};
 use crate::aggregation_gossip::AggregationGossip;
 use crate::block_builder::{PlanTransition, ProposalGossip};
 use crate::local_attester::LocalAttester;
 use crate::local_proposer::LocalProposer;
+use crate::proof_service::ProofService;
 use crate::sync_orphan::SyncOrphanCache;
 use ethean_primitives::{Hash32, Slot};
 use ethean_profile::ChainProfile;
@@ -49,8 +50,12 @@ pub struct ChainOwner {
     pub last_gossip_root: Option<Hash32>,
     /// Chain profile for structural gossip state transitions.
     pub profile: Option<ChainProfile>,
-    /// In-memory aggregate proofs from attestation / aggregation gossip.
+    /// Verified Type-1 proofs from aggregation gossip and local aggregation.
     pub aggregates: AggregatePool,
+    /// Verified individual votes awaiting aggregation (aggregators only).
+    pub signatures: AttestationSignaturePool,
+    /// Background leanMultisig prover, when an `ethean-prover` binary is available.
+    pub prover: Option<ProofService>,
     /// Last locally planned proposal (cleared when superseded).
     pub planned_proposal: Option<PlanTransition>,
     /// Tick that produced `planned_proposal`, if any.
@@ -59,7 +64,7 @@ pub struct ChainOwner {
     pub pending_block_gossip: Option<ProposalGossip>,
     /// Recently applied block SSZ blobs waiting for `--data-dir` flush.
     pub durable_blocks: Vec<(Hash32, Vec<u8>)>,
-    /// Encoded Type-1 aggregates waiting for `/aggregation/` / attestation publish.
+    /// Votes and aggregates waiting for attestation-subnet / aggregation publish.
     pub pending_aggregation_gossip: Vec<AggregationGossip>,
     /// Optional local proposal signer (test-hmac smoke key).
     pub proposer: Option<LocalProposer>,
@@ -92,6 +97,8 @@ impl Default for ChainOwner {
             last_gossip_root: None,
             profile: None,
             aggregates: AggregatePool::default(),
+            signatures: AttestationSignaturePool::default(),
+            prover: None,
             planned_proposal: None,
             planned_tick: None,
             pending_block_gossip: None,

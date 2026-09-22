@@ -19,6 +19,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ethean_bin /usr/local/bin/ethean /usr/local/bin/ethean
+COPY --from=ethean_bin /usr/local/bin/ethean-prover /usr/local/bin/ethean-prover
 ADD ethean.sh /ethean.sh
 
 RUN chmod +x /ethean.sh \

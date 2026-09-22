@@ -32,6 +32,8 @@ pub enum TransitionError {
     #[error("STATE_ROOT_MISMATCH: {0}")]
     InvalidStateRoot(String),
 
+    #[error("INVALID_BLOCK_PROOF: {0}")]
+    InvalidBlockProof(String),
     #[error("UNSUPPORTED_SIGNATURE: {0}")]
     UnsupportedSignature(String),
 

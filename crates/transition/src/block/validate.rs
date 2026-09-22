@@ -65,9 +65,10 @@ pub fn process_block_header(state: &mut State, block: &Block) -> Result<(), Tran
         state.historical_block_hashes.push(HASH32_ZERO);
     }
 
-    let last_materialized = block.slot.checked_sub(1).map_err(|_| {
-        TransitionError::Types("block slot underflow when materializing".into())
-    })?;
+    let last_materialized = block
+        .slot
+        .checked_sub(1)
+        .map_err(|_| TransitionError::Types("block slot underflow when materializing".into()))?;
     state.justified_slots = extend_to_slot(
         &state.justified_slots,
         state.latest_finalized.slot,

@@ -36,7 +36,7 @@ fn runs_beyond_future_horizon_when_cache_present() {
     let Some(path) = fixture(
         "test_block_future_horizon/test_block_beyond_future_horizon_rejected.json",
     ) else {
-        eprintln!("skip: fetch-leanspec-fixtures.ps1 cache missing");
+        eprintln!("skip: fetch-leanspec-fixtures.sh cache missing");
         return;
     };
     let bytes = std::fs::read(&path).unwrap();

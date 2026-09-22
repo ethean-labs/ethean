@@ -40,10 +40,8 @@ pub enum ChainEvent {
         topic: String,
         /// Encoded payload length in bytes.
         payload_len: usize,
-        /// True when the envelope carries a non-empty Type-2 proof.
-        has_type2_proof: bool,
-        /// Local proposer signature length when signed this tick.
-        proposer_sig_len: usize,
+        /// Merged block proof length in bytes.
+        proof_len: usize,
     },
     /// Local proposer signed the planned block root (XMSS/HMAC binding).
     ProposalSigned {
@@ -52,35 +50,33 @@ pub enum ChainEvent {
         /// Signature wire length in bytes.
         signature_len: usize,
     },
-    /// Proposer signature re-verified against the local key before gossip encode.
-    ProposalBindingVerified {
-        /// Inner block tree root that was verified.
+    /// A prove job was queued with the proof service.
+    ProofScheduled {
+        /// "attestation" or "block".
+        kind: &'static str,
+        /// Attestation-data root or block root.
         root: Hash32,
     },
-    /// Local Type-2 aggregate proof attached to the planned block.
-    Type2ProofAttached {
+    /// A prove job failed or its proof did not verify.
+    ProofFailed {
+        /// "attestation" or "block".
+        kind: &'static str,
+        /// Reason.
+        error: String,
+    },
+    /// The merged block proof verified and the block was imported locally.
+    BlockProofAttached {
         /// Inner block tree root.
         root: Hash32,
-        /// Proof byte length.
+        /// Proof length in bytes.
         proof_len: usize,
-        /// Body attestations that already had Type-1 proofs in the pool.
-        type1_hits: u32,
-        /// Body attestation count that needed Type-1 cache coverage.
-        type1_needed: u32,
     },
-    /// Aggregator duty saw enough pool coverage to dispatch Type-1 prove.
-    AggregatorReady {
-        /// Attestation-data root being aggregated.
+    /// A Type-1 aggregate verified, entered the pool and was queued for gossip.
+    AggregateProved {
+        /// Attestation-data root.
         data_root: Hash32,
-        /// Assigned attestation subnet.
-        subnet: u16,
-        /// Observed participant coverage.
+        /// Validators covered.
         coverage: u32,
-    },
-    /// Local Type-1 proof produced and re-verified for an aggregator-ready root.
-    AggregatorType1Proved {
-        /// Attestation-data root that was proved.
-        data_root: Hash32,
         /// Proof byte length.
         proof_len: usize,
     },
@@ -121,8 +117,8 @@ pub enum ChainEvent {
         topic: String,
         /// Uncompressed SSZ payload length.
         payload_len: usize,
-        /// True when the envelope carried a non-empty Type-2 proof.
-        has_type2_proof: bool,
+        /// Merged block proof length in bytes.
+        proof_len: usize,
     },
     /// Syncing flag changed on the chain owner.
     SyncingUpdated(bool),

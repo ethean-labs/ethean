@@ -143,7 +143,7 @@ pub fn rebind_plan_state_root(owner: &ChainOwner, plan: &mut PlanTransition) -> 
     process_block(&mut trial, &plan.block, &ctx).map_err(|e| e.to_string())?;
     plan.block.state_root = trial.hash_tree_root().map_err(|e| e.to_string())?;
     plan.aggregate_proof.clear();
-    plan.proposer_signature = None;
+    plan.attestation_proofs.clear();
     Ok(())
 }
 

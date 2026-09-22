@@ -1,6 +1,6 @@
 # Upgrade
 
-1. Build release artifacts with `tools/release/repro-build.ps1` (or `.sh`).
+1. Build release artifacts with `tools/release/repro-build.sh`.
 2. Record `artifacts/phase-13/repro/build-meta.*` and SBOM lock fingerprint.
 3. Stage the new binary beside the prior generation; keep prior data directory intact.
 4. Run schema open (`ethean-lc-d5-v1`); refuse Panro/JSON dirs.

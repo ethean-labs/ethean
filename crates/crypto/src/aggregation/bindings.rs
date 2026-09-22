@@ -1,6 +1,6 @@
 //! Pinned aggregation / leanVM parameters.
 
-/// leanVM commit pinned by Phase 08 plan.
+/// leanVM (leanMultisig) revision shared with the other pq-devnet-4 clients.
 pub const LEANVM_REV: &str = "e2592df4e30fdddbbf8ae26a333116c68cec7026";
 
 /// Inverse-rate exponent for production SNARK backend (leanSpec PROD).
@@ -12,8 +12,8 @@ pub const LOG_INV_RATE: u32 = 2;
 /// Maximum proof payload bytes (`ByteList512KiB` / Phase 08 bound).
 pub const MAX_PROOF_BYTES: usize = 524_288;
 
-/// Maximum Type-2 components: proposer + up to MAX_ATTESTATIONS_DATA attestation proofs.
-pub const MAX_TYPE2_COMPONENTS: usize = 1 + 8;
+/// Maximum Type-2 components: up to MAX_ATTESTATIONS_DATA attestation proofs + proposer.
+pub const MAX_TYPE2_COMPONENTS: usize = 8 + 1;
 
 /// Stable fingerprint for startup asserts and phase locks.
 pub const PROD_AGGREGATION_FINGERPRINT: &str = concat!(

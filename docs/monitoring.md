@@ -15,13 +15,13 @@ Bind: `--metrics-address` / `--metrics-port`.
 
 ## Grafana + Prometheus UI
 
-Needs **Docker Desktop** (or Engine + Compose). Start with:
+Needs **Docker Engine** + Compose. Start with:
 
 ```text
 ethean start --network pq-devnet-4 --until-signal --metrics
 ```
 
-Or separately: `.\scripts\run-observability.ps1`
+Or separately: `./scripts/run-observability.sh`
 
 | Service | URL |
 | --- | --- |

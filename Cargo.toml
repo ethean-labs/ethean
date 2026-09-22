@@ -5,6 +5,7 @@ members = [
     "crates/ssz",
     "crates/types",
     "crates/crypto",
+    "crates/multisig",
     "crates/genesis",
     "crates/transition",
     "crates/fork-choice",
@@ -18,12 +19,12 @@ members = [
     "crates/metrics",
     "crates/spec-fixtures",
     "bin/ethean",
-    "bin/ethean-leanvm-mock",
+    "bin/ethean-prover",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.47"
+version = "0.1.48"
 edition = "2021"
 license = "MIT"
 authors = ["Ethean contributors"]
@@ -35,6 +36,7 @@ ethean-profile = { path = "crates/profile" }
 ethean-ssz = { path = "crates/ssz" }
 ethean-types = { path = "crates/types" }
 ethean-crypto = { path = "crates/crypto" }
+ethean-multisig = { path = "crates/multisig" }
 ethean-genesis = { path = "crates/genesis" }
 ethean-transition = { path = "crates/transition" }
 ethean-fork-choice = { path = "crates/fork-choice" }
@@ -67,7 +69,9 @@ libp2p = { version = "0.54", default-features = false, features = ["quic", "toki
 [profile.release]
 lto = true
 codegen-units = 1
-panic = "abort"
+# Unwind so a panic inside leanMultisig on a hostile proof is contained by the
+# verifier's thread boundary and rejected, instead of aborting the node.
+panic = "unwind"
 
 [profile.dev]
 debug = true

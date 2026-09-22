@@ -22,7 +22,7 @@ execution client and not a Beacon-chain compatibility layer.
 
 - Rust toolchain from [`rust-toolchain.toml`](./rust-toolchain.toml) (via rustup)
 - Git
-- Optional: Docker Desktop — required for Grafana / Prometheus
+- Optional: Docker Engine + Compose — required for Grafana / Prometheus
   (`ethean start … --metrics`)
 
 ## Setup

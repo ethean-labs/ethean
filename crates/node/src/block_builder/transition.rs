@@ -15,18 +15,16 @@ pub struct PlanTransition {
     pub parent_root: Hash32,
     /// Block with computed state root after structural transition.
     pub block: Block,
-    /// Type-2 multi-message proof bytes (empty until D3 cache-aware attach).
+    /// Merged Type-2 block proof (empty until the prover returns it).
     pub aggregate_proof: Vec<u8>,
-    /// Proposer XMSS/HMAC signature over the block root (not a leanVM Type-2 proof).
-    pub proposer_signature: Option<Vec<u8>>,
+    /// Type-1 proof of each body attestation, parallel to `block.body.attestations`.
+    pub attestation_proofs: Vec<Vec<u8>>,
 }
 
 impl PlanTransition {
     /// Block signing / tree root after state-root binding.
     pub fn block_root(&self) -> Result<Hash32, String> {
-        self.block
-            .hash_tree_root()
-            .map_err(|e| e.to_string())
+        self.block.hash_tree_root().map_err(|e| e.to_string())
     }
 
     /// Declared post-state root on the planned block.
@@ -45,9 +43,10 @@ pub fn plan_from_pool(
     profile: ChainProfile,
     max_attestations: usize,
 ) -> Result<PlanTransition, String> {
-    let body = body_from_pool(pool, max_attestations);
-    // Type-2 envelope starts empty; D3 attach fills it from the Type-1 cache + prove.
-    plan_with_body(parent_root, slot, proposer_index, body, Vec::new(), pre, profile)
+    let (body, attestation_proofs) = body_from_pool(pool, max_attestations);
+    let mut plan = plan_with_body(parent_root, slot, proposer_index, body, pre, profile)?;
+    plan.attestation_proofs = attestation_proofs;
+    Ok(plan)
 }
 
 fn plan_with_body(
@@ -55,7 +54,6 @@ fn plan_with_body(
     slot: Slot,
     proposer_index: ValidatorIndex,
     body: BlockBody,
-    aggregate_proof: Vec<u8>,
     pre: &State,
     profile: ChainProfile,
 ) -> Result<PlanTransition, String> {
@@ -74,8 +72,8 @@ fn plan_with_body(
     Ok(PlanTransition {
         parent_root,
         block,
-        aggregate_proof,
-        proposer_signature: None,
+        aggregate_proof: Vec::new(),
+        attestation_proofs: Vec::new(),
     })
 }
 

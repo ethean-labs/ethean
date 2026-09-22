@@ -1,29 +1,27 @@
 //! Lean Consensus state transition (lstar / leanSpec@0b7d33ec).
 //!
 //! Structural path: [`apply_block_unverified`] / [`transition_block`] with
-//! `require_proofs = false`. Verified path: [`apply_block`] — Type-2 envelope
-//! bound to consensus-derived inputs; leanVM fails closed (never fake-accepts).
+//! `require_proofs = false`. Verified path: [`apply_block`] checks the block's
+//! merged leanMultisig proof against the parent registry, then transitions.
 
 #![forbid(unsafe_code)]
 
 mod block;
+mod block_proof;
 mod context;
 mod error;
 mod helpers;
 mod operation;
 mod opts;
 mod outcome;
-mod proposer_verify;
 mod slot;
-mod type2_statement;
 
+pub use block_proof::{block_proof_components, participant_indices, verify_block_proof};
 pub use context::TransitionContext;
 pub use error::TransitionError;
 pub use opts::TransitionOpts;
 pub use outcome::TransitionOutcome;
-pub use proposer_verify::verify_proposer_signature;
 pub use slot::process_slots;
-pub use type2_statement::type2_statement_for_block;
 
 pub use block::{process_block, process_block_header};
 pub use helpers::proposer_for_slot;
@@ -31,6 +29,7 @@ pub use operation::{
     check_attestation_data_structure, distinct_attestation_data_count, process_attestations,
 };
 
+use ethean_crypto::AggregateVerifier;
 use ethean_types::{Block, SignedBlock, State};
 
 /// Full state transition: advance slots to `block.slot`, process block, check state root.
@@ -79,10 +78,7 @@ pub fn apply_block_unverified_no_slots(
     finish_unverified(state, block)
 }
 
-fn finish_unverified(
-    state: State,
-    block: &Block,
-) -> Result<TransitionOutcome, TransitionError> {
+fn finish_unverified(state: State, block: &Block) -> Result<TransitionOutcome, TransitionError> {
     let post_state_root = state
         .hash_tree_root()
         .map_err(|e| TransitionError::Types(e.to_string()))?;
@@ -97,27 +93,16 @@ fn finish_unverified(
     })
 }
 
-/// Verified API: non-empty Type-2 envelope bound to consensus-derived inputs.
-///
-/// leanVM production verify fails closed; empty / mismatched proofs rejected; no fake accept.
+/// Verified API: check the block's merged proof against the parent state's
+/// registry (leanSpec `verify_signatures`), then apply the transition.
 pub fn apply_block(
     pre: &State,
     signed: &SignedBlock,
     ctx: &TransitionContext,
+    verifier: &dyn AggregateVerifier,
 ) -> Result<TransitionOutcome, TransitionError> {
-    if signed.proof.proof.is_empty() {
-        return Err(TransitionError::UnsupportedSignature(
-            "block aggregate proof is empty".into(),
-        ));
-    }
-    let statement = type2_statement_for_block(&signed.block)?;
-    match ethean_crypto::verify_type2(&statement, &signed.proof.proof) {
-        Ok(()) => apply_block_unverified(pre, &signed.block, ctx),
-        Err(ethean_crypto::CryptoError::BackendUnavailable(msg)) => {
-            Err(TransitionError::UnsupportedSignature(msg.to_string()))
-        }
-        Err(e) => Err(TransitionError::UnsupportedSignature(e.to_string())),
-    }
+    verify_block_proof(signed, &pre.validators, verifier)?;
+    apply_block_unverified(pre, &signed.block, ctx)
 }
 
 /// Alias matching leanSpec naming: slots then block (structural / unverified).
@@ -197,9 +182,7 @@ mod tests {
         let mut atts = Vec::new();
         for i in 0..(MAX_ATTESTATIONS_DATA + 1) {
             atts.push(AggregatedAttestation {
-                aggregation_bits: AggregationBits {
-                    bits: vec![true],
-                },
+                aggregation_bits: AggregationBits { bits: vec![true] },
                 data: AttestationData {
                     slot: Slot::new(i as u64),
                     head: Checkpoint::genesis(),
@@ -216,23 +199,44 @@ mod tests {
         assert!(matches!(err, TransitionError::AttestationDataLimit(_)));
     }
 
+    struct RejectAll;
+
+    impl AggregateVerifier for RejectAll {
+        fn verify_single(
+            &self,
+            _: &[u8],
+            _: &[ethean_crypto::PublicKey],
+            _: &[u8; 32],
+            _: u64,
+        ) -> ethean_crypto::Result<()> {
+            Err(ethean_crypto::CryptoError::VerificationFailed)
+        }
+        fn verify_multi(
+            &self,
+            _: &[u8],
+            _: &[ethean_crypto::ProofComponent],
+        ) -> ethean_crypto::Result<()> {
+            Err(ethean_crypto::CryptoError::VerificationFailed)
+        }
+    }
+
     #[test]
-    fn apply_block_rejects_empty_proof() {
+    fn apply_block_fails_closed_when_proof_is_rejected() {
         let state = sample_state(1);
         let signed = SignedBlock {
             block: empty_block(1, 0, HASH32_ZERO),
             proof: MultiMessageAggregate::default(),
         };
-        let err = apply_block(&state, &signed, &ctx()).unwrap_err();
-        assert!(matches!(err, TransitionError::UnsupportedSignature(_)));
+        let err = apply_block(&state, &signed, &ctx(), &RejectAll).unwrap_err();
+        assert!(matches!(err, TransitionError::InvalidBlockProof(_)));
     }
 
     #[test]
     fn require_proofs_on_bare_block_rejected() {
         let state = sample_state(1);
         let block = empty_block(1, 0, HASH32_ZERO);
-        let err = transition_block(&state, &block, &ctx(), TransitionOpts::REQUIRE_PROOFS)
-            .unwrap_err();
+        let err =
+            transition_block(&state, &block, &ctx(), TransitionOpts::REQUIRE_PROOFS).unwrap_err();
         assert!(matches!(err, TransitionError::UnsupportedSignature(_)));
     }
 

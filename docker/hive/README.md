@@ -11,13 +11,8 @@ From the repository root:
 docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
 ```
 
-Optional production XMSS (needs vendor `[patch]` in the build context first):
-
-```bash
-docker build -f docker/hive/Dockerfile \
-  --build-arg CARGO_FEATURES=leansig-backend \
-  -t ethpandaops/ethean:local-leansig .
-```
+The image contains `ethean` and `ethean-prover` (leanMultisig prover used by
+aggregators and proposers). XMSS is native; no build features are needed.
 
 ## Entrypoint env (Lean simulator)
 
@@ -35,8 +30,7 @@ docker build -f docker/hive/Dockerfile \
 | `HIVE_LEAN_NETWORK_CONFIG` | `--lean-config` (`config.yaml`) |
 | `HIVE_LEAN_VALIDATOR_REGISTRY_PATH` | `--validator-registry` |
 | `HIVE_NODE_ID` | `--node-id` (default `ethean_0`) |
-| `HIVE_LEANVM_PROVER` | exports `ETHEAN_LEANVM_PROVER` (optional IPC binary path) |
-| `HIVE_LEANVM_IPC_PROBE` | exports `ETHEAN_LEANVM_IPC_PROBE` (optional live probe) |
+| `HIVE_ETHEAN_PROVER_BIN` | exports `ETHEAN_PROVER_BIN` (defaults to the bundled `ethean-prover`) |
 
 Operator plug-in order (fork-digest, bootnodes, leanVM, leansig, Hive):
 [`docs/pq-devnet-operator-plug-in-checklist-2026-09-20.md`](../../docs/pq-devnet/pq-devnet-operator-plug-in-checklist-2026-09-20.md).
@@ -56,7 +50,7 @@ and add the lean-devnets snippet. Details:
 ## Known gaps vs Ream Hive client
 
 - Lean HTTP serves `/lean/v1/…` only (no Beacon `/eth/v1`).
-- Registry privkeys load when present; proposal install needs a `leansig-backend` build.
+- Attestation checks use the head state registry; the spec's target-state lookup needs a fork-choice store.
 - Upstream ethereum/hive merge still required (drop-in is ready to copy).
 - `ATTESTATION_COMMITTEE_COUNT` from prepared `config.yaml` lands on the profile and
   gossip subnet count (see

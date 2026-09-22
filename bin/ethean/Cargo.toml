@@ -25,11 +25,4 @@ nu-ansi-term = "0.46"
 # Default enables QUIC so `ethean start --bootnodes …` can dial pq-devnet peers.
 default = ["libp2p-quic"]
 libp2p-quic = ["ethean-node/libp2p-quic"]
-# XMSS is native; kept so older run scripts that pass this feature still build.
-leansig-backend = ["ethean-node/leansig-backend"]
-# Synthetic aggregate proofs for offline smoke runs. Off by default so the
-# shipped binary never accepts keyless Type-2 proofs.
-test-aggregate = ["ethean-node/test-aggregate"]
-# Optional leanVM surface (fail-closed until FFI linked).
-leanvm-backend = ["ethean-node/leanvm-backend"]
 

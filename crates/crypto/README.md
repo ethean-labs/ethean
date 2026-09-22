@@ -47,19 +47,14 @@ for permutation and verify timings.
 
 ## Aggregation
 
-- Max proof **524288** bytes, `LOG_INV_RATE=2`, leanVM pin `e2592df4…`.
-- `verify_type2` needs a leanVM prover (feature `leanvm-backend` plus IPC).
-  Without one it returns `BackendUnavailable` and callers fail closed.
-- `test-aggregate` produces statement-bound synthetic proofs for unit tests
-  and local smoke only. It is **not** a default feature; enabling it in a
-  node build makes keyless proofs verify.
+This crate defines `AggregateVerifier` and `ProofComponent` plus the pinned
+parameters (`LEANVM_REV`, `LOG_INV_RATE`, `MAX_PROOF_BYTES`). Proof generation
+and verification live in `ethean-multisig` (leanMultisig), so consensus crates
+can verify blocks without linking the zkVM.
 
 ## Features
 
 | Feature | Default | Meaning |
 | --- | --- | --- |
-| `test-hmac` | yes | `TestHmacBackend` for fast unit tests |
-| `test-aggregate` | no | synthetic aggregate proofs (tests / smoke only) |
-| `leanvm-backend` | no | leanVM prove/verify surface (fail-closed stub) |
-| `leansig-backend` | no | no-op kept for feature forwarding; XMSS is always native |
+| `test-hmac` | yes | `TestHmacBackend` for fast unit tests (never production) |
 | `serde` | no | serde derives on wire types |

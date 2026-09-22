@@ -60,20 +60,18 @@ impl NodeObservability {
         self.readiness.network = true;
     }
 
-    /// Mark leanVM prover path available when FFI is wired.
+    /// Mark the aggregate-proof path available.
     pub fn mark_prover_ok(&mut self) {
         self.readiness.prover = true;
     }
 
-    /// Apply [`ethean_crypto::FfiStatus`] to crypto/prover readiness bits.
-    pub fn apply_ffi_status(&mut self, status: ethean_crypto::FfiStatus) {
-        if status.leansig {
+    /// Apply the crypto capability probe to readiness bits. XMSS and proof
+    /// verification are always in-process; proving is optional per role.
+    pub fn apply_crypto_status(&mut self, status: &crate::crypto_status::CryptoStatus) {
+        if status.xmss {
             self.mark_crypto_ok();
         }
-        // Prover is required only when leanVM is selected; skip the gate otherwise
-        // so long-run `/readyz` works for consensus-only builds.
         self.mark_prover_ok();
-        let _ = status.leanvm;
     }
 
     /// Network remains false until QUIC binds; prover false until leanVM FFI.
@@ -234,7 +232,7 @@ mod tests {
         obs.mark_crypto_ok();
         obs.mark_signer_ok();
         obs.mark_network_ok();
-        obs.apply_ffi_status(ethean_crypto::FfiStatus::probe());
+        obs.apply_crypto_status(&crate::crypto_status::CryptoStatus::probe());
         obs.refresh_ready_gauge().unwrap();
         assert!(obs.readiness.is_ready());
     }

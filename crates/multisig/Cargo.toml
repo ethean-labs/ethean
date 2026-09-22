@@ -1,0 +1,15 @@
+[package]
+name = "ethean-multisig"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "leanMultisig (leanVM) aggregate proofs for Ethean: in-process verification, out-of-process proving"
+
+[dependencies]
+ethean-crypto = { workspace = true }
+thiserror = { workspace = true }
+# leanVM pin shared with ream, ethlambda and zeam for pq-devnet-4.
+lean-multisig = { git = "https://github.com/leanEthereum/leanVM.git", rev = "e2592df4e30fdddbbf8ae26a333116c68cec7026" }
+leansig_wrapper = { git = "https://github.com/leanEthereum/leanVM.git", rev = "e2592df4e30fdddbbf8ae26a333116c68cec7026" }

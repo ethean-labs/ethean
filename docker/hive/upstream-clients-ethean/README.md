@@ -54,7 +54,7 @@ ethean=devnet4,devnet5
 ## Honesty
 
 - Lean HTTP is `/lean/v1/…` only (no Beacon `/eth/v1`).
-- Proposal XMSS needs a `leansig-backend` image build; attester registry keys load
-  when present.
+- Registry attestation and proposal keys load when present (native XMSS); the
+  bundled `ethean-prover` builds aggregates and block proofs.
 - `ATTESTATION_COMMITTEE_COUNT` is taken from prepared `config.yaml` (profile +
   gossip subnets), not a separate Hive CLI flag.

@@ -4,11 +4,12 @@
 schema = "ethean-phase-lock-v1"
 phase = "08"
 phase_name = "leanvm-aggregation"
-lock_status = "resolved_with_open_gates"
-recorded_at_utc = "2026-09-19T00:00:00Z"
+lock_status = "resolved"
+recorded_at_utc = "2026-09-23T00:00:00Z"
 profile_note = """
-Type-1 / Type-2 statement binding and fail-closed verify landed.
-leanVM FFI not wired (pin recorded). test-aggregate binds statement digests for unit tests only.
+leanMultisig wired at the pinned leanVM commit: in-process Type-1 / Type-2
+verification (ethean-multisig), proving in the ethean-prover process, block
+proofs bound per leanSpec lstar/signatures.py. Synthetic test proofs removed.
 """
 
 [ethean]
@@ -19,11 +20,11 @@ commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
 citation_aggregation = "src/lean_spec/spec/forks/lstar/containers/aggregation.py"
 
 [resolved.leanvm]
-status = "pinned_ffi_not_wired"
+status = "linked"
 repository = "https://github.com/leanEthereum/leanVM"
 commit = "e2592df4e30fdddbbf8ae26a333116c68cec7026"
-optional_cargo_feature = "leanvm-backend"
-blocker = "FFI / native proving process not integrated; refuse fake accept"
+crates = ["lean-multisig", "leansig_wrapper"]
+plonky3_commit = "3f67d136c71bec40f180c85d0bb2b654acddef22"
 
 [resolved.aggregation]
 type1 = "SingleMessageAggregate"
@@ -33,16 +34,14 @@ log_inv_rate = 2
 max_type2_components = 9
 max_attestations_data = 8
 fingerprint = "leanVM|rev=e2592df4e30fdddbbf8ae26a333116c68cec7026|LOG_INV_RATE=2|MAX_PROOF=524288|TYPE2_COMP_MAX=9|gen=type1_type2"
-production_verify = "fail_closed_without_leanvm_backend"
-test_verify = "test-aggregate_statement_bound"
+production_verify = "leanmultisig_in_process"
+production_prove = "ethean-prover_child_process"
 
 [resolved.node]
 pool = "ethean-node/aggregation"
-prover = "sync_facade_until_process_sandbox"
+prover = "ethean-prover_child_process_via_proof_service"
 selection = "coverage_desc_then_index_asc"
 
 [open_gates]
-leanvm_ffi = "blocked"
-dedicated_prover_process = "deferred"
 upstream_proof_fixture_byte_diff = "deferred"
 mutation_corpus_100k = "deferred"

@@ -19,7 +19,7 @@ pub fn apply_wall_step(
     shutdown: &mut ShutdownState,
     sync: &mut SyncStatus,
 ) -> Result<Vec<ChainEvent>> {
-    let mut events = Vec::new();
+    let mut events = crate::proof_collect::collect_proofs(owner);
     if !shutdown.accepts_new_duties() {
         return Ok(events);
     }
@@ -42,32 +42,8 @@ pub fn apply_wall_step(
         if let Err(reason) = evaluate_gate(&snap.duty_view) {
             events.push(ChainEvent::DutySuppressed { tick, reason });
         } else {
-            // Attest first so same-tick aggregator/prove can see the new pool entry.
             events.extend(crate::duty_attest::try_local_attest(owner, tick));
-            let ready = crate::duty_aggregator::evaluate_aggregator_duties(owner, tick, lag);
-            for ev in &ready {
-                if let ChainEvent::AggregatorReady {
-                    data_root, subnet, ..
-                } = ev
-                {
-                    if let Some(proved) =
-                        crate::duty_aggregator_prove::try_prove_type1_for_root(owner, *data_root)
-                    {
-                        events.push(proved);
-                        for g in crate::aggregation_gossip::queue_type1_aggregation_gossip(
-                            owner, *data_root, *subnet,
-                        ) {
-                            events.push(ChainEvent::AggregationGossipReady {
-                                topic: g.topic,
-                                data_root: g.data_root,
-                                payload_len: g.payload.len(),
-                                proof_len: g.proof_len,
-                            });
-                        }
-                    }
-                }
-            }
-            events.extend(ready);
+            events.extend(crate::aggregation_duty::schedule_aggregations(owner));
             events.extend(try_plan_proposal(owner, tick));
         }
     }

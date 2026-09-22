@@ -4,15 +4,15 @@ Local stack for Shariq-style long-run monitoring of Ethean.
 
 ## Prerequisites
 
-1. Docker Desktop (or Docker Engine + Compose)
+1. Docker Engine + Docker Compose plugin
 2. Ethean built: `cargo build -p ethean --release`
 
 ## Long-run node (pq-devnet-4)
 
-```powershell
+```bash
 ethean start --network pq-devnet-4 --until-signal
 # or
-.\scripts\run-pq-devnet-4.ps1
+./scripts/run-pq-devnet-4.sh
 ```
 
 Default scrape: `http://127.0.0.1:9100/metrics`  
@@ -22,66 +22,21 @@ Disable with `--no-metrics`. Bind: `--metrics-address` / `--metrics-port`.
 
 **Preferred:** pass `--metrics` on the node (starts Docker Compose automatically):
 
-```powershell
+```bash
 ethean start --until-signal --network pq-devnet-4 --metrics
 ```
 
 **Or** start the stack alone:
 
-```powershell
-.\scripts\run-observability.ps1
+```bash
+./scripts/run-observability.sh
 # or
 cd deploy/observability
 docker compose up -d
 ```
 
-Requires Docker Desktop (or Engine + Compose). Without it, `:3000` / `:9090` stay down
+Requires Docker Engine + Compose. Without it, `:3000` / `:9090` stay down
 even though `:9100/metrics` from the binary works.
-
-### Windows: `npipe://./pipe/docker_engine` / file not found
-
-That error means the **Docker CLI is installed but the daemon is stopped**
-(Docker Desktop not running, still starting, or backend crash-looping). Fix:
-
-1. Start **Docker Desktop** from the Start menu (or
-   `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`).
-2. Wait until the tray icon reports the engine is running.
-3. Re-run `.\scripts\run-observability.ps1` (it fails fast if the daemon is down).
-
-If Desktop opens but Engine never comes up, check WSL:
-
-```powershell
-wsl -l -v
-# If that fails ("cannot access the file" / similar): Admin PowerShell
-wsl --install
-# or
-wsl --update
-```
-
-Then reboot and start Docker Desktop again. Without a working WSL2 distro,
-`com.docker.backend` exits and Grafana/Prometheus never bind `:3000` / `:9090`.
-
-### Windows: HTTP 500 on `dockerDesktopLinuxEngine/_ping`
-
-```text
-request returned 500 Internal Server Error for API route and version
-http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/_ping
-```
-
-The CLI and Desktop UI are present; the **Linux engine is not**. Docker is
-proxying `_ping` with HTTP 500 because WSL2 cannot create a VM. Typical host
-log: `HCS_E_HYPERV_NOT_INSTALLED` / `HypervisorPresent = False`.
-
-Fix (elevated PowerShell), then **reboot**:
-
-```powershell
-wsl.exe --install --no-distribution
-dism.exe /Online /Enable-Feature /FeatureName:VirtualMachinePlatform /All /NoRestart
-```
-
-Enable CPU virtualization in firmware if it is off. After reboot, start Docker
-Desktop, wait until Engine is **Running**, confirm `docker info` has a Server
-section, then re-run `--metrics` or `.\scripts\run-observability.ps1`.
 
 `--metrics` is best-effort: the node still serves `:9100/metrics` while Grafana
 stays down.

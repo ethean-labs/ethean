@@ -14,9 +14,42 @@ the curated operator-facing summary, not a dump of every working note.
 
 ### Added
 
-- Multi-platform `ethean` release archives (Windows x86_64, Linux x86_64/aarch64,
-  macOS aarch64/x86_64) via `.github/workflows/release-binaries.yml`, with
-  per-target `.sha256` files and a Binaries section on GitHub Release notes.
+- leanMultisig aggregation at leanVM `e2592df4` (the pq-devnet-4 pin shared with
+  ream, ethlambda and zeam): in-process Type-1 / Type-2 verification
+  (`ethean-multisig`) and proving in the new `ethean-prover` process.
+- Aggregator duty: verified `SignedAttestation` votes are aggregated into
+  Type-1 proofs and published on the aggregation topic.
+- Proposals carry a merged Type-2 block proof (body attestation proofs, then the
+  proposer's signature over the block root).
+- Release archives for Linux x86_64/aarch64, macOS aarch64/x86_64 and Windows
+  x86_64 (experimental, pending leanMultisig Windows support) via
+  `.github/workflows/release-binaries.yml`, each containing `ethean` and
+  `ethean-prover`, with per-target `.sha256` files and a Binaries section on
+  GitHub Release notes.
+
+### Changed
+
+- Gossip blocks are imported only after their block proof verifies against the
+  parent state's registry (leanSpec `verify_signatures`); unsigned `Block`
+  payloads are no longer accepted.
+- Attestation subnets carry `SignedAttestation` and every vote's XMSS signature
+  is verified; aggregates are verified against their participants' keys.
+- Release profile uses `panic = "unwind"` so a verifier panic on a hostile
+  proof is contained and rejected.
+- Linux-first: PowerShell scripts and Windows-only docs were removed and CI runs
+  on Ubuntu; `fetch-leanspec-fixtures.sh` and `legacy-scan.sh` replace their
+  PowerShell versions.
+
+### Fixed
+
+- `SignedAggregatedAttestation` SSZ now follows the spec field order (`data`,
+  then the offset to `proof`); peers could not decode the old layout.
+
+### Removed
+
+- Statement-based synthetic aggregate proofs (`test-aggregate`), the leanVM IPC
+  stubs, `ethean-leanvm-mock`, and the `leansig-backend` / `leanvm-backend`
+  features.
 
 ## [0.1.47] - 2026-09-20
 

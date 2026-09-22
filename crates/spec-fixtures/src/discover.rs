@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn discovers_under_env_cache_if_present() {
         let Some(root) = fixtures_root_from_env() else {
-            eprintln!("skip: set {FIXTURES_ENV} after fetch-leanspec-fixtures.ps1");
+            eprintln!("skip: set {FIXTURES_ENV} after tools/release/fetch-leanspec-fixtures.sh");
             return;
         };
         let files = discover_json_fixtures(&root).expect("walk");

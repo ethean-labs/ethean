@@ -10,8 +10,7 @@ cargo build -p ethean --release
 
 Requires the workspace Rust toolchain (see `rust-toolchain.toml`). The binary enables `libp2p-quic` by default so bootnode dials work.
 
-Each build of `bin/ethean` refreshes a PATH shim in `~/.cargo/bin` (`ethean` on
-Unix, `ethean.cmd` on Windows) so the client runs as `ethean …` with no
+Each build of `bin/ethean` refreshes a PATH shim in `~/.cargo/bin` (`ethean`) so the client runs as `ethean …` with no
 `install.sh` / `cargo install` step. Cargo's `bin` directory must be on `PATH`
 (rustup usually configures this).
 
@@ -20,7 +19,7 @@ Unix, `ethean.cmd` on Windows) so the client runs as `ethean …` with no
 Default `--network` is **`pq-devnet-4`** (operational join while D5 has no public mesh).
 
 **`pq-devnet-5` stays fully wired** as a ready path: same CLI flags, config files under
-`config/networks/pq-devnet-5.*`, and `scripts/run-pq-devnet-5.*`. Use
+`config/networks/pq-devnet-5.*`, and `scripts/run-pq-devnet-5.sh`. Use
 `--network pq-devnet-5` when operators publish multiaddrs.
 
 That label alone does **not** attach to a public mesh. Supply QUIC multiaddrs:

@@ -27,10 +27,7 @@ pub use limits::{
 pub use operation::{
     AggregatedAttestation, Attestation, SignedAggregatedAttestation, SignedAttestation,
 };
-pub use proofs::{
-    indices_from_bits, type1_statement_from_aggregate, type2_statement_for_block,
-    validate_ordered_indices, Type2ComponentRoots,
-};
+pub use proofs::{indices_from_bits, validate_ordered_indices};
 pub use state::State;
 pub use validator::Validator;
 

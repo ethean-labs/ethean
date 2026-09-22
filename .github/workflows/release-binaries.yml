@@ -1,6 +1,6 @@
 name: release-binaries
 
-# Build ethean client archives for Windows / Linux / macOS and attach them
+# Build ethean client archives (ethean + ethean-prover) for Linux / macOS / Windows and attach them
 # to an existing (or newly tagged) GitHub Release.
 on:
   push:
@@ -23,6 +23,9 @@ jobs:
   build:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
+    # Windows is experimental: leanMultisig (leanVM e2592df4) uses Unix-only
+    # system calls, so that job may fail without blocking the other archives.
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -30,18 +33,23 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             cross: false
+            experimental: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             cross: false
+            experimental: false
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             cross: true
+            experimental: false
           - os: macos-latest
             target: aarch64-apple-darwin
             cross: false
+            experimental: false
           - os: macos-latest
             target: x86_64-apple-darwin
             cross: false
+            experimental: false
 
     steps:
       - uses: actions/checkout@v4
@@ -74,17 +82,17 @@ jobs:
         with:
           tool: cross
 
-      - name: Build ethean (native)
+      - name: Build ethean + ethean-prover (native)
         if: ${{ !matrix.cross }}
         shell: bash
         run: |
-          cargo build -p ethean --release --locked --target "${{ matrix.target }}"
+          cargo build -p ethean -p ethean-prover --release --locked --target "${{ matrix.target }}"
 
-      - name: Build ethean (cross)
+      - name: Build ethean + ethean-prover (cross)
         if: matrix.cross
         shell: bash
         run: |
-          cross build -p ethean --release --locked --target "${{ matrix.target }}"
+          cross build -p ethean -p ethean-prover --release --locked --target "${{ matrix.target }}"
 
       - name: Package archive
         shell: bash

@@ -18,41 +18,25 @@ impl EtheanClient {
         self.db.verify_schema()?;
         self.observability.mark_storage_ok();
         self.observability.mark_signer_ok();
-        self.observability
-            .apply_ffi_status(ethean_crypto::FfiStatus::probe());
-        let leanvm_gate = ethean_crypto::LeanVmGate::probe();
-        let leansig_gate = ethean_crypto::LeanSigGate::probe();
+        let crypto = crate::crypto_status::CryptoStatus::probe();
+        self.observability.apply_crypto_status(&crypto);
         info!(
             network = network.id.as_str(),
             bootnodes = network.bootnodes.len(),
             fork_digest = network.fork_digest.as_deref().unwrap_or(""),
-            leanvm_feature = leanvm_gate.feature_enabled,
-            leanvm_ffi = leanvm_gate.ffi_linked,
-            leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
-            leanvm_ipc_frame = leanvm_gate.ipc_frame_abi_ready,
-            leanvm_ipc_spawn = leanvm_gate.ipc_spawn_wired,
-            leanvm_ipc_probe = leanvm_gate.ipc_probe_requested,
-            leanvm_ipc_ready = leanvm_gate.ipc_protocol_ready,
-            leanvm_pin = leanvm_gate.pinned_rev,
-            leansig_feature = leansig_gate.feature_enabled,
-            leansig_vendor_patch = leansig_gate.vendor_bigint_patch_required,
-            leansig_pin = leansig_gate.pinned_rev,
-            "crypto backend gate probe"
+            xmss = "native",
+            leanmultisig = crypto.verifier_rev,
+            prover = crypto
+                .prover
+                .as_ref()
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|| "none".into()),
+            "crypto status"
         );
-        if network.has_bootnodes() && !leansig_gate.ready() {
+        if network.has_bootnodes() && !crypto.can_prove() && self.owner.is_aggregator {
             warn!(
                 network = network.id.as_str(),
-                pin = leansig_gate.pinned_rev,
-                reason = leansig_gate.refuse_reason().unwrap_or("unavailable"),
-                "mesh dial without production leanSig; peer XMSS verify stays fail-closed"
-            );
-        }
-        if network.has_bootnodes() && !leanvm_gate.ready() {
-            warn!(
-                network = network.id.as_str(),
-                pin = leanvm_gate.pinned_rev,
-                reason = leanvm_gate.refuse_reason().unwrap_or("unavailable"),
-                "mesh dial without production leanVM; Type-2 proof verify stays fail-closed"
+                "aggregator on a mesh without ethean-prover; no aggregates will be produced"
             );
         }
         if let Some(stem) = network.id.config_stem() {
@@ -109,12 +93,8 @@ impl EtheanClient {
             bootnodes = network.bootnodes.len(),
             fork_digest_source = ?network.fork_digest_source(),
             mesh_isolation_risk = network.mesh_isolation_risk(),
-            leansig_ready = leansig_gate.ready(),
-            leansig_refuse = leansig_gate.refuse_reason().unwrap_or(""),
-            leanvm_ready = leanvm_gate.ready(),
-            leanvm_refuse = leanvm_gate.refuse_reason().unwrap_or(""),
-            leanvm_ipc_binary = leanvm_gate.ipc_binary_present,
-            "operator plug-in status (paste A2/A3 + prover when eth/pq-devnet opens)"
+            can_prove = crypto.can_prove(),
+            "operator plug-in status"
         );
 
         let attestation_subnets = self.profile.attestation_subnet_count();
@@ -126,8 +106,7 @@ impl EtheanClient {
         .await?;
         info!(
             listen_port = _port,
-            attestation_subnets,
-            "network listen port ready"
+            attestation_subnets, "network listen port ready"
         );
         #[cfg(feature = "libp2p-quic")]
         {
@@ -135,12 +114,10 @@ impl EtheanClient {
             if let Some(ref dir) = self.persist_dir {
                 let paths = crate::persist_paths::PersistPaths::new(dir);
                 if let Some(facade) = self.swarm.as_mut() {
-                    let seed =
-                        crate::serve_cache_seed::seed_facade_from_data_dir(facade, &paths);
-                    let _ = self.observability.record_serve_cache_seed(
-                        seed.candidates as u64,
-                        seed.indexed as u64,
-                    );
+                    let seed = crate::serve_cache_seed::seed_facade_from_data_dir(facade, &paths);
+                    let _ = self
+                        .observability
+                        .record_serve_cache_seed(seed.candidates as u64, seed.indexed as u64);
                 }
             }
             crate::boot_network::dial_bootnodes(network, self.swarm.as_mut());
@@ -151,12 +128,8 @@ impl EtheanClient {
             crate::boot_network::dial_bootnodes(network, None);
         }
 
-        let genesis_root = self
-            .genesis
-            .hash_tree_root()
-            .map_err(crate::Error::Types)?;
-        let status =
-            crate::local_status::local_status(&self.owner, genesis_root, &fork_segment);
+        let genesis_root = self.genesis.hash_tree_root().map_err(crate::Error::Types)?;
+        let status = crate::local_status::local_status(&self.owner, genesis_root, &fork_segment);
         info!(
             head_slot = status.head_slot,
             finalized_slot = status.finalized_slot,
@@ -192,8 +165,7 @@ impl EtheanClient {
             fork_segment = %fork_segment,
             network = network.id.as_str(),
             ready = self.observability.readiness.is_ready(),
-            ffi_leansig = ethean_crypto::FfiStatus::probe().leansig,
-            ffi_leanvm = ethean_crypto::FfiStatus::probe().leanvm,
+            can_prove = crate::crypto_status::CryptoStatus::probe().can_prove(),
             "Ethean Lean Consensus client starting duties"
         );
         Ok(())

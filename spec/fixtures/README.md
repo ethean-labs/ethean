@@ -30,6 +30,6 @@ This tree holds **provenance manifests** for upstream fixture archives used by c
 | [samples/](./samples/) | Tiny committed JSON envelopes for CI (`ethean-spec-fixtures`) |
 
 Fetch full prod-scheme archive (gitignored cache):
-[`../../tools/release/fetch-leanspec-fixtures.ps1`](../../tools/release/fetch-leanspec-fixtures.ps1).
+[`../../tools/release/fetch-leanspec-fixtures.sh`](../../tools/release/fetch-leanspec-fixtures.sh).
 
 See also [`../pins/phase-00.lock.toml`](../pins/phase-00.lock.toml), [`../pins/phase-03.lock.toml`](../pins/phase-03.lock.toml), [`../pins/phase-05.lock.toml`](../pins/phase-05.lock.toml), [`../pins/phase-06.lock.toml`](../pins/phase-06.lock.toml), and [`../../tests/interop/README.md`](../../tests/interop/README.md).

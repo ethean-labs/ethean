@@ -165,35 +165,82 @@ pub struct SignedAggregatedAttestation {
 }
 
 impl SignedAggregatedAttestation {
+    /// SSZ container `{data: AttestationData, proof: SingleMessageAggregate}`:
+    /// the fixed 128-byte `data`, then a 4-byte offset, then `proof`.
     pub fn ssz_encode(&self) -> Result<Vec<u8>, TypesError> {
         let data = self.data.ssz_encode();
         let proof = self.proof.ssz_encode()?;
-        // data fixed, proof variable: offset + data + proof bytes
-        let fixed_end = 4 + data.len();
+        let fixed_end = data.len() + 4;
         let mut out = Vec::with_capacity(fixed_end + proof.len());
-        out.extend_from_slice(&(fixed_end as u32).to_le_bytes());
         out.extend_from_slice(&data);
+        out.extend_from_slice(&(fixed_end as u32).to_le_bytes());
         out.extend_from_slice(&proof);
         Ok(out)
     }
 
     pub fn ssz_decode(input: &[u8]) -> Result<Self, TypesError> {
-        if input.len() < 4 {
+        let fixed_end = ATTESTATION_DATA_SSZ_LEN + 4;
+        if input.len() < fixed_end {
             return Err(TypesError::Ssz(ethean_ssz::SszError::BufferTooShort {
-                need: 4,
+                need: fixed_end,
                 have: input.len(),
             }));
         }
-        let offset = u32::from_le_bytes(input[0..4].try_into().unwrap()) as usize;
-        if offset > input.len() {
+        let offset = u32::from_le_bytes(
+            input[ATTESTATION_DATA_SSZ_LEN..fixed_end]
+                .try_into()
+                .expect("4-byte offset"),
+        ) as usize;
+        if offset != fixed_end {
             return Err(TypesError::Ssz(ethean_ssz::SszError::OffsetOutOfRange {
                 offset,
                 payload_len: input.len(),
             }));
         }
         Ok(Self {
-            data: AttestationData::ssz_decode(&input[4..offset])?,
-            proof: SingleMessageAggregate::ssz_decode(&input[offset..])?,
+            data: AttestationData::ssz_decode(&input[..ATTESTATION_DATA_SSZ_LEN])?,
+            proof: SingleMessageAggregate::ssz_decode(&input[fixed_end..])?,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::checkpoint::Checkpoint;
+    use ethean_primitives::Slot;
+
+    #[test]
+    fn signed_aggregate_places_fixed_data_before_proof_offset() {
+        let data = AttestationData {
+            slot: Slot::new(5),
+            head: Checkpoint::genesis(),
+            target: Checkpoint::genesis(),
+            source: Checkpoint::genesis(),
+        };
+        let proof = SingleMessageAggregate::new(
+            AggregationBits::new(vec![true, false, true]).unwrap(),
+            vec![0xab; 10],
+        )
+        .unwrap();
+        let signed = SignedAggregatedAttestation {
+            data,
+            proof: proof.clone(),
+        };
+        let bytes = signed.ssz_encode().unwrap();
+        assert_eq!(&bytes[..ATTESTATION_DATA_SSZ_LEN], &data.ssz_encode()[..]);
+        assert_eq!(
+            u32::from_le_bytes(bytes[128..132].try_into().unwrap()),
+            132,
+            "offset to the variable proof field"
+        );
+        assert_eq!(&bytes[132..], &proof.ssz_encode().unwrap()[..]);
+        assert_eq!(
+            SignedAggregatedAttestation::ssz_decode(&bytes).unwrap(),
+            signed
+        );
+        let mut bad = bytes.clone();
+        bad[128] = 4;
+        assert!(SignedAggregatedAttestation::ssz_decode(&bad).is_err());
     }
 }

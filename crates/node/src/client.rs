@@ -144,12 +144,29 @@ impl EtheanClient {
     pub fn apply_local_roles(&mut self, roles: crate::start_config::LocalRoles) {
         self.owner.is_aggregator = roles.is_aggregator;
         self.owner.local_finality = roles.local_finality;
+        if roles.is_aggregator && !roles.local_finality {
+            self.ensure_prover();
+        }
         info!(
             validators = roles.validators,
             is_aggregator = roles.is_aggregator,
             local_finality = roles.local_finality,
             "local roles applied"
         );
+    }
+
+    /// Start the leanMultisig proof service once, when a prover binary exists.
+    pub fn ensure_prover(&mut self) {
+        if self.owner.prover.is_some() {
+            return;
+        }
+        self.owner.prover = crate::proof_service::ProofService::discover();
+        if self.owner.prover.is_none() {
+            tracing::warn!(
+                "no ethean-prover binary found (set ETHEAN_PROVER_BIN); \
+                 aggregates and block proofs will not be produced"
+            );
+        }
     }
 
     /// Access the chain owner (sole writer of head/sync flags).

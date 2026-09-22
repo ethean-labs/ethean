@@ -60,8 +60,9 @@ In practical terms, Ethean should eventually:
 2. **Sign and verify with native leanSpec XMSS** : KoalaBear / Poseidon1 /
    SHAKE128 implemented in-tree, checked against leanSpec vectors and published
    leanSig keys; no BLS fallback anywhere.
-3. **Aggregate toward leanMultisig / leanVM** : aggregator duties and prove/verify
-   IPC as backends mature (mock and refuse paths are intentional, not accidental).
+3. **Aggregate with leanMultisig** : Type-1 aggregation of gossiped votes and
+   Type-2 block proofs (leanVM `e2592df4`, the pq-devnet-4 pin), proved in a
+   supervised `ethean-prover` process and verified in-process on every import.
 4. **Run on pq-devnets like peer operators** : network labels, bootnode multiaddrs,
    fork digests, durable genesis packages, and metrics that operators can scrape.
 5. **Stay operable solo** : local finality / aggregator smoke so contributors can
@@ -95,10 +96,10 @@ The `ethean` binary is already useful for day-to-day Lean client work:
 - **Spec fixtures** : `crates/spec-fixtures` locks fork-choice and related leanSpec
   vectors so regressions show up in `cargo test`, not only on a live mesh.
 - **Observability** : process metrics are on by default; `ethean start … --metrics`
-  can start Docker Compose Grafana + Prometheus when Docker Desktop is available.
+  can start Docker Compose Grafana + Prometheus when Docker Engine is available.
 
 Honest limits matter: empty bootnodes mean **private / offline**, not “joined public
-D4.” leanVM aggregation proofs are gated behind a real prover. RocksDB and some transport
+D4.” Aggregators and proposers need the `ethean-prover` binary. RocksDB and some transport
 edges are still hardening. Treat Ethean as an **active Lean client under construction**,
 aligned with research tracks, not a drop-in Beacon replacement.
 
@@ -127,8 +128,8 @@ Contributors are expected to keep the tree **English-only**, split source files 
   mesh helpers; empty bootnodes are offline by design.
 - **Observability** : `ethean_` Prometheus gauges on `:9100`; optional Docker
   Grafana / Prometheus via `--metrics`.
-- **Spec alignment** : leanSpec FC/STF runners, native XMSS and fail-closed
-  leanVM gates instead of Beacon shortcuts.
+- **Spec alignment** : leanSpec FC/STF runners, native XMSS and verified
+  leanMultisig block proofs instead of Beacon shortcuts.
 - **House rules** : English-only tree, ≤300-line sources, clean human git history.
 
 ### Where to go next
@@ -161,7 +162,8 @@ Ethean is a **crate-per-concern** Rust workspace behind a single CLI.
 | --- | --- |
 | Primitives / profile | Slots, forks, pinned `lstar` style chain profile |
 | Types + SSZ | Canonical Lean containers and encode/decode |
-| Crypto | Native leanSpec XMSS (KoalaBear / Poseidon1 / SHAKE128), batch verify, aggregation surface |
+| Crypto | Native leanSpec XMSS (KoalaBear / Poseidon1 / SHAKE128), batch verify |
+| Aggregation | `ethean-multisig` (leanMultisig verify in-process) + `ethean-prover` process |
 | Consensus | Genesis, state transition, **3SF-mini** fork choice |
 | Validator | ~4s / interval duties, local aggregator role |
 | Network | QUIC swarm, gossip admission, Status / blocks-by-root / range |
@@ -181,12 +183,14 @@ Migration plan library: [road-to/lean-consensus-migration/README.md](./road-to/l
 2. Clone this repo and build:
 
 ```bash
-cargo build -p ethean --release
+cargo build --release -p ethean -p ethean-prover
 ethean version
 ```
 
-The build publishes an `ethean` shim under `~/.cargo/bin`. Optional: Docker Desktop
-for Grafana/Prometheus.
+The node finds `ethean-prover` next to its own binary (or via
+`ETHEAN_PROVER_BIN`); aggregators and proposers need it. The build publishes an
+`ethean` shim under `~/.cargo/bin`. Optional: Docker Engine with the compose
+plugin for Grafana/Prometheus. Ethean targets Linux.
 
 Details: [docs/readme/installation.md](./docs/readme/installation.md).
 
@@ -206,7 +210,7 @@ ethean start --until-signal --network pq-devnet-4 --ephemeral
 ethean start --until-signal --network pq-devnet-4 --data-dir ./ethean-data --metrics
 ```
 
-Helpers: `./scripts/run-pq-devnet-4.sh` / `.\scripts\run-pq-devnet-4.ps1`.
+Helper: `./scripts/run-pq-devnet-4.sh`.
 
 Dual mode, private mesh, D5 ready path, flags, and troubleshooting:
 [docs/readme/usage.md](./docs/readme/usage.md).

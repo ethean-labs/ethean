@@ -20,11 +20,10 @@ commit = "0b7d33ecbc9ee2435759c92de4da4d08d7faf1c8"
 citation_xmss = "src/lean_spec/spec/crypto/xmss/"
 
 [resolved.leansig]
-status = "pinned_compile_blocked"
+status = "native_reimplementation"
 repository = "https://github.com/leanEthereum/leanSig"
 commit = "15cbdd43ec8525aa43fea2f42cafc5ed366084ae"
-optional_cargo_feature = "leansig-backend"
-blocker = "dependency resolution / Plonky3 / num_bigint with workspace lock"
+implementation = "ethean-crypto xmss::native (wire-identical; verified against leanSpec vectors and leanSig PROD keys)"
 
 [resolved.crypto]
 construction = "leanSpec_internal_xmss"

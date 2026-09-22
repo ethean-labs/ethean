@@ -9,7 +9,7 @@ mod log_filter;
 mod observability;
 
 use clap::Parser;
-use ethean_crypto::FfiStatus;
+use ethean_node::crypto_status::CryptoStatus;
 use ethean_node::{
     cli::{Cli, Command},
     EtheanClient, LocalRoles, MetricsListen, NetworkTarget, StartConfig,
@@ -237,15 +237,16 @@ async fn main() -> Result<()> {
             client.start_with(cfg).await?;
         }
         Command::Validator => {
-            let ffi = FfiStatus::probe();
-            info!(?ffi, "Validator client status");
-            println!(
-                "Validator duties require production crypto backends (leansig={}, leanvm={}).",
-                ffi.leansig, ffi.leanvm
-            );
-            if !ffi.both_selected() {
-                println!("Gaps: {:?}", ffi.gaps());
-                println!("Fail-closed: aggregate proofs need a leanVM prover (leanvm-backend + IPC).");
+            let status = CryptoStatus::probe();
+            info!(?status, "Validator client status");
+            println!("XMSS signing and verification: native (leanSpec PROD).");
+            println!("Aggregate proof verification: leanMultisig {}.", status.verifier_rev);
+            match &status.prover {
+                Some(path) => println!("Prover: {}", path.display()),
+                None => println!(
+                    "Prover: not found. Build `ethean-prover` or set ETHEAN_PROVER_BIN; \
+                     aggregators and proposers need it."
+                ),
             }
         }
         Command::Version => {

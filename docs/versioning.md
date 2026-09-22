@@ -10,15 +10,11 @@ Single source of truth for the Ethean workspace version (`MAJOR.MINOR.PATCH`).
 
 Bump with:
 
-```powershell
-.\scripts\bump-version.ps1
-```
-
 ```bash
 ./scripts/bump-version.sh
 ```
 
-The scripts update `VERSION`, root `Cargo.toml`, and **only** `ethean*` package
+The script updates `VERSION`, root `Cargo.toml`, and **only** `ethean*` package
 stanzas in `Cargo.lock`. Do not blanket-replace version strings in the lockfile
 (that can overwrite crates.io pins such as `tracing-attributes`).
 

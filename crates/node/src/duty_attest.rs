@@ -1,18 +1,21 @@
-//! Sign a local attestation for owned registry indices and seed the aggregate pool.
+//! Sign a local attestation for an owned validator, publish it as a
+//! `SignedAttestation` on its subnet, and keep it for aggregation.
 
-use crate::aggregation::{PoolEntry, PoolKey};
+use crate::aggregation_gossip::AggregationGossip;
 use crate::chain_owner::ChainOwner;
 use crate::events::ChainEvent;
-use crate::gossip_pool::pool_profile_digest;
+use ethean_crypto::Signature;
+use ethean_network_wire::{fork_segment_from_name, topic_attestation};
 use ethean_primitives::ValidatorIndex;
-use ethean_types::{AggregatedAttestation, AggregationBits, AttestationData, Checkpoint};
+use ethean_types::{AttestationData, Checkpoint, SignedAttestation};
 use ethean_validator::DutyTick;
 
 /// Interval used for attestation duties (proposal uses 0).
 pub const ATTESTATION_INTERVAL: u8 = 1;
 
 /// When a local attester is installed, sign head attestation data for the first
-/// owned validator index and insert a single-bit aggregate into the pool.
+/// owned validator index, queue it for subnet gossip, and pool the signature
+/// when this node aggregates.
 pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEvent> {
     let mut out = Vec::new();
     if tick.interval != ATTESTATION_INTERVAL {
@@ -37,7 +40,11 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         slot: state.slot,
     };
     let source = state.latest_justified;
-    let target = if head.slot > source.slot { head } else { source };
+    let target = if head.slot > source.slot {
+        head
+    } else {
+        source
+    };
     let data = AttestationData {
         slot: tick.slot,
         head,
@@ -74,31 +81,28 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         }
     }
 
-    let mut bits = vec![false; n];
-    bits[index as usize] = true;
-    let Ok(agg_bits) = AggregationBits::new(bits) else {
+    let Ok(signature) = Signature::try_from_slice(&sig) else {
         return out;
     };
-    let agg = AggregatedAttestation {
-        aggregation_bits: agg_bits,
-        data,
+    let Ok(vote) = SignedAttestation::new(ValidatorIndex::new(index), data, sig.clone()) else {
+        return out;
     };
-    let attestation_ssz = agg.ssz_encode();
-    let key = PoolKey {
-        profile_digest: pool_profile_digest(),
-        message_root: data_root,
-    };
-    owner.aggregates.insert_verified(
-        key,
-        PoolEntry {
-            // Empty until leanVM / test-aggregate Type-1 prove fills a real proof.
-            // Never stuff individual XMSS signatures into the aggregate proof field.
-            proof: Vec::new(),
-            coverage: 1,
-            inserted_slot: tick.slot.get(),
-            attestation_ssz,
-        },
-    );
+    if owner.is_aggregator {
+        owner.signatures.insert(data_root, &data, index, signature);
+    }
+    if let Some(fork) = owner.profile.as_ref().map(|p| p.fork_name) {
+        let topic = fork_segment_from_name(fork)
+            .ok()
+            .and_then(|segment| topic_attestation(&segment, subnet).ok());
+        if let Some(topic) = topic {
+            owner.pending_aggregation_gossip.push(AggregationGossip {
+                topic,
+                payload: vote.ssz_encode(),
+                data_root,
+                proof_len: 0,
+            });
+        }
+    }
     out.push(ChainEvent::AttestationSigned {
         data_root,
         validator_index: ValidatorIndex::new(index),
@@ -141,12 +145,14 @@ mod tests {
     }
 
     #[test]
-    fn signs_and_seeds_pool_on_interval_1() {
+    fn signs_publishes_and_pools_own_vote() {
         let mut owner = ChainOwner::new(4);
         owner.head_state = Some(state_n(4));
         owner.head_root = [7u8; 32];
+        owner.profile = Some(ethean_profile::lstar_devnet().unwrap());
         owner.attester = Some(LocalAttester::smoke().unwrap());
         owner.owned_validator_indices = vec![2];
+        owner.is_aggregator = true;
         let tick = DutyTick {
             slot: Slot::new(3),
             interval: 1,
@@ -154,12 +160,16 @@ mod tests {
         };
         let ev = try_local_attest(&mut owner, tick);
         assert_eq!(ev.len(), 1);
-        assert!(!owner.aggregates.is_empty());
-        let key = owner.aggregates.best_entries()[0].0;
         assert!(
-            owner.aggregates.best(&key).unwrap().proof.is_empty(),
-            "XMSS must not stand in as Type-1 proof"
+            owner.aggregates.is_empty(),
+            "a vote is not an aggregate proof"
         );
+        assert_eq!(owner.signatures.len(), 1, "aggregator keeps its own vote");
+        let gossip = &owner.pending_aggregation_gossip[0];
+        assert!(gossip.topic.contains("/attestation_"), "{}", gossip.topic);
+        let vote = SignedAttestation::ssz_decode(&gossip.payload).unwrap();
+        assert_eq!(vote.validator_index.get(), 2);
+        assert_eq!(vote.data.hash_tree_root(), gossip.data_root);
         let _ = HASH32_ZERO;
     }
 }

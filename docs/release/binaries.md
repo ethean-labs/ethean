@@ -7,32 +7,33 @@ GitHub Releases can attach platform archives built by
 
 | System | Architecture | Rust target | Archive |
 | --- | --- | --- | --- |
-| Windows | x86_64 | `x86_64-pc-windows-msvc` | `.zip` |
+| Windows (experimental) | x86_64 | `x86_64-pc-windows-msvc` | `.zip` |
 | Linux | x86_64 | `x86_64-unknown-linux-gnu` | `.tar.gz` |
 | Linux | aarch64 | `aarch64-unknown-linux-gnu` (via `cross`) | `.tar.gz` |
 | macOS | aarch64 | `aarch64-apple-darwin` | `.tar.gz` |
 | macOS | x86_64 | `x86_64-apple-darwin` | `.tar.gz` |
 
-Naming: `ethean-v<VERSION>-<target>.{zip|tar.gz}` plus a sibling
-`ethean-v<VERSION>-<target>.sha256`.
+Naming: `ethean-v<VERSION>-<target>.{tar.gz|zip}` plus a sibling
+`ethean-v<VERSION>-<target>.sha256`. Each archive holds `ethean` and
+`ethean-prover`; keep them in the same directory so the node finds the prover
+(or set `ETHEAN_PROVER_BIN`).
+
+Windows is experimental: leanMultisig at leanVM `e2592df4` uses Unix-only system
+calls (`getrusage`, `mmap`) and does not compile for Windows yet, so the Windows
+job is allowed to fail and its row appears only once an archive is produced.
 
 ## Features in release builds
 
-- Package: `ethean` only (`cargo build -p ethean --release --locked`)
+- Packages: `ethean` and `ethean-prover` (`cargo build -p ethean -p ethean-prover --release --locked`)
 - Default features: `libp2p-quic` enabled
-- `test-aggregate` **off** (no keyless Type-2 proofs in shipped binaries)
+- XMSS is native; aggregate proofs use leanMultisig at leanVM `e2592df4` (pq-devnet-4 pin)
 - Optional `rocksdb` storage feature is **not** enabled (redb data-dir path)
 
 ## Local packaging
 
-```powershell
-cargo build -p ethean --release --locked --target x86_64-pc-windows-msvc
-powershell -NoProfile -File tools/release/package-ethean.ps1 -Version 0.1.47 -Target x86_64-pc-windows-msvc
-```
-
 ```bash
-cargo build -p ethean --release --locked --target x86_64-unknown-linux-gnu
-tools/release/package-ethean.sh 0.1.47 x86_64-unknown-linux-gnu
+cargo build -p ethean -p ethean-prover --release --locked --target x86_64-unknown-linux-gnu
+tools/release/package-ethean.sh 0.1.48 x86_64-unknown-linux-gnu
 ```
 
 ## Attach to an existing release

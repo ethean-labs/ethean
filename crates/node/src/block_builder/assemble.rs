@@ -1,6 +1,5 @@
 //! Assemble a Type-2 `SignedBlock` envelope from a planned proposal.
 
-use crate::block_builder::type2_envelope::{assert_sidecar_invariant, wire_proof_bytes};
 use crate::block_builder::PlanTransition;
 use ethean_network::LeanGossipTopics;
 use ethean_primitives::Hash32;
@@ -17,22 +16,17 @@ pub struct ProposalGossip {
     pub block_root: Hash32,
     /// Proposal slot (for blocks-by-range serve cache).
     pub slot: u64,
-    /// True when the envelope carries a non-empty pool Type-2 proof.
-    pub has_type2_proof: bool,
-    /// Length of the local proposer signature when present (sidecar; not in Type-2).
-    pub proposer_sig_len: usize,
+    /// Merged block proof length in bytes.
+    pub proof_len: usize,
 }
 
-/// Wrap a plan as `SignedBlock` (proof may be empty → remote uses structural STF).
-///
-/// Proposer XMSS stays off the Type-2 field under [`crate::block_builder::PROPOSER_TYPE2_POLICY`].
+/// Wrap a plan and its merged block proof as a `SignedBlock`.
 pub fn assemble_signed_block(plan: &PlanTransition) -> Result<SignedBlock, String> {
-    assert_sidecar_invariant(plan)?;
-    let proof_bytes = wire_proof_bytes(
-        &plan.aggregate_proof,
-        plan.proposer_signature.as_deref(),
-    );
-    let proof = MultiMessageAggregate::new(proof_bytes).map_err(|e| e.to_string())?;
+    if plan.aggregate_proof.is_empty() {
+        return Err("block proof missing".into());
+    }
+    let proof =
+        MultiMessageAggregate::new(plan.aggregate_proof.clone()).map_err(|e| e.to_string())?;
     Ok(SignedBlock::new(plan.block.clone(), proof))
 }
 
@@ -50,12 +44,7 @@ pub fn encode_proposal_gossip(
         payload,
         block_root,
         slot: plan.block.slot.get(),
-        has_type2_proof: !plan.aggregate_proof.is_empty(),
-        proposer_sig_len: plan
-            .proposer_signature
-            .as_ref()
-            .map(|s| s.len())
-            .unwrap_or(0),
+        proof_len: plan.aggregate_proof.len(),
     })
 }
 
@@ -76,39 +65,25 @@ mod tests {
                 body: BlockBody::default(),
             },
             aggregate_proof: proof,
-            proposer_signature: None,
+            attestation_proofs: Vec::new(),
         }
     }
 
     #[test]
-    fn assembles_empty_proof_envelope() {
-        let plan = sample_plan(Vec::new());
-        let signed = assemble_signed_block(&plan).expect("signed");
-        assert!(signed.proof.proof.is_empty());
-        assert_eq!(signed.block.state_root, [3u8; 32]);
+    fn refuses_to_assemble_without_a_block_proof() {
+        assert!(assemble_signed_block(&sample_plan(Vec::new())).is_err());
+        assert!(encode_proposal_gossip(&sample_plan(Vec::new()), "lstar").is_err());
     }
 
     #[test]
-    fn encodes_lstar_block_topic() {
+    fn encodes_lstar_block_topic_with_proof() {
         let plan = sample_plan(vec![9, 9, 9]);
         let gossip = encode_proposal_gossip(&plan, "lstar").expect("gossip");
         assert!(gossip.topic.ends_with("/block/ssz_snappy"));
-        assert!(gossip.has_type2_proof);
-        assert_eq!(gossip.proposer_sig_len, 0);
+        assert_eq!(gossip.proof_len, 3);
         assert_ne!(gossip.block_root, HASH32_ZERO);
-        assert!(!gossip.payload.is_empty());
         let decoded = SignedBlock::ssz_decode(&gossip.payload).expect("decode");
         assert_eq!(decoded.proof.proof, vec![9, 9, 9]);
-    }
-
-    #[test]
-    fn records_proposer_sig_len_without_type2() {
-        let mut plan = sample_plan(Vec::new());
-        plan.proposer_signature = Some(vec![1; 32]);
-        let gossip = encode_proposal_gossip(&plan, "lstar").expect("gossip");
-        assert!(!gossip.has_type2_proof);
-        assert_eq!(gossip.proposer_sig_len, 32);
-        let decoded = SignedBlock::ssz_decode(&gossip.payload).expect("decode");
-        assert!(decoded.proof.proof.is_empty());
+        assert_eq!(decoded.block.state_root, [3u8; 32]);
     }
 }

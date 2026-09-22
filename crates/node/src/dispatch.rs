@@ -3,8 +3,8 @@
 use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::events::ChainEvent;
+use crate::gossip_attestation::ingest_attestation_gossip;
 use crate::gossip_decode::{content_root_for, try_decode_block};
-use crate::gossip_pool::ingest_into_pool;
 use crate::gossip_stf::import_decoded_block;
 use crate::shutdown::ShutdownState;
 
@@ -77,16 +77,19 @@ fn ingest_gossip(
     let content_root = content_root_for(&topic, &payload);
     owner.last_gossip_root = Some(content_root);
 
-    let _ = ingest_into_pool(&mut owner.aggregates, &topic, &payload);
+    if let Some(Err(reason)) = ingest_attestation_gossip(owner, &topic, &payload) {
+        tracing::debug!(%topic, %reason, "attestation gossip rejected");
+    }
 
     if let Some(decoded) = try_decode_block(&topic, &payload) {
         match import_decoded_block(owner, shutdown, &decoded) {
-            crate::gossip_stf::GossipStfResult::Applied { .. }
-            | crate::gossip_stf::GossipStfResult::AppliedVerified { .. }
-            | crate::gossip_stf::GossipStfResult::RootOnly { .. } => {
+            crate::gossip_stf::GossipStfResult::Applied { .. } => {
                 owner.remember_durable_block(decoded.root, payload.clone());
             }
-            _ => {}
+            crate::gossip_stf::GossipStfResult::Rejected { reason } => {
+                tracing::info!(root0 = decoded.root[0], %reason, "gossip block rejected");
+            }
+            crate::gossip_stf::GossipStfResult::Skipped => {}
         }
     }
 
@@ -150,7 +153,7 @@ mod tests {
     }
 
     #[test]
-    fn ingest_gossip_records_content_root() {
+    fn ingest_gossip_records_content_root_and_rejects_garbage_aggregates() {
         let mut owner = ChainOwner::new(2);
         let mut shutdown = ShutdownState::default();
         let ev = apply_command(
@@ -168,11 +171,14 @@ mod tests {
             ChainEvent::GossipIngested { content_root, .. } if content_root == root
         ));
         assert_eq!(owner.head_root, [0u8; 32]);
-        assert_eq!(owner.aggregates.len(), 1);
+        assert!(
+            owner.aggregates.is_empty(),
+            "unverifiable payloads never enter the pool"
+        );
     }
 
     #[test]
-    fn ingest_block_advances_head_when_parent_matches() {
+    fn unsigned_block_gossip_is_not_imported() {
         use ethean_primitives::{Slot, ValidatorIndex};
         use ethean_types::{Block, BlockBody};
 
@@ -186,30 +192,24 @@ mod tests {
             state_root: [7u8; 32],
             body: BlockBody::default(),
         };
-        let enc = block.ssz_encode().unwrap();
-        let root = block.hash_tree_root().unwrap();
-        let ev = apply_command(
+        let _ = apply_command(
             &mut owner,
             &mut shutdown,
             ChainCommand::IngestGossip {
                 topic: "/leanconsensus/abcd/block/ssz_snappy".into(),
-                payload: enc,
+                payload: block.ssz_encode().unwrap(),
                 peer: None,
             },
         );
-        assert_eq!(owner.head_root, root);
-        assert_eq!(owner.last_gossip_root, Some(root));
-        assert!(matches!(
-            ev,
-            ChainEvent::GossipIngested { content_root, .. } if content_root == root
-        ));
+        assert_eq!(owner.head_root, [1u8; 32]);
     }
 
     #[test]
-    fn ingest_attestation_fills_aggregate_pool() {
+    fn unsigned_attestations_are_rejected() {
         use ethean_types::{AggregatedAttestation, AggregationBits, AttestationData, Checkpoint};
 
         let mut owner = ChainOwner::new(2);
+        owner.is_aggregator = true;
         let mut shutdown = ShutdownState::default();
         let agg = AggregatedAttestation {
             aggregation_bits: AggregationBits {
@@ -222,17 +222,16 @@ mod tests {
                 source: Checkpoint::genesis(),
             },
         };
-        let enc = agg.ssz_encode();
         let _ = apply_command(
             &mut owner,
             &mut shutdown,
             ChainCommand::IngestGossip {
                 topic: "/leanconsensus/abcd/attestation_0/ssz_snappy".into(),
-                payload: enc,
+                payload: agg.ssz_encode(),
                 peer: None,
             },
         );
-        assert_eq!(owner.aggregates.len(), 1);
-        assert_eq!(owner.head_root, [0u8; 32]);
+        assert!(owner.aggregates.is_empty());
+        assert!(owner.signatures.is_empty());
     }
 }

@@ -2,6 +2,7 @@
 
 Dated development notes for this topic. Index: [../README.md](../../README.md).
 
+- [leanmultisig aggregation](leanmultisig-aggregation-2026-09-23.md)
 - [native xmss backend](native-xmss-backend-2026-09-22.md)
 - [aggregator prove ipc route](aggregator-prove-ipc-route-2026-09-20.md)
 - [attest before prove empty type1](attest-before-prove-empty-type1-2026-09-20.md)

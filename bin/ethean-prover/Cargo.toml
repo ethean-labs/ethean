@@ -1,0 +1,18 @@
+[package]
+name = "ethean-prover"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "leanMultisig prover process for Ethean (Type-1 aggregation, Type-2 merge and split)"
+
+[[bin]]
+name = "ethean-prover"
+path = "src/main.rs"
+
+[dependencies]
+ethean-multisig = { workspace = true }
+
+[dev-dependencies]
+ethean-crypto = { workspace = true }

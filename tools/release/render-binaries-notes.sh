@@ -36,9 +36,10 @@ row() {
 cat <<EOF
 ## Binaries
 
-Pre-built \`ethean\` client archives for this tag. Default features include
-QUIC (\`libp2p-quic\`). Production XMSS is native in \`ethean-crypto\`;
-\`test-aggregate\` is **not** enabled in these builds.
+Pre-built archives for this tag, each containing \`ethean\` and \`ethean-prover\`
+(the leanMultisig prover aggregators and proposers need; keep it next to \`ethean\`).
+Default features include QUIC (\`libp2p-quic\`). XMSS is native in
+\`ethean-crypto\`; aggregate proofs use leanMultisig at the pq-devnet-4 leanVM pin.
 
 Verify downloads with the matching \`.sha256\` file:
 
@@ -61,7 +62,7 @@ cat <<EOF
 Source archives are attached automatically by GitHub. Build locally with:
 
 \`\`\`bash
-cargo build -p ethean --release --locked
+cargo build -p ethean -p ethean-prover --release --locked
 \`\`\`
 
 See [docs/release/binaries.md](${REPO_URL}/blob/master/docs/release/binaries.md).

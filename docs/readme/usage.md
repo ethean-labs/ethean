@@ -22,7 +22,7 @@ Without bootnodes (`--bootnodes` / `ETHEAN_BOOTNODES` / the matching
 cargo build -p ethean --release
 ```
 
-After that build, the command is `ethean` (Windows and Linux). The build script
+After that build, the command is `ethean`. The build script
 places a shim in `~/.cargo/bin`; no `install.sh` step.
 
 ### Run (default: pq-devnet-4, local finality on)
@@ -52,15 +52,9 @@ ethean start --until-signal --no-local-finality --no-aggregator --ephemeral
 Helpers (build + long-run):
 
 ```bash
-# Unix
 ./scripts/run-pq-devnet-4.sh
 ./scripts/run-local-finality.sh          # same defaults; NETWORK=… VALIDATORS=…
 METRICS_STACK=1 ./scripts/run-local-finality.sh
-
-# Windows PowerShell
-.\scripts\run-pq-devnet-4.ps1
-.\scripts\run-local-finality.ps1
-.\scripts\run-local-finality.ps1 -MetricsStack
 ```
 
 Paste D4 QUIC multiaddrs into `config/networks/pq-devnet-4.bootnodes` (or pass
@@ -152,10 +146,6 @@ Related: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](../peer-
 Same pattern as Ream/ethlambda: create a private 2-peer mesh for this run, write
 peer A’s dialable address to `target/local-pq-mesh/nodes.multiaddrs`, then dial it.
 
-```powershell
-.\scripts\local-pq-mesh.ps1
-```
-
 ```bash
 ./scripts/local-pq-mesh.sh
 ```
@@ -196,7 +186,6 @@ ethean start --until-signal --network pq-devnet-5
 
 # Helpers
 ./scripts/run-pq-devnet-5.sh
-# Windows: .\scripts\run-pq-devnet-5.ps1
 ```
 
 ### What you will see
@@ -293,7 +282,6 @@ Manual stack only (if you prefer not to use `--metrics`):
 
 ```bash
 ./scripts/run-observability.sh
-# Windows: .\scripts\run-observability.ps1
 # or: cd deploy/observability && docker compose up -d
 ```
 
@@ -452,10 +440,10 @@ RUST_BACKTRACE=1 Ethean start
 
 ### Common issues
 
-- Blank Grafana/Prometheus (:3000 / :9090): Docker Desktop is not running. Scrape
+- Blank Grafana/Prometheus (:3000 / :9090): the Docker daemon is not running. Scrape
   at :9100 still works without Docker.
 - Empty bootnodes file: offline under the network label (expected). Paste operator
-  multiaddrs or run scripts/local-pq-mesh.* for a private mesh.
+  multiaddrs or run scripts/local-pq-mesh.sh for a private mesh.
 - ethean not found: ensure ~/.cargo/bin is on PATH after cargo build -p ethean.
 
 See also [deployment.md](../deployment.md) and

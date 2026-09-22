@@ -63,11 +63,8 @@ pub fn ingest_blocks_by_root_response(
             #[cfg(feature = "libp2p-quic")]
             {
                 let _ = facade.put_block_bytes(decoded.root, blob.clone());
-                let _ = facade.put_block_at_slot(
-                    decoded.block.slot.get(),
-                    decoded.root,
-                    blob.clone(),
-                );
+                let _ =
+                    facade.put_block_at_slot(decoded.block.slot.get(), decoded.root, blob.clone());
             }
             #[cfg(not(feature = "libp2p-quic"))]
             {
@@ -97,9 +94,7 @@ pub fn ingest_blocks_by_root_response(
                     },
                 );
             }
-            GossipStfResult::Applied { .. }
-            | GossipStfResult::AppliedVerified { .. }
-            | GossipStfResult::RootOnly { .. } => {
+            GossipStfResult::Applied { .. } => {
                 owner.remember_durable_block(decoded.root, blob.clone());
                 info!(
                     peer0 = peer[0],
@@ -109,8 +104,13 @@ pub fn ingest_blocks_by_root_response(
                 );
                 drain_orphans(owner, shutdown, &mut out.events);
             }
-            GossipStfResult::Skipped | GossipStfResult::Rejected => {
-                info!(peer0 = peer[0], root0 = decoded.root[0], ?stf, "sync block not applied");
+            GossipStfResult::Skipped | GossipStfResult::Rejected { .. } => {
+                info!(
+                    peer0 = peer[0],
+                    root0 = decoded.root[0],
+                    ?stf,
+                    "sync block not applied"
+                );
             }
         }
     }
@@ -121,11 +121,7 @@ pub fn ingest_blocks_by_root_response(
     out
 }
 
-fn drain_orphans(
-    owner: &mut ChainOwner,
-    shutdown: &ShutdownState,
-    events: &mut Vec<ChainEvent>,
-) {
+fn drain_orphans(owner: &mut ChainOwner, shutdown: &ShutdownState, events: &mut Vec<ChainEvent>) {
     loop {
         let Some((root, orphan)) = owner.sync_orphans.take_child_of(owner.head_root) else {
             break;
@@ -135,9 +131,7 @@ fn drain_orphans(
         };
         let stf = import_decoded_block(owner, shutdown, &decoded);
         match stf {
-            GossipStfResult::Applied { .. }
-            | GossipStfResult::AppliedVerified { .. }
-            | GossipStfResult::RootOnly { .. } => {
+            GossipStfResult::Applied { .. } => {
                 owner.remember_durable_block(root, orphan.blob.clone());
                 events.push(ChainEvent::GossipIngested {
                     topic: SYNC_BLOCK_TOPIC.to_string(),
@@ -159,7 +153,7 @@ mod tests {
     use ethean_primitives::{Slot, ValidatorIndex};
     use ethean_types::{Block, BlockBody, MultiMessageAggregate, SignedBlock};
 
-    fn signed_child(parent: [u8; 32], slot: u64, tag: u8) -> ( [u8; 32], Vec<u8> ) {
+    fn signed_child(parent: [u8; 32], slot: u64, tag: u8) -> ([u8; 32], Vec<u8>) {
         let block = Block {
             slot: Slot::new(slot),
             proposer_index: ValidatorIndex::new(0),
@@ -173,31 +167,30 @@ mod tests {
     }
 
     #[test]
-    fn ingests_signed_block_from_response() {
-        let (root, enc) = signed_child([0u8; 32], 1, 2);
+    fn never_advances_head_without_a_verified_block() {
+        let (_root, enc) = signed_child([0u8; 32], 1, 2);
         let payload = encode_blocks_by_root_response(&[enc]).unwrap();
         let mut owner = ChainOwner::new(2);
         owner.head_root = [0u8; 32];
         let mut shutdown = ShutdownState::default();
         let out =
             ingest_blocks_by_root_response(&mut owner, &mut shutdown, None, [9u8; 32], &payload);
-        assert_eq!(out.events.len(), 1);
-        assert!(out.fetch_roots.is_empty());
-        assert_eq!(owner.head_root, root);
+        assert_eq!(out.events.len(), 1, "ingest is observed");
+        assert_eq!(
+            owner.head_root, [0u8; 32],
+            "no state and no proof: head unchanged"
+        );
     }
 
     #[test]
-    fn orphans_tip_then_applies_after_parent() {
+    fn orphaned_tip_requests_its_parent() {
         let genesis = [0u8; 32];
-        let (mid_root, mid_enc) = signed_child(genesis, 1, 3);
-        let (tip_root, tip_enc) = signed_child(mid_root, 2, 4);
-
+        let (mid_root, _mid_enc) = signed_child(genesis, 1, 3);
+        let (_tip_root, tip_enc) = signed_child(mid_root, 2, 4);
         let mut owner = ChainOwner::new(2);
         owner.head_root = genesis;
         let mut shutdown = ShutdownState::default();
-
-        // Tip arrives first → orphan + fetch mid.
-        let tip_payload = encode_blocks_by_root_response(&[tip_enc.clone()]).unwrap();
+        let tip_payload = encode_blocks_by_root_response(&[tip_enc]).unwrap();
         let out = ingest_blocks_by_root_response(
             &mut owner,
             &mut shutdown,
@@ -208,18 +201,5 @@ mod tests {
         assert_eq!(owner.head_root, genesis);
         assert_eq!(out.fetch_roots, vec![mid_root]);
         assert_eq!(owner.sync_orphans.len(), 1);
-
-        // Mid arrives → import mid, drain tip.
-        let mid_payload = encode_blocks_by_root_response(&[mid_enc]).unwrap();
-        let out2 = ingest_blocks_by_root_response(
-            &mut owner,
-            &mut shutdown,
-            None,
-            [9u8; 32],
-            &mid_payload,
-        );
-        assert_eq!(owner.head_root, tip_root);
-        assert!(out2.fetch_roots.is_empty());
-        assert!(owner.sync_orphans.is_empty());
     }
 }

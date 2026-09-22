@@ -11,7 +11,7 @@ pub fn ensure_stack() -> Result<(), String> {
     let Some(dir) = find_observability_dir() else {
         warn!(
             "deploy/observability not found; start Grafana/Prometheus manually \
-             (./scripts/run-observability.sh or .\\scripts\\run-observability.ps1)"
+             (./scripts/run-observability.sh)"
         );
         return Ok(());
     };
@@ -31,8 +31,8 @@ pub fn ensure_stack() -> Result<(), String> {
             warn!(
                 error = %e,
                 "Docker CLI not found — Grafana :3000 and Prometheus :9090 will stay blank. \
-                 Install and start Docker Desktop, then re-run with --metrics \
-                 (or .\\scripts\\run-observability.ps1). Port change is not needed; \
+                 Install Docker Engine with the compose plugin, then re-run with --metrics \
+                 (or ./scripts/run-observability.sh). Port change is not needed; \
                  only :9100 is from ethean itself."
             );
             return Ok(());
@@ -70,26 +70,19 @@ fn combine_output(stdout: &[u8], stderr: &[u8]) -> String {
 /// Operator-facing hint from `docker compose` stdout/stderr.
 fn compose_failure_hint(output: &str) -> &'static str {
     let t = output.to_ascii_lowercase();
-    if t.contains("dockerdesktoplinuxengine")
-        || t.contains("500 internal server error")
-        || t.contains("/_ping")
-        || t.contains("requested api version")
+    if t.contains("permission denied") && t.contains("docker.sock") {
+        "the current user cannot reach /var/run/docker.sock. Add it to the docker \
+         group (`sudo usermod -aG docker $USER`, then log in again) and re-run --metrics"
+    } else if t.contains("cannot connect to the docker daemon")
+        || t.contains("is the docker daemon running")
     {
-        "Docker Desktop UI is up but the Linux engine is down (HTTP 500 on \
-         dockerDesktopLinuxEngine/_ping). On Windows this is usually Hyper-V / \
-         Virtual Machine Platform off (HCS_E_HYPERV_NOT_INSTALLED). Admin PowerShell: \
-         wsl.exe --install --no-distribution, enable Virtual Machine Platform, reboot, \
-         then start Docker Desktop and wait until Engine is running"
-    } else if t.contains("wsl") || t.contains("sistem dosyaya") {
-        "often Docker Desktop/WSL (wsl.exe exit 1, 'Sistem dosyaya erişemiyor'). \
-         Fix: restart Docker Desktop, or `wsl --update` / enable Virtual Machine \
-         Platform; or skip --metrics and use curl on :9100 only"
-    } else if t.contains("npipe") || t.contains("cannot connect to the docker") {
-        "Docker CLI is present but the daemon is not ready. Start Docker Desktop, \
-         wait until Engine is running, then re-run --metrics"
+        "Docker CLI is present but the daemon is not running. Start it with \
+         `sudo systemctl start docker`, then re-run --metrics"
+    } else if t.contains("unknown command") || t.contains("'compose' is not a docker command") {
+        "the Docker compose plugin is missing. Install docker-compose-plugin, then re-run --metrics"
     } else {
-        "start Docker Desktop, wait until Engine is running, then re-run --metrics \
-         (or .\\scripts\\run-observability.ps1). Or skip --metrics and scrape :9100 only"
+        "check `docker compose up -d` in deploy/observability, then re-run --metrics \
+         (or ./scripts/run-observability.sh). Or skip --metrics and scrape :9100 only"
     }
 }
 
@@ -140,16 +133,16 @@ mod tests {
     }
 
     #[test]
-    fn hint_for_engine_500_ping() {
-        let s = "request returned 500 Internal Server Error for API route and version \
-                 http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/_ping, check if the \
-                 server supports the requested API version";
-        assert!(compose_failure_hint(s).contains("Hyper-V"));
+    fn hint_for_daemon_down() {
+        let s = "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. \
+                 Is the docker daemon running?";
+        assert!(compose_failure_hint(s).contains("systemctl start docker"));
     }
 
     #[test]
-    fn hint_for_npipe_daemon_down() {
-        let s = "failed to connect to the docker API at npipe://./pipe/docker_engine";
-        assert!(compose_failure_hint(s).contains("daemon is not ready"));
+    fn hint_for_socket_permission() {
+        let s = "permission denied while trying to connect to the Docker daemon socket \
+                 at unix:///var/run/docker.sock";
+        assert!(compose_failure_hint(s).contains("docker group"));
     }
 }

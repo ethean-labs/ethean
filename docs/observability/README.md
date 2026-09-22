@@ -16,7 +16,5 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [node safe target reorg metrics](node-safe-target-reorg-metrics-2026-09-20.md)
 - [long run metrics grafana](long-run-metrics-grafana-2026-09-20.md)
 - [metrics flag starts grafana prometheus](metrics-flag-starts-grafana-prometheus-2026-09-20.md)
-- [observability docker daemon guard](observability-docker-daemon-guard-2026-09-20.md)
 - [observability wall tick hard scan](observability-wall-tick-hard-scan-2026-09-19.md)
-- [observability wsl broken blocks docker](observability-wsl-broken-blocks-docker-2026-09-20.md)
 - [range serve seed metrics](range-serve-seed-metrics-2026-09-20.md)

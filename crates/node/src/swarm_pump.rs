@@ -29,8 +29,8 @@ pub struct PublishedBlock {
     pub topic: String,
     /// Uncompressed SSZ payload length.
     pub payload_len: usize,
-    /// Whether the envelope carried a Type-2 proof.
-    pub has_type2_proof: bool,
+    /// Merged block proof length in bytes.
+    pub proof_len: usize,
 }
 
 /// Drain up to `max_events` swarm events without blocking longer than `idle`.
@@ -94,7 +94,7 @@ pub fn publish_pending_block(
             Ok(Some(PublishedBlock {
                 topic: gossip.topic,
                 payload_len: gossip.payload.len(),
-                has_type2_proof: gossip.has_type2_proof,
+                proof_len: gossip.proof_len,
             }))
         }
         Err(e) => {
@@ -116,7 +116,7 @@ pub fn publish_pending_block(
                 return Ok(Some(PublishedBlock {
                     topic: gossip.topic,
                     payload_len: gossip.payload.len(),
-                    has_type2_proof: gossip.has_type2_proof,
+                    proof_len: gossip.proof_len,
                 }));
             }
             // Restore so a later flush can retry.
@@ -135,7 +135,7 @@ pub fn flush_pending_event(
         crate::events::ChainEvent::ProposalPublished {
             topic: p.topic,
             payload_len: p.payload_len,
-            has_type2_proof: p.has_type2_proof,
+            proof_len: p.proof_len,
         }
     }))
 }

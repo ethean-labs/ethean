@@ -9,8 +9,9 @@ use tracing::{info, warn};
 impl EtheanClient {
     /// Prefer Hive registry proposal/attestation keys when present.
     ///
-    /// Import requires `leansig-backend`; otherwise existing local signers are
-    /// left unchanged and a warning is logged.
+    /// Keys are native XMSS; a key that fails to install leaves the existing
+    /// signer unchanged and logs a warning. Installing a proposer also starts
+    /// the proof service when an `ethean-prover` binary is available.
     pub fn apply_registry_keys(&mut self, keys: &LoadedNodeKeys) {
         info!(
             node_id = %keys.node_id,
@@ -49,6 +50,7 @@ impl EtheanClient {
                     "installed registry proposal privkey into LocalProposer"
                 );
                 self.owner.proposer = Some(proposer);
+                self.ensure_prover();
             }
             Err(e) => {
                 warn!(

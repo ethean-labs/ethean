@@ -17,11 +17,11 @@ Machine-readable record: [`manifest.toml`](./manifest.toml).
 
 ## Retrieval (operator / CI)
 
-```powershell
+```bash
 # Example only — always verify digest before extraction
-$url = "https://github.com/leanEthereum/leanSpec/releases/download/latest/fixtures-prod-scheme.tar.gz"
+url="https://github.com/leanEthereum/leanSpec/releases/download/latest/fixtures-prod-scheme.tar.gz"
 # Download to a local cache path outside the git tree, then:
-# Get-FileHash <path> -Algorithm SHA256
+# sha256sum <path>
 # Compare to manifest.toml sha256 and size_bytes
 ```
 

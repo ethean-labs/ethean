@@ -1,25 +1,13 @@
-//! Type-1 / Type-2 aggregate proof verification (Phase 08).
+//! Aggregate-proof parameters and the verifier interface.
 //!
-//! Production leanVM verify fails closed until the pinned backend compiles.
-//! `test-aggregate` provides a statement-bound synthetic verifier for unit tests
-//! (never always-true on arbitrary bytes).
+//! Proof generation and verification live in `ethean-multisig` (leanMultisig);
+//! this crate only defines what consensus code needs to call it.
 
 mod bindings;
-mod merge;
-mod prove;
-mod split;
-mod statement;
-mod statement_wire;
-mod verify;
+mod verifier;
 
 pub use bindings::{
-    assert_aggregation_invariants, aggregation_fingerprint, LEANVM_REV, LOG_INV_RATE,
+    aggregation_fingerprint, assert_aggregation_invariants, LEANVM_REV, LOG_INV_RATE,
     MAX_PROOF_BYTES, MAX_TYPE2_COMPONENTS, PROD_AGGREGATION_FINGERPRINT,
 };
-pub use merge::{merge_type1, merge_type1_statements};
-pub use prove::{prove_type1, prove_type2};
-pub use split::{attestation_leaves_from_type2, split_type2_to_type1, Type1Leaf};
-pub use statement::{
-    AggregateStatement, ParticipantSet, ProofKind, Type2ComponentRef, MAX_PARTICIPANTS,
-};
-pub use verify::{verify_statement_shape, verify_type1, verify_type2};
+pub use verifier::{AggregateVerifier, ProofComponent};
