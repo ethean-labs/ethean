@@ -23,3 +23,19 @@ stanzas in `Cargo.lock`. Do not blanket-replace version strings in the lockfile
 (that can overwrite crates.io pins such as `tracing-attributes`).
 
 Then commit `VERSION` + `Cargo.toml` + `Cargo.lock`.
+
+## Changelog and Releases
+
+After a finished development update, append a short bullet under
+`## [Unreleased]` in [`CHANGELOG.md`](../CHANGELOG.md) when the change is
+operator-visible (API, CLI, storage schema, networking, crypto gates,
+metrics, or breaking behaviour). Skip pure docs/process noise.
+
+When cutting a public milestone:
+
+1. Move `[Unreleased]` items into a new `## [X.Y.Z] - YYYY-MM-DD` section.
+2. Add compare links at the bottom of `CHANGELOG.md`.
+3. Create an annotated tag `vX.Y.Z` on the release commit and a notes-only
+   GitHub Release whose body matches that section.
+4. Leave binary / SBOM attachment to the repro path under `tools/release/`
+   when promotion gates require it.
