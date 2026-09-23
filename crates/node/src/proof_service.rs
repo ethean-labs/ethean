@@ -6,6 +6,7 @@
 
 use std::collections::HashSet;
 use std::sync::mpsc::{self, Receiver, SyncSender, TryRecvError, TrySendError};
+use std::time::{Duration, Instant};
 
 use ethean_crypto::{PublicKey, Signature};
 use ethean_multisig::{KeyedProof, ProverClient, ProverConfig};
@@ -44,14 +45,19 @@ pub enum ProofOutcome {
         data: AttestationData,
         participants: Vec<bool>,
         proof: Result<Vec<u8>, String>,
+        /// Wall time the prover spent on this job.
+        elapsed: Duration,
     },
     Block {
         plan: PlanTransition,
         proof: Result<Vec<u8>, String>,
+        /// Wall time the prover spent on this job.
+        elapsed: Duration,
     },
 }
 
 fn run(client: &ProverClient, job: ProofJob) -> ProofOutcome {
+    let started = Instant::now();
     match job {
         ProofJob::Attestation {
             data,
@@ -66,6 +72,7 @@ fn run(client: &ProverClient, job: ProofJob) -> ProofOutcome {
                 data,
                 participants,
                 proof,
+                elapsed: started.elapsed(),
             }
         }
         ProofJob::Block {
@@ -95,7 +102,11 @@ fn run(client: &ProverClient, job: ProofJob) -> ProofOutcome {
                         .merge_type2(attestation_proofs)
                         .map_err(|e| e.to_string())
                 });
-            ProofOutcome::Block { plan, proof }
+            ProofOutcome::Block {
+                plan,
+                proof,
+                elapsed: started.elapsed(),
+            }
         }
     }
 }

@@ -50,7 +50,8 @@ async fn handle_conn(
     let path = parse_path(&req);
     let (status, content_type, body) = match path.as_str() {
         "/metrics" => {
-            let text = registry.with_ref(export_prometheus_text);
+            let mut text = registry.with_ref(export_prometheus_text);
+            text.push_str(&crate::lean::export_lean_text());
             (200, "text/plain; version=0.0.4; charset=utf-8", text)
         }
         "/healthz" => (200, "text/plain; charset=utf-8", "ok\n".into()),

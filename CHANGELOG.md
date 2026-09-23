@@ -14,6 +14,11 @@ the curated operator-facing summary, not a dump of every working note.
 
 ### Added
 
+- leanMetrics standard metrics (`lean_*`, metrics schema `ethean-metrics-v3`):
+  all 63 metrics of leanEthereum/leanMetrics with matching types, labels and
+  buckets, recorded across signing, aggregation, block production, state
+  transition, gossip and peers; Grafana provisions the leanMetrics interop
+  dashboard. Existing `ethean_*` metrics are unchanged.
 - leanMultisig aggregation at leanVM `e2592df4` (the pq-devnet-4 pin shared with
   ream, ethlambda and zeam): in-process Type-1 / Type-2 verification
   (`ethean-multisig`) and proving in the new `ethean-prover` process.

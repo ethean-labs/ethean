@@ -21,12 +21,7 @@ impl EtheanClient {
             .owner
             .head_state
             .as_ref()
-            .map(|s| {
-                (
-                    s.latest_justified.slot.get(),
-                    s.latest_finalized.slot.get(),
-                )
-            })
+            .map(|s| (s.latest_justified.slot.get(), s.latest_finalized.slot.get()))
             .unwrap_or((0, 0));
         let finalized_root = self
             .owner
@@ -75,6 +70,8 @@ impl EtheanClient {
         )?;
         self.observability
             .record_reorg_total(self.owner.reorg_total)?;
+        crate::lean_metrics::refresh(&self.owner, current, peers);
+        crate::lean_metrics::node_facts(&self.owner, env!("CARGO_PKG_VERSION"));
         self.observability.record_roles(
             validators,
             self.owner.is_aggregator,

@@ -54,11 +54,11 @@ pub fn on_pump_event(
     local: &Status,
 ) -> usize {
     match event {
-        PumpEvent::ConnectionEstablished { peer: Some(peer) } => {
+        PumpEvent::ConnectionEstablished { peer: Some(peer), .. } => {
             book.on_peer_connected(*peer, local.clone());
             1
         }
-        PumpEvent::ConnectionClosed { peer: Some(peer) } => {
+        PumpEvent::ConnectionClosed { peer: Some(peer), .. } => {
             book.on_peer_disconnected(peer);
             0
         }
@@ -146,7 +146,7 @@ mod tests {
         let peer = [9u8; 32];
         let n = on_pump_event(
             &mut book,
-            &PumpEvent::ConnectionEstablished { peer: Some(peer) },
+            &PumpEvent::ConnectionEstablished { peer: Some(peer), outbound: true },
             &local,
         );
         assert_eq!(n, 1);

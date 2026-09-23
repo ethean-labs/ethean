@@ -17,18 +17,29 @@ pub fn collect_proofs(owner: &mut ChainOwner) -> Vec<ChainEvent> {
                 data,
                 participants,
                 proof,
+                elapsed,
             } => {
                 let result = proof.and_then(|p| {
-                    crate::aggregation_duty::accept_attestation_proof(owner, data, participants, p)
+                    crate::aggregation_duty::accept_attestation_proof(
+                        owner,
+                        data,
+                        participants,
+                        p,
+                        elapsed,
+                    )
                 });
                 match result {
                     Ok(event) => events.push(event),
                     Err(error) => events.push(failed("attestation", error)),
                 }
             }
-            ProofOutcome::Block { plan, proof } => {
-                let result =
-                    proof.and_then(|p| crate::duty_propose::accept_block_proof(owner, plan, p));
+            ProofOutcome::Block {
+                plan,
+                proof,
+                elapsed,
+            } => {
+                let result = proof
+                    .and_then(|p| crate::duty_propose::accept_block_proof(owner, plan, p, elapsed));
                 match result {
                     Ok(mut evs) => events.append(&mut evs),
                     Err(error) => events.push(failed("block", error)),

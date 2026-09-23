@@ -13,11 +13,13 @@ use crate::events::ChainEvent;
 use crate::proof_service::ProofJob;
 use crate::registry_keys_view::{attestation_keys_for_bits, proposal_key};
 use ethean_crypto::Signature;
+use ethean_metrics::lean::{inc, observe_since};
 use ethean_multisig::{KeyedProof, LeanMultisigVerifier};
 use ethean_primitives::ValidatorIndex;
 use ethean_transition::{apply_block, TransitionContext};
 use ethean_types::{MultiMessageAggregate, SignedBlock};
 use ethean_validator::DutyTick;
+use std::time::Instant;
 
 /// Plan a proposal for an owned slot and request its block proof.
 pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEvent> {
@@ -35,7 +37,8 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
         return out;
     }
     let proposer = ValidatorIndex::new(tick.slot.get() % n);
-    let mut plan = match plan_from_pool(
+    let build_started = Instant::now();
+    let planned = plan_from_pool(
         &owner.aggregates,
         owner.head_root,
         tick.slot,
@@ -43,9 +46,15 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
         &pre,
         profile,
         16,
-    ) {
-        Ok(p) => p,
+    );
+    observe_since("lean_block_building_time_seconds", &[], build_started);
+    let mut plan = match planned {
+        Ok(p) => {
+            inc("lean_block_building_success_total", &[], 1.0);
+            p
+        }
         Err(e) => {
+            inc("lean_block_building_failures_total", &[], 1.0);
             tracing::debug!(error = %e, slot = tick.slot.get(), "proposal plan skipped");
             return out;
         }
@@ -157,6 +166,7 @@ pub fn accept_block_proof(
     owner: &mut ChainOwner,
     mut plan: PlanTransition,
     proof: Vec<u8>,
+    aggregation: std::time::Duration,
 ) -> Result<Vec<ChainEvent>, String> {
     if owner.head_root != plan.parent_root {
         return Err("head moved while the block proof was built".into());
@@ -166,8 +176,17 @@ pub fn accept_block_proof(
     plan.aggregate_proof = proof;
     let signed = assemble_signed_block(&plan)?;
     let ctx = TransitionContext::new(profile.clone());
+    let started = Instant::now();
     let applied = apply_block(&pre, &signed, &ctx, &LeanMultisigVerifier)
         .map_err(|e| format!("own block rejected: {e}"))?;
+    crate::lean_metrics::transition(started.elapsed(), &applied.timings);
+    let payloads = plan.block.body.attestations.len() as f64;
+    ethean_metrics::lean::observe("lean_block_aggregated_payloads", &[], payloads);
+    ethean_metrics::lean::observe(
+        "lean_block_building_payload_aggregation_time_seconds",
+        &[],
+        aggregation.as_secs_f64(),
+    );
     let gossip = encode_proposal_gossip(&plan, profile.fork_name)?;
     let root = gossip.block_root;
     owner.head_state = Some(applied.post_state);

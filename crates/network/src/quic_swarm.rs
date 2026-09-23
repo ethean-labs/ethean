@@ -251,13 +251,32 @@ impl QuicSwarm {
     /// Pump one swarm event; validates inbound gossip against Lean rules.
     pub async fn pump_once(&mut self) -> PumpEvent {
         match self.swarm.select_next_some().await {
-            SwarmEvent::ConnectionEstablished { peer_id, .. } => {
+            SwarmEvent::ConnectionEstablished {
+                peer_id, endpoint, ..
+            } => {
                 let peer = self.remember_peer(peer_id);
-                PumpEvent::ConnectionEstablished { peer: Some(peer) }
+                PumpEvent::ConnectionEstablished {
+                    peer: Some(peer),
+                    outbound: endpoint.is_dialer(),
+                }
             }
-            SwarmEvent::ConnectionClosed { peer_id, .. } => {
+            SwarmEvent::ConnectionClosed {
+                peer_id,
+                endpoint,
+                cause,
+                ..
+            } => {
                 let peer = self.forget_peer(&peer_id);
-                PumpEvent::ConnectionClosed { peer: Some(peer) }
+                let reason = match &cause {
+                    None => "local_close",
+                    Some(libp2p::swarm::ConnectionError::KeepAliveTimeout) => "timeout",
+                    Some(_) => "error",
+                };
+                PumpEvent::ConnectionClosed {
+                    peer: Some(peer),
+                    outbound: endpoint.is_dialer(),
+                    reason,
+                }
             }
             SwarmEvent::OutgoingConnectionError { .. } => PumpEvent::OutgoingError,
             SwarmEvent::IncomingConnectionError { .. } => PumpEvent::IncomingError,

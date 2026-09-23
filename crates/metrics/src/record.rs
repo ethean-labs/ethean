@@ -140,10 +140,18 @@ pub fn ensure_core_families(reg: &mut Registry) -> Result<()> {
             MetricKind::Gauge,
         ),
         ("ready", "1 if process ready", MetricKind::Gauge),
-        ("ready_storage", "1 if storage gate passed", MetricKind::Gauge),
+        (
+            "ready_storage",
+            "1 if storage gate passed",
+            MetricKind::Gauge,
+        ),
         ("ready_crypto", "1 if crypto gate passed", MetricKind::Gauge),
         ("ready_signer", "1 if signer gate passed", MetricKind::Gauge),
-        ("ready_network", "1 if network gate passed", MetricKind::Gauge),
+        (
+            "ready_network",
+            "1 if network gate passed",
+            MetricKind::Gauge,
+        ),
         ("ready_prover", "1 if prover gate passed", MetricKind::Gauge),
     ];
     for (name, help, kind) in specs {

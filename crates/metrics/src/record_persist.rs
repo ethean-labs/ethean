@@ -16,10 +16,7 @@ pub fn record_durable_persist(
         reg.inc("durable_blocks_flushed_total", flushed_blocks as f64)?;
     }
     if files_removed > 0 {
-        reg.inc(
-            "durable_blocks_pruned_files_total",
-            files_removed as f64,
-        )?;
+        reg.inc("durable_blocks_pruned_files_total", files_removed as f64)?;
     }
     if redb_removed > 0 {
         reg.inc("durable_blocks_pruned_redb_total", redb_removed as f64)?;
@@ -37,10 +34,7 @@ pub fn record_range_serve(
     cache_slots: u64,
 ) -> Result<()> {
     reg.set("blocks_by_range_serve_found_total", found_total as f64)?;
-    reg.set(
-        "blocks_by_range_serve_missing_total",
-        missing_total as f64,
-    )?;
+    reg.set("blocks_by_range_serve_missing_total", missing_total as f64)?;
     reg.set("blocks_by_range_serve_cache_slots", cache_slots as f64)?;
     Ok(())
 }

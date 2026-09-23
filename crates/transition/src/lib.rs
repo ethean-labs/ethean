@@ -20,7 +20,7 @@ pub use block_proof::{block_proof_components, participant_indices, verify_block_
 pub use context::TransitionContext;
 pub use error::TransitionError;
 pub use opts::TransitionOpts;
-pub use outcome::TransitionOutcome;
+pub use outcome::{TransitionOutcome, TransitionTimings};
 pub use slot::process_slots;
 
 pub use block::{process_block, process_block_header};
@@ -28,6 +28,8 @@ pub use helpers::proposer_for_slot;
 pub use operation::{
     check_attestation_data_structure, distinct_attestation_data_count, process_attestations,
 };
+
+use std::time::Instant;
 
 use ethean_crypto::AggregateVerifier;
 use ethean_types::{Block, SignedBlock, State};
@@ -58,9 +60,33 @@ pub fn apply_block_unverified(
     ctx: &TransitionContext,
 ) -> Result<TransitionOutcome, TransitionError> {
     let mut state = pre.clone();
+    let started = Instant::now();
+    let from_slot = state.slot.get();
     process_slots(&mut state, block.slot)?;
-    process_block(&mut state, block, ctx)?;
-    finish_unverified(state, block)
+    let mut timings = TransitionTimings {
+        slots_processed: block.slot.get().saturating_sub(from_slot),
+        slots: started.elapsed(),
+        ..TransitionTimings::default()
+    };
+    timed_block(&mut state, block, ctx, &mut timings)?;
+    finish_unverified(state, block, timings)
+}
+
+/// `process_block` with the block and attestation phases timed.
+fn timed_block(
+    state: &mut State,
+    block: &Block,
+    ctx: &TransitionContext,
+    timings: &mut TransitionTimings,
+) -> Result<(), TransitionError> {
+    let started = Instant::now();
+    process_block_header(state, block)?;
+    let attestations_started = Instant::now();
+    process_attestations(state, &block.body.attestations, ctx)?;
+    timings.attestations = attestations_started.elapsed();
+    timings.attestations_processed = block.body.attestations.len() as u64;
+    timings.block = started.elapsed();
+    Ok(())
 }
 
 /// Structural apply at the current store slot (no `process_slots`).
@@ -74,11 +100,16 @@ pub fn apply_block_unverified_no_slots(
     ctx: &TransitionContext,
 ) -> Result<TransitionOutcome, TransitionError> {
     let mut state = pre.clone();
-    process_block(&mut state, block, ctx)?;
-    finish_unverified(state, block)
+    let mut timings = TransitionTimings::default();
+    timed_block(&mut state, block, ctx, &mut timings)?;
+    finish_unverified(state, block, timings)
 }
 
-fn finish_unverified(state: State, block: &Block) -> Result<TransitionOutcome, TransitionError> {
+fn finish_unverified(
+    state: State,
+    block: &Block,
+    timings: TransitionTimings,
+) -> Result<TransitionOutcome, TransitionError> {
     let post_state_root = state
         .hash_tree_root()
         .map_err(|e| TransitionError::Types(e.to_string()))?;
@@ -90,6 +121,7 @@ fn finish_unverified(state: State, block: &Block) -> Result<TransitionOutcome, T
     Ok(TransitionOutcome {
         post_state: state,
         post_state_root,
+        timings,
     })
 }
 

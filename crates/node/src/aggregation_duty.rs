@@ -71,10 +71,20 @@ fn select_children(owner: &ChainOwner, data_root: Hash32) -> (Vec<BitsAndProof>,
 /// Queue Type-1 jobs for every attestation data with fresh signatures.
 pub fn schedule_aggregations(owner: &mut ChainOwner) -> Vec<ChainEvent> {
     let mut events = Vec::new();
-    if !owner.is_aggregator || owner.prover.is_none() {
+    if !owner.is_aggregator {
+        crate::lean_metrics::aggregation_skipped("not_aggregator");
+        return events;
+    }
+    if owner.syncing {
+        crate::lean_metrics::aggregation_skipped("not_synced");
+        return events;
+    }
+    if owner.prover.is_none() {
+        crate::lean_metrics::aggregation_skipped("other");
         return events;
     }
     let Some(state) = owner.head_state.clone() else {
+        crate::lean_metrics::aggregation_skipped("missing_state");
         return events;
     };
     for data_root in owner.signatures.roots() {
@@ -124,6 +134,8 @@ pub fn schedule_aggregations(owner: &mut ChainOwner) -> Vec<ChainEvent> {
                 kind: "attestation",
                 root: data_root,
             });
+        } else {
+            crate::lean_metrics::aggregation_skipped("spawn_failed");
         }
     }
     events
@@ -135,6 +147,7 @@ pub fn accept_attestation_proof(
     data: AttestationData,
     participants: Vec<bool>,
     proof: Vec<u8>,
+    building: std::time::Duration,
 ) -> Result<ChainEvent, String> {
     let state = owner.head_state.as_ref().ok_or("no head state")?;
     let keys = attestation_keys_for_bits(state, &participants)?;
@@ -144,6 +157,7 @@ pub fn accept_attestation_proof(
         .map_err(|e| format!("prover returned an invalid proof: {e}"))?;
     let coverage = keys.len() as u32;
     let proof_len = proof.len();
+    crate::lean_metrics::aggregate_built(coverage, building);
     insert_proved(owner, &data, participants.clone(), proof.clone())?;
     owner.signatures.remove_covered(&data_root, &participants);
     if let Some(fork) = owner.profile.as_ref().map(|p| p.fork_name) {

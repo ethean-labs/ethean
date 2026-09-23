@@ -44,7 +44,9 @@ pub async fn pump_swarm_budget(
         match tokio::time::timeout(idle, facade.pump_quic_once()).await {
             Ok(Ok(event)) => {
                 out.drained = out.drained.saturating_add(1);
-                if let crate::network::PumpEvent::ConnectionEstablished { peer: Some(p) } = &event
+                record_peer_event(&event);
+                if let crate::network::PumpEvent::ConnectionEstablished { peer: Some(p), .. } =
+                    &event
                 {
                     out.connected_peers.push(*p);
                 }
@@ -86,11 +88,8 @@ pub fn publish_pending_block(
     match facade.publish_gossip(&gossip.topic, &compressed) {
         Ok(()) => {
             let _ = facade.put_block_bytes(gossip.block_root, gossip.payload.clone());
-            let _ = facade.put_block_at_slot(
-                gossip.slot,
-                gossip.block_root,
-                gossip.payload.clone(),
-            );
+            let _ =
+                facade.put_block_at_slot(gossip.slot, gossip.block_root, gossip.payload.clone());
             Ok(Some(PublishedBlock {
                 topic: gossip.topic,
                 payload_len: gossip.payload.len(),
@@ -150,7 +149,9 @@ pub fn flush_all_pending_gossip(
     if let Some(ev) = flush_pending_event(facade, owner)? {
         out.push(ev);
     }
-    out.extend(crate::swarm_pump_agg::flush_pending_aggregations(facade, owner)?);
+    out.extend(crate::swarm_pump_agg::flush_pending_aggregations(
+        facade, owner,
+    )?);
     Ok(out)
 }
 
@@ -193,5 +194,19 @@ mod tests {
         assert!(publish_pending_block(&mut facade, &mut owner)
             .expect("flush")
             .is_none());
+    }
+}
+
+fn record_peer_event(event: &crate::network::PumpEvent) {
+    use crate::lean_metrics::{peer_connect_failed, peer_connected, peer_disconnected};
+    use crate::network::PumpEvent;
+    match event {
+        PumpEvent::ConnectionEstablished { outbound, .. } => peer_connected(*outbound),
+        PumpEvent::ConnectionClosed {
+            outbound, reason, ..
+        } => peer_disconnected(*outbound, reason),
+        PumpEvent::OutgoingError => peer_connect_failed(true),
+        PumpEvent::IncomingError => peer_connect_failed(false),
+        _ => {}
     }
 }

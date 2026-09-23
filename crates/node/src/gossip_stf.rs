@@ -3,10 +3,13 @@
 
 use crate::chain_owner::ChainOwner;
 use crate::gossip_decode::DecodedBlockGossip;
+use crate::lean_metrics;
 use crate::shutdown::{ShutdownPhase, ShutdownState};
+use ethean_metrics::lean::observe_since;
 use ethean_multisig::LeanMultisigVerifier;
 use ethean_primitives::Hash32;
 use ethean_transition::{apply_block, TransitionContext};
+use std::time::Instant;
 
 /// Outcome of importing a decoded block.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,8 +35,16 @@ pub fn import_decoded_block(
         return GossipStfResult::Skipped;
     };
     let ctx = TransitionContext::new(profile);
-    match apply_block(pre, &decoded.signed, &ctx, &LeanMultisigVerifier) {
+    let started = Instant::now();
+    let applied = apply_block(pre, &decoded.signed, &ctx, &LeanMultisigVerifier);
+    observe_since(
+        "lean_fork_choice_block_processing_time_seconds",
+        &[],
+        started,
+    );
+    match applied {
         Ok(out) => {
+            lean_metrics::transition(started.elapsed(), &out.timings);
             owner.head_state = Some(out.post_state);
             owner.advance_head(decoded.root, decoded.parent);
             GossipStfResult::Applied { root: decoded.root }

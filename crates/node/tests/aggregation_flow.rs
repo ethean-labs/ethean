@@ -258,4 +258,28 @@ fn votes_aggregate_into_a_block_that_a_peer_verifies() {
         }
     );
     assert_eq!(peer.head_root, aggregator.head_root);
+
+    // leanMetrics: the same process recorded every step above.
+    use ethean_metrics::lean::{observations, value};
+    let count = |name| value(name, &[]).unwrap_or(0.0);
+    assert!(count("lean_pq_sig_attestation_signatures_valid_total") >= 3.0);
+    assert!(count("lean_pq_sig_attestation_signatures_invalid_total") >= 1.0);
+    assert!(count("lean_pq_sig_aggregated_signatures_total") >= 1.0);
+    assert!(count("lean_pq_sig_attestations_in_aggregated_signatures_total") >= 3.0);
+    assert!(count("lean_pq_sig_aggregated_signatures_valid_total") >= 1.0);
+    assert!(count("lean_block_building_success_total") >= 1.0);
+    assert!(count("lean_state_transition_attestations_processed_total") >= 1.0);
+    for histogram in [
+        "lean_pq_sig_attestation_verification_time_seconds",
+        "lean_pq_sig_aggregated_signatures_building_time_seconds",
+        "lean_pq_sig_aggregated_signatures_verification_time_seconds",
+        "lean_block_aggregated_payloads",
+        "lean_block_building_payload_aggregation_time_seconds",
+        "lean_fork_choice_block_processing_time_seconds",
+        "lean_state_transition_time_seconds",
+        "lean_gossip_attestation_size_bytes",
+        "lean_gossip_aggregation_size_bytes",
+    ] {
+        assert!(observations(histogram, &[]).unwrap_or(0) >= 1, "{histogram} not observed");
+    }
 }

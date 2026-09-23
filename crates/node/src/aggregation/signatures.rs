@@ -98,6 +98,11 @@ impl AttestationSignaturePool {
         self.by_root.len()
     }
 
+    /// Total individual signatures held across all attestation data.
+    pub fn signature_count(&self) -> usize {
+        self.by_root.values().map(|v| v.signatures.len()).sum()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.by_root.is_empty()
     }

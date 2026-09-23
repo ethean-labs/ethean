@@ -10,11 +10,17 @@ pub enum PumpEvent {
     ConnectionEstablished {
         /// SHA-256 of PeerId bytes when available.
         peer: Option<Hash32>,
+        /// True when this node dialed the connection.
+        outbound: bool,
     },
     /// QUIC connection closed (peer fingerprint when known).
     ConnectionClosed {
         /// SHA-256 of PeerId bytes when available.
         peer: Option<Hash32>,
+        /// True when this node had dialed the connection.
+        outbound: bool,
+        /// leanMetrics reason: `local_close`, `timeout` or `error`.
+        reason: &'static str,
     },
     /// Outbound dial failed.
     OutgoingError,

@@ -43,6 +43,7 @@ pub mod gossip_ingest;
 pub mod gossip_attestation;
 pub mod gossip_stf;
 pub mod genesis_bundle;
+pub mod lean_metrics;
 pub mod local_attester;
 pub mod local_finality;
 pub mod local_genesis;

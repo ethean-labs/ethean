@@ -80,6 +80,7 @@ fn finish_allowing_zero_root(
     Ok(TransitionOutcome {
         post_state: state,
         post_state_root,
+        timings: Default::default(),
     })
 }
 

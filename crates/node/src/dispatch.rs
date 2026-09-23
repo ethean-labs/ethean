@@ -82,6 +82,7 @@ fn ingest_gossip(
     }
 
     if let Some(decoded) = try_decode_block(&topic, &payload) {
+        crate::lean_metrics::gossip_block(owner, decoded.block.slot.get(), payload.len());
         match import_decoded_block(owner, shutdown, &decoded) {
             crate::gossip_stf::GossipStfResult::Applied { .. } => {
                 owner.remember_durable_block(decoded.root, payload.clone());

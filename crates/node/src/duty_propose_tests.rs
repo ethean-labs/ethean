@@ -76,7 +76,7 @@ fn rejects_a_block_proof_that_does_not_verify() {
     let mut owner = owner_at_slot_one();
     try_plan_proposal(&mut owner, tick(1));
     let plan = owner.planned_proposal.clone().unwrap();
-    let err = accept_block_proof(&mut owner, plan, vec![0u8; 64]).unwrap_err();
+    let err = accept_block_proof(&mut owner, plan, vec![0u8; 64], Default::default()).unwrap_err();
     assert!(err.contains("own block rejected"), "{err}");
     assert!(owner.pending_block_gossip.is_none());
 }
@@ -87,9 +87,11 @@ fn drops_stale_block_proofs() {
     try_plan_proposal(&mut owner, tick(1));
     let plan = owner.planned_proposal.clone().unwrap();
     owner.head_root = [7u8; 32];
-    assert!(accept_block_proof(&mut owner, plan, vec![1])
-        .unwrap_err()
-        .contains("head moved"));
+    assert!(
+        accept_block_proof(&mut owner, plan, vec![1], Default::default())
+            .unwrap_err()
+            .contains("head moved")
+    );
 }
 
 #[test]

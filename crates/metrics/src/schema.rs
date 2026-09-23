@@ -1,7 +1,9 @@
-//! Metrics schema version and closed label policy (OSD-009 leanMetrics pin still open).
+//! Metrics schema version and closed label policy.
+//!
+//! v3 adds the leanMetrics standard `lean_*` families (see [`crate::lean`]).
 
 /// Ethean metrics schema version embedded in build_info.
-pub const METRICS_SCHEMA_VERSION: &str = "ethean-metrics-v2";
+pub const METRICS_SCHEMA_VERSION: &str = "ethean-metrics-v3";
 
 /// Metric name prefix (Ethean namespace; not peer-copied).
 pub const METRIC_PREFIX: &str = "ethean_";

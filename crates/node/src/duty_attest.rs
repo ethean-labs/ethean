@@ -5,10 +5,12 @@ use crate::aggregation_gossip::AggregationGossip;
 use crate::chain_owner::ChainOwner;
 use crate::events::ChainEvent;
 use ethean_crypto::Signature;
+use ethean_metrics::lean::{inc, observe_since};
 use ethean_network_wire::{fork_segment_from_name, topic_attestation};
 use ethean_primitives::ValidatorIndex;
 use ethean_types::{AttestationData, Checkpoint, SignedAttestation};
 use ethean_validator::DutyTick;
+use std::time::Instant;
 
 /// Interval used for attestation duties (proposal uses 0).
 pub const ATTESTATION_INTERVAL: u8 = 1;
@@ -21,6 +23,7 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
     if tick.interval != ATTESTATION_INTERVAL {
         return out;
     }
+    let production_started = Instant::now();
     if owner.attester.is_none() {
         return out;
     }
@@ -65,8 +68,17 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         let Some(attester) = owner.attester.as_mut() else {
             return out;
         };
+        let signing_started = Instant::now();
         match attester.sign_attestation(tick, &duty_view, data_root, subnet) {
-            Ok(s) => s,
+            Ok(s) => {
+                observe_since(
+                    "lean_pq_sig_attestation_signing_time_seconds",
+                    &[],
+                    signing_started,
+                );
+                inc("lean_pq_sig_attestation_signatures_total", &[], 1.0);
+                s
+            }
             Err(e) => {
                 tracing::debug!(error = %e, index, "local attestation sign skipped");
                 return out;
@@ -103,6 +115,11 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
             });
         }
     }
+    observe_since(
+        "lean_attestations_production_time_seconds",
+        &[],
+        production_started,
+    );
     out.push(ChainEvent::AttestationSigned {
         data_root,
         validator_index: ValidatorIndex::new(index),

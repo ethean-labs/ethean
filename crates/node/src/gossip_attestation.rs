@@ -4,6 +4,8 @@
 //! Keys come from the local head state's registry. Structural checks mirror
 //! the parts of `validate_attestation` that do not need a fork-choice store.
 
+use std::time::{Duration, Instant};
+
 use ethean_crypto::{
     domain_digest, AggregateVerifier, CryptoBackend, ProductionBackend, Signature,
     PROD_AGGREGATION_FINGERPRINT,
@@ -17,6 +19,7 @@ use ethean_types::{
 
 use crate::aggregation::{PoolEntry, PoolKey};
 use crate::chain_owner::ChainOwner;
+use crate::lean_metrics;
 use crate::registry_keys_view::{attestation_key, attestation_keys_for_bits};
 
 /// Profile digest keying the aggregate pool.
@@ -50,17 +53,35 @@ fn check_data(owner: &ChainOwner, data: &AttestationData) -> Result<(), String> 
 
 /// Verify a gossiped vote; aggregators keep its signature for aggregation.
 pub fn on_signed_attestation(owner: &mut ChainOwner, payload: &[u8]) -> Result<Hash32, String> {
+    let started = Instant::now();
+    let mut verification = None;
+    let result = check_signed_attestation(owner, payload, &mut verification);
+    lean_metrics::attestation_checked(
+        result.is_ok(),
+        verification.is_some(),
+        started.elapsed(),
+        verification.unwrap_or_default(),
+    );
+    result
+}
+
+fn check_signed_attestation(
+    owner: &mut ChainOwner,
+    payload: &[u8],
+    verification: &mut Option<Duration>,
+) -> Result<Hash32, String> {
     let vote = SignedAttestation::ssz_decode(payload).map_err(|e| e.to_string())?;
+    lean_metrics::gossip_attestation(owner, vote.data.slot.get(), payload.len());
     check_data(owner, &vote.data)?;
     let state = owner.head_state.as_ref().ok_or("no head state")?;
     let key = attestation_key(state, vote.validator_index.get())?;
     let signature = Signature::try_from_slice(&vote.signature).map_err(|e| e.to_string())?;
     let data_root = vote.data.hash_tree_root();
     let slot = u32::try_from(vote.data.slot.get()).map_err(|_| "slot beyond XMSS lifetime")?;
-    if !ProductionBackend
-        .verify(&key, slot, &data_root, &signature)
-        .map_err(|e| e.to_string())?
-    {
+    let verify_started = Instant::now();
+    let valid = ProductionBackend.verify(&key, slot, &data_root, &signature);
+    *verification = Some(verify_started.elapsed());
+    if !valid.map_err(|e| e.to_string())? {
         return Err("invalid attestation signature".into());
     }
     if owner.is_aggregator {
@@ -73,20 +94,39 @@ pub fn on_signed_attestation(owner: &mut ChainOwner, payload: &[u8]) -> Result<H
 
 /// Verify a gossiped aggregate against its participants and pool it.
 pub fn on_signed_aggregate(owner: &mut ChainOwner, payload: &[u8]) -> Result<Hash32, String> {
+    let started = Instant::now();
+    let mut verification = None;
+    let result = check_signed_aggregate(owner, payload, &mut verification);
+    lean_metrics::aggregate_checked(
+        result.is_ok(),
+        verification.is_some(),
+        started.elapsed(),
+        verification.unwrap_or_default(),
+    );
+    result
+}
+
+fn check_signed_aggregate(
+    owner: &mut ChainOwner,
+    payload: &[u8],
+    verification: &mut Option<Duration>,
+) -> Result<Hash32, String> {
     let aggregate = SignedAggregatedAttestation::ssz_decode(payload).map_err(|e| e.to_string())?;
+    lean_metrics::gossip_aggregation(owner, payload.len());
     check_data(owner, &aggregate.data)?;
     let state = owner.head_state.as_ref().ok_or("no head state")?;
     let bits = &aggregate.proof.participants.bits;
     let keys = attestation_keys_for_bits(state, bits)?;
     let data_root = aggregate.data.hash_tree_root();
-    LeanMultisigVerifier
-        .verify_single(
-            &aggregate.proof.proof,
-            &keys,
-            &data_root,
-            aggregate.data.slot.get(),
-        )
-        .map_err(|e| e.to_string())?;
+    let verify_started = Instant::now();
+    let checked = LeanMultisigVerifier.verify_single(
+        &aggregate.proof.proof,
+        &keys,
+        &data_root,
+        aggregate.data.slot.get(),
+    );
+    *verification = Some(verify_started.elapsed());
+    checked.map_err(|e| e.to_string())?;
     insert_proved(owner, &aggregate.data, bits.clone(), aggregate.proof.proof)?;
     Ok(data_root)
 }

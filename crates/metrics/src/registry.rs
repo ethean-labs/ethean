@@ -1,7 +1,7 @@
 //! In-process metric registry with closed names.
 
 use crate::error::{MetricsError, Result};
-use crate::schema::{assert_label_allowed, METRIC_PREFIX, METRICS_SCHEMA_VERSION};
+use crate::schema::{assert_label_allowed, METRICS_SCHEMA_VERSION, METRIC_PREFIX};
 use std::collections::HashMap;
 
 /// Metric kinds we expose.

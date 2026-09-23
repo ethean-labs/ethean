@@ -35,6 +35,9 @@ pub fn apply_wall_step(
     ));
     let accepted = apply_command(owner, shutdown, ChainCommand::Tick(tick));
     let was_accepted = matches!(accepted, ChainEvent::TickAccepted(_));
+    if was_accepted {
+        crate::lean_metrics::tick();
+    }
     events.push(accepted);
     if was_accepted {
         let lag = sync.lag();
