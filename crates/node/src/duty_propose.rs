@@ -36,6 +36,11 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     if n == 0 || !is_assigned_proposer(owner, tick.slot.get(), n) {
         return out;
     }
+    // The head already holds a block for this slot (ours or imported); later
+    // ticks of the same slot have nothing to build.
+    if pre.slot.get() >= tick.slot.get() {
+        return out;
+    }
     let proposer = ValidatorIndex::new(tick.slot.get() % n);
     let build_started = Instant::now();
     let planned = plan_from_pool(

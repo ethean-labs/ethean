@@ -120,3 +120,25 @@ fn local_finality_blocks_are_recorded_for_durable_flush() {
         "solo blocks are never gossiped"
     );
 }
+
+#[test]
+fn later_ticks_of_a_built_slot_do_not_rebuild() {
+    let mut owner = owner_at_slot_one();
+    owner.local_finality = true;
+    try_plan_proposal(&mut owner, tick(1));
+    assert_eq!(owner.head_state.as_ref().unwrap().slot.get(), 1);
+    let failures = ethean_metrics::lean::value("lean_block_building_failures_total", &[]);
+    for interval in 1..5 {
+        let later = DutyTick {
+            slot: Slot::new(1),
+            interval,
+            generation: 1,
+        };
+        assert!(try_plan_proposal(&mut owner, later).is_empty());
+    }
+    assert_eq!(
+        ethean_metrics::lean::value("lean_block_building_failures_total", &[]),
+        failures,
+        "no build is attempted once the slot has a block"
+    );
+}
