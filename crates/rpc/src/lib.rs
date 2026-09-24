@@ -10,6 +10,7 @@ pub mod events;
 pub mod handlers;
 pub mod hexutil;
 pub mod http;
+pub mod http_sse;
 pub mod json_body;
 pub mod limits;
 pub mod parse;
