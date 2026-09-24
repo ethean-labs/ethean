@@ -22,7 +22,9 @@ pub use record::{
     ensure_core_families, record_bootnode_count, record_fc_reorg, record_fc_reorg_total,
     record_readiness_gauges, record_role_gauges, record_slot_gauges, set_ready,
 };
-pub use record_persist::{record_durable_persist, record_range_serve, record_serve_cache_seed};
+pub use record_persist::{
+    record_admin_event_backlog, record_durable_persist, record_range_serve, record_serve_cache_seed,
+};
 pub use registry::{MetricKind, MetricSample, Registry};
 pub use schema::{assert_label_allowed, FORBIDDEN_LABELS, METRICS_SCHEMA_VERSION, METRIC_PREFIX};
 pub use shared::SharedRegistry;
