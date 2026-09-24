@@ -79,7 +79,7 @@ pub fn ingest_blocks_by_root_response(
 
         let stf = import_decoded_block(owner, shutdown, &decoded);
         match stf {
-            GossipStfResult::Skipped if decoded.parent != owner.head_root => {
+            GossipStfResult::Skipped if !owner.can_import_parent(decoded.parent) => {
                 info!(
                     peer0 = peer[0],
                     root0 = decoded.root[0],
@@ -123,25 +123,42 @@ pub fn ingest_blocks_by_root_response(
 
 fn drain_orphans(owner: &mut ChainOwner, shutdown: &ShutdownState, events: &mut Vec<ChainEvent>) {
     loop {
-        let Some((root, orphan)) = owner.sync_orphans.take_child_of(owner.head_root) else {
-            break;
-        };
-        let Some(decoded) = try_decode_block(SYNC_BLOCK_TOPIC, &orphan.blob) else {
-            continue;
-        };
-        let stf = import_decoded_block(owner, shutdown, &decoded);
-        match stf {
-            GossipStfResult::Applied { .. } => {
-                owner.remember_durable_block(root, orphan.blob.clone());
-                events.push(ChainEvent::GossipIngested {
-                    topic: SYNC_BLOCK_TOPIC.to_string(),
-                    content_root: root,
-                });
+        let parents: Vec<Hash32> = {
+            let mut p = vec![owner.head_root];
+            if let Some(fc) = owner.fc.as_ref() {
+                p.extend(fc.blocks.keys().copied());
             }
-            _ => {
-                // Parent matched but import failed — drop (do not infinite-loop).
+            p.sort();
+            p.dedup();
+            p
+        };
+        let mut progressed = false;
+        for parent in parents {
+            let Some((root, orphan)) = owner.sync_orphans.take_child_of(parent) else {
+                continue;
+            };
+            let Some(decoded) = try_decode_block(SYNC_BLOCK_TOPIC, &orphan.blob) else {
+                progressed = true;
                 break;
+            };
+            let stf = import_decoded_block(owner, shutdown, &decoded);
+            match stf {
+                GossipStfResult::Applied { .. } => {
+                    owner.remember_durable_block(root, orphan.blob.clone());
+                    events.push(ChainEvent::GossipIngested {
+                        topic: SYNC_BLOCK_TOPIC.to_string(),
+                        content_root: root,
+                    });
+                    progressed = true;
+                }
+                _ => {
+                    // Parent matched but import failed — drop (do not infinite-loop).
+                }
             }
+            break;
+        }
+        if !progressed {
+            break;
         }
     }
 }
