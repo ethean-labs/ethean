@@ -91,6 +91,8 @@ pub fn identity_json(snap: &ApiSnapshot) -> Value {
     json!({
         "network": snap.network,
         "peer_id": snap.peer_id,
+        "version": env!("CARGO_PKG_VERSION"),
+        "ready": snap.ready,
     })
 }
 
@@ -194,5 +196,16 @@ mod tests {
         assert_eq!(j["drained"], 1);
         assert_eq!(j["pending"], 2);
         assert_eq!(j["events"][0]["slot"], 3);
+    }
+
+    #[test]
+    fn identity_includes_version_and_ready() {
+        let mut snap = ApiSnapshot::default();
+        snap.network = "pq-devnet-4".into();
+        snap.ready = true;
+        let j = identity_json(&snap);
+        assert_eq!(j["network"], "pq-devnet-4");
+        assert_eq!(j["ready"], true);
+        assert_eq!(j["version"], env!("CARGO_PKG_VERSION"));
     }
 }

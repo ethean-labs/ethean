@@ -16,6 +16,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [fork digest local status](fork-digest-local-status-2026-09-19.md)
 - [gossip ingest peer score](gossip-ingest-peer-score-2026-09-19.md)
 - [gossipsub quic mesh](gossipsub-quic-mesh-2026-09-19.md)
+- [identity version ready v0 alias](identity-version-ready-v0-alias-2026-09-25.md)
 - [duties committee count events pending](duties-committee-count-events-pending-2026-09-25.md)
 - [duties interval gating monitoring sse](duties-interval-gating-monitoring-sse-2026-09-25.md)
 - [hive v0 events alias](hive-v0-events-alias-2026-09-25.md)

@@ -64,7 +64,11 @@ pub fn handle_route(route: Route, state: &SharedApiState, body: &[u8]) -> HttpRe
                 HttpReply::text(503, "text/plain; charset=utf-8", "not ready\n")
             }
         }
-        Route::NodeIdentity => json_ok(identity_json(&state.snapshot())),
+        Route::NodeIdentity => {
+            let mut snap = state.snapshot();
+            snap.ready = state.is_ready();
+            json_ok(identity_json(&snap))
+        }
         Route::ChainHead => json_ok(head_json(&state.snapshot().head)),
         Route::ChainFinalized => json_ok(finalized_json(&state.snapshot().finalized)),
         Route::ChainSync => json_ok(sync_json(&state.snapshot().sync)),

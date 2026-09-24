@@ -24,6 +24,8 @@ pub struct ApiSnapshot {
     pub fork_choice_stats: ForkChoiceStatsView,
     /// Bounded local duty visibility for `/lean/v1/validator/duties`.
     pub duties: DutiesView,
+    /// Mirror of `/lean/v1/ready` for identity JSON.
+    pub ready: bool,
 }
 
 impl Default for ApiSnapshot {
@@ -59,6 +61,7 @@ impl Default for ApiSnapshot {
                 known_votes: 0,
             },
             duties: DutiesView::default(),
+            ready: false,
         }
     }
 }
