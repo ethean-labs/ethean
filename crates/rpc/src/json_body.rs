@@ -30,6 +30,29 @@ pub fn sync_json(v: &SyncView) -> Value {
     })
 }
 
+/// Encode a drained admin event backlog (JSON poll; not a long-lived SSE body).
+pub fn events_json(events: &[crate::events::AdminEvent]) -> Value {
+    use crate::events::AdminEvent;
+    let items: Vec<Value> = events
+        .iter()
+        .map(|e| match e {
+            AdminEvent::DutySuppressed { reason } => json!({
+                "kind": "duty_suppressed",
+                "reason": reason,
+            }),
+            AdminEvent::HeadSlot { slot } => json!({
+                "kind": "head_slot",
+                "slot": slot,
+            }),
+            AdminEvent::Readiness { ready } => json!({
+                "kind": "readiness",
+                "ready": ready,
+            }),
+        })
+        .collect();
+    json!({ "events": items })
+}
+
 /// Encode fork-choice operator view.
 pub fn fork_choice_json(v: &ForkChoiceView) -> Value {
     json!({
