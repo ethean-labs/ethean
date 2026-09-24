@@ -27,6 +27,7 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     let min_slot = tick.slot.get().saturating_sub(owner.max_head_lag_slots);
     owner.aggregates.prune_before(min_slot);
     owner.signatures.prune_before(min_slot);
+    owner.known_payloads.retain(|_, slot| *slot >= min_slot);
 
     let (pre, profile) = match (owner.head_state.clone(), owner.profile.clone()) {
         (Some(s), Some(p)) => (s, p),
@@ -43,6 +44,7 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     }
     let proposer = ValidatorIndex::new(tick.slot.get() % n);
     let build_started = Instant::now();
+    let known_roots = owner.known_block_roots();
     let planned = plan_from_pool(
         &owner.aggregates,
         owner.head_root,
@@ -50,7 +52,7 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
         proposer,
         &pre,
         profile,
-        16,
+        &known_roots,
     );
     observe_since("lean_block_building_time_seconds", &[], build_started);
     let mut plan = match planned {
@@ -194,6 +196,19 @@ pub fn accept_block_proof(
     );
     let gossip = encode_proposal_gossip(&plan, profile.fork_name)?;
     let root = gossip.block_root;
+    let block_bits = crate::lean_metrics::coverage::union_bits(plan.block.body.attestations.iter());
+    let pool_now = crate::lean_metrics::coverage::pool_bits(owner);
+    crate::lean_metrics::coverage::record_block_coverage(
+        &block_bits,
+        &block_bits,
+        &pool_now,
+        profile.attestation_subnet_count() as u64,
+    );
+    for attestation in &plan.block.body.attestations {
+        owner
+            .known_payloads
+            .insert(attestation.data.hash_tree_root(), attestation.data.slot.get());
+    }
     let post = applied.post_state;
     if owner.fc.is_some() {
         owner.fc_on_block(plan.block.clone(), post);

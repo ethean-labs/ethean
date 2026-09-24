@@ -20,8 +20,8 @@ pub enum JsonTypesError {
 }
 
 #[derive(Debug, Deserialize)]
-struct JsonList<T> {
-    data: Vec<T>,
+pub(crate) struct JsonList<T> {
+    pub(crate) data: Vec<T>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,7 +32,7 @@ struct JsonConfig {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct JsonCheckpoint {
+pub(crate) struct JsonCheckpoint {
     root: String,
     slot: u64,
 }
@@ -168,7 +168,7 @@ pub fn block_from_value(v: &serde_json::Value) -> Result<Block, JsonTypesError> 
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct JsonAttestationData {
+pub(crate) struct JsonAttestationData {
     slot: u64,
     head: JsonCheckpoint,
     target: JsonCheckpoint,
@@ -177,13 +177,12 @@ struct JsonAttestationData {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct JsonAttestation {
-    validator_index: u64,
-    data: JsonAttestationData,
+pub(crate) struct JsonAttestation {
+    pub(crate) validator_index: u64,
+    pub(crate) data: JsonAttestationData,
     /// Present in fixtures; ignored on the structural FC path.
     #[serde(default)]
-    #[allow(dead_code)]
-    signature: Option<String>,
+    pub(crate) signature: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -195,22 +194,22 @@ struct JsonAggregatedAttestation {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct JsonAggregateProof {
-    participants: JsonList<bool>,
+pub(crate) struct JsonAggregateProof {
+    pub(crate) participants: JsonList<bool>,
     /// Present in fixtures; ignored on the structural FC path.
     #[serde(default)]
     #[allow(dead_code)]
-    proof: Option<serde_json::Value>,
+    pub(crate) proof: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct JsonSignedAggregatedAttestation {
-    data: JsonAttestationData,
-    proof: JsonAggregateProof,
+pub(crate) struct JsonSignedAggregatedAttestation {
+    pub(crate) data: JsonAttestationData,
+    pub(crate) proof: JsonAggregateProof,
 }
 
-fn attestation_data(j: &JsonAttestationData) -> Result<ethean_types::AttestationData, JsonTypesError> {
+pub(crate) fn attestation_data(j: &JsonAttestationData) -> Result<ethean_types::AttestationData, JsonTypesError> {
     Ok(ethean_types::AttestationData {
         slot: Slot::new(j.slot),
         head: checkpoint(&j.head)?,
@@ -253,3 +252,4 @@ pub fn attestation_from_value(
         attestation_data(&j.data)?,
     ))
 }
+

@@ -219,7 +219,7 @@ roles, readiness, peers, and lag gauges on provisioned Grafana boards.
 | Layer | What | When |
 | --- | --- | --- |
 | Scrape HTTP (`:9100`) | Ethean exports `/metrics` `/healthz` `/readyz` | **On by default** (disable with `--no-metrics`) |
-| Prometheus UI + Grafana | Docker Compose in `deploy/observability` | Pass **`--metrics`** (or run `scripts/run-observability.*`) |
+| Prometheus UI + Grafana | Docker Compose in `deploy/observability` | Pass **`--observability-stack`** (or run `scripts/run-observability.*`) |
 
 `ethean start --until-signal` alone does **not** open http://localhost:3000 or :9090.
 Those ports need Docker. Your process metrics at http://127.0.0.1:9100/metrics already work.
@@ -254,31 +254,44 @@ binary and reload dashboards:
 
 ```bash
 # Starts docker compose (Grafana :3000, Prometheus :9090) then the node
-ethean start --until-signal --network pq-devnet-4 --metrics
+ethean start --until-signal --network pq-devnet-4 --observability-stack
 
 # Same for the D5 ready-path label
-ethean start --until-signal --network pq-devnet-5 --metrics
+ethean start --until-signal --network pq-devnet-5 --observability-stack
 ```
 
 | Flag | Default | Role |
 | --- | --- | --- |
-| `--metrics` | off | `docker compose up -d` for Prometheus + Grafana |
+| `--metrics` | off | Keep scrape HTTP on (already the default; Hive/Ream alias) |
+| `--observability-stack` | off | `docker compose up -d` for Prometheus + Grafana |
 | `--no-metrics` | off | Disable scrape HTTP on :9100 |
-| `--metrics-address` | `127.0.0.1` | Bind host for scrape |
+| `--metrics-address` | `127.0.0.1` | Bind host for scrape (`ETHEAN_METRICS_ADDRESS`) |
 | `--metrics-port` | `9100` | Bind port (must match Prometheus scrape) |
 | `--until-signal` | off | Long-run until Ctrl-C |
-| `--network` | `pq-devnet-4` | Network label |
-| `--data-dir` | unset | Durable fixed genesis + head resume |
+| `--network` | `pq-devnet-4` | Label, or a path to Lean `config.yaml` (loads under `local`) |
+| `--lean-config` | unset | Explicit `config.yaml` (wins over `--network` path) |
+| `--bootnodes` | unset | `none`, CSV of QUIC multiaddrs / `enr:`, or `nodes.yaml` path |
+| `--node-key` | unset | secp256k1 hex file (alias `--private-key-path`); else `<data-dir>/node.key` |
+| `--socket-address` | `0.0.0.0` | QUIC listen interface |
+| `--listen-port` | `9000` | UDP/QUIC port (alias `--socket-port`; `0` = ephemeral) |
+| `--data-dir` | unset | Durable fixed genesis + head resume + `node.key` |
 | `--ephemeral` | off | Force recent-genesis smoke (ignore `--data-dir`) |
 | `--reset-chain` | off | Empty `--data-dir` (chain + logs) before start |
 | `-v` / `--verbose` | off | More logs (`-v` DEBUG, `-vv` +libp2p, `-vvv` TRACE) |
 | `--log-level` | unset | Max level (`info`/`debug`/`trace`; `RUST_LOG` wins) |
 | `--no-banner` | off | Skip ASCII logo + start snapshot card |
-| `--validators` | `4` | Local registry size |
-| `--no-aggregator` | off | Disable aggregator role (default **on**) |
-| `--no-local-finality` | off | Disable solo head/finality advance (default **on**) |
+| `--validators` | `4` | Local registry size (solo smoke) |
+| `--is-aggregator` | off | Enable aggregator when a genesis file is given (mesh default off) |
+| `--no-aggregator` | off | Disable aggregator (solo default **on**) |
+| `--no-local-finality` | off | Disable solo head/finality advance (solo default **on**; mesh always off) |
+| `--aggregate-subnet-ids` | unset | CSV of subnet ids (recorded; all subnets already subscribed) |
+| `--attestation-committee-count` | unset | Override `ATTESTATION_COMMITTEE_COUNT` from `config.yaml` |
+| `--checkpoint-sync-url` | unset | Accepted; empty-datadir SSZ fetch not yet applied |
+| `--http-address` | `127.0.0.1` | Lean HTTP bind (`ETHEAN_HTTP_ADDRESS`) |
+| `--http-port` | `5052` | Lean HTTP port |
+| `--validator-registry` | unset | Alias `--validator-registry-path` |
 
-Manual stack only (if you prefer not to use `--metrics`):
+Manual stack only (if you prefer not to use `--observability-stack`):
 
 ```bash
 ./scripts/run-observability.sh

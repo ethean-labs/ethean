@@ -5,20 +5,49 @@
 use crate::error::NetworkError;
 use crate::gossip::LeanGossipTopics;
 use crate::quic_swarm::LeanBehaviour;
+use ethean_network_wire::gossip::{
+    FANOUT_TTL, GOSSIP_LAZY, HEARTBEAT, HISTORY_GOSSIP, HISTORY_LENGTH, MAX_MESSAGES_PER_RPC,
+    MESH_N, MESH_N_HIGH, MESH_N_LOW, SEEN_TTL,
+};
+use ethean_network_wire::{
+    compute_message_id, decompress_raw, max_message_size, MESSAGE_DOMAIN_INVALID_SNAPPY,
+    MESSAGE_DOMAIN_VALID_SNAPPY,
+};
 use libp2p::futures::StreamExt;
-use libp2p::gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode};
+use libp2p::gossipsub::{self, IdentTopic, MessageAuthenticity, MessageId, ValidationMode};
 use libp2p::identity;
 use libp2p::swarm::SwarmEvent;
 use libp2p::Multiaddr;
 
 type NetResult<T> = std::result::Result<T, NetworkError>;
 
-pub(crate) fn build_gossipsub(keypair: &identity::Keypair) -> NetResult<gossipsub::Behaviour> {
+pub(crate) fn build_gossipsub(_keypair: &identity::Keypair) -> NetResult<gossipsub::Behaviour> {
     let config = gossipsub::ConfigBuilder::default()
-        .validation_mode(ValidationMode::Permissive)
+        .max_transmit_size(max_message_size())
+        .heartbeat_interval(HEARTBEAT)
+        .fanout_ttl(FANOUT_TTL)
+        .mesh_n(MESH_N)
+        .mesh_n_low(MESH_N_LOW)
+        .mesh_n_high(MESH_N_HIGH)
+        .gossip_lazy(GOSSIP_LAZY)
+        .history_length(HISTORY_LENGTH)
+        .history_gossip(HISTORY_GOSSIP)
+        .max_messages_per_rpc(Some(MAX_MESSAGES_PER_RPC))
+        .duplicate_cache_time(SEEN_TTL)
+        .validation_mode(ValidationMode::Anonymous)
+        .allow_self_origin(true)
+        .flood_publish(false)
+        .message_id_fn(|message| {
+            let topic = message.topic.as_str().as_bytes();
+            let (data, domain) = match decompress_raw(&message.data) {
+                Ok(plain) => (plain, MESSAGE_DOMAIN_VALID_SNAPPY),
+                Err(_) => (message.data.clone(), MESSAGE_DOMAIN_INVALID_SNAPPY),
+            };
+            MessageId::from(&compute_message_id(topic, &data, domain)[..])
+        })
         .build()
         .map_err(|e| NetworkError::Handshake(format!("gossipsub config: {e}")))?;
-    gossipsub::Behaviour::new(MessageAuthenticity::Signed(keypair.clone()), config)
+    gossipsub::Behaviour::new(MessageAuthenticity::Anonymous, config)
         .map_err(|e| NetworkError::Handshake(format!("gossipsub behaviour: {e}")))
 }
 
@@ -87,6 +116,7 @@ mod tests {
         .expect("quic+gossip");
         let topics = swarm.topics.as_ref().expect("topics");
         assert!(topics.block.contains("/leanconsensus/"));
+        assert!(topics.block.contains("12345678"));
         assert!(swarm
             .publish_gossip("/eth2/beacon_block/ssz_snappy", b"x")
             .is_err());

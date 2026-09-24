@@ -6,6 +6,12 @@ use ethean_types::{BlockHeader, Checkpoint, GenesisConfig, State, Validator};
 
 use crate::error::GenesisError;
 
+/// leanSpec `hash_tree_root(BlockBody(attestations=[]))` with list limit 4096.
+pub const EMPTY_BLOCK_BODY_ROOT: Root = [
+    0xdb, 0xa9, 0x67, 0x1b, 0xac, 0x95, 0x13, 0xc9, 0x48, 0x2f, 0x14, 0x16, 0xa5, 0x3a, 0xab, 0xd2,
+    0xc6, 0xce, 0x90, 0xd5, 0xa5, 0xf8, 0x65, 0xce, 0x5a, 0x55, 0xc7, 0x75, 0x32, 0x5c, 0x91, 0x36,
+];
+
 /// Built genesis state plus its `hash_tree_root`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuiltGenesis {
@@ -82,7 +88,7 @@ impl GenesisBuilder {
                 proposer_index: ValidatorIndex::ZERO,
                 parent_root: HASH32_ZERO,
                 state_root: HASH32_ZERO,
-                body_root: HASH32_ZERO,
+                body_root: EMPTY_BLOCK_BODY_ROOT,
             },
             latest_justified: Checkpoint::genesis(),
             latest_finalized: Checkpoint::genesis(),
@@ -111,6 +117,7 @@ pub fn local_smoke_genesis(genesis_time_secs: u64) -> Result<BuiltGenesis, Genes
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ethean_types::BlockBody;
 
     #[test]
     fn builder_slot_zero_and_validator_count() {
@@ -127,7 +134,25 @@ mod tests {
         assert_eq!(built.state.validators[1].index.get(), 1);
         assert_eq!(built.state.config.genesis_time, 1_700_000_000);
         assert_eq!(built.state.latest_block_header.parent_root, HASH32_ZERO);
+        assert_eq!(
+            built.state.latest_block_header.body_root,
+            EMPTY_BLOCK_BODY_ROOT
+        );
         assert_eq!(built.state_root.len(), 32);
+    }
+
+    #[test]
+    fn empty_body_root_matches_ssz_default() {
+        let computed = BlockBody::default().hash_tree_root().unwrap();
+        assert_eq!(computed, EMPTY_BLOCK_BODY_ROOT);
+        assert_eq!(
+            computed,
+            [
+                0xdb, 0xa9, 0x67, 0x1b, 0xac, 0x95, 0x13, 0xc9, 0x48, 0x2f, 0x14, 0x16, 0xa5, 0x3a,
+                0xab, 0xd2, 0xc6, 0xce, 0x90, 0xd5, 0xa5, 0xf8, 0x65, 0xce, 0x5a, 0x55, 0xc7, 0x75,
+                0x32, 0x5c, 0x91, 0x36,
+            ]
+        );
     }
 
     #[test]

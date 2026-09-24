@@ -10,14 +10,16 @@ use libp2p::Multiaddr;
 use sha2::{Digest, Sha256};
 use std::time::Duration;
 
-fn sample_status(fork: &str, head_slot: u64) -> Status {
+fn sample_status(_fork: &str, head_slot: u64) -> Status {
     Status {
-        genesis_root: [1u8; 32],
-        fork_segment: fork.into(),
-        head_slot,
-        head_root: [head_slot as u8; 32],
-        finalized_slot: 0,
-        finalized_root: [0u8; 32],
+        finalized: ethean_network_wire::Checkpoint {
+            root: [0u8; 32],
+            slot: 0,
+        },
+        head: ethean_network_wire::Checkpoint {
+            root: [head_slot as u8; 32],
+            slot: head_slot,
+        },
     }
 }
 
@@ -99,8 +101,8 @@ async fn two_nodes_dial_and_status_response() {
             if let PumpEvent::StatusResponse { peer, payload } = ev {
                 assert_eq!(peer, peer_a);
                 let remote = Status::decode(&payload).expect("decode status");
-                assert_eq!(remote.head_slot, 1);
-                assert_eq!(remote.fork_segment, fork);
+                assert_eq!(remote.head_slot(), 1);
+                assert_eq!(remote.head_root(), [1u8; 32]);
                 got_response = true;
                 break;
             }

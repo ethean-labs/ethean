@@ -16,7 +16,7 @@ pub use blocks_by_range::{
 };
 pub use blocks_by_root::{
     blocks_by_root_for_roots, blocks_by_root_for_status_gap, blocks_by_root_protocol_id,
-    encode_blocks_by_root,
+    decode_blocks_by_root, encode_blocks_by_root,
 };
 pub use blocks_outbound::{
     prepare_blocks_by_root_for_roots, prepare_blocks_by_root_outbound, OutboundBlocksByRootRequest,

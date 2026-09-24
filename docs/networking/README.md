@@ -18,6 +18,8 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [gossipsub quic mesh](gossipsub-quic-mesh-2026-09-19.md)
 - [external backlog and admin events poll](external-backlog-and-admin-events-poll-2026-09-24.md)
 - [lean http api 5052](lean-http-api-5052-2026-09-20.md)
+- [lean v0 http api hive](lean-v0-http-api-hive-2026-09-24.md)
+- [lean wire conformance](lean-wire-conformance-2026-09-24.md)
 - [proposer binding verify before gossip](proposer-binding-verify-before-gossip-2026-09-19.md)
 - [quic fixed listen port](quic-fixed-listen-port-2026-09-20.md)
 - [quic status reqresp wire](quic-status-reqresp-wire-2026-09-19.md)

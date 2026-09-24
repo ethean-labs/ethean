@@ -71,18 +71,16 @@ impl PersistPaths {
     }
 
     pub fn ensure_dir(&self) -> Result<()> {
-        fs::create_dir_all(&self.root).map_err(|e| {
-            Error::Config(format!("create data-dir {}: {e}", self.root.display()))
-        })?;
+        fs::create_dir_all(&self.root)
+            .map_err(|e| Error::Config(format!("create data-dir {}: {e}", self.root.display())))?;
         fs::create_dir_all(self.blocks_dir()).map_err(|e| {
             Error::Config(format!(
                 "create blocks dir {}: {e}",
                 self.blocks_dir().display()
             ))
         })?;
-        fs::create_dir_all(self.log_dir()).map_err(|e| {
-            Error::Config(format!("create log dir {}: {e}", self.log_dir().display()))
-        })
+        fs::create_dir_all(self.log_dir())
+            .map_err(|e| Error::Config(format!("create log dir {}: {e}", self.log_dir().display())))
     }
 }
 
@@ -119,13 +117,11 @@ pub fn reset_chain_files(root: &Path) -> Result<()> {
     if root.is_file() {
         return remove_path(root);
     }
-    let entries = fs::read_dir(root).map_err(|e| {
-        Error::Config(format!("read data-dir {}: {e}", root.display()))
-    })?;
+    let entries = fs::read_dir(root)
+        .map_err(|e| Error::Config(format!("read data-dir {}: {e}", root.display())))?;
     for entry in entries {
-        let entry = entry.map_err(|e| {
-            Error::Config(format!("read data-dir entry {}: {e}", root.display()))
-        })?;
+        let entry = entry
+            .map_err(|e| Error::Config(format!("read data-dir entry {}: {e}", root.display())))?;
         remove_path(&entry.path())?;
     }
     Ok(())
@@ -152,8 +148,7 @@ fn remove_path(path: &Path) -> Result<()> {
 /// Write `data` to `path` via a sibling `.tmp` then rename.
 pub fn write_atomic(path: &Path, data: &[u8]) -> Result<()> {
     let tmp = path.with_extension("tmp");
-    fs::write(&tmp, data)
-        .map_err(|e| Error::Config(format!("write {}: {e}", tmp.display())))?;
+    fs::write(&tmp, data).map_err(|e| Error::Config(format!("write {}: {e}", tmp.display())))?;
     if path.exists() {
         fs::remove_file(path)
             .map_err(|e| Error::Config(format!("replace {}: {e}", path.display())))?;
@@ -177,7 +172,10 @@ mod tests {
         assert!(p.redb().ends_with("ethean.redb"));
         assert!(p.genesis_json().ends_with("genesis.json"));
         assert!(p.state_ssz().ends_with("state.ssz"));
-        assert!(p.block_ssz("ab").ends_with("blocks/ab.ssz") || p.block_ssz("ab").ends_with("blocks\\ab.ssz"));
+        assert!(
+            p.block_ssz("ab").ends_with("blocks/ab.ssz")
+                || p.block_ssz("ab").ends_with("blocks\\ab.ssz")
+        );
         assert!(p.log_dir().ends_with("log"));
         let log = p.run_log_path("2026-09-20-040512");
         let name = log.file_name().unwrap().to_string_lossy();

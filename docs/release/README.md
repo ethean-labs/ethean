@@ -7,6 +7,7 @@ tags `vMAJOR.MINOR.PATCH` (public milestones include `v0.1.12`, `v0.1.27`,
 the curated summary copied into each Release body.
 
 - [binaries.md](./binaries.md) — multi-platform `ethean` archives on Releases
+- [docker-images.md](./docker-images.md) — GHCR tags, workflow, local / Hive smoke
 - [gates.md](./gates.md) — promotion checklist and non-waivable gates
 - [upgrade.md](./upgrade.md) — staged binary activation
 - [rollback.md](./rollback.md) — fail-closed rollback and signer immutability

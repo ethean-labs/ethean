@@ -5,7 +5,7 @@ use crate::commands::ChainCommand;
 use crate::dispatch::apply_command;
 use crate::duty_step::apply_wall_step;
 use crate::events::ChainEvent;
-use crate::wall_tick::ms_until_next_interval;
+use crate::wall_tick::{ms_until_genesis, ms_until_next_interval};
 use crate::{Error, Result};
 use ethean_genesis::{SystemTimeSource, TimeSource};
 use std::time::Duration;
@@ -23,6 +23,9 @@ impl EtheanClient {
         for i in 0..ticks {
             if !self.shutdown.accepts_new_duties() {
                 break;
+            }
+            if self.wait_if_pre_genesis(&time).await? {
+                continue;
             }
             let drained = self
                 .apply_network_budget(32, Duration::from_millis(20))
@@ -110,6 +113,9 @@ impl EtheanClient {
         let _ = self
             .apply_network_budget(32, Duration::from_millis(20))
             .await?;
+        if self.wait_if_pre_genesis(time).await? {
+            return Ok(Vec::new());
+        }
         #[cfg_attr(not(feature = "libp2p-quic"), allow(unused_mut))]
         let mut step_events = apply_wall_step(
             &self.clock,
@@ -132,6 +138,25 @@ impl EtheanClient {
             tokio::time::sleep(Duration::from_millis(wait)).await;
         }
         Ok(step_events)
+    }
+
+    /// Before genesis there are no duties: keep the swarm pumped and the HTTP
+    /// snapshot fresh, nap (at most one second per round) and report `true`.
+    async fn wait_if_pre_genesis(&mut self, time: &SystemTimeSource) -> Result<bool> {
+        let now_ms = time.unix_millis().map_err(Error::Clock)?;
+        let Some(remaining) = ms_until_genesis(&self.clock, now_ms)? else {
+            return Ok(false);
+        };
+        if !self.pre_genesis_logged {
+            info!(
+                remaining_ms = remaining,
+                "waiting for genesis before running duties"
+            );
+            self.pre_genesis_logged = true;
+        }
+        let _ = self.refresh_slot_metrics();
+        tokio::time::sleep(Duration::from_millis(remaining.min(1_000))).await;
+        Ok(true)
     }
 
     #[cfg(feature = "libp2p-quic")]

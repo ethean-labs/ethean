@@ -1,0 +1,41 @@
+FROM rust:1.98.1-bookworm AS builder
+
+ARG github=ethean-labs/ethean
+ARG tag=master
+
+ENV RUSTUP_TOOLCHAIN=1.98.1
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    ca-certificates \
+    git \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+RUN echo "Cloning: $github - $tag" \
+    && git clone https://github.com/$github ethean \
+    && cd ethean \
+    && git checkout $tag \
+    && cargo build --release --locked -p ethean -p ethean-prover
+
+FROM ubuntu:24.04
+
+RUN apt-get update && apt-get install -y bash ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /src/ethean/target/release/ethean /usr/local/bin/ethean-devnet5
+# Sibling name must stay `ethean-prover` (node-side discovery).
+COPY --from=builder /src/ethean/target/release/ethean-prover /usr/local/bin/ethean-prover
+COPY validators.yaml /assets/lean/validators.yaml
+COPY ethean.sh /ethean.sh
+
+RUN chmod +x /ethean.sh \
+    && /usr/local/bin/ethean-devnet5 --version | head -1 > /version-devnet5.txt \
+    && printf "ethean devnet5: %s\n" \
+        "$(cat /version-devnet5.txt)" > /version.txt
+
+EXPOSE 5052 9000/udp 8080
+
+ENTRYPOINT ["/ethean.sh"]

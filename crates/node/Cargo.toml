@@ -27,6 +27,7 @@ ethean-network-wire = { workspace = true }
 ethean-storage = { workspace = true }
 ethean-sync = { workspace = true }
 ethean-rpc = { workspace = true }
+ethean-spec-fixtures = { workspace = true }
 ethean-metrics = { workspace = true }
 
 tokio = { workspace = true }

@@ -24,8 +24,8 @@ pub fn load_genesis_ssz_file(paths: &PersistPaths) -> Result<Option<State>> {
     if !path.exists() {
         return Ok(None);
     }
-    let bytes = fs::read(&path)
-        .map_err(|e| Error::Config(format!("read {}: {e}", path.display())))?;
+    let bytes =
+        fs::read(&path).map_err(|e| Error::Config(format!("read {}: {e}", path.display())))?;
     let state = ethean_genesis::load_genesis_ssz(&bytes, None)
         .map_err(|e| Error::Config(format!("decode genesis.ssz: {e}")))?;
     info!(
@@ -53,10 +53,10 @@ pub fn load_state_ssz(paths: &PersistPaths) -> Result<Option<State>> {
     if !path.exists() {
         return Ok(None);
     }
-    let bytes = fs::read(&path)
-        .map_err(|e| Error::Config(format!("read {}: {e}", path.display())))?;
-    let state = State::ssz_decode(&bytes)
-        .map_err(|e| Error::Config(format!("decode state.ssz: {e}")))?;
+    let bytes =
+        fs::read(&path).map_err(|e| Error::Config(format!("read {}: {e}", path.display())))?;
+    let state =
+        State::ssz_decode(&bytes).map_err(|e| Error::Config(format!("decode state.ssz: {e}")))?;
     info!(
         path = %path.display(),
         slot = state.slot.get(),
@@ -117,8 +117,8 @@ pub fn load_block_ssz_dir(paths: &PersistPaths) -> Result<Vec<(Hash32, Vec<u8>)>
         let Ok(root) = parse_hex32(stem) else {
             continue;
         };
-        let bytes = fs::read(&path)
-            .map_err(|e| Error::Config(format!("read {}: {e}", path.display())))?;
+        let bytes =
+            fs::read(&path).map_err(|e| Error::Config(format!("read {}: {e}", path.display())))?;
         if !bytes.is_empty() {
             out.push((root, bytes));
         }
@@ -149,8 +149,8 @@ fn parse_hex32(s: &str) -> Result<Hash32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ethean_primitives::{Bytes52, HASH32_ZERO};
     use ethean_genesis::GenesisBuilder;
+    use ethean_primitives::{Bytes52, HASH32_ZERO};
 
     #[test]
     fn genesis_and_state_ssz_roundtrip() {

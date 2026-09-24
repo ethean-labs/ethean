@@ -47,7 +47,7 @@ path (the entrypoint exports `ETHEAN_PROVER_BIN`).
 
 ## Hive registration
 
-1. Build `ethpandaops/ethean:local`.
+1. Build `ghcr.io/ethean-labs/ethean:local`.
 2. Copy `docker/hive/upstream-clients-ethean/` → `ethereum/hive/clients/ethean/`.
 3. Append client row + `ethean=devnet4,devnet5` in lean-devnets.
 4. Run lean simulator with `--client ethean`.

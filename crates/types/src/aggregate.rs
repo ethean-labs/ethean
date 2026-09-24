@@ -127,12 +127,22 @@ impl MultiMessageAggregate {
         Ok(Self { proof })
     }
 
+    /// leanSpec `MultiMessageAggregate` is a container with one variable field:
+    /// a 4-byte offset (always 4) followed by the proof bytes.
     pub fn ssz_encode(&self) -> Vec<u8> {
-        encode_byte_list(&self.proof)
+        let mut out = Vec::with_capacity(4 + self.proof.len());
+        out.extend_from_slice(&4u32.to_le_bytes());
+        out.extend_from_slice(&encode_byte_list(&self.proof));
+        out
     }
 
     pub fn ssz_decode(input: &[u8]) -> Result<Self, TypesError> {
-        Self::new(input.to_vec())
+        if input.len() < 4 || input[..4] != 4u32.to_le_bytes() {
+            return Err(TypesError::InvalidContainer(
+                "MultiMessageAggregate must start with the proof offset 4".into(),
+            ));
+        }
+        Self::new(input[4..].to_vec())
     }
 
     pub fn hash_tree_root(&self) -> Result<Root, TypesError> {

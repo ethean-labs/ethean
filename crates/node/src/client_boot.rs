@@ -14,6 +14,7 @@ impl EtheanClient {
         &mut self,
         network: &crate::network_target::NetworkTarget,
         listen_port: u16,
+        who: &crate::network::ListenIdentity,
     ) -> Result<()> {
         self.db.verify_schema()?;
         self.observability.mark_storage_ok();
@@ -78,7 +79,7 @@ impl EtheanClient {
                 info!(%fork_segment, "resolved gossip fork segment from operator digest");
             }
             ForkDigestSource::InterimNameHash => {
-                info!(%fork_segment, "resolved interim gossip fork segment (SHA-256 name hash)");
+                info!(%fork_segment, "resolved gossip fork segment from fork GOSSIP_DIGEST");
             }
         }
         if network.mesh_isolation_risk() {
@@ -102,6 +103,7 @@ impl EtheanClient {
             &fork_segment,
             listen_port,
             attestation_subnets,
+            who,
         )
         .await?;
         info!(
@@ -128,12 +130,11 @@ impl EtheanClient {
             crate::boot_network::dial_bootnodes(network, None);
         }
 
-        let genesis_root = self.genesis.hash_tree_root().map_err(crate::Error::Types)?;
-        let status = crate::local_status::local_status(&self.owner, genesis_root, &fork_segment);
+        let status = crate::local_status::local_status(&self.owner);
         info!(
-            head_slot = status.head_slot,
-            finalized_slot = status.finalized_slot,
-            fork = %status.fork_segment,
+            head_slot = status.head_slot(),
+            finalized_slot = status.finalized_slot(),
+            fork_segment = %fork_segment,
             "local Lean Status ready for peer handshake"
         );
         self.local_status = Some(status);

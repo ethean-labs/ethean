@@ -77,23 +77,16 @@ impl NetworkTarget {
     }
 
     /// Build from CLI network name + optional bootnodes + optional fork digest.
+    ///
+    /// `--bootnodes none` (or `ETHEAN_BOOTNODES=none`) skips file / env fallback.
+    /// Values may be CSV multiaddrs, `enr:` records, or a YAML `nodes.yaml` path.
     pub fn from_cli(
         network: &str,
         bootnodes_csv: Option<&str>,
         fork_digest: Option<&str>,
     ) -> Result<Self, String> {
         let id = NetworkId::parse(network)?;
-        let mut bootnodes = parse_bootnode_csv(bootnodes_csv.unwrap_or(""));
-        if bootnodes.is_empty() {
-            if let Ok(env) = std::env::var("ETHEAN_BOOTNODES") {
-                bootnodes = parse_bootnode_csv(&env);
-            }
-        }
-        if bootnodes.is_empty() {
-            if let Some(path) = bootnodes_path_for(id) {
-                bootnodes = load_lines_file(&path)?;
-            }
-        }
+        let bootnodes = resolve_bootnodes(id, bootnodes_csv)?;
 
         let mut digest = fork_digest
             .map(str::trim)
@@ -126,12 +119,28 @@ impl NetworkTarget {
     }
 }
 
-fn parse_bootnode_csv(raw: &str) -> Vec<String> {
-    raw.split(|c| c == ',' || c == ';' || c == '\n')
-        .map(str::trim)
-        .filter(|s| !s.is_empty() && !s.starts_with('#'))
-        .map(|s| s.to_string())
-        .collect()
+fn resolve_bootnodes(id: NetworkId, cli: Option<&str>) -> Result<Vec<String>, String> {
+    if let Some(raw) = cli.map(str::trim).filter(|s| !s.is_empty()) {
+        return match crate::bootnodes_parse::parse_bootnodes_value(raw)? {
+            crate::bootnodes_parse::BootnodesSpec::None => Ok(Vec::new()),
+            crate::bootnodes_parse::BootnodesSpec::List(list) => Ok(list),
+        };
+    }
+    if let Ok(env) = std::env::var("ETHEAN_BOOTNODES") {
+        let t = env.trim();
+        if !t.is_empty() {
+            return match crate::bootnodes_parse::parse_bootnodes_value(t)? {
+                crate::bootnodes_parse::BootnodesSpec::None => Ok(Vec::new()),
+                crate::bootnodes_parse::BootnodesSpec::List(list) => Ok(list),
+            };
+        }
+    }
+    if let Some(path) = bootnodes_path_for(id) {
+        if path.exists() {
+            return crate::bootnodes_parse::load_bootnodes_file(&path);
+        }
+    }
+    Ok(Vec::new())
 }
 
 fn bootnodes_path_for(id: NetworkId) -> Option<PathBuf> {
@@ -168,9 +177,15 @@ mod tests {
 
     #[test]
     fn parses_devnet_aliases() {
-        assert_eq!(NetworkId::parse("pq-devnet-4").unwrap(), NetworkId::PqDevnet4);
+        assert_eq!(
+            NetworkId::parse("pq-devnet-4").unwrap(),
+            NetworkId::PqDevnet4
+        );
         assert_eq!(NetworkId::parse("devnet4").unwrap(), NetworkId::PqDevnet4);
-        assert_eq!(NetworkId::parse("pq-devnet-5").unwrap(), NetworkId::PqDevnet5);
+        assert_eq!(
+            NetworkId::parse("pq-devnet-5").unwrap(),
+            NetworkId::PqDevnet5
+        );
         assert_eq!(NetworkId::parse("devnet5").unwrap(), NetworkId::PqDevnet5);
         assert_eq!(NetworkId::parse("local").unwrap(), NetworkId::Local);
     }
@@ -184,6 +199,22 @@ mod tests {
         )
         .unwrap();
         assert_eq!(t.bootnodes.len(), 2);
+    }
+
+    #[test]
+    fn none_skips_fallback() {
+        let t = NetworkTarget::from_cli("local", Some("none"), None).unwrap();
+        assert!(t.bootnodes.is_empty());
+    }
+
+    #[test]
+    fn enr_csv_becomes_quic_multiaddr() {
+        let enr = "enr:-IW4QMn2QUYENcnsEpITZLph3YZee8Y3B92INUje_riQUOFQQ5Zm5kASi7E_IuQoGCWgcmCYrH920Q52kH7tQcWcPhEBgmlkgnY0gmlwhH8AAAGEcXVpY4IjKIlzZWNwMjU2azGhAhMMnGF1rmIPQ9tWgqfkNmvsG-aIyc9EJU5JFo3Tegys";
+        let t = NetworkTarget::from_cli("local", Some(enr), None).unwrap();
+        assert_eq!(
+            t.bootnodes,
+            vec!["/ip4/127.0.0.1/udp/9000/quic-v1/p2p/16Uiu2HAkvi2sxT75Bpq1c7yV2FjnSQJJ432d6jeshbmfdJss1i6f".to_string()]
+        );
     }
 
     #[test]

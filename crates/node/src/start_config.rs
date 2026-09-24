@@ -1,7 +1,8 @@
 //! Start / run mode configuration for the node client.
 
 use crate::network_target::NetworkTarget;
-use std::net::SocketAddr;
+use ethean_network::{ListenIdentity, NodeKey};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 /// How `EtheanClient::start` drives duty ticks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,8 +99,16 @@ pub struct StartConfig {
     pub http: Option<RpcListen>,
     /// UDP/QUIC listen port (`0` = OS ephemeral; default `9000` for Hive/mesh).
     pub listen_port: u16,
+    /// QUIC listen interface (`--socket-address`).
+    pub listen_ip: IpAddr,
+    /// secp256k1 node key used as the libp2p swarm identity.
+    pub node_key: Option<NodeKey>,
     /// Local genesis size and aggregator/finality flags.
     pub roles: LocalRoles,
+    /// Aggregator subnet ids from `--aggregate-subnet-ids` (parity / logs).
+    pub aggregate_subnet_ids: Vec<u64>,
+    /// Checkpoint-sync URL when `--checkpoint-sync-url` is set (anchor TBD).
+    pub checkpoint_sync_url: Option<String>,
     /// Slots retained below finalized before durable block prune (default 256).
     pub prune_keep_slots: u64,
 }
@@ -112,7 +121,11 @@ impl Default for StartConfig {
             metrics: Some(MetricsListen::default()),
             http: Some(RpcListen::default()),
             listen_port: 9000,
+            listen_ip: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
+            node_key: None,
             roles: LocalRoles::default(),
+            aggregate_subnet_ids: Vec::new(),
+            checkpoint_sync_url: None,
             prune_keep_slots: crate::block_prune::KEEP_BELOW_FINALIZED,
         }
     }
@@ -170,10 +183,42 @@ impl StartConfig {
         self
     }
 
+    /// Set QUIC listen interface (`--socket-address`).
+    pub fn with_listen_ip(mut self, listen_ip: IpAddr) -> Self {
+        self.listen_ip = listen_ip;
+        self
+    }
+
+    /// Set the secp256k1 swarm identity.
+    pub fn with_node_key(mut self, node_key: Option<NodeKey>) -> Self {
+        self.node_key = node_key;
+        self
+    }
+
     /// Set local validator count and aggregator/finality roles.
     pub fn with_roles(mut self, roles: LocalRoles) -> Self {
         self.roles = roles;
         self
+    }
+
+    /// Record `--aggregate-subnet-ids` (Ethean already subscribes to every subnet).
+    pub fn with_aggregate_subnet_ids(mut self, ids: Vec<u64>) -> Self {
+        self.aggregate_subnet_ids = ids;
+        self
+    }
+
+    /// Record `--checkpoint-sync-url` (empty-datadir anchor when implemented).
+    pub fn with_checkpoint_sync_url(mut self, url: Option<String>) -> Self {
+        self.checkpoint_sync_url = url;
+        self
+    }
+
+    /// QUIC bind identity (listen IP + optional node key).
+    pub fn listen_identity(&self) -> ListenIdentity {
+        ListenIdentity {
+            listen_ip: self.listen_ip,
+            node_key: self.node_key.clone(),
+        }
     }
 
     /// Slots to keep below the finalized checkpoint before pruning durable blobs.
@@ -196,6 +241,8 @@ mod tests {
         assert!(cfg.metrics.is_some());
         assert!(cfg.http.is_some());
         assert_eq!(cfg.listen_port, 9000);
+        assert_eq!(cfg.listen_ip, IpAddr::V4(Ipv4Addr::UNSPECIFIED));
+        assert!(cfg.node_key.is_none());
         assert!(cfg.roles.local_finality);
         assert_eq!(cfg.roles.validators, 4);
         assert_eq!(

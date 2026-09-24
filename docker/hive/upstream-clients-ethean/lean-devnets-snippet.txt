@@ -1,2 +1,0 @@
-# Append to ethereum/hive simulators/lean/config/lean-devnets.txt
-ethean=devnet4,devnet5

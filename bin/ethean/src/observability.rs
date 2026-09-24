@@ -1,4 +1,4 @@
-//! Bring up local Prometheus + Grafana via Docker Compose when `--metrics` is set.
+//! Bring up local Prometheus + Grafana via Docker Compose when `--observability-stack` is set.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -18,7 +18,7 @@ pub fn ensure_stack() -> Result<(), String> {
 
     info!(
         path = %dir.display(),
-        "starting Prometheus + Grafana via docker compose (--metrics)"
+        "starting Prometheus + Grafana via docker compose (--observability-stack)"
     );
 
     let output = match Command::new("docker")
@@ -31,7 +31,7 @@ pub fn ensure_stack() -> Result<(), String> {
             warn!(
                 error = %e,
                 "Docker CLI not found — Grafana :3000 and Prometheus :9090 will stay blank. \
-                 Install Docker Engine with the compose plugin, then re-run with --metrics \
+                 Install Docker Engine with the compose plugin, then re-run with --observability-stack \
                  (or ./scripts/run-observability.sh). Port change is not needed; \
                  only :9100 is from ethean itself."
             );
@@ -72,17 +72,17 @@ fn compose_failure_hint(output: &str) -> &'static str {
     let t = output.to_ascii_lowercase();
     if t.contains("permission denied") && t.contains("docker.sock") {
         "the current user cannot reach /var/run/docker.sock. Add it to the docker \
-         group (`sudo usermod -aG docker $USER`, then log in again) and re-run --metrics"
+         group (`sudo usermod -aG docker $USER`, then log in again) and re-run --observability-stack"
     } else if t.contains("cannot connect to the docker daemon")
         || t.contains("is the docker daemon running")
     {
         "Docker CLI is present but the daemon is not running. Start it with \
-         `sudo systemctl start docker`, then re-run --metrics"
+         `sudo systemctl start docker`, then re-run --observability-stack"
     } else if t.contains("unknown command") || t.contains("'compose' is not a docker command") {
-        "the Docker compose plugin is missing. Install docker-compose-plugin, then re-run --metrics"
+        "the Docker compose plugin is missing. Install docker-compose-plugin, then re-run --observability-stack"
     } else {
-        "check `docker compose up -d` in deploy/observability, then re-run --metrics \
-         (or ./scripts/run-observability.sh). Or skip --metrics and scrape :9100 only"
+        "check `docker compose up -d` in deploy/observability, then re-run --observability-stack \
+         (or ./scripts/run-observability.sh). Or skip the stack and scrape :9100 only"
     }
 }
 

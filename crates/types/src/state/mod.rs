@@ -1,6 +1,6 @@
 //! Consensus state container (leanSpec lstar `State`).
 
-mod codec;
+pub mod codec;
 
 use ethean_primitives::{Hash32, Slot};
 use ethean_ssz::{

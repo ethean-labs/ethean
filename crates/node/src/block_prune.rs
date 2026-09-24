@@ -96,10 +96,7 @@ fn prune_ssz_files(paths: &PersistPaths, floor_slot: u64) -> Result<u32> {
         match fs::remove_file(&path) {
             Ok(()) => removed = removed.saturating_add(1),
             Err(e) => {
-                return Err(Error::Config(format!(
-                    "remove {}: {e}",
-                    path.display()
-                )));
+                return Err(Error::Config(format!("remove {}: {e}", path.display())));
             }
         }
     }

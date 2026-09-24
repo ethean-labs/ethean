@@ -56,11 +56,7 @@ where
         }
     }
 
-    events.push(apply_command(
-        owner,
-        shutdown,
-        ChainCommand::Shutdown,
-    ));
+    events.push(apply_command(owner, shutdown, ChainCommand::Shutdown));
     Ok(events)
 }
 

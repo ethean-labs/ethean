@@ -106,7 +106,7 @@ fn apply_no_slots_allow_zero(
 }
 
 /// Prefer the full transition; use no-slots / zero-root helpers for fixture edge cases.
-fn apply_stf_block(
+pub(crate) fn apply_stf_block(
     state: &State,
     block: &Block,
     ctx: &TransitionContext,

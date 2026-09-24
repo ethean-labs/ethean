@@ -5,14 +5,89 @@ All notable changes to **Ethean Lean Consensus Client** are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses the workspace version in [`VERSION`](./VERSION)
 (`MAJOR.MINOR.PATCH`). GitHub Releases for milestone cuts live at
-https://github.com/Pamenarti/Ethean/releases.
+https://github.com/ethean-labs/ethean/releases.
 
 Session-level engineering notes remain under [`docs/`](./docs/). This file is
 the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
+### Added
+
+- `--checkpoint-sync-url` bootstraps from a peer's `/lean/v0` finalized state
+  and block pair after verifying they belong together (leanSpec checkpoint
+  sync); the last leanMetrics series are recorded: connected and mesh peers by
+  client family through libp2p identify, and fork-choice reorg depth.
+- `crates/spec-fixtures` runs every case of the leanSpec ssz, networking codec,
+  slot clock, justifiability, Poseidon, sync, single-message proof and API
+  endpoint suites, in addition to the full fork-choice and state-transition
+  drives; unsupported vectors are listed, not hidden. The leanSpec node
+  registry's attestation coverage gauges are exported next to the leanMetrics
+  table.
+- Hive `test_driver` routes (`fork_choice/init`, `fork_choice/step`,
+  `state_transition/run`, `verify_signatures/run`) behind
+  `HIVE_LEAN_TEST_DRIVER=1`, driving the production fork choice, state
+  transition and proof verification; every extracted leanSpec fixture passes.
+- Hive `/lean/v0` HTTP surface (`health`, `checkpoints/justified`, `fork_choice`,
+  `states/finalized`, `blocks/finalized`, `admin/aggregator`) with `/lean/v1`
+  aliases, HTTP/1.1 request bodies, and a published fork-choice snapshot
+  (node weights stay 0 until `ForkChoiceStore` is wired on the chain owner).
+- Hive / lean-quickstart `ethean start` aliases: `--network` may be a `config.yaml`
+  path, `--node-key` / `--private-key-path` (secp256k1 hex), `--socket-address` /
+  `--socket-port`, `--is-aggregator`, `--aggregate-subnet-ids`,
+  `--attestation-committee-count`, `--checkpoint-sync-url`, `--validator-registry-path`, and
+  `--observability-stack` for Grafana compose. `--metrics` is a no-op keep-on for
+  scrape HTTP. Env fallbacks `ETHEAN_HTTP_ADDRESS` and `ETHEAN_METRICS_ADDRESS`.
+- secp256k1 libp2p swarm identity: persist `<data-dir>/node.key` across restarts,
+  generate per run with `--ephemeral`, and log the PeerId plus dialable
+  `/ip4/…/udp/…/quic-v1/p2p/<peerid>` multiaddr. `/lean/v1/node/identity` uses
+  that PeerId.
+- `--bootnodes` accepts `none`, CSV of QUIC multiaddrs and/or `enr:` records, or
+  a YAML `nodes.yaml` list. secp256k1 ENRs decode to a QUIC multiaddr
+  (`quic` port, fallback `udp`).
+- Multi-arch Docker image (`linux/amd64` + `linux/arm64`) via
+  `.github/workflows/docker-image.yml`, published to
+  `ghcr.io/<github-owner>/ethean` (lowercased). Tags: `sha-<short>` every
+  build, `unstable` on `master`, semver plus `latest` / `devnet5` /
+  `latest-devnet5` on `v*` tags. Runtime image ships `ethean` and
+  `ethean-prover` in `/usr/local/bin` with `config/networks/` under `/app`.
+- Hive drop-in `docker/hive/upstream-clients-ethean/` matching
+  `hive/clients/ream/` (Dockerfile wrapping `ghcr.io/ethean-labs/ethean:devnet5`,
+  `Dockerfile.git`, `ethean.sh`, `hive.yaml`, `validators.yaml`).
+- Repository URL in `Cargo.toml`, release-binaries `REPO_URL`, and changelog
+  compare links set to `https://github.com/ethean-labs/ethean`.
+
+### Changed
+
+- Fork choice rejects votes from validators outside the target state's
+  registry (`VALIDATOR_NOT_IN_STATE`) and the driver path verifies vote
+  signatures and aggregate proofs before admission.
+- Block production follows leanSpec vote selection: target-slot order, known
+  head roots, justified-source and on-chain checks, re-anchoring rounds, and
+  a body cap of `MAX_ATTESTATIONS_DATA` (8, was 16).
+- Aggregators recover each block vote's Type-1 proof from the block proof
+  (`split_type2`) and reuse it as a merge child; known on-chain payloads feed
+  `lean_latest_known_aggregated_payloads`.
+- Wire layer now follows leanSpec lstar: gossip fork segment `12345678`,
+  anonymous gossipsub with the spec 20-byte message id and mesh parameters, SSZ
+  `Status`, varint + snappy-framed req/resp chunks with spec response codes and
+  request encodings, subnet count from `ATTESTATION_COMMITTEE_COUNT`.
+- Genesis header `body_root` is `hash_tree_root(BlockBody([]))` as in leanSpec
+  (was zero), and `is_justifiable_after` uses an exact integer square root.
+- Console logs disable ANSI when stdout is not a terminal or `NO_COLOR` is set.
+
 ### Fixed
+
+- Docker image build copies `vendor/` before `cargo chef cook` so the leanVM
+  Windows `[patch]` overlays resolve inside the builder stage.
+- Wall-clock duty loops wait for genesis (hive and lean-quickstart start the
+  client before `GENESIS_TIME`) instead of shutting down on the first tick.
+- SSZ wire format now matches leanSpec: `BlockBody` and `MultiMessageAggregate`
+  carry their container offset, `State.validators` is a plain concatenation,
+  `Validator.index` is unbounded at decode time, and signature roots use the
+  `Signature` container layout. Blocks and served states produced before this
+  change were undecodable by spec clients. Durable schema id is now
+  `ethean-lc-d5-v2`; recreate `--data-dir` trees.
 
 - Windows `x86_64-pc-windows-msvc` release archives compile via
   `vendor/leanvm-windows` overlays for leanVM `system-info` / `zk-alloc`
@@ -231,8 +306,8 @@ work that landed before the root `VERSION` file (`0.1.1`) through `0.1.12`.
   `blstrs` / `bls12_381` under `crates/` or `bin/` as hard-fail for release
   promotion.
 
-[Unreleased]: https://github.com/Pamenarti/Ethean/compare/v0.1.53...HEAD
-[0.1.53]: https://github.com/Pamenarti/Ethean/compare/v0.1.47...v0.1.53
-[0.1.47]: https://github.com/Pamenarti/Ethean/compare/v0.1.27...v0.1.47
-[0.1.27]: https://github.com/Pamenarti/Ethean/compare/v0.1.12...v0.1.27
-[0.1.12]: https://github.com/Pamenarti/Ethean/releases/tag/v0.1.12
+[Unreleased]: https://github.com/ethean-labs/ethean/compare/v0.1.53...HEAD
+[0.1.53]: https://github.com/ethean-labs/ethean/compare/v0.1.47...v0.1.53
+[0.1.47]: https://github.com/ethean-labs/ethean/compare/v0.1.27...v0.1.47
+[0.1.27]: https://github.com/ethean-labs/ethean/compare/v0.1.12...v0.1.27
+[0.1.12]: https://github.com/ethean-labs/ethean/releases/tag/v0.1.12

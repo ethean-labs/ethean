@@ -77,18 +77,21 @@ impl QuicSwarm {
         request: &[u8],
         channel: ResponseChannel<Vec<u8>>,
     ) {
-        let roots = decode_root_list(request);
+        let roots = match crate::reqresp::decode_blocks_by_root(request) {
+            Ok(req) => req.roots,
+            Err(e) => {
+                tracing::warn!(error = %e, "blocks-by-root request decode failed");
+                Vec::new()
+            }
+        };
         let mut blocks = Vec::new();
         for root in roots {
             if let Some(block) = self.blocks_by_root.get(&root) {
                 blocks.push(block.clone());
             }
         }
-        let payload = crate::reqresp::encode_blocks_by_root_response(&blocks).unwrap_or_else(|_| {
-            let mut empty = Vec::with_capacity(4);
-            empty.extend_from_slice(&0u32.to_le_bytes());
-            empty
-        });
+        let payload = crate::reqresp::encode_blocks_by_root_response(&blocks)
+            .unwrap_or_else(|_| Vec::new());
         let _ = self
             .swarm
             .behaviour_mut()
@@ -133,7 +136,7 @@ impl QuicSwarm {
                     &self.blocks_by_slot,
                     req.start_slot,
                     req.count,
-                    req.step,
+                    1,
                 );
                 self.range_serve_found
                     .fetch_add(collected.found, Ordering::Relaxed);
@@ -143,7 +146,7 @@ impl QuicSwarm {
                     tracing::warn!(
                         start_slot = req.start_slot,
                         count = req.count,
-                        step = req.step.max(1),
+                        step = 1u64,
                         found = collected.found,
                         missing = collected.missing,
                         cache_slots = self.blocks_by_slot.len(),
@@ -163,11 +166,8 @@ impl QuicSwarm {
                 Vec::new()
             }
         };
-        let payload = crate::reqresp::encode_blocks_by_root_response(&blocks).unwrap_or_else(|_| {
-            let mut empty = Vec::with_capacity(4);
-            empty.extend_from_slice(&0u32.to_le_bytes());
-            empty
-        });
+        let payload = crate::reqresp::encode_blocks_by_root_response(&blocks)
+            .unwrap_or_else(|_| Vec::new());
         let _ = self
             .swarm
             .behaviour_mut()
@@ -226,26 +226,6 @@ pub(crate) fn peer_fingerprint(peer: &PeerId) -> Hash32 {
     let mut out = [0u8; 32];
     out.copy_from_slice(&dig);
     out
-}
-
-/// Decode the scaffold blocks-by-root request (u32 LE count + 32-byte roots).
-fn decode_root_list(input: &[u8]) -> Vec<Hash32> {
-    if input.len() < 4 {
-        return Vec::new();
-    }
-    let n = u32::from_le_bytes(input[0..4].try_into().unwrap_or([0; 4])) as usize;
-    let mut roots = Vec::with_capacity(n.min(128));
-    let mut off = 4;
-    for _ in 0..n {
-        if off + 32 > input.len() {
-            break;
-        }
-        let mut root = [0u8; 32];
-        root.copy_from_slice(&input[off..off + 32]);
-        roots.push(root);
-        off += 32;
-    }
-    roots
 }
 
 /// Result of walking a slot range against the in-memory serve cache.

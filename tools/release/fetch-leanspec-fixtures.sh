@@ -11,7 +11,7 @@ ARCHIVE="$CACHE/fixtures-prod-scheme.tar.gz"
 EXTRACTED="$CACHE/extracted"
 
 toml_value() {
-  sed -nE "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"?([^\"]+)\"?[[:space:]]*$/\1/p" "$MANIFEST" | head -n1
+  tr -d '\r' < "$MANIFEST" | sed -nE "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"?([^\"]+)\"?[[:space:]]*$/\1/p" | head -n1
 }
 
 [ -f "$MANIFEST" ] || { echo "missing manifest: $MANIFEST" >&2; exit 1; }

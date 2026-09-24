@@ -34,3 +34,6 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [owned index proposer gate](owned-index-proposer-gate-2026-09-20.md)
 - [pool backed block body](pool-backed-block-body-2026-09-19.md)
 - [state ssz encode decode complete](state-ssz-encode-decode-complete-2026-09-20.md)
+- [genesis body root and isqrt](genesis-body-root-and-isqrt-2026-09-24.md)
+- [block production spec selection](block-production-spec-selection-2026-09-24.md)
+- [fixture suites full coverage](fixture-suites-full-coverage-2026-09-24.md)

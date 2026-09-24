@@ -2,7 +2,7 @@
 
 Owned by `ethean-storage`.
 
-- Schema id / version: `ethean-lc-d5-v1` (see crate `schema` module)
+- Schema id / version: `ethean-lc-d5-v2` (see crate `schema` module)
 - In-memory `Database` with checksummed puts and flush-before-publish batching
 - Path open: `open_path` refuses legacy markers, then returns `BackendPending` until RocksDB is bound
 - Optional feature `ethean-storage/rocksdb` (no silent memory fallback when pending)

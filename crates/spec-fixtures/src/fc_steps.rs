@@ -44,7 +44,7 @@ pub fn apply_tick(
     Ok(())
 }
 
-fn maybe_tick_to_slot(
+pub(crate) fn maybe_tick_to_slot(
     store: &mut ForkChoiceStore,
     step: &Value,
     slot: u64,
@@ -63,7 +63,7 @@ fn maybe_tick_to_slot(
 }
 
 /// Advance clock to the earliest interval that admits a slot-N vote (Gean/leanSpec).
-fn maybe_tick_to_admit(store: &mut ForkChoiceStore, slot: u64) -> Result<(), FcRunError> {
+pub(crate) fn maybe_tick_to_admit(store: &mut ForkChoiceStore, slot: u64) -> Result<(), FcRunError> {
     let start = slot.saturating_mul(store.intervals_per_slot);
     let need = start.saturating_sub(store.gossip_disparity_intervals);
     if store.time < need {

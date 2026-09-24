@@ -44,7 +44,7 @@ mod tests {
         let r = Registry::with_build_info("0.1.0").unwrap();
         let text = export_prometheus_text(&r);
         assert!(text.contains("ethean_build_info"));
-        assert!(text.contains("schema=\"ethean-metrics-v3\""));
+        assert!(text.contains("schema=\"ethean-metrics-v4\""));
     }
 
     #[test]

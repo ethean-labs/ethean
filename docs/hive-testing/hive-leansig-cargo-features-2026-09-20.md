@@ -16,16 +16,16 @@ depend on gitignored vendor trees.
 
 ```bash
 # Default (QUIC only)
-docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
+docker build -f docker/hive/Dockerfile -t ghcr.io/ethean-labs/ethean:local .
 
 # With leanSig (after tools/release/vendor-leansig-bigint-fix.ps1 + .cargo/config.toml)
 docker build -f docker/hive/Dockerfile \
   --build-arg CARGO_FEATURES=leansig-backend \
-  -t ethpandaops/ethean:local-leansig .
+  -t ghcr.io/ethean-labs/ethean:local-leansig .
 ```
 
 ## Still open
 
 - Upstream leanSig `num-bigint` 0.5 so git dep works without `[patch]`
-- Published `ethpandaops/ethean` image with leansig enabled
+- Published `ghcr.io/ethean-labs/ethean` image with leansig enabled
 - leanVM FFI link in the same image (`leanvm-backend`)

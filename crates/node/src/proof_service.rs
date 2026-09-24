@@ -36,6 +36,13 @@ pub enum ProofJob {
         proposer_key: PublicKey,
         proposer_signature: Signature,
     },
+    /// Recover the Type-1 proof of one block vote from a block proof.
+    Split {
+        data: AttestationData,
+        participants: Vec<bool>,
+        block_proof: Vec<u8>,
+        public_keys_per_component: Vec<Vec<PublicKey>>,
+    },
 }
 
 /// Finished job; proofs still need in-process verification by the caller.
@@ -52,6 +59,13 @@ pub enum ProofOutcome {
         plan: PlanTransition,
         proof: Result<Vec<u8>, String>,
         /// Wall time the prover spent on this job.
+        elapsed: Duration,
+    },
+    /// A Type-1 recovered from a block proof (never re-gossiped).
+    Split {
+        data: AttestationData,
+        participants: Vec<bool>,
+        proof: Result<Vec<u8>, String>,
         elapsed: Duration,
     },
 }
@@ -104,6 +118,22 @@ fn run(client: &ProverClient, job: ProofJob) -> ProofOutcome {
                 });
             ProofOutcome::Block {
                 plan,
+                proof,
+                elapsed: started.elapsed(),
+            }
+        }
+        ProofJob::Split {
+            data,
+            participants,
+            block_proof,
+            public_keys_per_component,
+        } => {
+            let proof = client
+                .split_type2(block_proof, public_keys_per_component, data.hash_tree_root())
+                .map_err(|e| e.to_string());
+            ProofOutcome::Split {
+                data,
+                participants,
                 proof,
                 elapsed: started.elapsed(),
             }
@@ -171,7 +201,9 @@ impl ProofService {
     /// Queue a job; false when the queue is full or the worker is gone.
     pub fn submit(&mut self, job: ProofJob) -> bool {
         let key = match &job {
-            ProofJob::Attestation { data, .. } => (Some(data.hash_tree_root()), None),
+            ProofJob::Attestation { data, .. } | ProofJob::Split { data, .. } => {
+                (Some(data.hash_tree_root()), None)
+            }
             ProofJob::Block { plan, .. } => (None, plan.block_root().ok()),
         };
         match self.jobs.try_send(job) {
@@ -195,7 +227,8 @@ impl ProofService {
             match self.outcomes.try_recv() {
                 Ok(outcome) => {
                     match &outcome {
-                        ProofOutcome::Attestation { data, .. } => {
+                        ProofOutcome::Attestation { data, .. }
+                        | ProofOutcome::Split { data, .. } => {
                             self.attestations_in_flight.remove(&data.hash_tree_root());
                         }
                         ProofOutcome::Block { .. } => self.block_in_flight = None,

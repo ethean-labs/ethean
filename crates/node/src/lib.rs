@@ -5,30 +5,36 @@
 
 #![forbid(unsafe_code)]
 
+pub mod api_ssz;
+pub mod api_view;
+pub mod agg_pin;
 pub mod aggregation;
 pub mod aggregation_duty;
 pub mod aggregation_gossip;
-pub mod agg_pin;
 pub mod api_events;
 pub mod block_builder;
+pub mod block_payloads;
+pub mod block_prune;
 pub mod blocks_sync;
 pub mod boot_network;
-pub mod chain_owner;
+pub mod bootnodes_parse;
 pub mod chain_head;
 pub mod chain_fc;
 pub mod chain_fc_rebuild;
 pub mod chain_fc_votes;
+pub mod chain_known;
+pub mod chain_owner;
+pub mod checkpoint_http;
+pub mod checkpoint_sync;
 pub mod chain_persist;
 pub mod chain_redb;
 pub mod chain_snap;
-pub mod persist_paths;
-pub mod persist_ssz;
-pub mod block_prune;
-pub mod serve_cache_seed;
 pub mod cli;
+pub mod cli_resolve;
 pub mod client;
 pub mod client_boot;
 pub mod client_data_dir;
+pub mod client_start;
 pub mod client_swarm;
 pub mod clock;
 pub mod commands;
@@ -42,11 +48,12 @@ pub mod duty_propose;
 pub mod duty_propose_gate;
 pub mod duty_step;
 pub mod events;
+pub mod fork_digest_policy;
+pub mod genesis_bundle;
+pub mod gossip_attestation;
 pub mod gossip_decode;
 pub mod gossip_ingest;
-pub mod gossip_attestation;
 pub mod gossip_stf;
-pub mod genesis_bundle;
 pub mod lean_metrics;
 pub mod local_attester;
 pub mod local_finality;
@@ -55,50 +62,58 @@ pub mod local_proposer;
 pub mod local_status;
 pub mod metrics_snap;
 pub mod network;
+pub mod network_target;
+pub mod observability;
+pub mod persist_paths;
+pub mod persist_ssz;
 pub mod proof_collect;
 pub mod proof_service;
-pub mod network_target;
-pub mod fork_digest_policy;
-pub mod observability;
+pub mod registry_apply;
+pub mod registry_keys;
+pub mod registry_keys_view;
+pub mod serve_cache_seed;
 pub mod shutdown;
 pub mod signal_loop;
 pub mod start_config;
 pub mod status_handshake;
-pub mod sync_orphan;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump_agg;
-pub mod registry_apply;
-pub mod registry_keys;
-pub mod registry_keys_view;
+pub mod sync_orphan;
+pub mod test_driver;
 pub mod validator_registry;
 pub mod wall_loop;
 pub mod wall_tick;
 
-pub use ethean_primitives::{Epoch, Hash32, Slot, ValidatorIndex};
-pub use ethean_profile::{lstar_devnet, ChainProfile, ForkId};
-pub use ethean_types::{
-    Attestation, Block, Checkpoint, SignedBlock, State, TypesError, Validator,
-};
 pub use ethean_genesis::{
     genesis_from_lean_config, load_genesis_ssz, load_lean_network_config, local_smoke_genesis,
     BuiltGenesis, ClockError, FakeTime, GenesisBuilder, GenesisError, LeanNetworkConfig, SlotClock,
     SystemTimeSource, TimeSource,
 };
+pub use ethean_primitives::{Epoch, Hash32, Slot, ValidatorIndex};
+pub use ethean_profile::{lstar_devnet, ChainProfile, ForkId};
+pub use ethean_types::{Attestation, Block, Checkpoint, SignedBlock, State, TypesError, Validator};
 
+pub use bootnodes_parse::{parse_bootnodes_value, BootnodesSpec};
 pub use chain_owner::{ChainOwner, ChainSnapshot};
+pub use cli::StartArgs;
+pub use cli_resolve::{
+    flag_env_or, parse_subnet_ids, resolve_genesis_source, resolve_node_key, resolve_roles,
+    GenesisSource, NodeKeySource, RoleFlags,
+};
 pub use client::EtheanClient;
 pub use commands::ChainCommand;
 pub use dispatch::apply_command;
 pub use duty_loop::{run_duty_loop, DutyLoopConfig};
+pub use ethean_network::{ListenIdentity, NodeKey};
 pub use events::ChainEvent;
+pub use network_target::{NetworkId, NetworkTarget};
 pub use observability::{smoke_health_route, NodeObservability};
+pub use registry_keys::{load_node_keys, LoadedNodeKeys};
 pub use shutdown::{ShutdownPhase, ShutdownState};
 pub use signal_loop::run_until_signal;
-pub use network_target::{NetworkId, NetworkTarget};
 pub use start_config::{LocalRoles, MetricsListen, RpcListen, RunMode, StartConfig};
-pub use registry_keys::{load_node_keys, LoadedNodeKeys};
 pub use validator_registry::{
     load_registry_key_rows, load_validator_assignment, parse_registry_key_rows,
     parse_validator_assignment, RegistryKeyRow, ValidatorAssignment,
@@ -150,3 +165,6 @@ pub enum Error {
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Crate package name
 pub const NAME: &str = env!("CARGO_PKG_NAME");
+
+#[cfg(test)]
+mod api_fixture_tests;

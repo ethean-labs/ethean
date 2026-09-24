@@ -1,6 +1,6 @@
 //! Gossip validation outcomes mapped to ACCEPT / IGNORE / REJECT.
 
-use ethean_network_wire::{decompress_raw, message_id, WireError};
+use ethean_network_wire::{decompress_raw, message_id_valid_snappy, WireError};
 use ethean_primitives::Hash32;
 
 /// Gossipsub application validation result.
@@ -30,7 +30,9 @@ pub fn validate_gossip_payload(
     if topic.contains("/eth2/") || topic.is_empty() {
         return (GossipAction::Reject, None);
     }
-    let id = message_id(topic, &plain);
+    let id20 = message_id_valid_snappy(topic, &plain);
+    let mut id = [0u8; 32];
+    id[..20].copy_from_slice(&id20);
     if !seen_ids.insert(id) {
         return (GossipAction::Ignore, None);
     }

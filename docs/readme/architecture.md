@@ -22,7 +22,7 @@ req/resp, and operator-shaped network labels — without carrying Beacon BLS or
 | `ethean-genesis` / `ethean-transition` / `ethean-fork-choice` | Genesis, state transition, 3SF-mini |
 | `ethean-validator` | 4s / 5-interval duties |
 | `ethean-network` / `ethean-network-wire` | Gossip admission, req/resp, QUIC facade |
-| `ethean-storage` / `ethean-sync` | Schema `ethean-lc-d5-v1`, sync gates |
+| `ethean-storage` / `ethean-sync` | Schema `ethean-lc-d5-v2`, sync gates |
 | `ethean-rpc` / `ethean-metrics` | `/lean/v1`, `ethean_` metrics |
 | `ethean-node` | Chain owner shell + client |
 | `ethean` (`bin/ethean`) | CLI |

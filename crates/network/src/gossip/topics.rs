@@ -6,10 +6,8 @@ use ethean_network_wire::{
 
 use crate::error::{NetworkError, Result};
 
-/// Attestation subnet topics subscribed for local / interop smoke meshes.
-///
-/// Operator D5 runs may require a larger set; raise once leanSpec pins subnet count.
-pub const SMOKE_ATTESTATION_SUBNETS: u16 = 4;
+/// Default attestation subnet count: leanSpec `ATTESTATION_COMMITTEE_COUNT` (lstar = 1).
+pub const SMOKE_ATTESTATION_SUBNETS: u16 = 1;
 
 /// Canonical Lean gossip topics for a fork name (e.g. `lstar`).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,7 +21,7 @@ pub struct LeanGossipTopics {
 }
 
 impl LeanGossipTopics {
-    /// Build topics from a profile fork name (interim SHA-256 segment).
+    /// Build topics from a profile fork name (lstar `GOSSIP_DIGEST` by default).
     pub fn from_fork_name(fork_name: &str) -> Result<Self> {
         let fork = fork_segment_from_name(fork_name)
             .map_err(|e| NetworkError::Handshake(e.to_string()))?;
@@ -90,7 +88,7 @@ mod tests {
         let t = LeanGossipTopics::from_fork_name("lstar").unwrap();
         assert!(t.block.contains("/leanconsensus/"));
         assert!(t.block.ends_with("/block/ssz_snappy"));
-        assert!(!t.block.contains("12345678"));
+        assert!(t.block.contains("12345678"));
         assert_eq!(t.attestations.len(), SMOKE_ATTESTATION_SUBNETS as usize);
         assert!(t.attestation_0().contains("/attestation_0/"));
         assert!(LeanGossipTopics::reject_if_eth2("/eth2/beacon_block").is_err());
@@ -100,7 +98,9 @@ mod tests {
     fn segment_override_topics() {
         let t = LeanGossipTopics::from_fork_segment("aabbccdd").unwrap();
         assert!(t.block.contains("/leanconsensus/aabbccdd/"));
-        assert!(t.as_slice().len() >= 3);
-        assert!(t.attestations.iter().any(|s| s.contains("attestation_3")));
+        assert_eq!(t.as_slice().len(), 3);
+        assert!(t.attestations.iter().any(|s| s.contains("attestation_0")));
+        let four = LeanGossipTopics::from_fork_segment_subnets("aabbccdd", 4).unwrap();
+        assert!(four.attestations.iter().any(|s| s.contains("attestation_3")));
     }
 }

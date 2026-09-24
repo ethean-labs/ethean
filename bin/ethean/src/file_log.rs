@@ -13,11 +13,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 
 /// Install tracing: green-forward console; also a dated plain file when durable.
-pub fn install(
-    data_dir: Option<&str>,
-    ephemeral: bool,
-    filter: EnvFilter,
-) -> Result<(), String> {
+pub fn install(data_dir: Option<&str>, ephemeral: bool, filter: EnvFilter) -> Result<(), String> {
     match data_dir {
         Some(dir) if !ephemeral => install_stdout_and_file(dir, filter),
         _ => {
@@ -31,7 +27,7 @@ pub fn install(
 pub fn install_stdout_only(filter: EnvFilter) {
     let stdout = fmt::layer()
         .event_format(EtheanConsole)
-        .with_ansi(true)
+        .with_ansi(stdout_ansi())
         .with_writer(io::stdout);
     tracing_subscriber::registry()
         .with(filter)
@@ -54,7 +50,7 @@ fn install_stdout_and_file(data_dir: &str, filter: EnvFilter) -> Result<(), Stri
 
     let stdout = fmt::layer()
         .event_format(EtheanConsole)
-        .with_ansi(true)
+        .with_ansi(stdout_ansi())
         .with_writer(io::stdout);
     let file_layer = fmt::layer()
         .event_format(EtheanConsole)
@@ -70,9 +66,29 @@ fn install_stdout_and_file(data_dir: &str, filter: EnvFilter) -> Result<(), Stri
     Ok(())
 }
 
+/// Color stdout when it is a terminal and `NO_COLOR` is unset.
+fn stdout_ansi() -> bool {
+    if std::env::var_os("NO_COLOR").is_some() {
+        return false;
+    }
+    io::IsTerminal::is_terminal(&io::stdout())
+}
+
 fn now_unix_secs() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn no_color_disables_ansi() {
+        std::env::set_var("NO_COLOR", "1");
+        assert!(!stdout_ansi());
+        std::env::remove_var("NO_COLOR");
+    }
 }

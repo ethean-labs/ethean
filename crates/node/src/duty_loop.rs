@@ -71,11 +71,7 @@ pub fn run_duty_loop(
         elapsed = elapsed.saturating_add(interval_ms);
     }
 
-    events.push(apply_command(
-        owner,
-        shutdown,
-        ChainCommand::Shutdown,
-    ));
+    events.push(apply_command(owner, shutdown, ChainCommand::Shutdown));
     events
 }
 

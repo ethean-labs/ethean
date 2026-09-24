@@ -166,8 +166,8 @@ fn hex32(root: &Hash32) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::block_builder::plan_from_pool;
     use crate::aggregation::AggregatePool;
+    use crate::block_builder::plan_from_pool;
     use ethean_primitives::{Bytes52, Slot, ValidatorIndex};
     use ethean_profile::lstar_devnet;
     use ethean_types::{BlockHeader, GenesisConfig, Validator};
@@ -211,7 +211,7 @@ mod tests {
             ValidatorIndex::new(1),
             owner.head_state.as_ref().unwrap(),
             profile,
-            16,
+            &owner.known_block_roots(),
         )
         .unwrap();
         inject_local_aggregate(&mut owner, &mut plan);
@@ -220,6 +220,15 @@ mod tests {
         assert_ne!(root, HASH32_ZERO);
         assert_eq!(owner.head_state.as_ref().unwrap().slot.get(), 1);
         promote_local_checkpoints(&mut owner, root);
-        assert!(owner.head_state.as_ref().unwrap().latest_justified.slot.get() >= 1);
+        assert!(
+            owner
+                .head_state
+                .as_ref()
+                .unwrap()
+                .latest_justified
+                .slot
+                .get()
+                >= 1
+        );
     }
 }

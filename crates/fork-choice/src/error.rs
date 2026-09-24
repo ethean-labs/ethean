@@ -59,6 +59,12 @@ pub enum ForkChoiceError {
     #[error("aggregated attestation has no participants")]
     EmptyAggregationBits,
 
+    #[error("validator index not in the target state's registry")]
+    ValidatorNotInState,
+
+    #[error("invalid attestation signature or aggregate proof: {0}")]
+    InvalidSignature(String),
+
     #[error("missing block or state for root")]
     MissingBlockOrState,
 

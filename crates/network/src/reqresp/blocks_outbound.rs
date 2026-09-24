@@ -18,7 +18,7 @@ pub struct OutboundBlocksByRootRequest {
     pub request_id: RequestId,
     /// Lean blocks-by-root protocol id.
     pub protocol_id: &'static str,
-    /// Encoded request body (length-prefixed roots scaffold).
+    /// Encoded request body (SSZ List[Bytes32, 1024]).
     pub payload: Vec<u8>,
 }
 
@@ -66,12 +66,14 @@ mod tests {
     #[test]
     fn stages_when_heads_differ() {
         let remote = Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "aabbccdd".into(),
-            head_slot: 9,
-            head_root: [5u8; 32],
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
+            finalized: ethean_network_wire::Checkpoint {
+                root: [0u8; 32],
+                slot: 0,
+            },
+            head: ethean_network_wire::Checkpoint {
+                root: [5u8; 32],
+                slot: 9,
+            },
         };
         let mut tracker = RequestTracker::default();
         let peer = [7u8; 32];
@@ -88,12 +90,11 @@ mod tests {
     fn skips_when_heads_match() {
         let root = [3u8; 32];
         let remote = Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "aabbccdd".into(),
-            head_slot: 1,
-            head_root: root,
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
+            finalized: ethean_network_wire::Checkpoint {
+                root: [0u8; 32],
+                slot: 0,
+            },
+            head: ethean_network_wire::Checkpoint { root, slot: 1 },
         };
         let mut tracker = RequestTracker::default();
         assert!(prepare_blocks_by_root_outbound([1u8; 32], root, &remote, &mut tracker)

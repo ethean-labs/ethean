@@ -3,10 +3,8 @@
 use crate::{
     chain_owner::ChainOwner,
     clock::{clock_from_genesis, SlotClock},
-    duty_loop::{run_duty_loop, DutyLoopConfig},
     observability::NodeObservability,
     shutdown::ShutdownState,
-    start_config::{RunMode, StartConfig},
     Error, Result, VERSION,
 };
 use ethean_genesis::{BuiltGenesis, GenesisBuilder, GenesisError};
@@ -46,8 +44,12 @@ pub struct EtheanClient {
     pub(crate) api: Option<std::sync::Arc<ethean_rpc::SharedApiState>>,
     /// Network label mirrored into `/lean/v1/node/identity`.
     pub(crate) network_label: String,
+    /// libp2p PeerId (base58) once the swarm is bound; empty until then.
+    pub(crate) peer_id: String,
     /// Slots retained below finalized before durable prune (see `--prune-keep-slots`).
     pub(crate) prune_keep_slots: u64,
+    /// Set once the pre-genesis wait has been logged (one line, not per round).
+    pub(crate) pre_genesis_logged: bool,
 }
 
 impl EtheanClient {
@@ -113,7 +115,9 @@ impl EtheanClient {
             bootnode_count: 0,
             api: None,
             network_label: String::new(),
+            peer_id: String::new(),
             prune_keep_slots: crate::block_prune::KEEP_BELOW_FINALIZED,
+            pre_genesis_logged: false,
         })
     }
 
@@ -132,10 +136,8 @@ impl EtheanClient {
     /// Recent genesis sized by [`LocalRoles::validators`].
     pub async fn with_local_roles(roles: crate::start_config::LocalRoles) -> Result<Self> {
         let profile = lstar_devnet()?;
-        let built = crate::local_genesis::local_devnet_genesis(
-            roles.validators,
-            profile.seconds_per_slot,
-        )?;
+        let built =
+            crate::local_genesis::local_devnet_genesis(roles.validators, profile.seconds_per_slot)?;
         let mut client = Self::with_genesis(profile, built.state).await?;
         client.apply_local_roles(roles);
         Ok(client)
@@ -215,62 +217,8 @@ impl EtheanClient {
         &self.observability
     }
 
-    /// Default smoke start (`StartConfig::default()`).
-    pub async fn start(self) -> Result<()> {
-        self.start_with(StartConfig::default()).await
-    }
-
-    /// Verify schema, smoke health, run the configured duty loop, record metrics.
-    pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
-        self.apply_local_roles(cfg.roles);
-        self.bootnode_count = cfg.network.bootnodes.len() as u64;
-        self.network_label = cfg.network.id.as_str().to_string();
-        self.prune_keep_slots = cfg.prune_keep_slots;
-        if let Some(ref metrics) = cfg.metrics {
-            let bound = ethean_metrics::spawn_metrics_server(
-                metrics.addr,
-                self.observability.registry.clone(),
-                self.observability.ready_flag.clone(),
-            )
-            .await
-            .map_err(|e| Error::Config(format!("metrics bind {}: {e}", metrics.addr)))?;
-            info!(%bound, "Prometheus scrape endpoint ready");
-        }
-        if let Some(ref http) = cfg.http {
-            let state = ethean_rpc::SharedApiState::new(http.admin_token.clone());
-            let bound = ethean_rpc::spawn_lean_http(http.addr, state.clone())
-                .await
-                .map_err(|e| Error::Config(format!("lean HTTP bind {}: {e}", http.addr)))?;
-            self.api = Some(state);
-            info!(%bound, "Lean HTTP API ready");
-        }
-        self.boot_gates(&cfg.network, cfg.listen_port).await?;
-        self.refresh_slot_metrics()?;
-        #[cfg(feature = "libp2p-quic")]
-        {
-            self.boot_pump_status_and_gossip().await?;
-        }
-        let events = match cfg.mode {
-            RunMode::SmokeElapsed { ticks } => run_duty_loop(
-                &self.profile,
-                &mut self.owner,
-                &mut self.shutdown,
-                &mut self.sync,
-                DutyLoopConfig {
-                    max_ticks: ticks,
-                    start_elapsed_ms: 0,
-                },
-            ),
-            RunMode::WallClock {
-                ticks,
-                enable_sleep,
-            } => self.run_wall_with_flush(ticks, enable_sleep).await?,
-            RunMode::UntilSignal { enable_sleep } => {
-                self.run_until_signal_with_flush(enable_sleep).await?
-            }
-        };
-        self.finish_observability(&events)?;
-        self.flush_chain_persist();
-        Ok(())
+    /// libp2p PeerId string after swarm bind (empty when identity is unknown).
+    pub fn peer_id(&self) -> &str {
+        &self.peer_id
     }
 }

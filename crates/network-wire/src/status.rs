@@ -1,92 +1,96 @@
-//! Status handshake payload (SSZ-free fixed layout for Phase 10 scaffolding).
+//! SSZ Status handshake: `Status{finalized: Checkpoint, head: Checkpoint}`.
 
 use ethean_primitives::Hash32;
 
 use crate::error::{Result, WireError};
 
-/// Compact status exchanged at connection (genesis + head + finalized).
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Checkpoint = root(32) ‖ slot(u64 LE). 40 bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Checkpoint {
+    /// Block root.
+    pub root: Hash32,
+    /// Slot of that root.
+    pub slot: u64,
+}
+
+impl Checkpoint {
+    /// Encode 40-byte SSZ checkpoint.
+    pub fn encode(&self) -> [u8; 40] {
+        let mut out = [0u8; 40];
+        out[..32].copy_from_slice(&self.root);
+        out[32..].copy_from_slice(&self.slot.to_le_bytes());
+        out
+    }
+
+    /// Decode 40-byte SSZ checkpoint.
+    pub fn decode(input: &[u8]) -> Result<Self> {
+        if input.len() != 40 {
+            return Err(WireError::InvalidStatus(format!(
+                "checkpoint length {} != 40",
+                input.len()
+            )));
+        }
+        let mut root = [0u8; 32];
+        root.copy_from_slice(&input[..32]);
+        let slot = u64::from_le_bytes(input[32..40].try_into().unwrap());
+        Ok(Self { root, slot })
+    }
+}
+
+/// Status exchanged at connection (80-byte SSZ container).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Status {
-    /// Genesis root.
-    pub genesis_root: Hash32,
-    /// Fork segment string bytes (UTF-8), max 16.
-    pub fork_segment: String,
-    /// Claimed head slot.
-    pub head_slot: u64,
-    /// Claimed head root.
-    pub head_root: Hash32,
-    /// Claimed finalized slot.
-    pub finalized_slot: u64,
-    /// Claimed finalized root.
-    pub finalized_root: Hash32,
+    /// Latest finalized checkpoint.
+    pub finalized: Checkpoint,
+    /// Current head checkpoint.
+    pub head: Checkpoint,
 }
 
 impl Status {
-    /// Encode as: genesis(32) || fork_len(u8) || fork || head_slot(u64 LE) || head(32)
-    /// || finalized_slot(u64 LE) || finalized(32).
+    /// Convenience accessors used by sync / handshake callers.
+    pub fn head_slot(&self) -> u64 {
+        self.head.slot
+    }
+
+    /// Head root.
+    pub fn head_root(&self) -> Hash32 {
+        self.head.root
+    }
+
+    /// Finalized slot.
+    pub fn finalized_slot(&self) -> u64 {
+        self.finalized.slot
+    }
+
+    /// Finalized root.
+    pub fn finalized_root(&self) -> Hash32 {
+        self.finalized.root
+    }
+
+    /// Encode as 80-byte SSZ: finalized then head.
     pub fn encode(&self) -> Result<Vec<u8>> {
-        if self.fork_segment.len() > 16 || self.fork_segment.is_empty() {
-            return Err(WireError::InvalidStatus("fork segment length".into()));
-        }
-        let mut out = Vec::with_capacity(32 + 1 + self.fork_segment.len() + 8 + 32 + 8 + 32);
-        out.extend_from_slice(&self.genesis_root);
-        out.push(self.fork_segment.len() as u8);
-        out.extend_from_slice(self.fork_segment.as_bytes());
-        out.extend_from_slice(&self.head_slot.to_le_bytes());
-        out.extend_from_slice(&self.head_root);
-        out.extend_from_slice(&self.finalized_slot.to_le_bytes());
-        out.extend_from_slice(&self.finalized_root);
+        let mut out = Vec::with_capacity(80);
+        out.extend_from_slice(&self.finalized.encode());
+        out.extend_from_slice(&self.head.encode());
         Ok(out)
     }
 
-    /// Decode Status; rejects trailing bytes.
+    /// Decode Status; rejects trailing bytes and wrong length.
     pub fn decode(input: &[u8]) -> Result<Self> {
-        if input.len() < 32 + 1 {
-            return Err(WireError::InvalidStatus("too short".into()));
+        if input.len() != 80 {
+            return Err(WireError::InvalidStatus(format!(
+                "status length {} != 80",
+                input.len()
+            )));
         }
-        let mut c = 0;
-        let mut genesis_root = [0u8; 32];
-        genesis_root.copy_from_slice(&input[c..c + 32]);
-        c += 32;
-        let flen = input[c] as usize;
-        c += 1;
-        if flen == 0 || flen > 16 || c + flen > input.len() {
-            return Err(WireError::InvalidStatus("fork length".into()));
-        }
-        let fork_segment = std::str::from_utf8(&input[c..c + flen])
-            .map_err(|_| WireError::InvalidStatus("fork utf8".into()))?
-            .to_string();
-        c += flen;
-        if input.len() - c != 8 + 32 + 8 + 32 {
-            return Err(WireError::TrailingBytes);
-        }
-        let head_slot = u64::from_le_bytes(input[c..c + 8].try_into().unwrap());
-        c += 8;
-        let mut head_root = [0u8; 32];
-        head_root.copy_from_slice(&input[c..c + 32]);
-        c += 32;
-        let finalized_slot = u64::from_le_bytes(input[c..c + 8].try_into().unwrap());
-        c += 8;
-        let mut finalized_root = [0u8; 32];
-        finalized_root.copy_from_slice(&input[c..c + 32]);
         Ok(Self {
-            genesis_root,
-            fork_segment,
-            head_slot,
-            head_root,
-            finalized_slot,
-            finalized_root,
+            finalized: Checkpoint::decode(&input[..40])?,
+            head: Checkpoint::decode(&input[40..])?,
         })
     }
 
-    /// Reject mismatched genesis or fork before trusting peer head claims.
-    pub fn compatible_with(&self, local: &Status) -> Result<()> {
-        if self.genesis_root != local.genesis_root {
-            return Err(WireError::InvalidStatus("genesis mismatch".into()));
-        }
-        if self.fork_segment != local.fork_segment {
-            return Err(WireError::InvalidStatus("fork mismatch".into()));
-        }
+    /// Status has no genesis/fork fields; compatibility is a no-op.
+    pub fn compatible_with(&self, _local: &Status) -> Result<()> {
         Ok(())
     }
 }
@@ -95,19 +99,44 @@ impl Status {
 mod tests {
     use super::*;
 
+    /// leanSpec `STATUS_SSZ`: finalized=Checkpoint(0x01.., 100), head=Checkpoint(0x02.., 150).
+    const STATUS_SSZ: &str = concat!(
+        "0101010101010101010101010101010101010101010101010101010101010101",
+        "6400000000000000",
+        "0202020202020202020202020202020202020202020202020202020202020202",
+        "9600000000000000"
+    );
+
+    fn unhex(s: &str) -> Vec<u8> {
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
+    }
+
     #[test]
-    fn roundtrip_and_compat() {
+    fn leanspec_status_ssz_vector() {
         let s = Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "abcd1234".into(),
-            head_slot: 9,
-            head_root: [2u8; 32],
-            finalized_slot: 3,
-            finalized_root: [3u8; 32],
+            finalized: Checkpoint {
+                root: [0x01; 32],
+                slot: 100,
+            },
+            head: Checkpoint {
+                root: [0x02; 32],
+                slot: 150,
+            },
         };
         let enc = s.encode().unwrap();
-        let dec = Status::decode(&enc).unwrap();
-        assert_eq!(dec, s);
-        assert!(s.compatible_with(&dec).is_ok());
+        assert_eq!(enc.len(), 80);
+        assert_eq!(enc, unhex(STATUS_SSZ));
+        assert_eq!(Status::decode(&enc).unwrap(), s);
+        assert_eq!(s.head_slot(), 150);
+        assert_eq!(s.finalized_slot(), 100);
+    }
+
+    #[test]
+    fn rejects_wrong_length() {
+        assert!(Status::decode(&[0u8; 79]).is_err());
+        assert!(Status::decode(&[0u8; 81]).is_err());
     }
 }

@@ -49,3 +49,10 @@ gh workflow run release-binaries.yml -f tag=v0.1.53
 
 Or push a new `v*` tag. The publish job uploads archives with `--clobber` and
 prepends / refreshes the `## Binaries` section in the release notes.
+
+## Docker images
+
+Multi-arch container images (`ethean` + `ethean-prover`) are published by
+[`.github/workflows/docker-image.yml`](../../.github/workflows/docker-image.yml)
+to `ghcr.io/<github-owner>/ethean`. Tags, local build, and the Hive smoke
+command: [`docker-images.md`](./docker-images.md).

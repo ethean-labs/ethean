@@ -11,7 +11,10 @@ pub enum ChainEvent {
     /// A duplicate tick was ignored.
     TickDuplicate(DutyTick),
     /// A duty was suppressed before signing.
-    DutySuppressed { tick: DutyTick, reason: SuppressReason },
+    DutySuppressed {
+        tick: DutyTick,
+        reason: SuppressReason,
+    },
     /// Head advanced after local import.
     HeadUpdated { root: Hash32, slot: u64 },
     /// Validated gossip ingested (content root recorded; SSZ decode still open).

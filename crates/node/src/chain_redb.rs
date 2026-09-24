@@ -54,7 +54,8 @@ pub fn save_head(
         let mut meta = txn.open_table(META).map_err(map_redb)?;
         meta.insert(KEY_SCHEMA, SCHEMA_ID.as_bytes())
             .map_err(map_redb)?;
-        meta.insert(KEY_HEAD, head_root.as_slice()).map_err(map_redb)?;
+        meta.insert(KEY_HEAD, head_root.as_slice())
+            .map_err(map_redb)?;
         if let Some(g) = genesis_ssz {
             meta.insert(KEY_GENESIS, g).map_err(map_redb)?;
         }
@@ -102,7 +103,9 @@ pub fn load_head(paths: &PersistPaths) -> Result<Option<RedbHead>> {
     };
     let head_bytes = head.value();
     if head_bytes.len() != 32 {
-        return Err(Error::Config("ethean.redb head root is not 32 bytes".into()));
+        return Err(Error::Config(
+            "ethean.redb head root is not 32 bytes".into(),
+        ));
     }
     let mut head_root = [0u8; 32];
     head_root.copy_from_slice(head_bytes);

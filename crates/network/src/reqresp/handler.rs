@@ -11,7 +11,7 @@ pub struct StatusExchange {
     pub remote: Status,
 }
 
-/// Validate remote Status against local genesis/fork; keep head claims untrusted.
+/// Accept remote Status; keep head claims untrusted.
 pub fn handle_status(local: &Status, remote: Status) -> Result<StatusExchange> {
     remote
         .compatible_with(local)
@@ -25,19 +25,31 @@ pub fn handle_status(local: &Status, remote: Status) -> Result<StatusExchange> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ethean_network_wire::Checkpoint;
 
     #[test]
-    fn rejects_fork_mismatch() {
+    fn accepts_distinct_heads() {
         let local = Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "aaaa1111".into(),
-            head_slot: 0,
-            head_root: [0u8; 32],
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
+            finalized: Checkpoint {
+                root: [1u8; 32],
+                slot: 0,
+            },
+            head: Checkpoint {
+                root: [2u8; 32],
+                slot: 1,
+            },
         };
-        let mut remote = local.clone();
-        remote.fork_segment = "bbbb2222".into();
-        assert!(handle_status(&local, remote).is_err());
+        let remote = Status {
+            finalized: Checkpoint {
+                root: [1u8; 32],
+                slot: 0,
+            },
+            head: Checkpoint {
+                root: [9u8; 32],
+                slot: 20,
+            },
+        };
+        let ex = handle_status(&local, remote.clone()).unwrap();
+        assert_eq!(ex.remote.head_slot(), 20);
     }
 }

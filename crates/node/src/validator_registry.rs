@@ -26,8 +26,7 @@ pub fn load_validator_assignment(
     path: &Path,
     node_id: &str,
 ) -> Result<ValidatorAssignment, String> {
-    let text =
-        fs::read_to_string(path).map_err(|e| format!("read {}: {e}", path.display()))?;
+    let text = fs::read_to_string(path).map_err(|e| format!("read {}: {e}", path.display()))?;
     parse_validator_assignment(&text, node_id)
 }
 
@@ -45,8 +44,8 @@ pub fn parse_validator_assignment(
     }
     // Simple index-only registries still need a path through extract_indices.
     if indices.is_empty() {
-        let map: BTreeMap<String, serde_yaml::Value> = serde_yaml::from_str(text)
-            .map_err(|e| format!("validators.yaml: {e}"))?;
+        let map: BTreeMap<String, serde_yaml::Value> =
+            serde_yaml::from_str(text).map_err(|e| format!("validators.yaml: {e}"))?;
         if let Some(value) = map.get(node_id) {
             indices = extract_indices(value)?;
         }
@@ -58,20 +57,13 @@ pub fn parse_validator_assignment(
 }
 
 /// Parse key rows (with `privkey_file`) for `node_id`.
-pub fn load_registry_key_rows(
-    path: &Path,
-    node_id: &str,
-) -> Result<Vec<RegistryKeyRow>, String> {
-    let text =
-        fs::read_to_string(path).map_err(|e| format!("read {}: {e}", path.display()))?;
+pub fn load_registry_key_rows(path: &Path, node_id: &str) -> Result<Vec<RegistryKeyRow>, String> {
+    let text = fs::read_to_string(path).map_err(|e| format!("read {}: {e}", path.display()))?;
     parse_registry_key_rows(&text, node_id)
 }
 
 /// Parse key rows from YAML text.
-pub fn parse_registry_key_rows(
-    text: &str,
-    node_id: &str,
-) -> Result<Vec<RegistryKeyRow>, String> {
+pub fn parse_registry_key_rows(text: &str, node_id: &str) -> Result<Vec<RegistryKeyRow>, String> {
     let map: BTreeMap<String, serde_yaml::Value> =
         serde_yaml::from_str(text).map_err(|e| format!("validators.yaml: {e}"))?;
     let Some(value) = map.get(node_id) else {
@@ -105,7 +97,10 @@ pub fn parse_registry_key_rows(
         if privkey_file.is_empty() {
             continue;
         }
-        let role = infer_role(&privkey_file, seen_for_index.get(&idx).copied().unwrap_or(0));
+        let role = infer_role(
+            &privkey_file,
+            seen_for_index.get(&idx).copied().unwrap_or(0),
+        );
         *seen_for_index.entry(idx).or_insert(0) += 1;
         out.push(RegistryKeyRow {
             index: idx,

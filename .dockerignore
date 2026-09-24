@@ -1,7 +1,38 @@
-.git
-.cache
-target
-bazalinacaklar
-.cursor
-agent-transcripts
-*.pdb
+# Build context for Dockerfile / docker/hive/Dockerfile.
+# Keep: Cargo.toml, Cargo.lock, rust-toolchain.toml, LICENCE, crates/, bin/,
+# config/ (bootnodes, fork digests, aggpins), spec/ and tests/ (fixture crates).
+
+# Cargo output and local packaging
+target/
+**/target/
+dist/
+**/*.pdb
+
+# Version control and CI
+.git/
+.github/
+
+# Editor / agent state
+.cache/
+.cursor/
+agent-transcripts/
+bazalinacaklar/
+
+# Runtime data and logs (never bake node state into an image)
+data/
+**/data/
+**/ethean.redb
+**/log/
+*.log
+tmp/
+**/tmp/
+deploy/**/data/
+
+# Documentation and planning material (not needed to compile)
+docs/
+road-to/
+artifacts/
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+README.md

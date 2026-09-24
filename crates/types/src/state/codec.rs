@@ -2,8 +2,8 @@
 
 use ethean_primitives::{Hash32, Slot};
 use ethean_ssz::{
-    decode_bitlist, decode_container_offsets, decode_hash32_list, decode_offset_list, decode_u64,
-    encode_bitlist, encode_fixed_bytes, encode_offset_list, encode_u32, encode_u64, need,
+    decode_bitlist, decode_container_offsets, decode_hash32_list, decode_u64, encode_bitlist,
+    encode_fixed_bytes, encode_u32, encode_u64, need,
 };
 
 use crate::block::BlockHeader;
@@ -22,6 +22,7 @@ const STATE_FIXED_END: usize = 8 + 8 + 112 + 40 + 40;
 const STATE_VAR_FIELDS: usize = 5;
 const HEADER_BYTES: usize = 112;
 const CHECKPOINT_BYTES: usize = 40;
+const VALIDATOR_BYTES: usize = 112;
 
 impl State {
     /// Encode state (variable lists after fixed fields + offsets).
@@ -37,11 +38,12 @@ impl State {
 
         let hist = encode_hash_list(&self.historical_block_hashes);
         let just_bits = encode_bitlist(&self.justified_slots);
-        let mut vals = Vec::with_capacity(self.validators.len());
+        // `Validator` is fixed-size (112 bytes), so the list is a plain
+        // concatenation without per-element offsets.
+        let mut vals_enc = Vec::with_capacity(self.validators.len() * VALIDATOR_BYTES);
         for v in &self.validators {
-            vals.push(v.ssz_encode());
+            vals_enc.extend_from_slice(&v.ssz_encode());
         }
-        let vals_enc = encode_offset_list(&vals)?;
         let j_roots = encode_hash_list(&self.justifications_roots);
         let j_vals = encode_bitlist(&self.justifications_validators);
 
@@ -89,7 +91,7 @@ impl State {
             latest_finalized,
             historical_block_hashes: decode_hash32_list(parts[0], HISTORICAL_ROOTS_LIMIT)?,
             justified_slots: decode_bitlist(parts[1], HISTORICAL_ROOTS_LIMIT)?,
-            validators: decode_validators(parts[2])?,
+            validators: decode_validator_list(parts[2])?,
             justifications_roots: decode_hash32_list(parts[3], HISTORICAL_ROOTS_LIMIT)?,
             justifications_validators: decode_bitlist(parts[4], JUSTIFICATION_VALIDATORS_LIMIT)?,
         };
@@ -106,13 +108,34 @@ fn encode_hash_list(hashes: &[Hash32]) -> Vec<u8> {
     out
 }
 
-fn decode_validators(input: &[u8]) -> Result<Vec<Validator>, TypesError> {
-    let parts = decode_offset_list(input, VALIDATOR_REGISTRY_LIMIT)?;
-    let mut out = Vec::with_capacity(parts.len());
-    for p in parts {
-        out.push(Validator::ssz_decode(p)?);
+/// Decode an SSZ `List[Validator, VALIDATOR_REGISTRY_LIMIT]` (fixed-size elements).
+pub fn decode_validator_list(input: &[u8]) -> Result<Vec<Validator>, TypesError> {
+    if input.len() % VALIDATOR_BYTES != 0 {
+        return Err(TypesError::InvalidContainer(format!(
+            "validator list length {} is not a multiple of {VALIDATOR_BYTES}",
+            input.len()
+        )));
     }
-    Ok(out)
+    let count = input.len() / VALIDATOR_BYTES;
+    if count > VALIDATOR_REGISTRY_LIMIT {
+        return Err(TypesError::InvalidContainer(format!(
+            "validator list length {count} exceeds limit {VALIDATOR_REGISTRY_LIMIT}"
+        )));
+    }
+    let list: Vec<Validator> = input
+        .chunks(VALIDATOR_BYTES)
+        .map(Validator::ssz_decode)
+        .collect::<Result<_, _>>()?;
+    // leanSpec: a registry entry's stored index must equal its position.
+    for (position, validator) in list.iter().enumerate() {
+        if validator.index.get() != position as u64 {
+            return Err(TypesError::InvalidContainer(format!(
+                "validator at position {position} stores index {}",
+                validator.index.get()
+            )));
+        }
+    }
+    Ok(list)
 }
 
 #[cfg(test)]

@@ -14,10 +14,10 @@ pub fn blocks_by_root_for_status_gap(
     local_head: Hash32,
     remote: &Status,
 ) -> Result<Option<BlocksByRootRequest>> {
-    if remote.head_root == local_head || remote.head_root == Hash32::default() {
+    if remote.head_root() == local_head || remote.head_root() == Hash32::default() {
         return Ok(None);
     }
-    BlocksByRootRequest::new(vec![remote.head_root])
+    BlocksByRootRequest::new(vec![remote.head_root()])
         .map(Some)
         .map_err(|e| NetworkError::Handshake(e.to_string()))
 }
@@ -41,51 +41,47 @@ pub fn blocks_by_root_for_roots(roots: Vec<Hash32>) -> Result<Option<BlocksByRoo
         .map_err(|e| NetworkError::Handshake(e.to_string()))
 }
 
-/// Encode a blocks-by-root request as length-prefixed roots (scaffold, not leanSpec SSZ yet).
+/// Encode a blocks-by-root request as SSZ `List[Bytes32, 1024]`.
 pub fn encode_blocks_by_root(req: &BlocksByRootRequest) -> Vec<u8> {
-    let mut out = Vec::with_capacity(4 + req.roots.len() * 32);
-    let n = req.roots.len() as u32;
-    out.extend_from_slice(&n.to_le_bytes());
-    for root in &req.roots {
-        out.extend_from_slice(root);
-    }
-    out
+    req.encode()
+}
+
+/// Decode a SSZ blocks-by-root request.
+pub fn decode_blocks_by_root(input: &[u8]) -> Result<BlocksByRootRequest> {
+    BlocksByRootRequest::decode(input).map_err(|e| NetworkError::Handshake(e.to_string()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ethean_network_wire::Checkpoint;
+
+    fn remote_with_head(root: Hash32, slot: u64) -> Status {
+        Status {
+            finalized: Checkpoint {
+                root: [0u8; 32],
+                slot: 0,
+            },
+            head: Checkpoint { root, slot },
+        }
+    }
 
     #[test]
     fn gap_requests_remote_head() {
-        let remote = Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "aabbccdd".into(),
-            head_slot: 9,
-            head_root: [5u8; 32],
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
-        };
+        let remote = remote_with_head([5u8; 32], 9);
         let req = blocks_by_root_for_status_gap([2u8; 32], &remote)
             .unwrap()
             .expect("gap");
         assert_eq!(req.roots, vec![[5u8; 32]]);
         let enc = encode_blocks_by_root(&req);
-        assert_eq!(&enc[..4], &1u32.to_le_bytes());
+        assert_eq!(&enc[..4], &4u32.to_le_bytes());
         assert_eq!(&enc[4..], &[5u8; 32]);
     }
 
     #[test]
     fn no_gap_when_heads_match() {
         let root = [3u8; 32];
-        let remote = Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "aabbccdd".into(),
-            head_slot: 1,
-            head_root: root,
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
-        };
+        let remote = remote_with_head(root, 1);
         assert!(blocks_by_root_for_status_gap(root, &remote)
             .unwrap()
             .is_none());

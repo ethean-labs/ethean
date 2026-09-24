@@ -57,8 +57,7 @@ impl EtheanClient {
                         match facade.flush_status_outbox() {
                             Ok(sent) => info!(
                                 staged = n,
-                                sent,
-                                "Status outbound payloads flushed to req/resp"
+                                sent, "Status outbound payloads flushed to req/resp"
                             ),
                             Err(e) => info!(
                                 staged = n,
@@ -100,8 +99,7 @@ impl EtheanClient {
                         match facade.flush_blocks_outbox() {
                             Ok(sent) => info!(
                                 peer0 = peer[0],
-                                sent,
-                                "blocks-by-root flushed after Status response"
+                                sent, "blocks-by-root flushed after Status response"
                             ),
                             Err(e) => info!(
                                 peer0 = peer[0],
@@ -116,8 +114,7 @@ impl EtheanClient {
                         match facade.flush_blocks_range_outbox() {
                             Ok(sent) => info!(
                                 peer0 = peer[0],
-                                sent,
-                                "blocks-by-range flushed after Status response"
+                                sent, "blocks-by-range flushed after Status response"
                             ),
                             Err(e) => info!(
                                 peer0 = peer[0],

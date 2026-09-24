@@ -24,11 +24,11 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.53"
+version = "0.1.54"
 edition = "2021"
 license = "MIT"
 authors = ["Ethean contributors"]
-repository = "https://github.com/Pamenarti/Ethean"
+repository = "https://github.com/ethean-labs/ethean"
 
 [workspace.dependencies]
 ethean-primitives = { path = "crates/primitives" }
@@ -47,6 +47,7 @@ ethean-sync = { path = "crates/sync" }
 ethean-validator = { path = "crates/validator" }
 ethean-node = { path = "crates/node" }
 ethean-rpc = { path = "crates/rpc" }
+ethean-spec-fixtures = { path = "crates/spec-fixtures" }
 ethean-metrics = { path = "crates/metrics" }
 
 tokio = { version = "1.0", features = ["full"] }
@@ -64,7 +65,7 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "ansi"] }
 clap = { version = "4.0", features = ["derive"] }
 tempfile = "3.8"
-libp2p = { version = "0.54", default-features = false, features = ["quic", "tokio", "ping", "macros"] }
+libp2p = { version = "0.54", default-features = false, features = ["quic", "tokio", "ping", "macros", "secp256k1"] }
 
 [profile.release]
 lto = true

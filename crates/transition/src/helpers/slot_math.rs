@@ -31,8 +31,19 @@ pub fn is_justifiable_after(target: Slot, finalized: Slot) -> bool {
     disc_root * disc_root == disc && disc_root % 2 == 1
 }
 
+/// Integer square root (floor), matching Python `math.isqrt`.
 fn isqrt(n: u64) -> u64 {
-    (n as f64).sqrt() as u64
+    if n < 2 {
+        return n;
+    }
+    let mut x = (n as f64).sqrt() as u64;
+    while x.checked_mul(x).is_none_or(|sq| sq > n) {
+        x -= 1;
+    }
+    while (x + 1).checked_mul(x + 1).is_some_and(|sq| sq <= n) {
+        x += 1;
+    }
+    x
 }
 
 #[cfg(test)]
@@ -47,6 +58,22 @@ mod tests {
         // delta=6 is pronic; delta=7 is neither window/square/pronic
         assert!(is_justifiable_after(Slot::new(16), f));
         assert!(!is_justifiable_after(Slot::new(17), f));
+    }
+
+    #[test]
+    fn isqrt_matches_reference() {
+        for n in 0u64..10_000 {
+            let mut r = 0u64;
+            while (r + 1) * (r + 1) <= n {
+                r += 1;
+            }
+            assert_eq!(isqrt(n), r, "n={n}");
+        }
+        for n in [u64::MAX, u64::MAX - 1, (1u64 << 63) + 7, 999_999_999_999_999_999] {
+            let r = isqrt(n);
+            assert!(r.checked_mul(r).is_some_and(|sq| sq <= n));
+            assert!((r + 1).checked_mul(r + 1).is_none_or(|sq| sq > n));
+        }
     }
 
     #[test]

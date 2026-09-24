@@ -18,6 +18,12 @@ pub fn tick_from_wall<T: TimeSource>(
     Ok(tick_from_elapsed_ms(elapsed, clock.profile(), generation))
 }
 
+/// Milliseconds until genesis, or `None` once `now_ms` has reached it.
+pub fn ms_until_genesis(clock: &SlotClock, now_ms: u64) -> Result<Option<u64>, ClockError> {
+    let genesis_ms = clock.genesis_time_millis()?;
+    Ok((now_ms < genesis_ms).then(|| genesis_ms - now_ms))
+}
+
 /// Milliseconds until the next profile interval boundary after `now_ms`.
 pub fn ms_until_next_interval(clock: &SlotClock, now_ms: u64) -> Result<u64, ClockError> {
     let genesis_ms = clock.genesis_time_millis()?;
@@ -50,6 +56,16 @@ mod tests {
         let tick = tick_from_wall(&clock, &time, 1).unwrap();
         assert_eq!(tick.slot.get(), 0);
         assert_eq!(tick.interval, 2);
+    }
+
+    #[test]
+    fn genesis_wait_only_before_genesis() {
+        let profile = lstar_devnet().unwrap();
+        let clock = SlotClock::new(1_000, profile).unwrap();
+        let g = clock.genesis_time_millis().unwrap();
+        assert_eq!(ms_until_genesis(&clock, g - 2_500).unwrap(), Some(2_500));
+        assert_eq!(ms_until_genesis(&clock, g).unwrap(), None);
+        assert_eq!(ms_until_genesis(&clock, g + 1).unwrap(), None);
     }
 
     #[test]

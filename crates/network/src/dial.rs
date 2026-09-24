@@ -117,12 +117,14 @@ mod tests {
         let server = UdpSocket::bind(("127.0.0.1", 0)).unwrap();
         let server_port = server.local_addr().unwrap().port();
         let status = Status {
-            genesis_root: [9u8; 32],
-            fork_segment: "lstar001".into(),
-            head_slot: 1,
-            head_root: [1u8; 32],
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
+            finalized: ethean_network_wire::Checkpoint {
+                root: [0u8; 32],
+                slot: 0,
+            },
+            head: ethean_network_wire::Checkpoint {
+                root: [1u8; 32],
+                slot: 1,
+            },
         };
         let echo = status.clone();
         let handle = thread::spawn(move || {

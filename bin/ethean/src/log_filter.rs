@@ -28,8 +28,7 @@ multistream_select=warn";
 pub fn build_filter(verbose: u8, log_level: Option<&str>) -> Result<EnvFilter, String> {
     if let Ok(rust_log) = std::env::var("RUST_LOG") {
         if !rust_log.trim().is_empty() {
-            return EnvFilter::try_new(rust_log)
-                .map_err(|e| format!("invalid RUST_LOG: {e}"));
+            return EnvFilter::try_new(rust_log).map_err(|e| format!("invalid RUST_LOG: {e}"));
         }
     }
     let directive = match log_level.map(|s| s.trim().to_ascii_lowercase()) {

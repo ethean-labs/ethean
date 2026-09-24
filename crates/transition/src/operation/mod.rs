@@ -6,3 +6,4 @@ pub mod justify;
 pub use attestation::{
     check_attestation_data_structure, distinct_attestation_data_count, process_attestations,
 };
+pub use justify::lies_on_chain;

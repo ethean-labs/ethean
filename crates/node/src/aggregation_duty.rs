@@ -183,3 +183,30 @@ pub fn accept_attestation_proof(
         proof_len,
     })
 }
+
+/// Re-verify and pool a Type-1 recovered from a block proof. It is a known
+/// payload: it joins the next merge as a child but is not gossiped again.
+pub fn accept_recovered_proof(
+    owner: &mut ChainOwner,
+    data: AttestationData,
+    participants: Vec<bool>,
+    proof: Vec<u8>,
+    building: std::time::Duration,
+) -> Result<ChainEvent, String> {
+    let state = owner.head_state.as_ref().ok_or("no head state")?;
+    let keys = attestation_keys_for_bits(state, &participants)?;
+    let data_root = data.hash_tree_root();
+    LeanMultisigVerifier
+        .verify_single(&proof, &keys, &data_root, data.slot.get())
+        .map_err(|e| format!("recovered proof does not verify: {e}"))?;
+    let coverage = keys.len() as u32;
+    let proof_len = proof.len();
+    tracing::debug!(coverage, proof_len, elapsed_ms = building.as_millis() as u64, "block vote proof recovered");
+    insert_proved(owner, &data, participants, proof)?;
+    owner.known_payloads.insert(data_root, data.slot.get());
+    Ok(ChainEvent::AggregateProved {
+        data_root,
+        coverage,
+        proof_len,
+    })
+}
