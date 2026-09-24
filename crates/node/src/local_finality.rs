@@ -70,8 +70,10 @@ pub fn apply_planned_locally(
     let out = apply_block_unverified(&pre, &plan.block, &ctx).map_err(|e| e.to_string())?;
     let root = plan.block_root()?;
     let parent = plan.block.parent_root;
-    owner.head_state = Some(out.post_state);
+    let post = out.post_state;
+    owner.head_state = Some(post.clone());
     owner.advance_head(root, parent);
+    owner.fc_on_block(plan.block.clone(), post);
     Ok(root)
 }
 
