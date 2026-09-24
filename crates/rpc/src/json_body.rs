@@ -1,6 +1,6 @@
 //! JSON response bodies for Lean HTTP routes (manual `serde_json`, no Beacon fields).
 
-use crate::dto::{FinalizedView, HeadView, SyncView};
+use crate::dto::{FinalizedView, ForkChoiceView, HeadView, SyncView};
 use crate::state::{hex_root, ApiSnapshot};
 use serde_json::{json, Value};
 
@@ -27,6 +27,22 @@ pub fn sync_json(v: &SyncView) -> Value {
         "syncing": v.syncing,
         "head_slot": v.head_slot.get(),
         "peer_horizon_slot": v.peer_horizon_slot.get(),
+    })
+}
+
+/// Encode fork-choice operator view.
+pub fn fork_choice_json(v: &ForkChoiceView) -> Value {
+    json!({
+        "live": v.live,
+        "head_root": hex_root(&v.head_root),
+        "safe_target_root": hex_root(&v.safe_target_root),
+        "safe_target_slot": v.safe_target_slot,
+        "justified_root": hex_root(&v.justified_root),
+        "finalized_root": hex_root(&v.finalized_root),
+        "reorg_total": v.reorg_total,
+        "blocks": v.blocks,
+        "pending_votes": v.pending_votes,
+        "known_votes": v.known_votes,
     })
 }
 
@@ -57,5 +73,25 @@ mod tests {
         let j = head_json(&v);
         assert_eq!(j["slot"], 3);
         assert_eq!(j["root"].as_str().unwrap().len(), 64);
+    }
+
+    #[test]
+    fn fork_choice_reports_live_flag() {
+        let v = ForkChoiceView {
+            live: true,
+            head_root: HASH32_ZERO,
+            safe_target_root: [1u8; 32],
+            safe_target_slot: 4,
+            justified_root: HASH32_ZERO,
+            finalized_root: HASH32_ZERO,
+            reorg_total: 2,
+            blocks: 3,
+            pending_votes: 1,
+            known_votes: 5,
+        };
+        let j = fork_choice_json(&v);
+        assert_eq!(j["live"], true);
+        assert_eq!(j["safe_target_slot"], 4);
+        assert_eq!(j["reorg_total"], 2);
     }
 }
