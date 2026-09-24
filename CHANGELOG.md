@@ -78,6 +78,12 @@ the curated operator-facing summary, not a dump of every working note.
 
 ### Fixed
 
+- A gossip publish with no mesh peer (`InsufficientPeers`) is dropped with a
+  warning in every mode; it used to stop the node unless `--local-finality`
+  was set (hive checkpoint-sync scenarios).
+- Checkpoint sync re-anchors the live fork-choice store on the fetched pair, so
+  `/lean/v0/fork_choice` shows the checkpoint as justified/finalized with no
+  pre-anchor nodes (hive checkpoint-sync scenarios).
 - Docker image build copies `vendor/` before `cargo chef cook` so the leanVM
   Windows `[patch]` overlays resolve inside the builder stage.
 - Wall-clock duty loops wait for genesis (hive and lean-quickstart start the

@@ -4,9 +4,10 @@
 
 use std::time::Duration;
 
+use ethean_fork_choice::{create_store, ForkChoiceOpts};
 use ethean_primitives::Hash32;
 use ethean_types::{SignedBlock, State};
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::chain_owner::ChainOwner;
 use crate::checkpoint_http::http_get;
@@ -113,11 +114,27 @@ pub fn apply_anchor(owner: &mut ChainOwner, anchor: CheckpointAnchor) -> bool {
         validators = anchor.state.validators.len(),
         "starting from checkpoint anchor"
     );
-    owner.head_state = Some(anchor.state);
+    owner.head_state = Some(anchor.state.clone());
     owner.remember_durable_block(anchor.block_root, anchor.block_bytes);
     owner.advance_head(anchor.block_root, anchor.signed_block.block.parent_root);
     owner.known_payloads.clear();
+    reanchor_fork_choice(owner, anchor.state, anchor.signed_block.block);
     true
+}
+
+/// Re-create the live store from the anchor pair so `/lean/v0/fork_choice`
+/// reports the checkpoint as justified and finalized (no pre-anchor nodes).
+fn reanchor_fork_choice(owner: &mut ChainOwner, state: State, block: ethean_types::Block) {
+    let Some(profile) = owner.profile.clone() else {
+        return;
+    };
+    match create_store(state, block, &profile, ForkChoiceOpts::STRUCTURAL) {
+        Ok(store) => {
+            owner.fc = Some(store);
+            owner.sync_from_fork_choice();
+        }
+        Err(error) => warn!(%error, "fork choice could not be re-anchored on the checkpoint"),
+    }
 }
 
 #[cfg(test)]

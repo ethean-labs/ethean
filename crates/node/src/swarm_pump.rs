@@ -97,13 +97,14 @@ pub fn publish_pending_block(
             }))
         }
         Err(e) => {
-            let soft = owner.local_finality
-                && matches!(&e, ethean_network::NetworkError::Handshake(msg)
+            let soft = matches!(&e, ethean_network::NetworkError::Handshake(msg)
                     if msg.contains("InsufficientPeers"));
             if soft {
-                // Solo local-finality already applied the block to head; no mesh yet.
-                tracing::debug!(
+                // The block is already applied to head; without a mesh peer the
+                // publish is dropped, peers can still fetch it by root or range.
+                tracing::warn!(
                     error = %e,
+                    solo = owner.local_finality,
                     "gossip publish skipped (no peers); local head already updated"
                 );
                 let _ = facade.put_block_bytes(gossip.block_root, gossip.payload.clone());

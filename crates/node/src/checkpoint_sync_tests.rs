@@ -87,3 +87,22 @@ async fn fetches_the_pair_from_a_lean_api() {
     assert_eq!(anchor.block_root, root);
     assert_eq!(anchor.state, state);
 }
+
+#[test]
+fn anchor_reanchors_the_live_fork_choice_store() {
+    let (state, signed) = genesis_pair();
+    let anchor = verify_pair(&state.ssz_encode().unwrap(), &signed.ssz_encode().unwrap()).unwrap();
+    let mut owner = ChainOwner::new(2);
+    owner.profile = Some(ethean_profile::lstar_devnet().unwrap());
+    assert!(apply_anchor(&mut owner, anchor.clone()));
+    let store = owner.fc.as_ref().expect("store re-anchored");
+    assert_eq!(store.head(), anchor.block_root);
+    assert_eq!(store.latest_finalized.root, anchor.block_root);
+    let view = crate::api_view::fork_choice_view(&owner);
+    assert_eq!(view.fork_choice.finalized.slot, anchor.state.slot.get());
+    assert!(view
+        .fork_choice
+        .nodes
+        .iter()
+        .all(|n| n.root == anchor.block_root));
+}

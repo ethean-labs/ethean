@@ -10,3 +10,4 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [hive upstream clients ethean dropin](hive-upstream-clients-ethean-dropin-2026-09-20.md)
 - [recommend test baseline ream ethlambda](recommend-test-baseline-ream-ethlambda-2026-09-20.md)
 - [hive test driver endpoints](hive-test-driver-endpoints-2026-09-24.md)
+- [local-hive-run-2026-09-24.md](./local-hive-run-2026-09-24.md) — three local lean-simulator runs: genesis wait, store re-anchor, helper pin, open sync gaps

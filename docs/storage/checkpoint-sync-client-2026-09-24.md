@@ -21,3 +21,15 @@ Flow (`crates/node/src/checkpoint_sync.rs`):
 A failed fetch logs a warning and the node continues from its local genesis;
 it never starts from an unverified pair. The end-to-end test serves a pair
 from Ethean's own `/lean/v0` routes and bootstraps a second chain owner from it.
+
+## Live store re-anchoring (same day, after the hive rerun)
+
+hive's checkpoint-sync scenarios (`forkchoice filters nodes before finalized
+slot` and friends) expect every visible fork-choice node to sit at or beyond
+the finalized checkpoint the client synced from. `apply_anchor` replaced the
+head state but left the live `ForkChoiceStore` at its genesis anchor, so
+`/lean/v0/fork_choice` kept the slot-0 node and genesis checkpoints.
+`apply_anchor` now rebuilds the store from the anchor pair
+(`create_store(anchor_state, anchor_block)`), then `sync_from_fork_choice`
+copies head and safe target; justified and finalized both equal the anchor.
+Test: `anchor_reanchors_the_live_fork_choice_store`.
