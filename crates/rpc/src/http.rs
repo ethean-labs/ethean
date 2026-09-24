@@ -2,8 +2,10 @@
 
 use crate::auth::BindScope;
 use crate::handlers::{error_json, handle_route, HttpReply};
+use crate::http_sse::{stream_admin_events, wants_sse};
 use crate::limits::{MAX_BODY_BYTES, MAX_HEADER_BYTES};
 use crate::parse::{parse_http_request, request_span, ParseError};
+use crate::routes::Route;
 use crate::server::{dispatch, IncomingRequest};
 use crate::state::SharedApiState;
 use std::io;
@@ -60,13 +62,23 @@ async fn handle_conn(
             body_len: req.body.len(),
             bearer: req.bearer.as_deref(),
         };
-        let reply = match dispatch(&incoming, scope, state.admin_token()) {
-            Ok(route) => handle_route(route, &state, &req.body),
-            Err(e) => error_json(e),
-        };
-        write_reply(&mut stream, &reply, req.keep_alive).await?;
-        if !req.keep_alive {
-            break;
+        match dispatch(&incoming, scope, state.admin_token()) {
+            Ok(Route::AdminEvents) if wants_sse(req.accept.as_deref()) => {
+                stream_admin_events(&mut stream, &state).await?;
+                break;
+            }
+            Ok(route) => {
+                let reply = handle_route(route, &state, &req.body);
+                write_reply(&mut stream, &reply, req.keep_alive).await?;
+                if !req.keep_alive {
+                    break;
+                }
+            }
+            Err(e) => {
+                let reply = error_json(e);
+                write_reply(&mut stream, &reply, false).await?;
+                break;
+            }
         }
         buf.clear();
     }
