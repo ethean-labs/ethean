@@ -73,6 +73,11 @@ impl EtheanClient {
         )?;
         self.observability
             .record_reorg_total(self.owner.reorg_total)?;
+        if let Some(api) = self.api.as_ref() {
+            let _ = self
+                .observability
+                .record_admin_event_backlog(api.events_pending() as u64);
+        }
         let (peer_clients, mesh_clients) = {
             #[cfg(feature = "libp2p-quic")]
             {

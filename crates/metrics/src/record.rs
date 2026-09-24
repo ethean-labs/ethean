@@ -139,6 +139,11 @@ pub fn ensure_core_families(reg: &mut Registry) -> Result<()> {
             "Durable blobs indexed into the serve cache at boot",
             MetricKind::Gauge,
         ),
+        (
+            "admin_event_backlog",
+            "Buffered Lean HTTP admin events waiting for poll or SSE",
+            MetricKind::Gauge,
+        ),
         ("ready", "1 if process ready", MetricKind::Gauge),
         (
             "ready_storage",
@@ -267,5 +272,6 @@ mod tests {
         record_serve_cache_seed(&mut r, 10, 9).unwrap();
         record_fc_reorg(&mut r).unwrap();
         record_fc_reorg_total(&mut r, 3).unwrap();
+        crate::record_persist::record_admin_event_backlog(&mut r, 4).unwrap();
     }
 }

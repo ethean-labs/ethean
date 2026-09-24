@@ -1,10 +1,10 @@
 //! Metrics registry and Lean RPC smoke helpers for the node process.
 
 use ethean_metrics::{
-    ensure_core_families, record_bootnode_count, record_durable_persist, record_fc_reorg,
-    record_fc_reorg_total, record_range_serve, record_readiness_gauges, record_role_gauges,
-    record_serve_cache_seed, record_slot_gauges, set_ready, MetricsError, Readiness, Registry,
-    SharedRegistry,
+    ensure_core_families, record_admin_event_backlog, record_bootnode_count,
+    record_durable_persist, record_fc_reorg, record_fc_reorg_total, record_range_serve,
+    record_readiness_gauges, record_role_gauges, record_serve_cache_seed, record_slot_gauges,
+    set_ready, MetricsError, Readiness, Registry, SharedRegistry,
 };
 use ethean_rpc::{dispatch, BindScope, IncomingRequest, Route, RpcError};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -202,6 +202,12 @@ impl NodeObservability {
     ) -> Result<(), MetricsError> {
         self.registry
             .with_mut(|reg| record_serve_cache_seed(reg, candidates, indexed))
+    }
+
+    /// Publish Lean HTTP admin event ring-buffer depth for scrape / Grafana.
+    pub fn record_admin_event_backlog(&mut self, pending: u64) -> Result<(), MetricsError> {
+        self.registry
+            .with_mut(|reg| record_admin_event_backlog(reg, pending))
     }
 }
 
