@@ -16,6 +16,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [fork digest local status](fork-digest-local-status-2026-09-19.md)
 - [gossip ingest peer score](gossip-ingest-peer-score-2026-09-19.md)
 - [gossipsub quic mesh](gossipsub-quic-mesh-2026-09-19.md)
+- [external backlog and admin events poll](external-backlog-and-admin-events-poll-2026-09-24.md)
 - [lean http api 5052](lean-http-api-5052-2026-09-20.md)
 - [proposer binding verify before gossip](proposer-binding-verify-before-gossip-2026-09-19.md)
 - [quic fixed listen port](quic-fixed-listen-port-2026-09-20.md)

@@ -19,14 +19,14 @@ Design notes, sprint write-ups, and working plans for the client.
 ## Dated development notes (by topic)
 
 - [LeanSpec / fork choice / STF](./lean-spec/README.md) (32 notes)
-- [Networking / QUIC / gossip / HTTP](./networking/README.md) (26 notes)
+- [Networking / QUIC / gossip / HTTP](./networking/README.md) (27 notes)
 - [Observability / metrics / Grafana](./observability/README.md) (17 notes)
 - [pq-devnet / operator run](./pq-devnet/README.md) (10 notes)
 - [leanSig / leanVM / aggregation](./lean-crypto/README.md) (23 notes)
 - [Storage / persist / prune](./storage/README.md) (7 notes)
 - [Hive / fixture testing](./hive-testing/README.md) (6 notes)
 - [Lean migration phases](./migration/README.md) (25 notes)
-- [Process / README / git house rules](./process/README.md) (14 notes)
+- [Process / README / git house rules](./process/README.md) (15 notes)
 - [Peer client references](./peer-clients/README.md) (6 notes)
 - [Misc Lean research indexes](./misc/README.md) (2 notes)
 
