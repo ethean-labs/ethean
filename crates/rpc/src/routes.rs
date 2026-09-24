@@ -7,7 +7,7 @@ use crate::error::{Result, RpcError};
 pub enum Route {
     /// GET `/lean/v0/health` (and `/lean/v1/health`).
     Health,
-    /// GET `/lean/v1/ready`.
+    /// GET `/lean/v0/ready` / `/lean/v1/ready`.
     Ready,
     /// GET `/lean/v1/node/identity`.
     NodeIdentity,
@@ -57,7 +57,7 @@ pub fn match_route(method: &str, path: &str) -> Result<Route> {
     let path = strip_trailing_slash(path);
     match (method, path) {
         ("GET", "/lean/v0/health" | "/lean/v1/health") => Ok(Route::Health),
-        ("GET", "/lean/v1/ready") => Ok(Route::Ready),
+        ("GET", "/lean/v0/ready" | "/lean/v1/ready") => Ok(Route::Ready),
         ("GET", "/lean/v1/node/identity") => Ok(Route::NodeIdentity),
         ("GET", "/lean/v1/chain/head") => Ok(Route::ChainHead),
         ("GET", "/lean/v1/chain/finalized") => Ok(Route::ChainFinalized),
@@ -124,6 +124,8 @@ mod tests {
     fn matches_v0_and_v1_health() {
         assert_eq!(match_route("GET", "/lean/v1/health").unwrap(), Route::Health);
         assert_eq!(match_route("GET", "/lean/v0/health").unwrap(), Route::Health);
+        assert_eq!(match_route("GET", "/lean/v0/ready").unwrap(), Route::Ready);
+        assert_eq!(match_route("GET", "/lean/v1/ready").unwrap(), Route::Ready);
     }
 
     #[test]
