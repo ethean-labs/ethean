@@ -3,6 +3,7 @@
 Dated development notes for this topic. Index: [../README.md](../../README.md).
 
 - [leanmetrics standard v3](leanmetrics-standard-v3-2026-09-23.md)
+- [dev backlog fc store](dev-backlog-fc-store-2026-09-24.md)
 - [durable persist prune metrics](durable-persist-prune-metrics-2026-09-20.md)
 - [durable prune stall alert](durable-prune-stall-alert-2026-09-20.md)
 - [ethean console log colors](ethean-console-log-colors-2026-09-20.md)

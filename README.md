@@ -305,6 +305,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **FC MAX_ATTESTATIONS_DATA / D4 rate**: [docs/fc-max-attestations-d4-log-inv-rate-2026-09-20.md](./docs/lean-spec/fc-max-attestations-d4-log-inv-rate-2026-09-20.md)
 - **leanMetrics safe_target / name map**: [docs/leanmetrics-safe-target-name-map-2026-09-20.md](./docs/observability/leanmetrics-safe-target-name-map-2026-09-20.md)
 - **Node safe_target / reorg metrics**: [docs/node-safe-target-reorg-metrics-2026-09-20.md](./docs/observability/node-safe-target-reorg-metrics-2026-09-20.md)
+- **Live ForkChoiceStore + safe-target attest**: [docs/live-fc-store-safe-target-attest-2026-09-24.md](./docs/lean-spec/live-fc-store-safe-target-attest-2026-09-24.md)
+- **FC store backlog**: [docs/dev-backlog-fc-store-2026-09-24.md](./docs/observability/dev-backlog-fc-store-2026-09-24.md)
 - **leanSpec FC payload LMD weights**: [docs/leanspec-fc-payload-lmd-weights-2026-09-20.md](./docs/lean-spec/leanspec-fc-payload-lmd-weights-2026-09-20.md)
 - **Full State SSZ encode/decode**: [docs/state-ssz-encode-decode-complete-2026-09-20.md](./docs/lean-spec/state-ssz-encode-decode-complete-2026-09-20.md)
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/peer-clients/lean-peer-client-research-library-2026-09-19.md)
