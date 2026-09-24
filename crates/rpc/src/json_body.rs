@@ -1,6 +1,6 @@
 //! JSON response bodies for Lean HTTP routes (manual `serde_json`, no Beacon fields).
 
-use crate::dto::{FinalizedView, ForkChoiceStatsView, HeadView, SyncView};
+use crate::dto::{DutiesView, FinalizedView, ForkChoiceStatsView, HeadView, SyncView};
 use crate::state::{hex_root, ApiSnapshot};
 use serde_json::{json, Value};
 
@@ -77,9 +77,29 @@ pub fn identity_json(snap: &ApiSnapshot) -> Value {
     })
 }
 
-/// Bounded duties placeholder (empty until validator schedule is wired).
-pub fn duties_json() -> Value {
-    json!({ "duties": [] })
+/// Encode bounded local validator duty visibility.
+pub fn duties_json(v: &DutiesView) -> Value {
+    let duties: Vec<Value> = v
+        .duties
+        .iter()
+        .map(|d| {
+            json!({
+                "validator_index": d.validator_index,
+                "kind": d.kind,
+                "slot": d.slot,
+            })
+        })
+        .collect();
+    json!({
+        "slot": v.slot,
+        "interval": v.interval,
+        "syncing": v.syncing,
+        "is_aggregator": v.is_aggregator,
+        "attester_loaded": v.attester_loaded,
+        "proposer_loaded": v.proposer_loaded,
+        "owned_validator_indices": v.owned_validator_indices,
+        "duties": duties,
+    })
 }
 
 #[cfg(test)]
@@ -116,5 +136,28 @@ mod tests {
         assert_eq!(j["live"], true);
         assert_eq!(j["safe_target_slot"], 4);
         assert_eq!(j["reorg_total"], 2);
+    }
+
+    #[test]
+    fn duties_lists_owned_rows() {
+        use crate::dto::DutyRow;
+        let v = DutiesView {
+            slot: 5,
+            interval: 1,
+            syncing: false,
+            is_aggregator: true,
+            attester_loaded: true,
+            proposer_loaded: false,
+            owned_validator_indices: vec![2],
+            duties: vec![DutyRow {
+                validator_index: 2,
+                kind: "attestation",
+                slot: 5,
+            }],
+        };
+        let j = duties_json(&v);
+        assert_eq!(j["slot"], 5);
+        assert_eq!(j["owned_validator_indices"][0], 2);
+        assert_eq!(j["duties"][0]["kind"], "attestation");
     }
 }
