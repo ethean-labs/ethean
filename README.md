@@ -282,7 +282,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Lean Consensus tracks**: [leanroadmap.org research tracks](https://leanroadmap.org/#research-tracks)
 - **Lean Consensus R&D (full site)**: [leanroadmap.org](https://leanroadmap.org/)
 - **How we capture that locally**: [docs/leanroadmap-local-notes.md](./docs/leanroadmap-local-notes.md)
-- **Source file size (300 lines)**: [docs/source-file-size-limit.md](./docs/source-file-size-limit.md)
 - **Peer Lean clients (reference)**: [docs/peer-reference-clients.md](./docs/peer-reference-clients.md)
 - **How Ream / ethlambda / Zeam run pq-devnets**: [docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](./docs/peer-clients/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
 - **Peer fixed genesis vs Ethean solo restart**: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](./docs/peer-clients/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md)
