@@ -21,10 +21,21 @@ impl EtheanClient {
         let paths = PersistPaths::new(path);
         let genesis = chain_persist::open_or_init(&paths, &profile, roles.validators)?;
         let db = open_store(path)?;
-        let mut client = Self::with_genesis_store(profile, genesis.state, db).await?;
+        let mut client = Self::with_genesis_store(profile.clone(), genesis.state.clone(), db).await?;
         if let Some(head) = chain_persist::load_head(&paths)? {
+            // Drop the genesis-only store from with_genesis_store so restore
+            // does not sync the tip back to the genesis FC head.
+            client.owner.fc = None;
             chain_persist::restore_owner(&mut client.owner, head)?;
-            client.owner.try_init_fork_choice();
+            let blobs = crate::serve_cache_seed::load_persisted_block_blobs(&paths);
+            client.owner.rebuild_fork_choice_from_durable(
+                genesis.state.clone(),
+                &profile,
+                &blobs,
+            );
+            if client.owner.fc.is_none() {
+                client.owner.try_init_fork_choice();
+            }
         }
         client.persist_dir = Some(PathBuf::from(path));
         client.apply_local_roles(LocalRoles {
