@@ -1,8 +1,9 @@
 //! Attestation and aggregation gossip, following leanSpec
 //! `on_gossip_attestation` and `on_gossip_aggregated_attestation`.
 //!
-//! Keys come from the local head state's registry. Structural checks mirror
-//! the parts of `validate_attestation` that do not need a fork-choice store.
+//! Keys come from the local head state's registry. After signature / proof
+//! checks succeed, votes are also offered to the live fork-choice store
+//! (structural pending pool).
 
 use std::time::{Duration, Instant};
 
@@ -89,6 +90,7 @@ fn check_signed_attestation(
             .signatures
             .insert(data_root, &vote.data, vote.validator_index.get(), signature);
     }
+    owner.fc_on_attestation(vote.validator_index, vote.data);
     Ok(data_root)
 }
 
@@ -115,8 +117,8 @@ fn check_signed_aggregate(
     lean_metrics::gossip_aggregation(owner, payload.len());
     check_data(owner, &aggregate.data)?;
     let state = owner.head_state.as_ref().ok_or("no head state")?;
-    let bits = &aggregate.proof.participants.bits;
-    let keys = attestation_keys_for_bits(state, bits)?;
+    let bits = aggregate.proof.participants.bits.clone();
+    let keys = attestation_keys_for_bits(state, &bits)?;
     let data_root = aggregate.data.hash_tree_root();
     let verify_started = Instant::now();
     let checked = LeanMultisigVerifier.verify_single(
@@ -128,6 +130,7 @@ fn check_signed_aggregate(
     *verification = Some(verify_started.elapsed());
     checked.map_err(|e| e.to_string())?;
     insert_proved(owner, &aggregate.data, bits.clone(), aggregate.proof.proof)?;
+    owner.fc_on_aggregated(aggregate.data, &bits);
     Ok(data_root)
 }
 
