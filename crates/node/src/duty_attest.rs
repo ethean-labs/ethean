@@ -16,8 +16,8 @@ use std::time::Instant;
 pub const ATTESTATION_INTERVAL: u8 = 1;
 
 /// When a local attester is installed, sign attestation data for the first
-/// owned validator index (preferring fork-choice safe-target when live), queue
-/// it for subnet gossip, and pool the signature when this node aggregates.
+/// owned validator index (head = FC tip; target = safe-target when live),
+/// queue it for subnet gossip, and pool the signature when this node aggregates.
 pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEvent> {
     let mut out = Vec::new();
     if tick.interval != ATTESTATION_INTERVAL {
@@ -43,7 +43,8 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         slot: state.slot,
     };
     let source = state.latest_justified;
-    // Prefer live fork-choice safe-target when the store has initialized it.
+    // Target follows interval-3 safe-target when the live store has set it;
+    // head stays the FC tip (owner.head_root after sync).
     let target = if owner.safe_target != HASH32_ZERO {
         Checkpoint {
             root: owner.safe_target,
@@ -53,11 +54,6 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         head
     } else {
         source
-    };
-    let head = if owner.safe_target != HASH32_ZERO {
-        target
-    } else {
-        head
     };
     let data = AttestationData {
         slot: tick.slot,
@@ -217,7 +213,7 @@ mod tests {
         assert_eq!(ev.len(), 1);
         let vote = SignedAttestation::ssz_decode(&owner.pending_aggregation_gossip[0].payload)
             .unwrap();
-        assert_eq!(vote.data.head.root, [9u8; 32]);
+        assert_eq!(vote.data.head.root, [7u8; 32]);
         assert_eq!(vote.data.target.root, [9u8; 32]);
     }
 }
