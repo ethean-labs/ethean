@@ -24,6 +24,7 @@ impl EtheanClient {
         let mut client = Self::with_genesis_store(profile, genesis.state, db).await?;
         if let Some(head) = chain_persist::load_head(&paths)? {
             chain_persist::restore_owner(&mut client.owner, head)?;
+            client.owner.try_init_fork_choice();
         }
         client.persist_dir = Some(PathBuf::from(path));
         client.apply_local_roles(LocalRoles {
