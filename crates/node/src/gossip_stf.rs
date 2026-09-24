@@ -45,8 +45,10 @@ pub fn import_decoded_block(
     match applied {
         Ok(out) => {
             lean_metrics::transition(started.elapsed(), &out.timings);
-            owner.head_state = Some(out.post_state);
+            let post = out.post_state;
+            owner.head_state = Some(post.clone());
             owner.advance_head(decoded.root, decoded.parent);
+            owner.fc_on_block(decoded.block.clone(), post);
             GossipStfResult::Applied { root: decoded.root }
         }
         Err(e) => GossipStfResult::Rejected {
