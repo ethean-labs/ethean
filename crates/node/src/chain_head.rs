@@ -5,9 +5,16 @@ use ethean_primitives::{Hash32, HASH32_ZERO};
 
 impl ChainOwner {
     /// Move the canonical head; count a reorg when the new block does not extend it.
+    ///
+    /// When a live fork-choice store is present, `reorg_total` comes from the
+    /// store after [`Self::fc_on_block`] / sync — skip the parent heuristic.
     pub fn advance_head(&mut self, new_root: Hash32, parent_root: Hash32) {
         let prev = self.head_root;
-        if prev != HASH32_ZERO && prev != new_root && parent_root != prev {
+        if self.fc.is_none()
+            && prev != HASH32_ZERO
+            && prev != new_root
+            && parent_root != prev
+        {
             self.reorg_total = self.reorg_total.saturating_add(1);
         }
         self.head_root = new_root;
@@ -16,30 +23,18 @@ impl ChainOwner {
 
     /// Refresh justified / finalized / safe-target from the head post-state.
     ///
-    /// Until a live [`ethean_fork_choice::ForkChoiceStore`] owns safe-target,
-    /// safe-target tracks the justified checkpoint (conservative attest target).
+    /// When a live fork-choice store is present, [`Self::sync_from_fork_choice`]
+    /// owns safe-target instead.
     pub fn refresh_fc_view(&mut self) {
+        if self.fc.is_some() {
+            self.sync_from_fork_choice();
+            return;
+        }
         let Some(state) = self.head_state.as_ref() else {
             self.safe_target = self.head_root;
             return;
         };
         self.safe_target = state.latest_justified.root;
-    }
-
-    /// Slot of the current safe-target root (justified slot while FC store is deferred).
-    pub fn safe_target_slot(&self) -> u64 {
-        self.head_state
-            .as_ref()
-            .map(|s| {
-                if self.safe_target == s.latest_justified.root {
-                    s.latest_justified.slot.get()
-                } else if self.safe_target == self.head_root {
-                    s.slot.get()
-                } else {
-                    s.latest_justified.slot.get()
-                }
-            })
-            .unwrap_or(0)
     }
 }
 
@@ -95,7 +90,7 @@ mod tests {
     }
 
     #[test]
-    fn safe_target_follows_justified() {
+    fn safe_target_follows_justified_without_store() {
         let mut owner = ChainOwner::new(2);
         let just = [7u8; 32];
         owner.head_state = Some(sample_state(5, just, 4));
