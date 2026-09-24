@@ -25,3 +25,19 @@ pub struct SyncView {
     pub head_slot: Slot,
     pub peer_horizon_slot: Slot,
 }
+
+/// Fork-choice view returned by GET /lean/v1/chain/fork_choice.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ForkChoiceView {
+    /// Live structural store is present on the node.
+    pub live: bool,
+    pub head_root: Hash32,
+    pub safe_target_root: Hash32,
+    pub safe_target_slot: u64,
+    pub justified_root: Hash32,
+    pub finalized_root: Hash32,
+    pub reorg_total: u64,
+    pub blocks: u64,
+    pub pending_votes: u64,
+    pub known_votes: u64,
+}
