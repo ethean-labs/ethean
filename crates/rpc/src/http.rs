@@ -3,7 +3,7 @@
 use crate::auth::BindScope;
 use crate::error::RpcError;
 use crate::json_body::{
-    duties_json, finalized_json, fork_choice_json, head_json, identity_json, sync_json,
+    duties_json, events_json, finalized_json, fork_choice_json, head_json, identity_json, sync_json,
 };
 use crate::routes::Route;
 use crate::server::{dispatch, IncomingRequest};
@@ -98,11 +98,10 @@ fn respond(route: Route, state: &SharedApiState) -> (u16, &'static str, String) 
             state.request_shutdown();
             (200, "application/json", r#"{"ok":true}"#.into())
         }
-        Route::AdminEvents => (
-            501,
-            "application/json",
-            r#"{"error":"events stream not implemented"}"#.into(),
-        ),
+        Route::AdminEvents => {
+            let drained = state.drain_events(64);
+            json_ok(events_json(&drained))
+        }
     }
 }
 
