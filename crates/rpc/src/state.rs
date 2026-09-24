@@ -1,6 +1,6 @@
 //! Shared chain snapshot for the Lean HTTP listener.
 
-use crate::dto::{FinalizedView, HeadView, SyncView};
+use crate::dto::{FinalizedView, ForkChoiceView, HeadView, SyncView};
 use ethean_primitives::{Hash32, Slot, HASH32_ZERO};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -15,6 +15,7 @@ pub struct ApiSnapshot {
     pub head: HeadView,
     pub finalized: FinalizedView,
     pub sync: SyncView,
+    pub fork_choice: ForkChoiceView,
 }
 
 impl Default for ApiSnapshot {
@@ -35,6 +36,18 @@ impl Default for ApiSnapshot {
                 syncing: false,
                 head_slot: Slot::new(0),
                 peer_horizon_slot: Slot::new(0),
+            },
+            fork_choice: ForkChoiceView {
+                live: false,
+                head_root: HASH32_ZERO,
+                safe_target_root: HASH32_ZERO,
+                safe_target_slot: 0,
+                justified_root: HASH32_ZERO,
+                finalized_root: HASH32_ZERO,
+                reorg_total: 0,
+                blocks: 0,
+                pending_votes: 0,
+                known_votes: 0,
             },
         }
     }
