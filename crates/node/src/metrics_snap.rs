@@ -183,13 +183,23 @@ impl EtheanClient {
             }
         }
         if proposer_loaded && !self.owner.syncing {
-            // Visibility only: mark owned indices as proposal candidates for this slot.
-            for &idx in &self.owner.owned_validator_indices {
-                duty_rows.push(DutyRow {
-                    validator_index: idx,
-                    kind: "proposal",
-                    slot: tick_slot,
-                });
+            let n = self
+                .owner
+                .head_state
+                .as_ref()
+                .map(|s| s.validators.len() as u64)
+                .unwrap_or(0);
+            if let Ok(proposer) =
+                ethean_transition::proposer_for_slot(Slot::new(tick_slot), n)
+            {
+                let idx = proposer.get();
+                if self.owner.owned_validator_indices.contains(&idx) {
+                    duty_rows.push(DutyRow {
+                        validator_index: idx,
+                        kind: "proposal",
+                        slot: tick_slot,
+                    });
+                }
             }
         }
         api.publish(ApiSnapshot {
