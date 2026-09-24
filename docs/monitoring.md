@@ -12,7 +12,7 @@ Metrics prefix: `ethean_` (`ethean-metrics`). Lean HTTP API also serves
 | http://127.0.0.1:9100/metrics | Prometheus text |
 | http://127.0.0.1:5052/lean/v1/health | Hive health JSON |
 | http://127.0.0.1:5052/lean/v1/validator/duties | Owned duty visibility |
-| http://127.0.0.1:5052/lean/v0/events | Admin event poll (JSON) |
+| http://127.0.0.1:5052/lean/v0/events | Admin event poll (`{events,drained,pending}`) |
 
 Scrape HTTP on `:9100` is on by default. Disable with `--no-metrics`.
 Bind: `--metrics-address` / `--metrics-port`.
