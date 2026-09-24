@@ -1,54 +1,27 @@
 # Development backlog and next-step decision (2026-09-24)
 
-## Current snapshot (v0.1.49)
+## Current snapshot (v0.1.50)
 
-- leanSpec FC fixture runner green (empty-body dump gates where fill skews)
-- leanMetrics schema v3 + Grafana interop dashboard
-- leanMultisig / leanVM wire paths present; fail-closed crypto
-- Optional live structural `ForkChoiceStore` on `ChainOwner`; local
-  attestations prefer `safe_target` when the store is initialized
-- Linear head import only (`parent == head`); FC does not yet own the tip
-  and non-genesis durable resume may skip store init
-
-## Is embedding ForkChoiceStore necessary?
-
-**Yes.** Lean attestations should target the interval-3 safe-target (deepest
-2/3-backed block), not the justified checkpoint alone. Without a store:
-
-- `ethean_safe_target_slot` / `lean_safe_target_slot` stay conservative stubs
-- Local attesters sign head/justified, not FC safe-target
-- LMD reorg counting cannot match leanSpec `reorg_total`
-
-Full LMD head replacement of linear gossip import remains a later phase
-(node still only extends `parent == head`).
+- Optional live structural `ForkChoiceStore` on `ChainOwner`
+- Owner head / safe-target / reorg follow the store after tick and import
+- Gossip and sync import any parent known to the store (FC-driven tip)
+- Durable `--data-dir` resume rebuilds the store from genesis + blobs
+  (tip-anchor fallback when ancestors were pruned)
 
 ## Backlog (priority)
 
 | Pri | Area | Action |
 | --- | --- | --- |
-| P0 | Live FC store in node | **Done** — optional store; genesis init; on_block/on_tick; sync |
-| P0 | Attest to safe-target | **Done** — `duty_attest` uses `owner.safe_target` when set |
+| P0 | Live FC store in node | **Done** |
+| P0 | Attest to safe-target | **Done** |
+| P1 | FC-driven head | **Done** — known-parent import + store.head → owner |
+| P1 | Resume FC | **Done** — durable replay / tip-anchor |
 | P1 | Fixture re-fill | `at_9` / `dead_9` empty bodies vs BlockSpec (upstream fill) |
-| P1 | FC-driven head | Allow competing-tip import + store.head → owner.head |
-| P1 | Resume FC | Rebuild store from durable tip (not only genesis slot 0) |
 | P2 | Operator A2/A3 / Hive | External pins only; no invented digests |
 | P2 | leanBench alignment | Comment/API mode notes when live |
 
 ## This session slice
 
-1. Tracked plan (this note) — done.
-2. Wire optional structural `ForkChoiceStore` + tick/import sync — done
-   (`crates/node/src/chain_fc.rs` + apply/tick call sites).
-3. Point local attestation head/target at safe-target — done (`duty_attest`).
-4. Version bump to **0.1.49** (this release). Node unit tests need Linux/WSL
-   when leanVM `system-info` lacks Windows `rusage`.
-
-## Remaining backlog
-
-| Pri | Area | Action |
-| --- | --- | --- |
-| P1 | Fixture re-fill | `at_9` / `dead_9` empty bodies vs BlockSpec (upstream fill) |
-| P1 | FC-driven head | Allow competing-tip import + store.head → owner.head |
-| P1 | Resume FC | Rebuild store from durable tip (not only genesis slot 0) |
-| P2 | Operator A2/A3 / Hive | External pins only; no invented digests |
-| P2 | leanBench alignment | Comment/API mode notes when live |
+1. FC-driven head + sync import of competing known-parent tips — done.
+2. Durable FC rebuild on resume — done.
+3. Version bump to **0.1.50**.
