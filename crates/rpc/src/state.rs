@@ -1,6 +1,6 @@
 //! Shared chain snapshot for the Lean HTTP listener.
 
-use crate::dto::{FinalizedView, ForkChoiceStatsView, HeadView, SyncView};
+use crate::dto::{DutiesView, FinalizedView, ForkChoiceStatsView, HeadView, SyncView};
 use crate::events::{AdminEvent, EventBuffer};
 use crate::test_driver::DriverHandle;
 use crate::view::ForkChoiceView;
@@ -22,6 +22,8 @@ pub struct ApiSnapshot {
     pub fork_choice: ForkChoiceView,
     /// Live-store stats for `/lean/v1/chain/fork_choice`.
     pub fork_choice_stats: ForkChoiceStatsView,
+    /// Bounded local duty visibility for `/lean/v1/validator/duties`.
+    pub duties: DutiesView,
 }
 
 impl Default for ApiSnapshot {
@@ -56,6 +58,7 @@ impl Default for ApiSnapshot {
                 pending_votes: 0,
                 known_votes: 0,
             },
+            duties: DutiesView::default(),
         }
     }
 }
