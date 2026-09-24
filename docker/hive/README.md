@@ -30,8 +30,18 @@ optional prepared assets). Hive simulator runs use the drop-in below.
 ## Upstream registration
 
 Drop-in files live in [`upstream-clients-ethean/`](./upstream-clients-ethean/) —
-copy that folder to ethereum/hive `clients/ethean/` (already applied in the
-workspace `./hive` clone). Structure matches `hive/clients/ream/`:
+copy that folder to ethereum/hive `clients/ethean/`, or run the idempotent helper:
+
+```text
+# PowerShell (Windows)
+.\tools\hive\apply-ethean-client.ps1 -HiveRoot <path-to-hive>
+
+# Bash (Linux / WSL)
+./tools/hive/apply-ethean-client.sh <path-to-hive>
+```
+
+PR text: [`tools/hive/PR_BODY.md`](../../tools/hive/PR_BODY.md).
+Structure matches `hive/clients/ream/`:
 
 | File | Role |
 | --- | --- |
