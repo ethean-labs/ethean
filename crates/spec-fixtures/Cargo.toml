@@ -8,9 +8,14 @@ repository.workspace = true
 description = "leanSpec / Hive fixture index and rejection-reason mapping for Ethean"
 
 [dependencies]
+ethean-crypto = { workspace = true }
 ethean-fork-choice = { workspace = true }
+ethean-genesis = { workspace = true }
+ethean-network = { workspace = true }
+ethean-network-wire = { workspace = true }
 ethean-primitives = { workspace = true }
 ethean-profile = { workspace = true }
+ethean-ssz = { workspace = true }
 ethean-transition = { workspace = true }
 ethean-types = { workspace = true }
 serde = { workspace = true }

@@ -1,11 +1,9 @@
-//! Minimal Lean `/lean/v1` TCP HTTP listener (same style as metrics scrape).
+//! Lean HTTP/1.1 listener: request-line + headers, Content-Length bodies, keep-alive.
 
 use crate::auth::BindScope;
-use crate::error::RpcError;
-use crate::json_body::{
-    duties_json, events_json, finalized_json, fork_choice_json, head_json, identity_json, sync_json,
-};
-use crate::routes::Route;
+use crate::handlers::{error_json, handle_route, HttpReply};
+use crate::limits::{MAX_BODY_BYTES, MAX_HEADER_BYTES};
+use crate::parse::{parse_http_request, request_span, ParseError};
 use crate::server::{dispatch, IncomingRequest};
 use crate::state::SharedApiState;
 use std::io;
@@ -25,11 +23,10 @@ pub async fn spawn_lean_http(
     } else {
         BindScope::Public
     };
-    // Public binds may omit the admin token: read routes stay open, admin stays Forbidden.
     let _ = crate::auth::validate_admin_token(scope, state.admin_token());
     let listener = TcpListener::bind(addr).await?;
     let bound = listener.local_addr()?;
-    info!(%bound, "Lean HTTP listening (/lean/v1/…)");
+    info!(%bound, "Lean HTTP listening (/lean/v0/…, /lean/v1 aliases)");
     tokio::spawn(async move {
         loop {
             let Ok((stream, peer)) = listener.accept().await else {
@@ -51,102 +48,86 @@ async fn handle_conn(
     state: Arc<SharedApiState>,
     scope: BindScope,
 ) -> io::Result<()> {
-    let mut buf = [0u8; 4096];
-    let n = stream.read(&mut buf).await?;
-    if n == 0 {
-        return Ok(());
+    let mut buf = Vec::with_capacity(4096);
+    loop {
+        let req = match read_one_request(&mut stream, &mut buf).await? {
+            Some(r) => r,
+            None => return Ok(()),
+        };
+        let incoming = IncomingRequest {
+            method: &req.method,
+            path: &req.path,
+            body_len: req.body.len(),
+            bearer: req.bearer.as_deref(),
+        };
+        let reply = match dispatch(&incoming, scope, state.admin_token()) {
+            Ok(route) => handle_route(route, &state, &req.body),
+            Err(e) => error_json(e),
+        };
+        write_reply(&mut stream, &reply, req.keep_alive).await?;
+        if !req.keep_alive {
+            break;
+        }
+        buf.clear();
     }
-    let req = String::from_utf8_lossy(&buf[..n]);
-    let (method, path, bearer) = parse_request(&req);
-    let incoming = IncomingRequest {
-        method: &method,
-        path: &path,
-        body_len: 0,
-        bearer: bearer.as_deref(),
-    };
-    let (status, content_type, body) = match dispatch(&incoming, scope, state.admin_token()) {
-        Ok(route) => respond(route, &state),
-        Err(e) => error_response(e),
-    };
-    let resp = format!(
-        "HTTP/1.1 {status} {}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-        reason(status),
-        body.len(),
-    );
-    stream.write_all(resp.as_bytes()).await?;
     Ok(())
 }
 
-fn respond(route: Route, state: &SharedApiState) -> (u16, &'static str, String) {
-    let snap = state.snapshot();
-    match route {
-        Route::Health => (200, "text/plain; charset=utf-8", "ok\n".into()),
-        Route::Ready => {
-            if state.is_ready() {
-                (200, "text/plain; charset=utf-8", "ready\n".into())
-            } else {
-                (503, "text/plain; charset=utf-8", "not ready\n".into())
+async fn read_one_request(
+    stream: &mut TcpStream,
+    buf: &mut Vec<u8>,
+) -> io::Result<Option<crate::parse::ParsedRequest>> {
+    loop {
+        match parse_http_request(buf) {
+            Ok(req) => {
+                let span = request_span(buf).map_err(|e| e.to_io())?;
+                buf.drain(..span);
+                return Ok(Some(req));
+            }
+            Err(ParseError::Incomplete) => {}
+            Err(ParseError::BodyTooLarge { got, max }) => {
+                let reply = error_json(crate::error::RpcError::BodyTooLarge { got, max });
+                write_reply(stream, &reply, false).await?;
+                return Ok(None);
+            }
+            Err(e) => {
+                let reply = error_json(crate::error::RpcError::BadRequest(format!("{e:?}")));
+                write_reply(stream, &reply, false).await?;
+                return Ok(None);
             }
         }
-        Route::NodeIdentity => json_ok(identity_json(&snap)),
-        Route::ChainHead => json_ok(head_json(&snap.head)),
-        Route::ChainFinalized => json_ok(finalized_json(&snap.finalized)),
-        Route::ChainSync => json_ok(sync_json(&snap.sync)),
-        Route::ChainForkChoice => json_ok(fork_choice_json(&snap.fork_choice)),
-        Route::ValidatorDuties => json_ok(duties_json()),
-        Route::AdminShutdown => {
-            state.request_shutdown();
-            (200, "application/json", r#"{"ok":true}"#.into())
+        if buf.len() > MAX_HEADER_BYTES + MAX_BODY_BYTES {
+            let reply = error_json(crate::error::RpcError::BodyTooLarge {
+                got: buf.len(),
+                max: MAX_BODY_BYTES,
+            });
+            write_reply(stream, &reply, false).await?;
+            return Ok(None);
         }
-        Route::AdminEvents => {
-            let drained = state.drain_events(64);
-            json_ok(events_json(&drained))
+        let mut chunk = [0u8; 8192];
+        let n = stream.read(&mut chunk).await?;
+        if n == 0 {
+            return Ok(None);
         }
+        buf.extend_from_slice(&chunk[..n]);
     }
 }
 
-fn json_ok(v: serde_json::Value) -> (u16, &'static str, String) {
-    (200, "application/json", v.to_string())
-}
-
-fn error_response(err: RpcError) -> (u16, &'static str, String) {
-    let status = match &err {
-        RpcError::UnknownRoute(_) => 404,
-        RpcError::BodyTooLarge { .. } | RpcError::BadRequest(_) => 400,
-        RpcError::Unauthorized => 401,
-        RpcError::Forbidden => 403,
-        RpcError::Unavailable(_) => 503,
-    };
-    let body = serde_json::json!({ "error": err.to_string() }).to_string();
-    (status, "application/json", body)
-}
-
-fn parse_request(req: &str) -> (String, String, Option<String>) {
-    let mut lines = req.lines();
-    let line = lines.next().unwrap_or("");
-    let mut parts = line.split_whitespace();
-    let method = parts.next().unwrap_or("GET").to_string();
-    let path = parts
-        .next()
-        .unwrap_or("/")
-        .split('?')
-        .next()
-        .unwrap_or("/")
-        .to_string();
-    let mut bearer = None;
-    for l in lines {
-        let lower = l.to_ascii_lowercase();
-        if lower.starts_with("authorization:") {
-            let v = l.split_once(':').map(|(_, r)| r.trim()).unwrap_or("");
-            if let Some(rest) = v.strip_prefix("Bearer ").or_else(|| v.strip_prefix("bearer ")) {
-                bearer = Some(rest.trim().to_string());
-            }
-        }
-        if l.is_empty() {
-            break;
-        }
+async fn write_reply(stream: &mut TcpStream, reply: &HttpReply, keep_alive: bool) -> io::Result<()> {
+    let conn = if keep_alive { "keep-alive" } else { "close" };
+    let head = format!(
+        "HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: {conn}\r\n\r\n",
+        reply.status,
+        reason(reply.status),
+        reply.content_type,
+        reply.body.len(),
+    );
+    stream.write_all(head.as_bytes()).await?;
+    stream.write_all(&reply.body).await?;
+    if !keep_alive {
+        stream.shutdown().await.ok();
     }
-    (method, path, bearer)
+    Ok(())
 }
 
 fn reason(status: u16) -> &'static str {
@@ -164,14 +145,13 @@ fn reason(status: u16) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::parse::parse_http_request;
 
     #[test]
-    fn parses_bearer() {
-        let raw = "GET /lean/v1/health HTTP/1.1\r\nAuthorization: Bearer secret\r\n\r\n";
-        let (m, p, b) = parse_request(raw);
-        assert_eq!(m, "GET");
-        assert_eq!(p, "/lean/v1/health");
-        assert_eq!(b.as_deref(), Some("secret"));
+    fn parse_still_used_by_listener() {
+        let raw = b"GET /lean/v0/health HTTP/1.1\r\nAuthorization: Bearer secret\r\n\r\n";
+        let p = parse_http_request(raw).unwrap();
+        assert_eq!(p.path, "/lean/v0/health");
+        assert_eq!(p.bearer.as_deref(), Some("secret"));
     }
 }

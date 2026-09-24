@@ -39,6 +39,8 @@ pub enum ForkChoiceRejection {
     TooManyAttestationData,
     /// `EMPTY_AGGREGATION_BITS`
     EmptyAggregationBits,
+    /// `VALIDATOR_NOT_IN_STATE`
+    ValidatorNotInState,
 }
 
 /// Sentinel when the fixture string is not yet mapped.
@@ -73,6 +75,7 @@ pub fn map_fork_choice_rejection(reason: &str) -> Option<ForkChoiceRejection> {
         "DUPLICATE_ATTESTATION_DATA" => Some(ForkChoiceRejection::DuplicateAttestationData),
         "TOO_MANY_ATTESTATION_DATA" => Some(ForkChoiceRejection::TooManyAttestationData),
         "EMPTY_AGGREGATION_BITS" => Some(ForkChoiceRejection::EmptyAggregationBits),
+        "VALIDATOR_NOT_IN_STATE" => Some(ForkChoiceRejection::ValidatorNotInState),
         _ => None,
     }
 }
@@ -98,6 +101,7 @@ impl ForkChoiceRejection {
             Self::DuplicateAttestationData => ForkChoiceError::DuplicateAttestationData,
             Self::TooManyAttestationData => ForkChoiceError::TooManyAttestationData,
             Self::EmptyAggregationBits => ForkChoiceError::EmptyAggregationBits,
+            Self::ValidatorNotInState => ForkChoiceError::ValidatorNotInState,
         }
     }
 
@@ -121,6 +125,7 @@ impl ForkChoiceRejection {
             Self::DuplicateAttestationData => "DUPLICATE_ATTESTATION_DATA",
             Self::TooManyAttestationData => "TOO_MANY_ATTESTATION_DATA",
             Self::EmptyAggregationBits => "EMPTY_AGGREGATION_BITS",
+            Self::ValidatorNotInState => "VALIDATOR_NOT_IN_STATE",
         }
     }
 }

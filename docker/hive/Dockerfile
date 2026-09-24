@@ -1,14 +1,17 @@
 # syntax=docker/dockerfile:1.7
 
-# Hive-oriented image for ethereum/hive simulators/lean.
+# Hive-oriented local image for ethereum/hive simulators/lean.
 # Build from the Ethean repo root:
-#   docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
+#   docker build -f docker/hive/Dockerfile -t ghcr.io/ethean-labs/ethean:local .
+#
+# CI publishes the same binaries as ghcr.io/ethean-labs/ethean (see
+# .github/workflows/docker-image.yml and the root Dockerfile); this file is the
+# no-cache, single-stage-builder variant with the flexible Hive entrypoint
+# (docker/hive/ethean.sh) baked in for smoke runs without prepared assets.
 
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.98.1-bookworm AS builder
+ENV RUSTUP_TOOLCHAIN=1.98.1
 WORKDIR /src
-RUN apt-get update \
- && apt-get install -y --no-install-recommends clang libclang-dev pkg-config protobuf-compiler \
- && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 # Default features include libp2p-quic (see bin/ethean/Cargo.toml).
@@ -18,7 +21,7 @@ RUN cargo build --release --locked -p ethean -p ethean-prover \
  && cp /src/target/release/ethean /src/ethean \
  && cp /src/target/release/ethean-prover /src/ethean-prover
 
-FROM debian:bookworm-slim AS runtime
+FROM ubuntu:24.04 AS runtime
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates \
  && rm -rf /var/lib/apt/lists/*
@@ -27,7 +30,8 @@ COPY --from=builder /src/ethean /usr/local/bin/ethean
 COPY --from=builder /src/ethean-prover /usr/local/bin/ethean-prover
 COPY docker/hive/ethean.sh /ethean.sh
 RUN chmod +x /ethean.sh \
- && /usr/local/bin/ethean version > /version.txt || true
+ && ethean --version | head -1 > /version.txt \
+ && ethean-prover --version
 
 # Lean HTTP (:5052), metrics (:9100), QUIC/UDP (:9000 default).
 EXPOSE 5052 9000/udp 9100

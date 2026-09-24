@@ -1,12 +1,14 @@
 //! Shared chain snapshot for the Lean HTTP listener.
 
-use crate::dto::{FinalizedView, ForkChoiceView, HeadView, SyncView};
+use crate::dto::{FinalizedView, ForkChoiceStatsView, HeadView, SyncView};
 use crate::events::{AdminEvent, EventBuffer};
+use crate::test_driver::DriverHandle;
+use crate::view::ForkChoiceView;
 use ethean_primitives::{Hash32, Slot, HASH32_ZERO};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-/// Live values served by `/lean/v1/…` (updated by the node duty loop).
+/// Live values served by `/lean/v0` and `/lean/v1` (updated by the node duty loop).
 #[derive(Debug, Clone)]
 pub struct ApiSnapshot {
     /// Network label (e.g. `pq-devnet-5`).
@@ -16,7 +18,10 @@ pub struct ApiSnapshot {
     pub head: HeadView,
     pub finalized: FinalizedView,
     pub sync: SyncView,
+    /// Fork-choice + finalized SSZ pair for hive `/lean/v0`.
     pub fork_choice: ForkChoiceView,
+    /// Live-store stats for `/lean/v1/chain/fork_choice`.
+    pub fork_choice_stats: ForkChoiceStatsView,
 }
 
 impl Default for ApiSnapshot {
@@ -38,7 +43,8 @@ impl Default for ApiSnapshot {
                 head_slot: Slot::new(0),
                 peer_horizon_slot: Slot::new(0),
             },
-            fork_choice: ForkChoiceView {
+            fork_choice: ForkChoiceView::default(),
+            fork_choice_stats: ForkChoiceStatsView {
                 live: false,
                 head_root: HASH32_ZERO,
                 safe_target_root: HASH32_ZERO,
@@ -55,14 +61,24 @@ impl Default for ApiSnapshot {
 }
 
 /// Process-wide Lean API state shared with the HTTP accept loop.
-#[derive(Debug)]
 pub struct SharedApiState {
     ready: AtomicBool,
     shutdown: AtomicBool,
+    aggregator: AtomicBool,
     snap: Mutex<ApiSnapshot>,
     events: Mutex<EventBuffer>,
     last_head_slot: Mutex<Option<u64>>,
     admin_token: String,
+    driver: Mutex<Option<DriverHandle>>,
+}
+
+impl std::fmt::Debug for SharedApiState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SharedApiState")
+            .field("ready", &self.is_ready())
+            .field("driver", &self.driver().is_some())
+            .finish()
+    }
 }
 
 impl SharedApiState {
@@ -71,10 +87,12 @@ impl SharedApiState {
         Arc::new(Self {
             ready: AtomicBool::new(false),
             shutdown: AtomicBool::new(false),
+            aggregator: AtomicBool::new(false),
             snap: Mutex::new(ApiSnapshot::default()),
             events: Mutex::new(EventBuffer::default()),
             last_head_slot: Mutex::new(None),
             admin_token: admin_token.into(),
+            driver: Mutex::new(None),
         })
     }
 
@@ -101,6 +119,21 @@ impl SharedApiState {
         self.shutdown.load(Ordering::Relaxed)
     }
 
+    /// Seed aggregator role from CLI / hive `IS_AGGREGATOR`.
+    pub fn set_aggregator(&self, enabled: bool) {
+        self.aggregator.store(enabled, Ordering::Relaxed);
+    }
+
+    /// Current aggregator role (atomic; POST `/admin/aggregator` flips this).
+    pub fn is_aggregator(&self) -> bool {
+        self.aggregator.load(Ordering::Relaxed)
+    }
+
+    /// Swap the aggregator flag; returns the previous value.
+    pub fn swap_aggregator(&self, enabled: bool) -> bool {
+        self.aggregator.swap(enabled, Ordering::Relaxed)
+    }
+
     /// Replace the published chain views; emit head-slot events on change.
     pub fn publish(&self, snap: ApiSnapshot) {
         let slot = snap.head.slot.get();
@@ -118,10 +151,7 @@ impl SharedApiState {
 
     /// Clone the current snapshot.
     pub fn snapshot(&self) -> ApiSnapshot {
-        self.snap
-            .lock()
-            .map(|g| g.clone())
-            .unwrap_or_default()
+        self.snap.lock().map(|g| g.clone()).unwrap_or_default()
     }
 
     /// Push a redacted admin event into the ring buffer.
@@ -142,6 +172,18 @@ impl SharedApiState {
     /// Admin bearer expected by authorize helpers.
     pub fn admin_token(&self) -> &str {
         &self.admin_token
+    }
+
+    /// Enable the hive `test_driver` routes.
+    pub fn install_driver(&self, driver: DriverHandle) {
+        if let Ok(mut g) = self.driver.lock() {
+            *g = Some(driver);
+        }
+    }
+
+    /// Installed test driver, if any.
+    pub fn driver(&self) -> Option<DriverHandle> {
+        self.driver.lock().ok().and_then(|g| g.clone())
     }
 }
 
@@ -171,5 +213,15 @@ mod tests {
         assert!(drained
             .iter()
             .any(|e| matches!(e, AdminEvent::HeadSlot { slot: 7 })));
+    }
+
+    #[test]
+    fn aggregator_swap() {
+        let st = SharedApiState::new("");
+        assert!(!st.is_aggregator());
+        assert!(!st.swap_aggregator(true));
+        assert!(st.is_aggregator());
+        assert!(st.swap_aggregator(false));
+        assert!(!st.is_aggregator());
     }
 }

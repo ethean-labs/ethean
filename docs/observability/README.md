@@ -20,3 +20,4 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [metrics flag starts grafana prometheus](metrics-flag-starts-grafana-prometheus-2026-09-20.md)
 - [observability wall tick hard scan](observability-wall-tick-hard-scan-2026-09-19.md)
 - [range serve seed metrics](range-serve-seed-metrics-2026-09-20.md)
+- [leanmetrics remaining series](leanmetrics-remaining-series-2026-09-24.md)

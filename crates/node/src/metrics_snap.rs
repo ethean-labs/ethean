@@ -1,10 +1,11 @@
 //! Snapshot chain slot gauges into the process metrics registry.
 
+use crate::api_view::fork_choice_view;
 use crate::client::EtheanClient;
 use crate::Result;
 use ethean_genesis::SystemTimeSource;
 use ethean_primitives::{Hash32, Slot, HASH32_ZERO};
-use ethean_rpc::{ApiSnapshot, FinalizedView, ForkChoiceView, HeadView, SyncView};
+use ethean_rpc::{ApiSnapshot, FinalizedView, ForkChoiceStatsView, HeadView, SyncView};
 use tracing::debug;
 
 impl EtheanClient {
@@ -70,7 +71,27 @@ impl EtheanClient {
         )?;
         self.observability
             .record_reorg_total(self.owner.reorg_total)?;
-        crate::lean_metrics::refresh(&self.owner, current, peers);
+        let (peer_clients, mesh_clients) = {
+            #[cfg(feature = "libp2p-quic")]
+            {
+                self.swarm
+                    .as_ref()
+                    .and_then(|s| s.quic.as_ref())
+                    .map(|q| (q.peer_clients(), q.mesh_peer_clients()))
+                    .unwrap_or_default()
+            }
+            #[cfg(not(feature = "libp2p-quic"))]
+            {
+                (Vec::new(), Vec::new())
+            }
+        };
+        crate::lean_metrics::refresh_with_clients(
+            &self.owner,
+            current,
+            peers,
+            &peer_clients,
+            &mesh_clients,
+        );
         crate::lean_metrics::node_facts(&self.owner, env!("CARGO_PKG_VERSION"));
         self.observability.record_roles(
             validators,
@@ -107,7 +128,7 @@ impl EtheanClient {
     }
 
     fn publish_lean_api(
-        &self,
+        &mut self,
         head_slot: u64,
         finalized_slot: u64,
         finalized_root: Hash32,
@@ -121,7 +142,9 @@ impl EtheanClient {
                 .ready_flag
                 .load(std::sync::atomic::Ordering::Relaxed),
         );
-        let peer_id = String::new();
+        // POST /lean/v0/admin/aggregator flips the RPC atomic; apply it onto the owner.
+        self.owner.is_aggregator = api.is_aggregator();
+        let peer_id = self.peer_id.clone();
         let _ = peers;
         let lag = self.sync.lag();
         let horizon = head_slot.saturating_add(if peers > 0 { lag.max(1) } else { 0 });
@@ -161,7 +184,8 @@ impl EtheanClient {
                 head_slot: Slot::new(head_slot),
                 peer_horizon_slot: Slot::new(horizon),
             },
-            fork_choice: ForkChoiceView {
+            fork_choice: fork_choice_view(&self.owner),
+            fork_choice_stats: ForkChoiceStatsView {
                 live,
                 head_root: self.owner.head_root,
                 safe_target_root: self.owner.safe_target,

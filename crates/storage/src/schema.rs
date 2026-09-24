@@ -1,7 +1,7 @@
 //! Storage schema identity and version gates.
 
 /// Frozen schema id for this migration snapshot.
-pub const SCHEMA_ID: &str = "ethean-lc-d5-v1";
+pub const SCHEMA_ID: &str = "ethean-lc-d5-v2";
 
 /// Monotonic schema version for forward-only migrations.
 pub const SCHEMA_VERSION: u32 = 1;

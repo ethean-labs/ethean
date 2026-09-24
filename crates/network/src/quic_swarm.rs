@@ -9,13 +9,13 @@ use crate::quic_blocks_codec::{blocks_by_root_behaviour, BlocksByRootCodec};
 use crate::quic_range_codec::{blocks_by_range_behaviour, BlocksByRangeCodec};
 use crate::quic_status_codec::{status_behaviour, StatusCodec};
 use crate::quic_swarm_bind::{build_gossipsub, subscribe_all, wait_quic_listen};
-use crate::transport::TransportConfig;
+use crate::transport::{ListenIdentity, TransportConfig};
 use ethean_primitives::Hash32;
 use libp2p::futures::StreamExt;
 use libp2p::gossipsub::{self, IdentTopic};
 use libp2p::request_response;
 use libp2p::swarm::SwarmEvent;
-use libp2p::{identity, ping, Multiaddr, PeerId, SwarmBuilder};
+use libp2p::{ping, Multiaddr, PeerId, SwarmBuilder};
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -26,6 +26,7 @@ type NetResult<T> = std::result::Result<T, NetworkError>;
 #[derive(libp2p::swarm::NetworkBehaviour)]
 pub(crate) struct LeanBehaviour {
     pub(crate) ping: ping::Behaviour,
+    pub(crate) identify: libp2p::identify::Behaviour,
     pub(crate) gossipsub: gossipsub::Behaviour,
     pub(crate) status: request_response::Behaviour<StatusCodec>,
     pub(crate) blocks_by_root: request_response::Behaviour<BlocksByRootCodec>,
@@ -54,6 +55,8 @@ pub struct QuicSwarm {
     pub(crate) range_serve_found: AtomicU64,
     /// Cumulative slots missing when serving blocks-by-range.
     pub(crate) range_serve_missing: AtomicU64,
+    /// Agent version reported by each connected peer through identify.
+    pub(crate) agents: HashMap<PeerId, String>,
 }
 
 impl std::fmt::Debug for QuicSwarm {
@@ -97,10 +100,41 @@ impl QuicSwarm {
         Self::bind_inner(cfg, Some(topics)).await
     }
 
-    async fn bind_inner(cfg: &TransportConfig, topics: Option<LeanGossipTopics>) -> NetResult<Self> {
-        let keypair = identity::Keypair::generate_ed25519();
+    /// Bind on `who.listen_ip` with the secp256k1 node key from `who` (or a
+    /// generated identity when absent) and subscribe to Lean topics.
+    pub async fn bind_with_identity(
+        cfg: &TransportConfig,
+        fork_segment: &str,
+        attestation_subnets: u16,
+        who: &ListenIdentity,
+    ) -> NetResult<Self> {
+        let topics =
+            LeanGossipTopics::from_fork_segment_subnets(fork_segment, attestation_subnets)?;
+        Self::bind_as(cfg, Some(topics), who).await
+    }
+
+    async fn bind_inner(
+        cfg: &TransportConfig,
+        topics: Option<LeanGossipTopics>,
+    ) -> NetResult<Self> {
+        Self::bind_as(cfg, topics, &ListenIdentity::default()).await
+    }
+
+    async fn bind_as(
+        cfg: &TransportConfig,
+        topics: Option<LeanGossipTopics>,
+        who: &ListenIdentity,
+    ) -> NetResult<Self> {
+        let keypair = match who.node_key.as_ref() {
+            Some(key) => key.libp2p_keypair()?,
+            None => crate::node_key::NodeKey::generate().libp2p_keypair()?,
+        };
         let peer_id = keypair.public().to_peer_id();
         let gossipsub = build_gossipsub(&keypair)?;
+        let identify = libp2p::identify::Behaviour::new(
+            libp2p::identify::Config::new("/leanconsensus/1".into(), keypair.public())
+                .with_agent_version(format!("ethean/{}", env!("CARGO_PKG_VERSION"))),
+        );
 
         let mut swarm = SwarmBuilder::with_existing_identity(keypair)
             .with_tokio()
@@ -109,6 +143,7 @@ impl QuicSwarm {
                 ping: ping::Behaviour::new(
                     ping::Config::new().with_interval(Duration::from_secs(15)),
                 ),
+                identify,
                 gossipsub,
                 status: status_behaviour(),
                 blocks_by_root: blocks_by_root_behaviour(),
@@ -117,7 +152,8 @@ impl QuicSwarm {
             .map_err(|e| NetworkError::Handshake(format!("behaviour: {e}")))?
             .build();
 
-        let listen: Multiaddr = format!("/ip4/0.0.0.0/udp/{}/quic-v1", cfg.listen_port)
+        let listen: Multiaddr = who
+            .listen_multiaddr(cfg.listen_port)
             .parse()
             .map_err(|e| NetworkError::Handshake(format!("listen multiaddr: {e}")))?;
         swarm
@@ -143,6 +179,7 @@ impl QuicSwarm {
             blocks_by_slot: HashMap::new(),
             range_serve_found: AtomicU64::new(0),
             range_serve_missing: AtomicU64::new(0),
+            agents: HashMap::new(),
         })
     }
 
@@ -195,59 +232,6 @@ impl QuicSwarm {
         Ok(())
     }
 
-    /// Send a Status request to a connected peer fingerprint.
-    pub fn send_status_request(&mut self, peer: Hash32, payload: Vec<u8>) -> NetResult<()> {
-        let Some(peer_id) = self.peers.get(&peer).copied() else {
-            return Err(NetworkError::Handshake(
-                "peer not connected for Status request".into(),
-            ));
-        };
-        let _ = self
-            .swarm
-            .behaviour_mut()
-            .status
-            .send_request(&peer_id, payload);
-        Ok(())
-    }
-
-    /// Send a blocks-by-root request to a connected peer fingerprint.
-    pub fn send_blocks_by_root_request(
-        &mut self,
-        peer: Hash32,
-        payload: Vec<u8>,
-    ) -> NetResult<()> {
-        let Some(peer_id) = self.peers.get(&peer).copied() else {
-            return Err(NetworkError::Handshake(
-                "peer not connected for blocks-by-root request".into(),
-            ));
-        };
-        let _ = self
-            .swarm
-            .behaviour_mut()
-            .blocks_by_root
-            .send_request(&peer_id, payload);
-        Ok(())
-    }
-
-    /// Send a blocks-by-range request to a connected peer fingerprint.
-    pub fn send_blocks_by_range_request(
-        &mut self,
-        peer: Hash32,
-        payload: Vec<u8>,
-    ) -> NetResult<()> {
-        let Some(peer_id) = self.peers.get(&peer).copied() else {
-            return Err(NetworkError::Handshake(
-                "peer not connected for blocks-by-range request".into(),
-            ));
-        };
-        let _ = self
-            .swarm
-            .behaviour_mut()
-            .blocks_by_range
-            .send_request(&peer_id, payload);
-        Ok(())
-    }
-
     /// Pump one swarm event; validates inbound gossip against Lean rules.
     pub async fn pump_once(&mut self) -> PumpEvent {
         match self.swarm.select_next_some().await {
@@ -267,6 +251,7 @@ impl QuicSwarm {
                 ..
             } => {
                 let peer = self.forget_peer(&peer_id);
+                self.agents.remove(&peer_id);
                 let reason = match &cause {
                     None => "local_close",
                     Some(libp2p::swarm::ConnectionError::KeepAliveTimeout) => "timeout",
@@ -281,6 +266,12 @@ impl QuicSwarm {
             SwarmEvent::OutgoingConnectionError { .. } => PumpEvent::OutgoingError,
             SwarmEvent::IncomingConnectionError { .. } => PumpEvent::IncomingError,
             SwarmEvent::NewListenAddr { .. } => PumpEvent::NewListenAddr,
+            SwarmEvent::Behaviour(LeanBehaviourEvent::Identify(ev)) => {
+                if let libp2p::identify::Event::Received { peer_id, info, .. } = ev {
+                    self.agents.insert(peer_id, info.agent_version);
+                }
+                PumpEvent::Behaviour
+            }
             SwarmEvent::Behaviour(LeanBehaviourEvent::Gossipsub(ev)) => {
                 self.handle_gossip_event(ev)
             }

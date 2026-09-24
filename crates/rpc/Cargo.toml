@@ -5,11 +5,12 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Lean Consensus HTTP/JSON-RPC API (Phase 12)"
+description = "Lean Consensus HTTP/JSON-RPC API (/lean/v0 hive surface)"
 
 [dependencies]
 ethean-primitives = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

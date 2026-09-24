@@ -86,6 +86,9 @@ pub struct ChainOwner {
     pub reorg_total: u64,
     /// Live lstar fork-choice store (structural until proofs are required in-node).
     pub fc: Option<ethean_fork_choice::ForkChoiceStore>,
+    /// Attestation data seen on chain, by data root -> vote slot
+    /// (leanSpec `latest_known_aggregated_payloads`).
+    pub known_payloads: std::collections::HashMap<Hash32, u64>,
 }
 
 impl Default for ChainOwner {
@@ -116,6 +119,7 @@ impl Default for ChainOwner {
             safe_target: Hash32::default(),
             reorg_total: 0,
             fc: None,
+            known_payloads: std::collections::HashMap::new(),
         }
     }
 }
@@ -183,11 +187,7 @@ impl ChainOwner {
         if payload.is_empty() {
             return;
         }
-        if let Some(slot) = self
-            .durable_blocks
-            .iter()
-            .position(|(r, _)| *r == root)
-        {
+        if let Some(slot) = self.durable_blocks.iter().position(|(r, _)| *r == root) {
             self.durable_blocks[slot] = (root, payload);
             return;
         }
@@ -200,6 +200,14 @@ impl ChainOwner {
     /// Drop queued durable blobs after a successful data-dir flush.
     pub fn clear_durable_blocks(&mut self) {
         self.durable_blocks.clear();
+    }
+
+    /// Look up a remembered SignedBlock SSZ blob by root.
+    pub fn durable_block(&self, root: &Hash32) -> Option<&[u8]> {
+        self.durable_blocks
+            .iter()
+            .find(|(r, _)| r == root)
+            .map(|(_, p)| p.as_slice())
     }
 }
 

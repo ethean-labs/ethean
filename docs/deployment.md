@@ -69,7 +69,7 @@ Terminal tracing only (network label, dials, crypto gates, ticks). No `ethean mo
 
 ## Config / data
 
-- Prefer paths and schema id from `ethean-storage` (`ethean-lc-d5-v1`).
+- Prefer paths and schema id from `ethean-storage` (`ethean-lc-d5-v2`).
 - Refuse directories whose names contain legacy product markers (see storage `refuse_legacy_path`).
 - HTTP surface is `/lean/v1/…` via `ethean-rpc` (no `/eth/v1` Beacon compatibility).
 

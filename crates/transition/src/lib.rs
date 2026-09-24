@@ -24,7 +24,8 @@ pub use outcome::{TransitionOutcome, TransitionTimings};
 pub use slot::process_slots;
 
 pub use block::{process_block, process_block_header};
-pub use helpers::proposer_for_slot;
+pub use helpers::{extend_to_slot, is_justifiable_after, is_slot_justified, proposer_for_slot};
+pub use operation::lies_on_chain;
 pub use operation::{
     check_attestation_data_structure, distinct_attestation_data_count, process_attestations,
 };

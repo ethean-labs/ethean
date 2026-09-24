@@ -16,6 +16,8 @@ impl ChainOwner {
             && parent_root != prev
         {
             self.reorg_total = self.reorg_total.saturating_add(1);
+            let depth = self.reorg_depth(prev, new_root).max(1);
+            ethean_metrics::lean::observe("lean_fork_choice_reorg_depth", &[], depth as f64);
         }
         self.head_root = new_root;
         self.refresh_fc_view();
@@ -42,9 +44,7 @@ impl ChainOwner {
 mod tests {
     use super::*;
     use ethean_primitives::{Bytes52, Slot, ValidatorIndex};
-    use ethean_types::{
-        BlockHeader, Checkpoint, GenesisConfig, State, Validator,
-    };
+    use ethean_types::{BlockHeader, Checkpoint, GenesisConfig, State, Validator};
 
     fn sample_state(slot: u64, justified: Hash32, just_slot: u64) -> State {
         let val = Validator::new(Bytes52::ZERO, Bytes52::ZERO, ValidatorIndex::new(0)).unwrap();

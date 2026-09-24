@@ -33,6 +33,26 @@ pub fn collect_proofs(owner: &mut ChainOwner) -> Vec<ChainEvent> {
                     Err(error) => events.push(failed("attestation", error)),
                 }
             }
+            ProofOutcome::Split {
+                data,
+                participants,
+                proof,
+                elapsed,
+            } => {
+                let result = proof.and_then(|p| {
+                    crate::aggregation_duty::accept_recovered_proof(
+                        owner,
+                        data,
+                        participants,
+                        p,
+                        elapsed,
+                    )
+                });
+                match result {
+                    Ok(event) => events.push(event),
+                    Err(error) => events.push(failed("split", error)),
+                }
+            }
             ProofOutcome::Block {
                 plan,
                 proof,

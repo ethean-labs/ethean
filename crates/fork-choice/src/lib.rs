@@ -14,7 +14,10 @@ mod update;
 
 pub use error::ForkChoiceError;
 pub use opts::ForkChoiceOpts;
-pub use store::{normalized_participant_sets, AggregatedPayloadEntry, ForkChoiceStore};
+pub use store::{
+    normalized_participant_sets, AggregatedPayloadEntry, ForkChoiceNode, ForkChoiceSnapshot,
+    ForkChoiceStore,
+};
 pub use update::create_store;
 
 pub use ethean_primitives::{Hash32, ValidatorIndex};

@@ -3,10 +3,12 @@
 
 mod export;
 mod spec;
+mod spec_extra;
 mod store;
 
 pub use export::export_lean_text;
 pub use spec::{spec, LeanKind, LeanSpec, LEAN_METRICS};
+pub use spec_extra::{COVERAGE_DIFF_DIRECTIONS, COVERAGE_SECTIONS, LEAN_METRICS_EXTRA};
 pub use store::{inc, observations, observe, set, value};
 
 /// Record wall time since `start` into a histogram.

@@ -1,0 +1,188 @@
+name: Docker image
+
+# Publishes ghcr.io/<owner>/ethean (multi-arch: linux/amd64 + linux/arm64).
+#
+# Tags:
+#   sha-<short>            every build
+#   unstable               pushes to master
+#   <semver>, <major.minor> tags v*
+#   latest, devnet5, latest-devnet5   tags v*
+#   <extra_tags>           workflow_dispatch input (comma-separated)
+#
+# The image name follows the GitHub owner of the repository (lowercased).
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      extra_tags:
+        description: Comma-separated extra tags to publish (for example "devnet5,latest-devnet5")
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BASENAME: ethean
+
+concurrency:
+  group: docker-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+            rustflags: -Ctarget-cpu=x86-64-v3
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            rustflags: ''
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve image name
+        id: image
+        shell: bash
+        run: |
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "name=${REGISTRY}/${owner}/${IMAGE_BASENAME}" >> "$GITHUB_OUTPUT"
+          echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            BUILD_PROFILE=release
+            LOCKED=--locked
+            RUSTFLAGS=${{ matrix.rustflags }}
+            VCS_REF=${{ github.sha }}
+            VCS_BRANCH=${{ github.ref_name }}
+            BUILD_DATE=${{ steps.image.outputs.created }}
+          outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=ethean-${{ matrix.arch }}
+          cache-to: type=gha,scope=ethean-${{ matrix.arch }},mode=max
+
+      - name: Export digest
+        shell: bash
+        run: |
+          mkdir -p /tmp/digests
+          digest='${{ steps.build.outputs.digest }}'
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  manifest:
+    name: manifest
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Resolve image name
+        id: image
+        shell: bash
+        run: |
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "name=${REGISTRY}/${owner}/${IMAGE_BASENAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          flavor: |
+            latest=false
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=unstable,enable=${{ github.ref == 'refs/heads/master' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=devnet5,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest-devnet5,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Create multi-arch manifest
+        shell: bash
+        working-directory: /tmp/digests
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          META_TAGS: ${{ steps.meta.outputs.tags }}
+          EXTRA_TAGS: ${{ github.event.inputs.extra_tags }}
+        run: |
+          set -euo pipefail
+          tag_args=()
+          while IFS= read -r ref; do
+            [ -n "$ref" ] && tag_args+=(-t "$ref")
+          done <<< "$META_TAGS"
+          IFS=',' read -r -a extra <<< "${EXTRA_TAGS:-}"
+          for t in "${extra[@]}"; do
+            t="$(echo "$t" | tr -d '[:space:]')"
+            [ -n "$t" ] && tag_args+=(-t "${IMAGE}:${t}")
+          done
+          if [ "${#tag_args[@]}" -eq 0 ]; then
+            echo "no tags resolved" >&2
+            exit 1
+          fi
+          digests=()
+          for d in *; do
+            digests+=("${IMAGE}@sha256:${d}")
+          done
+          echo "tags: ${tag_args[*]}"
+          echo "digests: ${digests[*]}"
+          docker buildx imagetools create "${tag_args[@]}" "${digests[@]}"
+
+      - name: Inspect manifest
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          docker buildx imagetools inspect "${IMAGE}:${{ steps.meta.outputs.version }}"

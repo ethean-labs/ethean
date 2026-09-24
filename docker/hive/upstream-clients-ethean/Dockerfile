@@ -1,29 +1,25 @@
-# syntax=docker/dockerfile:1.7
-#
-# Drop-in for ethereum/hive `clients/ethean/Dockerfile`.
-# Prefers a pre-built image (see docker/hive/Dockerfile in the Ethean repo).
-#
-# Build args (Hive `--client-file` build_args):
-#   baseimage  default ethpandaops/ethean
-#   tag        default local
+ARG devnet5_baseimage=ghcr.io/ethean-labs/ethean
+ARG devnet5_tag=devnet5
+ARG runtime_baseimage=ubuntu:24.04
 
-ARG baseimage=ethpandaops/ethean
-ARG tag=local
-ARG runtime_baseimage=debian:bookworm-slim
-
-FROM ${baseimage}:${tag} AS ethean_bin
-FROM ${runtime_baseimage} AS runtime
+FROM $devnet5_baseimage:$devnet5_tag AS devnet5
+FROM $runtime_baseimage AS runtime
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ethean_bin /usr/local/bin/ethean /usr/local/bin/ethean
-COPY --from=ethean_bin /usr/local/bin/ethean-prover /usr/local/bin/ethean-prover
+COPY validators.yaml /assets/lean/validators.yaml
+COPY --from=devnet5 /usr/local/bin/ethean /usr/local/bin/ethean-devnet5
+# The node looks for the leanMultisig prover as a sibling named exactly
+# `ethean-prover` (or via ETHEAN_PROVER_BIN), so keep that name.
+COPY --from=devnet5 /usr/local/bin/ethean-prover /usr/local/bin/ethean-prover
 ADD ethean.sh /ethean.sh
 
 RUN chmod +x /ethean.sh \
- && /usr/local/bin/ethean version > /version.txt || true
+    && /usr/local/bin/ethean-devnet5 --version > /version-devnet5.txt \
+    && printf "ethean devnet5: %s\n" \
+        "$(cat /version-devnet5.txt)" > /version.txt
 
-EXPOSE 5052 9000/udp 9100
+EXPOSE 5052 9000/udp 8080
 ENTRYPOINT ["/ethean.sh"]

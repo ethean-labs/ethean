@@ -7,14 +7,18 @@ use crate::network_target::{NetworkId, NetworkTarget};
 pub enum ForkDigestSource {
     /// `--fork-digest`, `ETHEAN_FORK_DIGEST`, or `*.forkdigest` file.
     OperatorOverride,
-    /// Interim SHA-256(fork_name) prefix (local smoke / missing pin).
+    /// Default digest when no operator pin is set (lstar `GOSSIP_DIGEST`).
     InterimNameHash,
 }
 
 impl NetworkTarget {
     /// Where the gossip fork segment will come from after resolve.
     pub fn fork_digest_source(&self) -> ForkDigestSource {
-        if self.fork_digest.as_ref().is_some_and(|s| !s.trim().is_empty()) {
+        if self
+            .fork_digest
+            .as_ref()
+            .is_some_and(|s| !s.trim().is_empty())
+        {
             ForkDigestSource::OperatorOverride
         } else {
             ForkDigestSource::InterimNameHash

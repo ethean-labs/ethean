@@ -65,8 +65,7 @@ pub fn open_or_init(
             state: built.state,
         });
     }
-    let genesis_time =
-        crate::local_genesis::recent_genesis_time_secs(4, profile.seconds_per_slot);
+    let genesis_time = crate::local_genesis::recent_genesis_time_secs(4, profile.seconds_per_slot);
     let n = validators.max(1);
     let built = crate::local_genesis::fixed_devnet_genesis(n, genesis_time)?;
     write_genesis_bundle(paths, profile, &built)?;

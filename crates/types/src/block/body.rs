@@ -35,16 +35,27 @@ impl BlockBody {
         self.attestations.len() > MAX_ATTESTATIONS_DATA
     }
 
+    /// leanSpec `BlockBody` is a container with one variable field, so the
+    /// wire form is a 4-byte offset (always 4) followed by the attestation list.
     pub fn ssz_encode(&self) -> Result<Vec<u8>, TypesError> {
         let mut elements = Vec::with_capacity(self.attestations.len());
         for a in &self.attestations {
             elements.push(a.ssz_encode());
         }
-        Ok(encode_offset_list(&elements)?)
+        let list = encode_offset_list(&elements)?;
+        let mut out = Vec::with_capacity(4 + list.len());
+        out.extend_from_slice(&4u32.to_le_bytes());
+        out.extend_from_slice(&list);
+        Ok(out)
     }
 
     pub fn ssz_decode(input: &[u8]) -> Result<Self, TypesError> {
-        let parts = decode_offset_list(input, AGGREGATED_ATTESTATIONS_LIMIT)?;
+        if input.len() < 4 || input[..4] != 4u32.to_le_bytes() {
+            return Err(TypesError::InvalidContainer(
+                "BlockBody must start with the attestations offset 4".into(),
+            ));
+        }
+        let parts = decode_offset_list(&input[4..], AGGREGATED_ATTESTATIONS_LIMIT)?;
         let mut attestations = Vec::with_capacity(parts.len());
         for p in parts {
             attestations.push(AggregatedAttestation::ssz_decode(p)?);

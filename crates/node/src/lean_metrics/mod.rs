@@ -4,6 +4,7 @@
 //! leanEthereum/leanMetrics; see `ethean_metrics::lean` for the table.
 
 mod gossip;
+pub mod coverage;
 mod peers;
 
 pub use gossip::{
@@ -95,6 +96,18 @@ pub fn tick() {
 
 /// Gauges refreshed from the owner on every metrics refresh.
 pub fn refresh(owner: &ChainOwner, current_slot: u64, peers: u64) {
+    refresh_with_clients(owner, current_slot, peers, &[], &[]);
+}
+
+/// Like [`refresh`], with connected and mesh peers grouped by client family
+/// (leanMetrics `client` label); an empty grouping reports `unknown`.
+pub fn refresh_with_clients(
+    owner: &ChainOwner,
+    current_slot: u64,
+    peers: u64,
+    peer_clients: &[(String, u64)],
+    mesh_clients: &[(String, u64)],
+) {
     set("lean_current_slot", &[], current_slot as f64);
     set(
         "lean_safe_target_slot",
@@ -106,7 +119,20 @@ pub fn refresh(owner: &ChainOwner, current_slot: u64, peers: u64) {
         &[],
         owner.reorg_total as f64,
     );
-    set("lean_connected_peers", &["unknown"], peers as f64);
+    if peer_clients.is_empty() {
+        set("lean_connected_peers", &["unknown"], peers as f64);
+    } else {
+        for (client, n) in peer_clients {
+            set("lean_connected_peers", &[client.as_str()], *n as f64);
+        }
+    }
+    if mesh_clients.is_empty() {
+        set("lean_gossip_mesh_peers", &["unknown"], 0.0);
+    } else {
+        for (client, n) in mesh_clients {
+            set("lean_gossip_mesh_peers", &[client.as_str()], *n as f64);
+        }
+    }
     set(
         "lean_gossip_signatures",
         &[],
@@ -116,6 +142,11 @@ pub fn refresh(owner: &ChainOwner, current_slot: u64, peers: u64) {
         "lean_latest_new_aggregated_payloads",
         &[],
         owner.aggregates.len() as f64,
+    );
+    set(
+        "lean_latest_known_aggregated_payloads",
+        &[],
+        owner.known_payloads.len() as f64,
     );
     set("lean_is_aggregator", &[], owner.is_aggregator as u8 as f64);
     let synced = if owner.syncing { "syncing" } else { "synced" };

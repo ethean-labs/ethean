@@ -78,11 +78,7 @@ impl StateSnap {
             latest_block_header: HeaderSnap::from_header(&state.latest_block_header),
             latest_justified: CheckpointSnap::from_cp(&state.latest_justified),
             latest_finalized: CheckpointSnap::from_cp(&state.latest_finalized),
-            historical_block_hashes: state
-                .historical_block_hashes
-                .iter()
-                .map(hex32)
-                .collect(),
+            historical_block_hashes: state.historical_block_hashes.iter().map(hex32).collect(),
             justified_slots: state.justified_slots.clone(),
             validators: state.validators.iter().map(ValidatorSnap::from_v).collect(),
             justifications_roots: state.justifications_roots.iter().map(hex32).collect(),
@@ -160,8 +156,7 @@ impl ValidatorSnap {
     fn into_validator(self) -> Result<Validator, String> {
         let att = parse_bytes52(&self.attestation_public_key)?;
         let prop = parse_bytes52(&self.proposal_public_key)?;
-        Validator::new(att, prop, ValidatorIndex::new(self.index))
-            .map_err(|e| e.to_string())
+        Validator::new(att, prop, ValidatorIndex::new(self.index)).map_err(|e| e.to_string())
     }
 }
 

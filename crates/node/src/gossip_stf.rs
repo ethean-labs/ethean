@@ -44,7 +44,10 @@ pub fn import_decoded_block(
     let Some(profile) = owner.profile.clone() else {
         return GossipStfResult::Skipped;
     };
-    let ctx = TransitionContext::new(profile);
+    let ctx = TransitionContext::new(profile.clone());
+    let parent_validators = pre.validators.clone();
+    let committees = profile.attestation_subnet_count() as u64;
+    let timely = crate::lean_metrics::coverage::pool_bits(owner);
     let started = Instant::now();
     let applied = apply_block(&pre, &decoded.signed, &ctx, &LeanMultisigVerifier);
     observe_since(
@@ -64,6 +67,19 @@ pub fn import_decoded_block(
             } else {
                 owner.head_state = Some(post);
                 owner.advance_head(decoded.root, decoded.parent);
+            }
+            let block_bits = crate::lean_metrics::coverage::union_bits(
+                decoded.signed.block.body.attestations.iter(),
+            );
+            crate::lean_metrics::coverage::record_block_coverage(&block_bits, &timely, &[], committees);
+            let seeded = crate::block_payloads::seed_known_payloads(
+                owner,
+                &decoded.signed.block,
+                &decoded.signed.proof.proof,
+                &parent_validators,
+            );
+            if !seeded.is_empty() {
+                tracing::debug!(jobs = seeded.len(), "block vote proof recovery queued");
             }
             GossipStfResult::Applied { root: decoded.root }
         }

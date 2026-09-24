@@ -1,10 +1,11 @@
-//! Length-prefixed blocks-by-root response codec (scaffold).
+//! Spec req/resp block response: one SignedBlock per SUCCESS chunk, read to EOF.
 
 use ethean_network_wire::limits::MAX_BLOCKS_PER_REQUEST;
+use ethean_network_wire::{decode_response_stream, encode_response, encode_response_stream, ResponseCode};
 
 use crate::error::{NetworkError, Result};
 
-/// Encode `count || (len || bytes)*` for a blocks-by-root response body.
+/// Encode each SignedBlock SSZ blob as its own SUCCESS response chunk.
 pub fn encode_blocks_by_root_response(blocks: &[Vec<u8>]) -> Result<Vec<u8>> {
     if blocks.len() as u64 > MAX_BLOCKS_PER_REQUEST {
         return Err(NetworkError::Handshake(format!(
@@ -13,52 +14,43 @@ pub fn encode_blocks_by_root_response(blocks: &[Vec<u8>]) -> Result<Vec<u8>> {
             MAX_BLOCKS_PER_REQUEST
         )));
     }
-    let mut out = Vec::with_capacity(4 + blocks.iter().map(|b| 4 + b.len()).sum::<usize>());
-    out.extend_from_slice(&(blocks.len() as u32).to_le_bytes());
-    for block in blocks {
-        out.extend_from_slice(&(block.len() as u32).to_le_bytes());
-        out.extend_from_slice(block);
+    let chunks: Vec<(ResponseCode, &[u8])> = blocks
+        .iter()
+        .map(|b| (ResponseCode::Success, b.as_slice()))
+        .collect();
+    encode_response_stream(&chunks).map_err(|e| NetworkError::Handshake(e.to_string()))
+}
+
+/// Decode a concatenated response stream into SUCCESS payloads (SignedBlock SSZ).
+///
+/// Error chunks (INVALID_REQUEST / SERVER_ERROR / RESOURCE_UNAVAILABLE) stop
+/// the iterator; payloads already collected are returned.
+pub fn decode_blocks_by_root_response(input: &[u8]) -> Result<Vec<Vec<u8>>> {
+    if input.is_empty() {
+        return Ok(Vec::new());
+    }
+    let chunks =
+        decode_response_stream(input).map_err(|e| NetworkError::Handshake(e.to_string()))?;
+    if chunks.len() as u64 > MAX_BLOCKS_PER_REQUEST {
+        return Err(NetworkError::Handshake(format!(
+            "blocks {} exceeds {MAX_BLOCKS_PER_REQUEST}",
+            chunks.len()
+        )));
+    }
+    let mut out = Vec::new();
+    for chunk in chunks {
+        match chunk.code {
+            ResponseCode::Success => out.push(chunk.payload),
+            _ => break,
+        }
     }
     Ok(out)
 }
 
-/// Decode a length-prefixed blocks-by-root response into raw SSZ blobs.
-pub fn decode_blocks_by_root_response(input: &[u8]) -> Result<Vec<Vec<u8>>> {
-    if input.len() < 4 {
-        return Err(NetworkError::Handshake(
-            "blocks-by-root response too short".into(),
-        ));
-    }
-    let n = u32::from_le_bytes(input[0..4].try_into().unwrap_or([0; 4])) as usize;
-    if n as u64 > MAX_BLOCKS_PER_REQUEST {
-        return Err(NetworkError::Handshake(format!(
-            "blocks {n} exceeds {MAX_BLOCKS_PER_REQUEST}"
-        )));
-    }
-    let mut off = 4;
-    let mut out = Vec::with_capacity(n);
-    for _ in 0..n {
-        if off + 4 > input.len() {
-            return Err(NetworkError::Handshake(
-                "truncated blocks-by-root length prefix".into(),
-            ));
-        }
-        let len = u32::from_le_bytes(input[off..off + 4].try_into().unwrap_or([0; 4])) as usize;
-        off += 4;
-        if off + len > input.len() {
-            return Err(NetworkError::Handshake(
-                "truncated blocks-by-root block bytes".into(),
-            ));
-        }
-        out.push(input[off..off + len].to_vec());
-        off += len;
-    }
-    if off != input.len() {
-        return Err(NetworkError::Handshake(
-            "trailing bytes after blocks-by-root response".into(),
-        ));
-    }
-    Ok(out)
+/// Encode a single error chunk.
+#[allow(dead_code)]
+pub fn encode_error_chunk(code: ResponseCode, message: &str) -> Result<Vec<u8>> {
+    encode_response(code, message.as_bytes()).map_err(|e| NetworkError::Handshake(e.to_string()))
 }
 
 #[cfg(test)]
@@ -76,6 +68,19 @@ mod tests {
     #[test]
     fn empty_list_ok() {
         let enc = encode_blocks_by_root_response(&[]).unwrap();
-        assert_eq!(decode_blocks_by_root_response(&enc).unwrap(), Vec::<Vec<u8>>::new());
+        assert_eq!(
+            decode_blocks_by_root_response(&enc).unwrap(),
+            Vec::<Vec<u8>>::new()
+        );
+    }
+
+    #[test]
+    fn success_then_unavailable_keeps_delivered() {
+        let mut stream = encode_blocks_by_root_response(&[vec![0x11; 16]]).unwrap();
+        stream.extend_from_slice(
+            &encode_error_chunk(ResponseCode::ResourceUnavailable, "not found").unwrap(),
+        );
+        let dec = decode_blocks_by_root_response(&stream).unwrap();
+        assert_eq!(dec, vec![vec![0x11; 16]]);
     }
 }

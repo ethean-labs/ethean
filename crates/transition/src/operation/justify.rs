@@ -11,7 +11,7 @@ use crate::helpers::{
 };
 
 /// Whether attestation checkpoints lie on the historical chain (leanSpec `lies_on_chain`).
-fn lies_on_chain(data: &ethean_types::AttestationData, historical: &[Hash32]) -> bool {
+pub fn lies_on_chain(data: &ethean_types::AttestationData, historical: &[Hash32]) -> bool {
     if data.source.root == HASH32_ZERO
         || data.target.root == HASH32_ZERO
         || data.head.root == HASH32_ZERO

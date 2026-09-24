@@ -9,3 +9,4 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [persist applied blocks durable](persist-applied-blocks-durable-2026-09-20.md)
 - [prune keep slots config](prune-keep-slots-config-2026-09-20.md)
 - [reset chain wipes data dir](reset-chain-wipes-data-dir-2026-09-20.md)
+- [checkpoint sync client](checkpoint-sync-client-2026-09-24.md)

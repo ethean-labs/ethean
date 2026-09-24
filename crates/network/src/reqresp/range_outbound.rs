@@ -17,7 +17,7 @@ pub struct OutboundBlocksByRangeRequest {
     pub request_id: RequestId,
     /// Lean blocks-by-range protocol id.
     pub protocol_id: &'static str,
-    /// Encoded request body (start/count/step little-endian u64s).
+    /// Encoded request body (start_slot + count, 16 bytes).
     pub payload: Vec<u8>,
 }
 
@@ -47,12 +47,14 @@ mod tests {
     #[test]
     fn stages_when_slots_lag() {
         let remote = Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "aabbccdd".into(),
-            head_slot: 10,
-            head_root: [5u8; 32],
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
+            finalized: ethean_network_wire::Checkpoint {
+                root: [0u8; 32],
+                slot: 0,
+            },
+            head: ethean_network_wire::Checkpoint {
+                root: [5u8; 32],
+                slot: 10,
+            },
         };
         let mut tracker = RequestTracker::default();
         let peer = [7u8; 32];
@@ -60,7 +62,7 @@ mod tests {
             .unwrap()
             .expect("gap");
         assert_eq!(out.peer, peer);
-        assert_eq!(out.payload.len(), 24);
+        assert_eq!(out.payload.len(), 16);
         assert!(out.protocol_id.contains("blocks_by_range"));
         assert_eq!(tracker.len(), 1);
     }
@@ -68,12 +70,14 @@ mod tests {
     #[test]
     fn skips_when_caught_up() {
         let remote = Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "aabbccdd".into(),
-            head_slot: 3,
-            head_root: [5u8; 32],
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
+            finalized: ethean_network_wire::Checkpoint {
+                root: [0u8; 32],
+                slot: 0,
+            },
+            head: ethean_network_wire::Checkpoint {
+                root: [5u8; 32],
+                slot: 3,
+            },
         };
         let mut tracker = RequestTracker::default();
         assert!(prepare_blocks_by_range_outbound([1u8; 32], 3, &remote, &mut tracker)

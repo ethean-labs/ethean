@@ -87,11 +87,31 @@ pub fn print_start_card(client: &EtheanClient, card: &StartCard<'_>) {
         "durable (--data-dir resume)"
     };
 
-    let _ = writeln!(out, "{}", dim.paint("────────────────────────────────────────────────────────"));
+    let _ = writeln!(
+        out,
+        "{}",
+        dim.paint("────────────────────────────────────────────────────────")
+    );
     let _ = writeln!(out, "  {}", green.paint("start snapshot"));
-    let _ = writeln!(out, "{}", dim.paint("────────────────────────────────────────────────────────"));
-    row(&mut out, "client", &format!("{PRODUCT} v{}", env!("CARGO_PKG_VERSION")), &cyan, &dim);
-    row(&mut out, "network", &format!("{} ({})", card.network.id.as_str(), network_kind), &cyan, &dim);
+    let _ = writeln!(
+        out,
+        "{}",
+        dim.paint("────────────────────────────────────────────────────────")
+    );
+    row(
+        &mut out,
+        "client",
+        &format!("{PRODUCT} v{}", env!("CARGO_PKG_VERSION")),
+        &cyan,
+        &dim,
+    );
+    row(
+        &mut out,
+        "network",
+        &format!("{} ({})", card.network.id.as_str(), network_kind),
+        &cyan,
+        &dim,
+    );
     row(&mut out, "run mode", run_mode, &cyan, &dim);
     row(&mut out, "chain", chain_mode, &cyan, &dim);
     if let Some(dir) = card.data_dir {
@@ -101,7 +121,13 @@ pub fn print_start_card(client: &EtheanClient, card: &StartCard<'_>) {
     }
     row(&mut out, "fork", fork, &cyan, &dim);
     row(&mut out, "slot time", &format!("{sps}s"), &cyan, &dim);
-    row(&mut out, "validators", &validators.to_string(), &green, &dim);
+    row(
+        &mut out,
+        "validators",
+        &validators.to_string(),
+        &green,
+        &dim,
+    );
     row(
         &mut out,
         "roles",
@@ -123,7 +149,13 @@ pub fn print_start_card(client: &EtheanClient, card: &StartCard<'_>) {
     if let Some(fd) = card.network.fork_digest.as_deref() {
         row(&mut out, "fork digest", fd, &cyan, &dim);
     }
-    row(&mut out, "genesis time", &genesis_time.to_string(), &cyan, &dim);
+    row(
+        &mut out,
+        "genesis time",
+        &genesis_time.to_string(),
+        &cyan,
+        &dim,
+    );
     row(
         &mut out,
         "slots",
@@ -138,8 +170,18 @@ pub fn print_start_card(client: &EtheanClient, card: &StartCard<'_>) {
         &cyan,
         &dim,
     );
-    row(&mut out, "log verbosity", &verbose_label(card.verbose), &cyan, &dim);
-    let _ = writeln!(out, "{}", dim.paint("────────────────────────────────────────────────────────"));
+    row(
+        &mut out,
+        "log verbosity",
+        &verbose_label(card.verbose),
+        &cyan,
+        &dim,
+    );
+    let _ = writeln!(
+        out,
+        "{}",
+        dim.paint("────────────────────────────────────────────────────────")
+    );
     let _ = writeln!(
         out,
         "  {}",

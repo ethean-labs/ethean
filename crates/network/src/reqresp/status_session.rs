@@ -75,14 +75,16 @@ impl StatusSessionBook {
 mod tests {
     use super::*;
 
-    fn sample(fork: &str) -> Status {
+    fn sample(head_slot: u64) -> Status {
         Status {
-            genesis_root: [1u8; 32],
-            fork_segment: fork.into(),
-            head_slot: 4,
-            head_root: [2u8; 32],
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
+            finalized: ethean_network_wire::Checkpoint {
+                root: [0u8; 32],
+                slot: 0,
+            },
+            head: ethean_network_wire::Checkpoint {
+                root: [2u8; 32],
+                slot: head_slot,
+            },
         }
     }
 
@@ -90,27 +92,25 @@ mod tests {
     fn roundtrip_compatible_peer() {
         let peer = [9u8; 32];
         let mut book = StatusSessionBook::default();
-        let local = sample("aabbccdd");
+        let local = sample(4);
         book.on_peer_connected(peer, local.clone());
         let enc = book.encode_local_for(&peer).unwrap();
         let mut remote = local.clone();
-        remote.head_slot = 20;
-        remote.head_root = [7u8; 32];
+        remote.head.slot = 20;
+        remote.head.root = [7u8; 32];
         let rem_bytes = remote.encode().unwrap();
         let ex = book.ingest_remote(peer, &rem_bytes).unwrap();
-        assert_eq!(ex.remote.head_slot, 20);
+        assert_eq!(ex.remote.head_slot(), 20);
         assert_eq!(book.take_completed().len(), 1);
         assert_eq!(book.pending_len(), 0);
         let _ = enc;
     }
 
     #[test]
-    fn rejects_fork_mismatch() {
-        let peer = [3u8; 32];
+    fn ingest_without_pending_fails() {
         let mut book = StatusSessionBook::default();
-        book.on_peer_connected(peer, sample("aabbccdd"));
-        let bad = sample("ffffffff").encode().unwrap();
-        assert!(book.ingest_remote(peer, &bad).is_err());
+        let bad = sample(1).encode().unwrap();
+        assert!(book.ingest_remote([3u8; 32], &bad).is_err());
     }
 
     #[test]

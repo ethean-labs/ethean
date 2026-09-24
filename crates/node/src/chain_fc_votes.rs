@@ -57,7 +57,7 @@ mod tests {
             justifications_roots: Vec::new(),
             justifications_validators: Vec::new(),
         };
-        st.latest_block_header.state_root = st.hash_tree_root().unwrap();
+        // Genesis header keeps `state_root` zero (leanSpec); the anchor block fills it.
         st.latest_block_header.body_root = BlockBody::default().hash_tree_root().unwrap();
         let mut owner = ChainOwner::new(2);
         owner.profile = Some(lstar_devnet().unwrap());

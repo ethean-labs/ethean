@@ -6,7 +6,10 @@ use ethean_profile::ChainProfile;
 use ethean_transition::{process_block, process_slots, TransitionContext};
 use ethean_types::{Block, BlockBody, State};
 
-use super::attestations::body_from_pool;
+use std::collections::HashSet;
+
+use super::attestations::candidates_from_pool;
+use super::spec_select::select_body;
 
 /// Planned transition inputs for computing the post-state root.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,7 +36,10 @@ impl PlanTransition {
     }
 }
 
-/// Plan a proposal from the aggregate pool when local head state is available.
+/// Plan a proposal from the aggregate pool with leanSpec vote selection.
+///
+/// `known_roots` are the block roots this node has seen; votes for other
+/// heads are left out (leanSpec `build_block` `known_block_roots`).
 pub fn plan_from_pool(
     pool: &AggregatePool,
     parent_root: Hash32,
@@ -41,11 +47,21 @@ pub fn plan_from_pool(
     proposer_index: ValidatorIndex,
     pre: &State,
     profile: ChainProfile,
-    max_attestations: usize,
+    known_roots: &HashSet<Hash32>,
 ) -> Result<PlanTransition, String> {
-    let (body, attestation_proofs) = body_from_pool(pool, max_attestations);
+    let candidates = candidates_from_pool(pool);
+    let selected = select_body(
+        &candidates,
+        pre,
+        slot,
+        proposer_index,
+        parent_root,
+        known_roots,
+        profile.clone(),
+    )?;
+    let body = BlockBody::new(selected.attestations).map_err(|e| e.to_string())?;
     let mut plan = plan_with_body(parent_root, slot, proposer_index, body, pre, profile)?;
-    plan.attestation_proofs = attestation_proofs;
+    plan.attestation_proofs = selected.proofs;
     Ok(plan)
 }
 
@@ -120,7 +136,7 @@ mod tests {
             ValidatorIndex::new(1),
             &pre,
             lstar_devnet().unwrap(),
-            8,
+            &HashSet::new(),
         )
         .expect("plan");
         assert_eq!(plan.parent_root, parent);

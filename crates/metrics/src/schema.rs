@@ -3,7 +3,7 @@
 //! v3 adds the leanMetrics standard `lean_*` families (see [`crate::lean`]).
 
 /// Ethean metrics schema version embedded in build_info.
-pub const METRICS_SCHEMA_VERSION: &str = "ethean-metrics-v3";
+pub const METRICS_SCHEMA_VERSION: &str = "ethean-metrics-v4";
 
 /// Metric name prefix (Ethean namespace; not peer-copied).
 pub const METRIC_PREFIX: &str = "ethean_";

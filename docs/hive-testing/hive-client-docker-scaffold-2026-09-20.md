@@ -17,7 +17,7 @@ Image entrypoint uses `--until-signal --ephemeral` and network labels
 ## Recipe
 
 ```bash
-docker build -f docker/hive/Dockerfile -t ethpandaops/ethean:local .
+docker build -f docker/hive/Dockerfile -t ghcr.io/ethean-labs/ethean:local .
 ```
 
 ## Still open

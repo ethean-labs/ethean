@@ -1,6 +1,6 @@
 //! JSON response bodies for Lean HTTP routes (manual `serde_json`, no Beacon fields).
 
-use crate::dto::{FinalizedView, ForkChoiceView, HeadView, SyncView};
+use crate::dto::{FinalizedView, ForkChoiceStatsView, HeadView, SyncView};
 use crate::state::{hex_root, ApiSnapshot};
 use serde_json::{json, Value};
 
@@ -54,7 +54,7 @@ pub fn events_json(events: &[crate::events::AdminEvent]) -> Value {
 }
 
 /// Encode fork-choice operator view.
-pub fn fork_choice_json(v: &ForkChoiceView) -> Value {
+pub fn fork_choice_json(v: &ForkChoiceStatsView) -> Value {
     json!({
         "live": v.live,
         "head_root": hex_root(&v.head_root),
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn fork_choice_reports_live_flag() {
-        let v = ForkChoiceView {
+        let v = ForkChoiceStatsView {
             live: true,
             head_root: HASH32_ZERO,
             safe_target_root: [1u8; 32],

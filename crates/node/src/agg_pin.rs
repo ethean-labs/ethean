@@ -1,6 +1,6 @@
 //! Operator aggregation / leanVM pin checks (B4).
 
-use ethean_crypto::{LEANVM_REV, LEANSIG_REV, LOG_INV_RATE};
+use ethean_crypto::{LEANSIG_REV, LEANVM_REV, LOG_INV_RATE};
 use std::fs;
 use std::path::{Path, PathBuf};
 

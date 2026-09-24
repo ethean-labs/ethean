@@ -13,6 +13,10 @@ ethean-network-wire = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 tracing = { workspace = true }
+rand = { workspace = true }
+rlp = "0.5"
+base64 = "0.22"
+bs58 = "0.5"
 libp2p = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
@@ -31,7 +35,9 @@ libp2p-quic = [
     "libp2p/ping",
     "libp2p/macros",
     "libp2p/gossipsub",
+    "libp2p/identify",
     "libp2p/request-response",
+    "libp2p/secp256k1",
 ]
 
 [dev-dependencies]
@@ -39,7 +45,7 @@ tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 sha2 = { workspace = true }
 ethean-network-wire = { workspace = true }
 ethean-primitives = { workspace = true }
-libp2p = { workspace = true, features = ["quic", "tokio", "ping", "macros", "gossipsub", "request-response"] }
+libp2p = { workspace = true, features = ["quic", "tokio", "ping", "macros", "gossipsub", "request-response", "secp256k1"] }
 
 [lib]
 name = "ethean_network"

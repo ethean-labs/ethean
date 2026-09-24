@@ -23,11 +23,10 @@ pub fn publish_one_aggregation(
     match facade.publish_gossip(&gossip.topic, &compressed) {
         Ok(()) => Ok(Some(gossip)),
         Err(e) => {
-            let soft = owner.local_finality
-                && matches!(&e, ethean_network::NetworkError::Handshake(msg)
+            let soft = matches!(&e, ethean_network::NetworkError::Handshake(msg)
                     if msg.contains("InsufficientPeers"));
             if soft {
-                tracing::debug!(
+                tracing::warn!(
                     error = %e,
                     topic = %gossip.topic,
                     "aggregation gossip publish skipped (no peers)"

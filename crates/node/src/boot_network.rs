@@ -1,6 +1,6 @@
 //! UDP listen + optional QuicSwarm bind used during client boot.
 
-use crate::network::{NodeIdentity, SwarmFacade, TransportConfig};
+use crate::network::{ListenIdentity, NodeIdentity, SwarmFacade, TransportConfig};
 use crate::network_target::NetworkTarget;
 use crate::Result;
 use tracing::{info, warn};
@@ -11,23 +11,29 @@ use tracing::{info, warn};
 /// probe socket stays ephemeral so it cannot steal the fixed swarm port.
 ///
 /// `attestation_subnets` is the gossip subscription count (profile ACC / Hive).
+/// `who` carries `--socket-address` and the secp256k1 node key.
 pub async fn prepare_boot_network(
     fork_segment: &str,
     listen_port: u16,
     attestation_subnets: u16,
+    who: &ListenIdentity,
 ) -> Result<(u16, Option<SwarmFacade>)> {
-    let identity = NodeIdentity::from_seed(b"ethean-local");
+    let identity = match who.node_key.as_ref() {
+        Some(key) => NodeIdentity::from_node_key(key),
+        None => NodeIdentity::from_seed(b"ethean-local"),
+    };
     let probe_port = if cfg!(feature = "libp2p-quic") {
         0
     } else {
         listen_port
     };
-    let bound = crate::network::prepare_transport(
+    let bound = crate::network::prepare_transport_on(
         &identity,
         &TransportConfig {
             listen_port: probe_port,
             idle_timeout_ms: 30_000,
         },
+        who.listen_ip,
     )?;
     let port = bound.listen_port;
     info!(
@@ -41,7 +47,7 @@ pub async fn prepare_boot_network(
     #[cfg(feature = "libp2p-quic")]
     {
         let facade =
-            bind_quic_facade(bound, fork_segment, listen_port, attestation_subnets).await?;
+            bind_quic_facade(bound, fork_segment, listen_port, attestation_subnets, who).await?;
         let quic_port = facade
             .quic
             .as_ref()
@@ -74,7 +80,10 @@ pub fn dial_bootnodes(target: &NetworkTarget, swarm: Option<&mut SwarmFacade>) {
                 );
             }
             crate::network_target::NetworkId::Local => {
-                info!(network = target.id.as_str(), "local smoke; skipping mesh dial");
+                info!(
+                    network = target.id.as_str(),
+                    "local smoke; skipping mesh dial"
+                );
             }
         }
         return;
@@ -112,17 +121,19 @@ async fn bind_quic_facade(
     fork_segment: &str,
     listen_port: u16,
     attestation_subnets: u16,
+    who: &ListenIdentity,
 ) -> Result<SwarmFacade> {
     let mut facade = SwarmFacade::default();
     facade.attach_transport(bound);
     facade
-        .bind_quic_swarm_for_fork_segment_subnets(
+        .bind_quic_swarm_with_identity(
             &TransportConfig {
                 listen_port,
                 idle_timeout_ms: 30_000,
             },
             fork_segment,
             attestation_subnets,
+            who,
         )
         .await?;
     let topic_block = facade
@@ -160,6 +171,7 @@ async fn bind_quic_facade(
 }
 
 /// Extract `/udp/<port>` from a multiaddr string.
+#[allow(dead_code)]
 fn parse_udp_port(multiaddr: &str) -> Option<u16> {
     let mut parts = multiaddr.split('/');
     while let Some(p) = parts.next() {
@@ -176,10 +188,7 @@ mod tests {
 
     #[test]
     fn parses_quic_udp_port() {
-        assert_eq!(
-            parse_udp_port("/ip4/0.0.0.0/udp/9000/quic-v1"),
-            Some(9000)
-        );
+        assert_eq!(parse_udp_port("/ip4/0.0.0.0/udp/9000/quic-v1"), Some(9000));
         assert_eq!(parse_udp_port("/ip4/1.2.3.4/tcp/9000"), None);
     }
 }

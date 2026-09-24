@@ -113,5 +113,8 @@ pub const LEAN_METRICS: &[LeanSpec] = &[
 
 /// Look up a metric by name.
 pub fn spec(name: &str) -> Option<&'static LeanSpec> {
-    LEAN_METRICS.iter().find(|s| s.name == name)
+    LEAN_METRICS
+        .iter()
+        .chain(super::spec_extra::LEAN_METRICS_EXTRA.iter())
+        .find(|s| s.name == name)
 }

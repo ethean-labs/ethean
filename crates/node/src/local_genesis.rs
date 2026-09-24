@@ -1,7 +1,7 @@
 //! Recent multi-validator genesis for local long-run / finality smoke.
 
-use ethean_primitives::Bytes52;
 use ethean_genesis::{BuiltGenesis, GenesisBuilder, GenesisError};
+use ethean_primitives::Bytes52;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Genesis time a few slots in the past so wall-clock duties start near slot 0–N

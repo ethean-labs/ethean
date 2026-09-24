@@ -25,3 +25,4 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [type2 proposer sidecar policy](type2-proposer-sidecar-policy-2026-09-19.md)
 - [type2 prove attach](type2-prove-attach-2026-09-19.md)
 - [type2 structural split pool reseed](type2-structural-split-pool-reseed-2026-09-19.md)
+- [post block split reaggregation](post-block-split-reaggregation-2026-09-24.md)

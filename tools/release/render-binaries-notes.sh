@@ -5,7 +5,7 @@ set -euo pipefail
 
 VERSION="${1:?version required}"
 DIST="${2:?dist dir required}"
-REPO_URL="${REPO_URL:-https://github.com/pamenarti/ethean}"
+REPO_URL="${REPO_URL:-https://github.com/ethean-labs/ethean}"
 TAG="v${VERSION}"
 BASE_URL="${REPO_URL}/releases/download/${TAG}"
 

@@ -3,7 +3,7 @@
 use ethean_primitives::ValidatorIndex;
 use ethean_ssz::{
     decode_fixed_bytes, decode_u64, encode_fixed_bytes, encode_u64, expect_exhausted,
-    hash_tree_root_bytes, hash_tree_root_container, hash_tree_root_u64, Root,
+    hash_tree_root_container, hash_tree_root_u64, Root,
 };
 
 use crate::aggregate::{AggregationBits, SingleMessageAggregate};
@@ -99,12 +99,13 @@ impl SignedAttestation {
         Self::new(validator_index, data, sig)
     }
 
-    pub fn hash_tree_root(&self) -> Root {
-        hash_tree_root_container(&[
+    /// Root with the signature hashed as the leanSpec `Signature` container.
+    pub fn hash_tree_root(&self) -> Result<Root, TypesError> {
+        Ok(hash_tree_root_container(&[
             hash_tree_root_u64(self.validator_index.get()),
             self.data.hash_tree_root(),
-            hash_tree_root_bytes(&self.signature),
-        ])
+            crate::xmss_root::xmss_signature_root(&self.signature)?,
+        ]))
     }
 }
 

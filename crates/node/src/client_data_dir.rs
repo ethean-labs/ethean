@@ -66,10 +66,7 @@ impl EtheanClient {
                     .as_ref()
                     .map(|s| s.latest_finalized.slot.get())
                     .unwrap_or(0);
-                let floor = crate::block_prune::prune_floor(
-                    finalized,
-                    self.prune_keep_slots,
-                );
+                let floor = crate::block_prune::prune_floor(finalized, self.prune_keep_slots);
                 let (files_removed, redb_removed) =
                     match crate::block_prune::prune_below_floor(&paths, floor) {
                         Ok(report) => (report.files_removed as u64, report.redb_removed as u64),

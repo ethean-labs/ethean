@@ -43,14 +43,7 @@ mod tests {
     use ethean_network_wire::Status;
 
     fn sample() -> Status {
-        Status {
-            genesis_root: [1u8; 32],
-            fork_segment: "aabbccdd".into(),
-            head_slot: 0,
-            head_root: [0u8; 32],
-            finalized_slot: 0,
-            finalized_root: [0u8; 32],
-        }
+        Status::default()
     }
 
     #[test]

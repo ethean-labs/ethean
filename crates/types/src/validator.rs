@@ -52,7 +52,12 @@ impl Validator {
         decode_fixed_bytes(input, &mut c, &mut prop)?;
         let index = ValidatorIndex::new(decode_u64(input, &mut c)?);
         expect_exhausted(input, c)?;
-        Self::new(Bytes52(att), Bytes52(prop), index)
+        // SSZ places no bound on `index`; the registry limit is a state rule.
+        Ok(Self {
+            attestation_public_key: Bytes52(att),
+            proposal_public_key: Bytes52(prop),
+            index,
+        })
     }
 
     pub fn hash_tree_root(&self) -> Root {

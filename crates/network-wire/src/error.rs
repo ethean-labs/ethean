@@ -22,6 +22,12 @@ pub enum WireError {
 
     #[error("trailing bytes after decode")]
     TrailingBytes,
+
+    #[error("varint: {0}")]
+    Varint(String),
+
+    #[error("codec: {0}")]
+    Codec(String),
 }
 
 /// Result alias for this crate.

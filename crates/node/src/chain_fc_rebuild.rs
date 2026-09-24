@@ -169,7 +169,7 @@ mod tests {
             justifications_roots: Vec::new(),
             justifications_validators: Vec::new(),
         };
-        st.latest_block_header.state_root = st.hash_tree_root().unwrap();
+        // Genesis header keeps `state_root` zero (leanSpec); the anchor block fills it.
         st.latest_block_header.body_root = BlockBody::default().hash_tree_root().unwrap();
         st
     }
@@ -193,8 +193,12 @@ mod tests {
             state_root: HASH32_ZERO,
             body: BlockBody::default(),
         };
+        // Probe the post-state root first: the transition rejects a zero state root.
+        let mut probe = pre.clone();
+        ethean_transition::process_slots(&mut probe, child.slot).unwrap();
+        ethean_transition::process_block(&mut probe, &child, &ctx).unwrap();
+        child.state_root = probe.hash_tree_root().unwrap();
         let out = apply_block_unverified(&pre, &child, &ctx).unwrap();
-        child.state_root = out.post_state.hash_tree_root().unwrap();
         let root = child.hash_tree_root().unwrap();
         let signed = SignedBlock::new(child.clone(), MultiMessageAggregate::new(Vec::new()).unwrap());
         let blob = signed.ssz_encode().unwrap();

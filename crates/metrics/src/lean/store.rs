@@ -42,7 +42,10 @@ pub(crate) struct Store {
 impl Store {
     fn new() -> Self {
         let mut store = Self::default();
-        for spec in LEAN_METRICS {
+        for spec in LEAN_METRICS
+            .iter()
+            .chain(super::spec_extra::LEAN_METRICS_EXTRA.iter())
+        {
             let mut by_labels = BTreeMap::new();
             if spec.labels.is_empty() {
                 by_labels.insert(Vec::new(), Series::empty(spec));

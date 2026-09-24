@@ -22,7 +22,28 @@ impl ForkChoiceStore {
             ));
         }
         self.validate_attestation(&data)?;
+        self.check_registry(&data, std::iter::once(validator.get()))?;
         self.insert_pending_vote(validator, data);
+        Ok(())
+    }
+
+    /// leanSpec `VALIDATOR_NOT_IN_STATE`: every voter must exist in the
+    /// target block's post-state registry.
+    pub fn check_registry(
+        &self,
+        data: &AttestationData,
+        indices: impl IntoIterator<Item = u64>,
+    ) -> Result<(), ForkChoiceError> {
+        let registry = self
+            .block_states
+            .get(&data.target.root)
+            .map(|s| s.validators.len() as u64)
+            .ok_or(ForkChoiceError::UnknownTargetBlock)?;
+        for index in indices {
+            if index >= registry {
+                return Err(ForkChoiceError::ValidatorNotInState);
+            }
+        }
         Ok(())
     }
 
@@ -43,6 +64,14 @@ impl ForkChoiceStore {
             return Err(ForkChoiceError::EmptyAggregationBits);
         }
         self.validate_attestation(&data)?;
+        self.check_registry(
+            &data,
+            participants
+                .iter()
+                .enumerate()
+                .filter(|(_, b)| **b)
+                .map(|(i, _)| i as u64),
+        )?;
         for (i, bit) in participants.iter().enumerate() {
             if *bit {
                 self.insert_pending_vote(ValidatorIndex::new(i as u64), data.clone());
@@ -71,7 +100,7 @@ impl ForkChoiceStore {
         }
     }
 
-    pub(crate) fn validate_attestation(
+    pub fn validate_attestation(
         &self,
         data: &AttestationData,
     ) -> Result<(), ForkChoiceError> {

@@ -13,6 +13,7 @@ pub mod block;
 pub mod operation;
 pub mod proofs;
 pub mod state;
+pub mod xmss_root;
 
 pub use aggregate::{AggregationBits, MultiMessageAggregate, SingleMessageAggregate};
 pub use block::{Block, BlockBody, BlockHeader, SignedBlock};
@@ -37,3 +38,5 @@ pub type Root = Hash32;
 pub type StateRoot = Hash32;
 
 pub use ethean_primitives::{Bytes52, Epoch, Hash32, Slot, ValidatorIndex, HASH32_ZERO};
+pub use xmss_root::{xmss_signature_root, XMSS_NODE_LIST_LIMIT};
+pub use state::codec::decode_validator_list;

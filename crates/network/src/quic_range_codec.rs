@@ -2,7 +2,9 @@
 
 #![cfg(feature = "libp2p-quic")]
 
-use crate::quic_framed::{read_framed, write_framed};
+use crate::quic_framed::{
+    read_framed_request, read_response_stream, write_framed_request, write_response_bytes,
+};
 use async_trait::async_trait;
 use ethean_network_wire::rpc_blocks_by_range;
 use futures::prelude::*;
@@ -11,7 +13,7 @@ use libp2p::swarm::StreamProtocol;
 use std::io;
 
 /// Max framed blocks-by-range request/response size (compressed).
-const MAX_RANGE_FRAME: u64 = 8 * 1024 * 1024;
+const MAX_RANGE_FRAME: u64 = ethean_network_wire::MAX_MESSAGE_SIZE as u64;
 
 /// Lean blocks-by-range codec over `/leanconsensus/req/blocks_by_range/1/ssz_snappy`.
 #[derive(Debug, Clone, Default)]
@@ -40,7 +42,7 @@ impl request_response::Codec for BlocksByRangeCodec {
     where
         T: AsyncRead + Unpin + Send,
     {
-        read_framed(io, MAX_RANGE_FRAME).await
+        read_framed_request(io, MAX_RANGE_FRAME).await
     }
 
     async fn read_response<T>(
@@ -51,7 +53,7 @@ impl request_response::Codec for BlocksByRangeCodec {
     where
         T: AsyncRead + Unpin + Send,
     {
-        read_framed(io, MAX_RANGE_FRAME).await
+        read_response_stream(io, MAX_RANGE_FRAME).await
     }
 
     async fn write_request<T>(
@@ -63,7 +65,7 @@ impl request_response::Codec for BlocksByRangeCodec {
     where
         T: AsyncWrite + Unpin + Send,
     {
-        write_framed(io, &req).await
+        write_framed_request(io, &req).await
     }
 
     async fn write_response<T>(
@@ -75,7 +77,7 @@ impl request_response::Codec for BlocksByRangeCodec {
     where
         T: AsyncWrite + Unpin + Send,
     {
-        write_framed(io, &res).await
+        write_response_bytes(io, &res).await
     }
 }
 
