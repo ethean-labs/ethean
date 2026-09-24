@@ -4,8 +4,8 @@ Packaging-side registration of Ethean as a Lean client. No version bump.
 Workspace clones stay uncommitted so they can be opened as PRs.
 
 GHCR image name is `ghcr.io/<github-owner>/ethean` (lowercased). Docs and
-Dockerfiles use `ethean-labs/ethean`. The git remote of this clone is still
-`https://github.com/pamenarti/ethean.git`; the GHCR namespace follows the
+Dockerfiles use `ethean-labs/ethean`. Day-to-day git `origin` for this clone is
+`https://github.com/ethean-labs/ethean.git`; the GHCR namespace follows the
 GitHub owner of the repository that runs `.github/workflows/docker-image.yml`.
 
 ## Ethean (this repo)
@@ -70,9 +70,7 @@ Job regexes and the interop `name=~` cadvisor expression already include
 
 ## Open questions
 
-- Git remote vs docs: clone `origin` is `pamenarti/ethean`; published URLs and
-  default image names use `ethean-labs/ethean`. Confirm org transfer before
-  relying on `ghcr.io/ethean-labs/ethean:devnet5` existing.
-- Hive `Dockerfile.git` clones `https://github.com/ethean-labs/ethean`; that
-  fails until the public repo lives under that owner (or the ARG `github` is
-  overridden at build time).
+- Day-to-day `origin` is `ethean-labs/ethean`. Confirm `ghcr.io/ethean-labs/ethean:devnet5`
+  exists after CI publishes from that repository.
+- Hive `Dockerfile.git` clones `https://github.com/ethean-labs/ethean`; override
+  ARG `github` at build time if a fork build is needed.
