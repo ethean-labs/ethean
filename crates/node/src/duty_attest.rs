@@ -7,7 +7,7 @@ use crate::events::ChainEvent;
 use ethean_crypto::Signature;
 use ethean_metrics::lean::{inc, observe_since};
 use ethean_network_wire::{fork_segment_from_name, topic_attestation};
-use ethean_primitives::ValidatorIndex;
+use ethean_primitives::{ValidatorIndex, HASH32_ZERO};
 use ethean_types::{AttestationData, Checkpoint, SignedAttestation};
 use ethean_validator::DutyTick;
 use std::time::Instant;
@@ -15,9 +15,9 @@ use std::time::Instant;
 /// Interval used for attestation duties (proposal uses 0).
 pub const ATTESTATION_INTERVAL: u8 = 1;
 
-/// When a local attester is installed, sign head attestation data for the first
-/// owned validator index, queue it for subnet gossip, and pool the signature
-/// when this node aggregates.
+/// When a local attester is installed, sign attestation data for the first
+/// owned validator index (preferring fork-choice safe-target when live), queue
+/// it for subnet gossip, and pool the signature when this node aggregates.
 pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEvent> {
     let mut out = Vec::new();
     if tick.interval != ATTESTATION_INTERVAL {
@@ -43,10 +43,21 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         slot: state.slot,
     };
     let source = state.latest_justified;
-    let target = if head.slot > source.slot {
+    // Prefer live fork-choice safe-target when the store has initialized it.
+    let target = if owner.safe_target != HASH32_ZERO {
+        Checkpoint {
+            root: owner.safe_target,
+            slot: ethean_primitives::Slot::new(owner.safe_target_slot()),
+        }
+    } else if head.slot > source.slot {
         head
     } else {
         source
+    };
+    let head = if owner.safe_target != HASH32_ZERO {
+        target
+    } else {
+        head
     };
     let data = AttestationData {
         slot: tick.slot,
@@ -133,7 +144,7 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
 mod tests {
     use super::*;
     use crate::local_attester::LocalAttester;
-    use ethean_primitives::{Bytes52, Slot, HASH32_ZERO};
+    use ethean_primitives::{Bytes52, Slot, ValidatorIndex, HASH32_ZERO};
     use ethean_types::{BlockHeader, GenesisConfig, State, Validator};
 
     fn state_n(n: usize) -> State {
@@ -187,6 +198,25 @@ mod tests {
         let vote = SignedAttestation::ssz_decode(&gossip.payload).unwrap();
         assert_eq!(vote.validator_index.get(), 2);
         assert_eq!(vote.data.hash_tree_root(), gossip.data_root);
-        let _ = HASH32_ZERO;
+    #[test]
+    fn attests_to_safe_target_when_set() {
+        let mut owner = ChainOwner::new(4);
+        owner.head_state = Some(state_n(4));
+        owner.head_root = [7u8; 32];
+        owner.safe_target = [9u8; 32];
+        owner.profile = Some(ethean_profile::lstar_devnet().unwrap());
+        owner.attester = Some(LocalAttester::smoke().unwrap());
+        owner.owned_validator_indices = vec![1];
+        let tick = DutyTick {
+            slot: Slot::new(3),
+            interval: 1,
+            generation: 1,
+        };
+        let ev = try_local_attest(&mut owner, tick);
+        assert_eq!(ev.len(), 1);
+        let vote = SignedAttestation::ssz_decode(&owner.pending_aggregation_gossip[0].payload)
+            .unwrap();
+        assert_eq!(vote.data.head.root, [9u8; 32]);
+        assert_eq!(vote.data.target.root, [9u8; 32]);
     }
 }
