@@ -195,6 +195,8 @@ mod tests {
         let vote = SignedAttestation::ssz_decode(&gossip.payload).unwrap();
         assert_eq!(vote.validator_index.get(), 2);
         assert_eq!(vote.data.hash_tree_root(), gossip.data_root);
+    }
+
     #[test]
     fn attests_to_safe_target_when_set() {
         let mut owner = ChainOwner::new(4);
