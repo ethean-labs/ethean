@@ -17,6 +17,8 @@ pub enum Route {
     ChainFinalized,
     /// GET /lean/v1/chain/sync
     ChainSync,
+    /// GET /lean/v1/chain/fork_choice
+    ChainForkChoice,
     /// GET /lean/v1/validator/duties (bounded visibility)
     ValidatorDuties,
     /// POST /lean/v1/admin/shutdown
@@ -37,6 +39,7 @@ pub fn match_route(method: &str, path: &str) -> Result<Route> {
         ("GET", "/lean/v1/chain/head") => Ok(Route::ChainHead),
         ("GET", "/lean/v1/chain/finalized") => Ok(Route::ChainFinalized),
         ("GET", "/lean/v1/chain/sync") => Ok(Route::ChainSync),
+        ("GET", "/lean/v1/chain/fork_choice") => Ok(Route::ChainForkChoice),
         ("GET", "/lean/v1/validator/duties") => Ok(Route::ValidatorDuties),
         ("POST", "/lean/v1/admin/shutdown") => Ok(Route::AdminShutdown),
         ("GET", "/lean/v1/events") => Ok(Route::AdminEvents),
@@ -61,5 +64,13 @@ mod tests {
     #[test]
     fn matches_lean_health() {
         assert_eq!(match_route("GET", "/lean/v1/health").unwrap(), Route::Health);
+    }
+
+    #[test]
+    fn matches_fork_choice() {
+        assert_eq!(
+            match_route("GET", "/lean/v1/chain/fork_choice").unwrap(),
+            Route::ChainForkChoice
+        );
     }
 }
