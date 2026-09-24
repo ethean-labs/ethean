@@ -95,11 +95,15 @@ pub fn duties_json(v: &DutiesView) -> Value {
         .duties
         .iter()
         .map(|d| {
-            json!({
+            let mut row = json!({
                 "validator_index": d.validator_index,
                 "kind": d.kind,
                 "slot": d.slot,
-            })
+            });
+            if let Some(subnet) = d.subnet {
+                row["subnet"] = json!(subnet);
+            }
+            row
         })
         .collect();
     json!({
@@ -165,11 +169,13 @@ mod tests {
                 validator_index: 2,
                 kind: "attestation",
                 slot: 5,
+                subnet: Some(0),
             }],
         };
         let j = duties_json(&v);
         assert_eq!(j["slot"], 5);
         assert_eq!(j["owned_validator_indices"][0], 2);
         assert_eq!(j["duties"][0]["kind"], "attestation");
+        assert_eq!(j["duties"][0]["subnet"], 0);
     }
 }

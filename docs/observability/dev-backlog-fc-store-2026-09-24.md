@@ -1,8 +1,8 @@
 # Development backlog (2026-09-25)
 
-## Current snapshot (v0.1.57)
+## Current snapshot (v0.1.58)
 
-- Duties JSON: proposal rows use `proposer_for_slot` when owned
+- Duties JSON: proposal = round-robin when owned; attestation rows include `subnet`
 - Admin events: JSON poll **or** SSE (`Accept: text/event-stream`)
 
 ## External (unchanged)
@@ -12,6 +12,5 @@
 
 ## This session
 
-1. Narrow proposal duties — done.
-2. SSE for admin events — done.
-3. Version **0.1.57**.
+1. Proposal duty + SSE — done (0.1.57).
+2. Attestation subnet on duties JSON — done (0.1.58).

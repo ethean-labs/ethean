@@ -51,6 +51,8 @@ pub struct DutyRow {
     /// `attestation` or `proposal` (visibility only; not a full schedule API).
     pub kind: &'static str,
     pub slot: u64,
+    /// Attestation gossip subnet (`index % committee_count`); absent for proposals.
+    pub subnet: Option<u16>,
 }
 
 /// Local validator duty visibility (owned indices + last tick).

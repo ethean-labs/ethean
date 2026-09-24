@@ -172,6 +172,12 @@ impl EtheanClient {
             .unwrap_or((head_slot, 0));
         let attester_loaded = self.owner.attester.is_some();
         let proposer_loaded = self.owner.proposer.is_some();
+        let committees = self
+            .owner
+            .profile
+            .as_ref()
+            .map(|p| p.attestation_committee_count.max(1))
+            .unwrap_or(1);
         let mut duty_rows = Vec::new();
         if attester_loaded && !self.owner.syncing {
             for &idx in &self.owner.owned_validator_indices {
@@ -179,6 +185,8 @@ impl EtheanClient {
                     validator_index: idx,
                     kind: "attestation",
                     slot: tick_slot,
+                    // Same mapping as duty_attest publish path.
+                    subnet: Some((idx % committees) as u16),
                 });
             }
         }
@@ -198,6 +206,7 @@ impl EtheanClient {
                         validator_index: idx,
                         kind: "proposal",
                         slot: tick_slot,
+                        subnet: None,
                     });
                 }
             }

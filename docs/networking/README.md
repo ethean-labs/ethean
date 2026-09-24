@@ -16,6 +16,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [fork digest local status](fork-digest-local-status-2026-09-19.md)
 - [gossip ingest peer score](gossip-ingest-peer-score-2026-09-19.md)
 - [gossipsub quic mesh](gossipsub-quic-mesh-2026-09-19.md)
+- [duties json attestation subnet](duties-json-attestation-subnet-2026-09-25.md)
 - [proposal duty sse events](proposal-duty-sse-events-2026-09-25.md)
 - [validator duties json visibility](validator-duties-json-visibility-2026-09-25.md)
 - [external backlog and admin events poll](external-backlog-and-admin-events-poll-2026-09-24.md)
