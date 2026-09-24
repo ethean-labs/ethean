@@ -37,6 +37,7 @@ pub fn apply_wall_step(
     let was_accepted = matches!(accepted, ChainEvent::TickAccepted(_));
     if was_accepted {
         crate::lean_metrics::tick();
+        owner.fc_on_tick(tick.slot.get(), tick.interval, tick.interval == 0);
     }
     events.push(accepted);
     if was_accepted {
