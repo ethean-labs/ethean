@@ -7,7 +7,8 @@ handlers. **No** `/eth/v1/` Beacon compatibility.
   blocks/finalized (SSZ)
 - Admin: aggregator GET/POST, shutdown, event poll or SSE
   (`Accept: text/event-stream` on `/lean/v0/events` / `/lean/v1/events`)
-- Operator extras: `/lean/v1/ready`, identity, chain head/finalized/sync,
+- Operator extras: `/lean/v1/ready` (also `/lean/v0/ready`), identity
+  (`network`, `peer_id`, `version`, `ready`), chain head/finalized/sync,
   `/lean/v1/chain/fork_choice` live-store stats,
   `/lean/v1/validator/duties` owned-index visibility (proposal = round-robin
   `proposer_for_slot` when owned; attestation rows include gossip `subnet` and
