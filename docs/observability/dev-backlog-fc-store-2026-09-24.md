@@ -5,8 +5,10 @@
 - leanSpec FC fixture runner green (empty-body dump gates where fill skews)
 - leanMetrics schema v3 + Grafana interop dashboard
 - leanMultisig / leanVM wire paths present; fail-closed crypto
-- Node `safe_target` / `reorg_total` exist but safe-target still tracks
-  **justified** (parent-heuristic reorg only) — no live `ForkChoiceStore`
+- Optional live structural `ForkChoiceStore` on `ChainOwner`; local
+  attestations prefer `safe_target` when the store is initialized
+- Linear head import only (`parent == head`); FC does not yet own the tip
+  and non-genesis durable resume may skip store init
 
 ## Is embedding ForkChoiceStore necessary?
 
@@ -24,10 +26,11 @@ Full LMD head replacement of linear gossip import remains a later phase
 
 | Pri | Area | Action |
 | --- | --- | --- |
-| P0 | Live FC store in node | Optional `ForkChoiceStore` on `ChainOwner`; init at genesis; `on_block` on apply; `on_tick` on duty ticks; sync safe_target/reorg |
-| P0 | Attest to safe-target | `duty_attest` uses `owner.safe_target` when set |
+| P0 | Live FC store in node | **Done** — optional store; genesis init; on_block/on_tick; sync |
+| P0 | Attest to safe-target | **Done** — `duty_attest` uses `owner.safe_target` when set |
 | P1 | Fixture re-fill | `at_9` / `dead_9` empty bodies vs BlockSpec (upstream fill) |
 | P1 | FC-driven head | Allow competing-tip import + store.head → owner.head |
+| P1 | Resume FC | Rebuild store from durable tip (not only genesis slot 0) |
 | P2 | Operator A2/A3 / Hive | External pins only; no invented digests |
 | P2 | leanBench alignment | Comment/API mode notes when live |
 
