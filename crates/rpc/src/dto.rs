@@ -140,6 +140,8 @@ fn de_root<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Hash32, D::Error> {
 pub struct HealthBody {
     pub status: String,
     pub service: String,
+    /// Crate/workspace semver for Hive / operator probes.
+    pub version: String,
 }
 
 /// GET `/lean/v0/admin/aggregator`.
