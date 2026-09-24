@@ -260,6 +260,7 @@ impl EtheanClient {
                 is_aggregator: self.owner.is_aggregator,
                 attester_loaded,
                 proposer_loaded,
+                attestation_committee_count: committees,
                 owned_validator_indices: self.owner.owned_validator_indices.clone(),
                 duties: duty_rows,
             },

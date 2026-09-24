@@ -64,6 +64,8 @@ pub struct DutiesView {
     pub is_aggregator: bool,
     pub attester_loaded: bool,
     pub proposer_loaded: bool,
+    /// Profile ACC / Hive committee count used for subnet = index % count.
+    pub attestation_committee_count: u64,
     pub owned_validator_indices: Vec<u64>,
     pub duties: Vec<DutyRow>,
 }

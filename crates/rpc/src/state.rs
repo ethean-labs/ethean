@@ -172,6 +172,11 @@ impl SharedApiState {
             .unwrap_or_default()
     }
 
+    /// Events still waiting after the last drain (or since the last push).
+    pub fn events_pending(&self) -> usize {
+        self.events.lock().map(|q| q.len()).unwrap_or(0)
+    }
+
     /// Admin bearer expected by authorize helpers.
     pub fn admin_token(&self) -> &str {
         &self.admin_token
