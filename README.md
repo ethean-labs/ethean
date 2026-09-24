@@ -293,6 +293,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Configurable prune keep slots**: [docs/prune-keep-slots-config-2026-09-20.md](./docs/storage/prune-keep-slots-config-2026-09-20.md)
 - **Durable prune stall alert**: [docs/durable-prune-stall-alert-2026-09-20.md](./docs/observability/durable-prune-stall-alert-2026-09-20.md)
 - **Range-serve / serve-cache seed metrics**: [docs/range-serve-seed-metrics-2026-09-20.md](./docs/observability/range-serve-seed-metrics-2026-09-20.md)
+- **Admin event backlog gauge**: [docs/admin-event-backlog-gauge-2026-09-25.md](./docs/observability/admin-event-backlog-gauge-2026-09-25.md)
 - **Grafana range-serve / seed panels**: [docs/grafana-range-serve-seed-panels-2026-09-20.md](./docs/observability/grafana-range-serve-seed-panels-2026-09-20.md)
 - **leanSpec FC finality / reorg / LMD**: [docs/leanspec-fc-finality-reorg-lmd-2026-09-20.md](./docs/lean-spec/leanspec-fc-finality-reorg-lmd-2026-09-20.md)
 - **leanSpec FC safe-target + reorg_total**: [docs/leanspec-fc-safe-target-reorg-total-2026-09-20.md](./docs/lean-spec/leanspec-fc-safe-target-reorg-total-2026-09-20.md)
