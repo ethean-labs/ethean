@@ -14,4 +14,5 @@ the curated summary copied into each Release body.
 - Session: [cut-v0-1-53-2026-09-24.md](./cut-v0-1-53-2026-09-24.md)
 - Session: [windows-leanvm-overlay-2026-09-24.md](./windows-leanvm-overlay-2026-09-24.md)
 - Session: [fork-release-mirror-ethean-labs-2026-09-24.md](./fork-release-mirror-ethean-labs-2026-09-24.md)
+- Session: [restore-v0-1-53-notes-2026-09-25.md](./restore-v0-1-53-notes-2026-09-25.md)
 - Org Releases: https://github.com/ethean-labs/ethean/releases

@@ -174,22 +174,21 @@ jobs:
             --jq .body > old-body.md || echo -n "" > old-body.md
           python3 - <<'PY'
           from pathlib import Path
+          import re
           binaries = Path("binaries-section.md").read_text(encoding="utf-8").strip() + "\n"
           old = Path("old-body.md").read_text(encoding="utf-8")
-          marker = "## Binaries"
-          if marker in old:
-              # Drop previous binaries block (until next ## or EOF).
-              parts = old.split(marker, 1)
-              head = parts[0].rstrip()
-              rest = parts[1]
-              if "\n## " in rest:
-                  rest = rest.split("\n## ", 1)[1]
-                  rest = "## " + rest
-              else:
-                  rest = ""
-              new = (head + "\n\n" + binaries + ("\n" + rest if rest.strip() else "")).strip() + "\n"
+          # Remove a prior ## Binaries section only. Changelog uses ### headings
+          # (Added/Changed/...), so requiring a following ## would wipe notes.
+          strip = re.compile(
+              r"(?ms)^## Binaries\n.*?"
+              r"(?:See \[docs/release/binaries\.md\][^\n]*\n|"
+              r"(?=\n### |\n## (?!Binaries))|\Z)"
+          )
+          changelog = strip.sub("", old).strip()
+          if changelog:
+              new = binaries + "\n" + changelog + "\n"
           else:
-              new = (binaries + "\n" + old.lstrip()).strip() + "\n"
+              new = binaries
           Path("new-body.md").write_text(new, encoding="utf-8")
           PY
           gh release edit "$TAG" \
