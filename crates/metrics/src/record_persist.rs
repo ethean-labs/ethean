@@ -45,3 +45,8 @@ pub fn record_serve_cache_seed(reg: &mut Registry, candidates: u64, indexed: u64
     reg.set("serve_cache_seed_indexed", indexed as f64)?;
     Ok(())
 }
+
+/// Depth of the Lean HTTP admin event ring buffer (poll / SSE backlog).
+pub fn record_admin_event_backlog(reg: &mut Registry, pending: u64) -> Result<()> {
+    reg.set("admin_event_backlog", pending as f64)
+}
