@@ -76,3 +76,9 @@ panic = "unwind"
 [profile.dev]
 debug = true
 opt-level = 0
+
+# leanVM e2592df4's system-info / zk-alloc assume Unix mmap and getrusage.
+# Overlay Windows-compatible stubs so release archives can include x86_64-pc-windows-msvc.
+[patch."https://github.com/leanEthereum/leanVM.git"]
+system-info = { path = "vendor/leanvm-windows/system-info" }
+zk-alloc = { path = "vendor/leanvm-windows/zk-alloc" }
