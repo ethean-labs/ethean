@@ -23,8 +23,7 @@ jobs:
   build:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
-    # Windows is experimental: leanMultisig (leanVM e2592df4) uses Unix-only
-    # system calls, so that job may fail without blocking the other archives.
+    # Windows builds via vendor/leanvm-windows overlays (system-info + zk-alloc).
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
@@ -33,7 +32,7 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             cross: false
-            experimental: true
+            experimental: false
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             cross: false
