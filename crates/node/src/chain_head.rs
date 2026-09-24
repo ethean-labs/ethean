@@ -24,7 +24,7 @@ impl ChainOwner {
     /// Refresh justified / finalized / safe-target from the head post-state.
     ///
     /// When a live fork-choice store is present, [`Self::sync_from_fork_choice`]
-    /// owns safe-target instead.
+    /// owns head, safe-target, and reorg.
     pub fn refresh_fc_view(&mut self) {
         if self.fc.is_some() {
             self.sync_from_fork_choice();
