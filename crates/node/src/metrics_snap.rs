@@ -180,34 +180,42 @@ impl EtheanClient {
             .unwrap_or(1);
         let mut duty_rows = Vec::new();
         if attester_loaded && !self.owner.syncing {
-            for &idx in &self.owner.owned_validator_indices {
-                duty_rows.push(DutyRow {
-                    validator_index: idx,
-                    kind: "attestation",
-                    slot: tick_slot,
-                    // Same mapping as duty_attest publish path.
-                    subnet: Some((idx % committees) as u16),
-                });
+            // Visibility matches try_local_attest: only the attestation interval.
+            if tick_interval == crate::duty_attest::ATTESTATION_INTERVAL {
+                for &idx in &self.owner.owned_validator_indices {
+                    duty_rows.push(DutyRow {
+                        validator_index: idx,
+                        kind: "attestation",
+                        slot: tick_slot,
+                        // Same mapping as duty_attest publish path.
+                        subnet: Some((idx % committees) as u16),
+                    });
+                }
             }
         }
         if proposer_loaded && !self.owner.syncing {
-            let n = self
-                .owner
-                .head_state
-                .as_ref()
-                .map(|s| s.validators.len() as u64)
-                .unwrap_or(0);
-            if let Ok(proposer) =
-                ethean_transition::proposer_for_slot(Slot::new(tick_slot), n)
-            {
-                let idx = proposer.get();
-                if self.owner.owned_validator_indices.contains(&idx) {
-                    duty_rows.push(DutyRow {
-                        validator_index: idx,
-                        kind: "proposal",
-                        slot: tick_slot,
-                        subnet: None,
-                    });
+            // Visibility matches try_plan_proposal: publish window is interval 0
+            // (local_finality may still propose on a late first tick — duties
+            // stay conservative and only advertise interval 0).
+            if tick_interval == 0 {
+                let n = self
+                    .owner
+                    .head_state
+                    .as_ref()
+                    .map(|s| s.validators.len() as u64)
+                    .unwrap_or(0);
+                if let Ok(proposer) =
+                    ethean_transition::proposer_for_slot(Slot::new(tick_slot), n)
+                {
+                    let idx = proposer.get();
+                    if self.owner.owned_validator_indices.contains(&idx) {
+                        duty_rows.push(DutyRow {
+                            validator_index: idx,
+                            kind: "proposal",
+                            slot: tick_slot,
+                            subnet: None,
+                        });
+                    }
                 }
             }
         }
