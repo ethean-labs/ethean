@@ -26,7 +26,7 @@ Design notes, sprint write-ups, and working plans for the client.
 - [Storage / persist / prune](./storage/README.md) (8 notes)
 - [Hive / fixture testing](./hive-testing/README.md) (9 notes)
 - [Lean migration phases](./migration/README.md) (25 notes)
-- [Process / README / git house rules](./process/README.md) (15 notes)
+- [Process / README / git house rules](./process/README.md) (16 notes)
 - [Peer client references](./peer-clients/README.md) (6 notes)
 - [Misc Lean research indexes](./misc/README.md) (2 notes)
 
