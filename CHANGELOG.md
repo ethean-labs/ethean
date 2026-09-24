@@ -12,6 +12,12 @@ the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows `x86_64-pc-windows-msvc` release archives compile via
+  `vendor/leanvm-windows` overlays for leanVM `system-info` / `zk-alloc`
+  (Unix `getrusage` / sparse `mmap` were blocking the Windows CI job).
+
 ## [0.1.53] - 2026-09-24
 
 Milestone covering patch work from `0.1.48` through `0.1.53`: leanMultisig

@@ -7,7 +7,7 @@ GitHub Releases can attach platform archives built by
 
 | System | Architecture | Rust target | Archive |
 | --- | --- | --- | --- |
-| Windows (experimental) | x86_64 | `x86_64-pc-windows-msvc` | `.zip` |
+| Windows | x86_64 | `x86_64-pc-windows-msvc` | `.zip` |
 | Linux | x86_64 | `x86_64-unknown-linux-gnu` | `.tar.gz` |
 | Linux | aarch64 | `aarch64-unknown-linux-gnu` (via `cross`) | `.tar.gz` |
 | macOS | aarch64 | `aarch64-apple-darwin` | `.tar.gz` |
@@ -18,9 +18,9 @@ Naming: `ethean-v<VERSION>-<target>.{tar.gz|zip}` plus a sibling
 `ethean-prover`; keep them in the same directory so the node finds the prover
 (or set `ETHEAN_PROVER_BIN`).
 
-Windows is experimental: leanMultisig at leanVM `e2592df4` uses Unix-only system
-calls (`getrusage`, `mmap`) and does not compile for Windows yet, so the Windows
-job is allowed to fail and its row appears only once an archive is produced.
+Windows builds use [`vendor/leanvm-windows/`](../../vendor/leanvm-windows/README.md)
+overlays so leanVM `system-info` / `zk-alloc` compile without Unix `getrusage` /
+sparse `mmap`. The proving arena stays disabled on Windows (System allocator).
 
 ## Features in release builds
 
@@ -31,17 +31,20 @@ job is allowed to fail and its row appears only once an archive is produced.
 
 ## Local packaging
 
+```powershell
+cargo build -p ethean -p ethean-prover --release --locked --target x86_64-pc-windows-msvc
+powershell -NoProfile -File tools/release/package-ethean.ps1 -Version 0.1.53 -Target x86_64-pc-windows-msvc
+```
+
 ```bash
 cargo build -p ethean -p ethean-prover --release --locked --target x86_64-unknown-linux-gnu
-tools/release/package-ethean.sh 0.1.48 x86_64-unknown-linux-gnu
+tools/release/package-ethean.sh 0.1.53 x86_64-unknown-linux-gnu
 ```
 
 ## Attach to an existing release
 
-After the workflow lands on `master`:
-
 ```bash
-gh workflow run release-binaries.yml -f tag=v0.1.47
+gh workflow run release-binaries.yml -f tag=v0.1.53
 ```
 
 Or push a new `v*` tag. The publish job uploads archives with `--clobber` and

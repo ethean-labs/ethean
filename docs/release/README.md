@@ -12,3 +12,4 @@ the curated summary copied into each Release body.
 - [rollback.md](./rollback.md) — fail-closed rollback and signer immutability
 - Session: [multi-platform-binaries-2026-09-23.md](./multi-platform-binaries-2026-09-23.md)
 - Session: [cut-v0-1-53-2026-09-24.md](./cut-v0-1-53-2026-09-24.md)
+- Session: [windows-leanvm-overlay-2026-09-24.md](./windows-leanvm-overlay-2026-09-24.md)
