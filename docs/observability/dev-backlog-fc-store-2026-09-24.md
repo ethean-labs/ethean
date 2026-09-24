@@ -1,22 +1,27 @@
-# Development backlog and next-step decision (2026-09-24)
+# Development backlog (2026-09-24)
 
-## Current snapshot (v0.1.52)
+## Current snapshot (v0.1.53)
 
-- Live structural FC store: head / safe-target / reorg / vote ingest
-- Local attest: head = FC tip, target = safe-target
-- `GET /lean/v1/chain/fork_choice` operator view
+- Live FC path + fork_choice HTTP + attest head≠target
+- Admin `GET /lean/v1/events` JSON poll (redacted ring buffer)
+- “External” backlog items documented (do not invent digests/bootnodes)
 
-## Backlog (priority)
+## What “external” means
+
+See [what-external-backlog-means-2026-09-24.md](../process/what-external-backlog-means-2026-09-24.md).
+Short form: **outside-repo ownership** (operator paste, leanSpec fill, Hive org).
+
+## Backlog
 
 | Pri | Area | Action |
 | --- | --- | --- |
-| P0–P1 | Live FC path | **Done** |
-| P1 | Attest head≠target + FC HTTP | **Done** |
-| P1 | Fixture re-fill | Upstream empty-body dumps (watch only) |
-| P2 | Operator A2/A3 / Hive | External pins only; no invented digests |
+| P0–P1 | Live FC / attest / fork_choice API | **Done** |
+| P1 | Admin events poll | **Done** |
+| Ext | Fixture re-fill | leanSpec upstream fill (watch) |
+| Ext | A2/A3 + Hive matrix | Paste / external PR only |
 
-## This session slice
+## This session
 
-1. Split attestation head/target — done.
-2. Fork-choice Lean HTTP route — done.
-3. Version bump to **0.1.52**.
+1. Document external vs in-repo — done.
+2. Implement `/lean/v1/events` drain — done.
+3. Version **0.1.53**.
