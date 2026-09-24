@@ -312,6 +312,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Attest head vs safe-target + fork_choice API**: [docs/attest-head-vs-safe-target-fork-choice-api-2026-09-24.md](./docs/lean-spec/attest-head-vs-safe-target-fork-choice-api-2026-09-24.md)
 - **What “external” backlog means**: [docs/what-external-backlog-means-2026-09-24.md](./docs/process/what-external-backlog-means-2026-09-24.md)
 - **Admin events poll**: [docs/external-backlog-and-admin-events-poll-2026-09-24.md](./docs/networking/external-backlog-and-admin-events-poll-2026-09-24.md)
+- **Identity version/ready + v0 ready**: [docs/identity-version-ready-v0-alias-2026-09-25.md](./docs/networking/identity-version-ready-v0-alias-2026-09-25.md)
 - **Duties committee count + events pending**: [docs/duties-committee-count-events-pending-2026-09-25.md](./docs/networking/duties-committee-count-events-pending-2026-09-25.md)
 - **Duties interval gating + monitoring SSE**: [docs/duties-interval-gating-monitoring-sse-2026-09-25.md](./docs/networking/duties-interval-gating-monitoring-sse-2026-09-25.md)
 - **Hive v0 events alias**: [docs/hive-v0-events-alias-2026-09-25.md](./docs/networking/hive-v0-events-alias-2026-09-25.md)
