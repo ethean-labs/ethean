@@ -84,6 +84,6 @@ on `0.0.0.0:5052` and QUIC on UDP `:9000`. Prepared assets are required.
 
 ## Known gaps vs Ream Hive client
 
-- Lean HTTP serves `/lean/v1/…` only (no Beacon `/eth/v1`).
+- Lean HTTP serves `/lean/v0/…` (Hive) and `/lean/v1/…` aliases; no Beacon `/eth/v1`.
 - Attestation checks use the head state registry; the spec's target-state lookup needs a fork-choice store.
 - Upstream ethereum/hive merge still required (drop-in is ready to copy / already in the workspace clone).
