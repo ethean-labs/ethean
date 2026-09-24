@@ -31,9 +31,14 @@ pub fn sync_json(v: &SyncView) -> Value {
 }
 
 /// Encode a drained admin event backlog (JSON poll; not a long-lived SSE body).
-pub fn events_json(events: &[crate::events::AdminEvent]) -> Value {
+/// `pending` is how many events remain after this drain.
+pub fn events_json(events: &[crate::events::AdminEvent], pending: usize) -> Value {
     let items: Vec<Value> = events.iter().map(admin_event_json).collect();
-    json!({ "events": items })
+    json!({
+        "events": items,
+        "drained": items.len(),
+        "pending": pending,
+    })
 }
 
 /// Encode one admin event object (shared by poll JSON and SSE `data:` lines).
@@ -113,6 +118,7 @@ pub fn duties_json(v: &DutiesView) -> Value {
         "is_aggregator": v.is_aggregator,
         "attester_loaded": v.attester_loaded,
         "proposer_loaded": v.proposer_loaded,
+        "attestation_committee_count": v.attestation_committee_count,
         "owned_validator_indices": v.owned_validator_indices,
         "duties": duties,
     })
@@ -164,6 +170,7 @@ mod tests {
             is_aggregator: true,
             attester_loaded: true,
             proposer_loaded: false,
+            attestation_committee_count: 4,
             owned_validator_indices: vec![2],
             duties: vec![DutyRow {
                 validator_index: 2,
@@ -174,8 +181,18 @@ mod tests {
         };
         let j = duties_json(&v);
         assert_eq!(j["slot"], 5);
+        assert_eq!(j["attestation_committee_count"], 4);
         assert_eq!(j["owned_validator_indices"][0], 2);
         assert_eq!(j["duties"][0]["kind"], "attestation");
         assert_eq!(j["duties"][0]["subnet"], 0);
+    }
+
+    #[test]
+    fn events_json_reports_pending() {
+        use crate::events::AdminEvent;
+        let j = events_json(&[AdminEvent::HeadSlot { slot: 3 }], 2);
+        assert_eq!(j["drained"], 1);
+        assert_eq!(j["pending"], 2);
+        assert_eq!(j["events"][0]["slot"], 3);
     }
 }
