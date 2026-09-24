@@ -196,7 +196,7 @@ mod tests {
         let out = apply_block_unverified(&pre, &child, &ctx).unwrap();
         child.state_root = out.post_state.hash_tree_root().unwrap();
         let root = child.hash_tree_root().unwrap();
-        let signed = SignedBlock::new(child.clone(), MultiMessageAggregate::default());
+        let signed = SignedBlock::new(child.clone(), MultiMessageAggregate::new(Vec::new()).unwrap());
         let blob = signed.ssz_encode().unwrap();
 
         // Fresh owner at tip with durable blob — no live store yet.
