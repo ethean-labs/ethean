@@ -1,19 +1,17 @@
 # Development backlog (2026-09-25)
 
-## Current snapshot (v0.1.56)
+## Current snapshot (v0.1.57)
 
-- Live FC path + fork_choice HTTP + attest head≠target
-- Admin events JSON poll
-- `/lean/v1/validator/duties` reports owned indices + bounded duty rows
+- Duties JSON: proposal rows use `proposer_for_slot` when owned
+- Admin events: JSON poll **or** SSE (`Accept: text/event-stream`)
 
-## External (outside-repo)
+## External (unchanged)
 
-See [what-external-backlog-means-2026-09-24.md](../process/what-external-backlog-means-2026-09-24.md).
-
-| Ext | Fixture re-fill | leanSpec `uv run fill` |
-| Ext | A2/A3 + Hive matrix | Operator paste / external PR |
+| Ext | Fixture re-fill | leanSpec fill |
+| Ext | A2/A3 + Hive | paste / external PR |
 
 ## This session
 
-1. Wire validator duties JSON from the owner snapshot — done.
-2. Version **0.1.56**.
+1. Narrow proposal duties — done.
+2. SSE for admin events — done.
+3. Version **0.1.57**.
