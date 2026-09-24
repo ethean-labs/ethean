@@ -4,7 +4,7 @@ use crate::client::EtheanClient;
 use crate::Result;
 use ethean_genesis::SystemTimeSource;
 use ethean_primitives::{Hash32, Slot, HASH32_ZERO};
-use ethean_rpc::{ApiSnapshot, FinalizedView, HeadView, SyncView};
+use ethean_rpc::{ApiSnapshot, FinalizedView, ForkChoiceView, HeadView, SyncView};
 use tracing::debug;
 
 impl EtheanClient {
@@ -125,6 +125,21 @@ impl EtheanClient {
         let _ = peers;
         let lag = self.sync.lag();
         let horizon = head_slot.saturating_add(if peers > 0 { lag.max(1) } else { 0 });
+        let (justified_root, finalized_from_state) = self
+            .owner
+            .head_state
+            .as_ref()
+            .map(|s| (s.latest_justified.root, s.latest_finalized.root))
+            .unwrap_or((HASH32_ZERO, finalized_root));
+        let (blocks, pending_votes, known_votes, live) = match self.owner.fc.as_ref() {
+            Some(fc) => (
+                fc.blocks.len() as u64,
+                fc.latest_new_attestations.len() as u64,
+                fc.latest_known_attestations.len() as u64,
+                true,
+            ),
+            None => (0, 0, 0, false),
+        };
         api.publish(ApiSnapshot {
             network: self.network_label.clone(),
             peer_id,
@@ -145,6 +160,18 @@ impl EtheanClient {
                 syncing: lag > 0,
                 head_slot: Slot::new(head_slot),
                 peer_horizon_slot: Slot::new(horizon),
+            },
+            fork_choice: ForkChoiceView {
+                live,
+                head_root: self.owner.head_root,
+                safe_target_root: self.owner.safe_target,
+                safe_target_slot: self.owner.safe_target_slot(),
+                justified_root,
+                finalized_root: finalized_from_state,
+                reorg_total: self.owner.reorg_total,
+                blocks,
+                pending_votes,
+                known_votes,
             },
         });
     }
