@@ -113,6 +113,7 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
     if owner.is_aggregator {
         owner.signatures.insert(data_root, &data, index, signature);
     }
+    owner.fc_on_attestation(ValidatorIndex::new(index), data);
     if let Some(fork) = owner.profile.as_ref().map(|p| p.fork_name) {
         let topic = fork_segment_from_name(fork)
             .ok()
