@@ -1,7 +1,7 @@
 //! Optional live [`ForkChoiceStore`] helpers on [`ChainOwner`].
 
 use crate::chain_owner::ChainOwner;
-use ethean_fork_choice::{create_store, ForkChoiceOpts, ForkChoiceStore};
+use ethean_fork_choice::{create_store, ForkChoiceOpts};
 use ethean_primitives::{Hash32, HASH32_ZERO};
 use ethean_types::{Block, BlockBody, State};
 use tracing::{debug, warn};
@@ -29,7 +29,29 @@ impl ChainOwner {
         }
     }
 
+    /// Whether `parent` is an admissible import parent (FC tree or linear head).
+    pub fn can_import_parent(&self, parent: Hash32) -> bool {
+        if let Some(fc) = self.fc.as_ref() {
+            return fc.block_states.contains_key(&parent);
+        }
+        parent == self.head_root
+    }
+
+    /// Pre-state for STF: FC parent state when the store is live, else head state.
+    pub fn pre_state_for_parent(&self, parent: Hash32) -> Option<State> {
+        if let Some(fc) = self.fc.as_ref() {
+            return fc.block_states.get(&parent).cloned();
+        }
+        if parent == self.head_root {
+            return self.head_state.clone();
+        }
+        None
+    }
+
     /// Import an applied block into the live store (structural path).
+    ///
+    /// After a successful `on_block`, [`Self::sync_from_fork_choice`] copies the
+    /// store head (LMD) onto the owner — the imported block may not become tip.
     pub fn fc_on_block(&mut self, block: Block, post_state: State) {
         let Some(fc) = self.fc.as_mut() else {
             return;
@@ -55,11 +77,16 @@ impl ChainOwner {
         self.sync_from_fork_choice();
     }
 
-    /// Copy safe-target and reorg counter from the store onto the owner view.
+    /// Copy head, safe-target, and reorg counter from the store onto the owner.
     pub fn sync_from_fork_choice(&mut self) {
         let Some(fc) = self.fc.as_ref() else {
             return;
         };
+        let head = fc.head();
+        if let Some(state) = fc.block_states.get(&head).cloned() {
+            self.head_root = head;
+            self.head_state = Some(state);
+        }
         self.safe_target = fc.safe_target();
         self.reorg_total = fc.reorg_total;
     }
@@ -86,7 +113,7 @@ impl ChainOwner {
     }
 }
 
-fn genesis_anchor_block(state: &State) -> Result<Block, ()> {
+pub(crate) fn genesis_anchor_block(state: &State) -> Result<Block, ()> {
     if state.slot.get() != 0 {
         return Err(());
     }
@@ -154,5 +181,18 @@ mod tests {
         owner.try_init_fork_choice();
         assert!(owner.fc.is_some());
         assert_ne!(owner.safe_target, Hash32::default());
+        assert_eq!(owner.head_root, owner.fc.as_ref().unwrap().head());
+    }
+
+    #[test]
+    fn can_import_parent_uses_store_when_live() {
+        let mut owner = ChainOwner::new(2);
+        owner.head_state = Some(genesis_state());
+        owner.profile = Some(lstar_devnet().unwrap());
+        owner.head_root = [9u8; 32];
+        owner.try_init_fork_choice();
+        let anchor = owner.fc.as_ref().unwrap().head();
+        assert!(owner.can_import_parent(anchor));
+        assert!(!owner.can_import_parent([9u8; 32]));
     }
 }
