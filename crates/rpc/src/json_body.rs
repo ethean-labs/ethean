@@ -32,25 +32,37 @@ pub fn sync_json(v: &SyncView) -> Value {
 
 /// Encode a drained admin event backlog (JSON poll; not a long-lived SSE body).
 pub fn events_json(events: &[crate::events::AdminEvent]) -> Value {
-    use crate::events::AdminEvent;
-    let items: Vec<Value> = events
-        .iter()
-        .map(|e| match e {
-            AdminEvent::DutySuppressed { reason } => json!({
-                "kind": "duty_suppressed",
-                "reason": reason,
-            }),
-            AdminEvent::HeadSlot { slot } => json!({
-                "kind": "head_slot",
-                "slot": slot,
-            }),
-            AdminEvent::Readiness { ready } => json!({
-                "kind": "readiness",
-                "ready": ready,
-            }),
-        })
-        .collect();
+    let items: Vec<Value> = events.iter().map(admin_event_json).collect();
     json!({ "events": items })
+}
+
+/// Encode one admin event object (shared by poll JSON and SSE `data:` lines).
+pub fn admin_event_json(e: &crate::events::AdminEvent) -> Value {
+    use crate::events::AdminEvent;
+    match e {
+        AdminEvent::DutySuppressed { reason } => json!({
+            "kind": "duty_suppressed",
+            "reason": reason,
+        }),
+        AdminEvent::HeadSlot { slot } => json!({
+            "kind": "head_slot",
+            "slot": slot,
+        }),
+        AdminEvent::Readiness { ready } => json!({
+            "kind": "readiness",
+            "ready": ready,
+        }),
+    }
+}
+
+/// SSE `event:` field name for an admin event.
+pub fn admin_event_name(e: &crate::events::AdminEvent) -> &'static str {
+    use crate::events::AdminEvent;
+    match e {
+        AdminEvent::DutySuppressed { .. } => "duty_suppressed",
+        AdminEvent::HeadSlot { .. } => "head_slot",
+        AdminEvent::Readiness { .. } => "readiness",
+    }
 }
 
 /// Encode fork-choice operator view.
