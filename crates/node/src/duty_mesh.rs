@@ -30,16 +30,20 @@ impl EtheanClient {
             if drained > 0 {
                 debug!(drained, "duty network pump");
             }
+            let before = events.len();
             events.extend(apply_wall_step(
                 &self.clock,
                 &mut self.owner,
                 &mut self.shutdown,
                 &mut self.sync,
             )?);
+            crate::api_events::publish_optional(&self.api, &events[before..]);
             self.flush_chain_persist();
             #[cfg(feature = "libp2p-quic")]
             {
-                for ev in self.flush_pending_events()? {
+                let gossip = self.flush_pending_events()?;
+                crate::api_events::publish_optional(&self.api, &gossip);
+                for ev in gossip {
                     events.push(ev);
                 }
             }
@@ -120,6 +124,7 @@ impl EtheanClient {
                 step_events.push(ev);
             }
         }
+        crate::api_events::publish_optional(&self.api, &step_events);
         let _ = self.refresh_slot_metrics();
         if enable_sleep && self.shutdown.accepts_new_duties() {
             let now_ms = time.unix_millis().map_err(Error::Clock)?;
