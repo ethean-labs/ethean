@@ -18,11 +18,11 @@ Design notes, sprint write-ups, and working plans for the client.
 
 ## Dated development notes (by topic)
 
-- [LeanSpec / fork choice / STF](./lean-spec/README.md) (30 notes)
+- [LeanSpec / fork choice / STF](./lean-spec/README.md) (31 notes)
 - [Networking / QUIC / gossip / HTTP](./networking/README.md) (26 notes)
 - [Observability / metrics / Grafana](./observability/README.md) (17 notes)
 - [pq-devnet / operator run](./pq-devnet/README.md) (10 notes)
-- [leanSig / leanVM / aggregation](./lean-crypto/README.md) (22 notes)
+- [leanSig / leanVM / aggregation](./lean-crypto/README.md) (23 notes)
 - [Storage / persist / prune](./storage/README.md) (7 notes)
 - [Hive / fixture testing](./hive-testing/README.md) (6 notes)
 - [Lean migration phases](./migration/README.md) (25 notes)

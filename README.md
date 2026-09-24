@@ -307,6 +307,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Node safe_target / reorg metrics**: [docs/node-safe-target-reorg-metrics-2026-09-20.md](./docs/observability/node-safe-target-reorg-metrics-2026-09-20.md)
 - **Live ForkChoiceStore + safe-target attest**: [docs/live-fc-store-safe-target-attest-2026-09-24.md](./docs/lean-spec/live-fc-store-safe-target-attest-2026-09-24.md)
 - **FC-driven head + durable rebuild**: [docs/fc-driven-head-durable-rebuild-2026-09-24.md](./docs/lean-spec/fc-driven-head-durable-rebuild-2026-09-24.md)
+- **FC vote ingest (gossip/local)**: [docs/fc-vote-ingest-gossip-local-2026-09-24.md](./docs/lean-spec/fc-vote-ingest-gossip-local-2026-09-24.md)
 - **FC store backlog**: [docs/dev-backlog-fc-store-2026-09-24.md](./docs/observability/dev-backlog-fc-store-2026-09-24.md)
 - **leanSpec FC payload LMD weights**: [docs/leanspec-fc-payload-lmd-weights-2026-09-20.md](./docs/lean-spec/leanspec-fc-payload-lmd-weights-2026-09-20.md)
 - **Full State SSZ encode/decode**: [docs/state-ssz-encode-decode-complete-2026-09-20.md](./docs/lean-spec/state-ssz-encode-decode-complete-2026-09-20.md)
