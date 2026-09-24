@@ -9,6 +9,7 @@ pub mod aggregation;
 pub mod aggregation_duty;
 pub mod aggregation_gossip;
 pub mod agg_pin;
+pub mod api_events;
 pub mod block_builder;
 pub mod blocks_sync;
 pub mod boot_network;
