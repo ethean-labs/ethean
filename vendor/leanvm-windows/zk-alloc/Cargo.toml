@@ -1,0 +1,14 @@
+[package]
+name = "zk-alloc"
+version = "0.1.0"
+edition = "2021"
+description = "leanVM zk-alloc with Windows syscall stubs (Ethean vendor overlay)"
+license = "MIT"
+publish = false
+
+[dependencies]
+system-info = { path = "../system-info" }
+parallel = { git = "https://github.com/leanEthereum/leanVM.git", rev = "e2592df4e30fdddbbf8ae26a333116c68cec7026" }
+
+[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
+libc = "0.2"
