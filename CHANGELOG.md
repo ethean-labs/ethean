@@ -39,10 +39,10 @@ vote ingest, and Lean HTTP surfaces for fork_choice and admin events.
 - Proposals carry a merged Type-2 block proof (body attestation proofs, then the
   proposer's signature over the block root).
 - Release archives for Linux x86_64/aarch64, macOS aarch64/x86_64 and Windows
-  x86_64 (experimental, pending leanMultisig Windows support) via
-  `.github/workflows/release-binaries.yml`, each containing `ethean` and
-  `ethean-prover`, with per-target `.sha256` files and a Binaries section on
-  GitHub Release notes.
+  x86_64 via `.github/workflows/release-binaries.yml`, each containing `ethean`
+  and `ethean-prover`, with per-target `.sha256` files and a Binaries section on
+  GitHub Release notes. Windows uses `vendor/leanvm-windows` overlays for leanVM
+  `system-info` / `zk-alloc` (proving arena disabled; System allocator).
 - Live optional `ForkChoiceStore` on `ChainOwner`: init after genesis / durable
   restore, `fc_on_block` / `fc_on_tick`, and interval-3 safe-target for local
   attestations.
