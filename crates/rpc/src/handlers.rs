@@ -54,6 +54,7 @@ pub fn handle_route(route: Route, state: &SharedApiState, body: &[u8]) -> HttpRe
             let v = HealthBody {
                 status: HEALTHY.into(),
                 service: SERVICE.into(),
+                version: env!("CARGO_PKG_VERSION").into(),
             };
             HttpReply::json(200, serde_json::to_string(&v).unwrap_or_else(|_| "{}".into()))
         }
@@ -201,6 +202,7 @@ mod tests {
         let v: HealthBody = serde_json::from_slice(&r.body).unwrap();
         assert_eq!(v.status, "healthy");
         assert_eq!(v.service, "lean-rpc-api");
+        assert_eq!(v.version, env!("CARGO_PKG_VERSION"));
     }
 
     #[test]

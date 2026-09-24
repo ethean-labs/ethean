@@ -32,4 +32,5 @@ Split payload-pool snapshot helpers into `fc_snapshot_payloads.rs`
 ## Still open
 
 - Regenerate filled `at_9` / `dead_9` bodies (see finalized_safety empty-body gate)
-- Live `ForkChoiceStore.safe_target` / `reorg_total` inside the node
+- Live `ForkChoiceStore` / `safe_target` / `reorg_total` in the node — landed
+  later (see FC store / safe-target attest notes under `docs/lean-spec/`)

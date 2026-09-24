@@ -1,9 +1,9 @@
 # Development backlog (2026-09-25)
 
-## Current snapshot (v0.1.63)
+## Current snapshot (v0.1.64)
 
-- Duties / events / admin backlog gauge (through 0.1.62)
-- Identity JSON: `version` + `ready`; `GET /lean/v0/ready` alias
+- Health JSON includes `version`; identity on `/lean/v0/node/identity`
+- Duties / events / admin backlog / ready aliases (through 0.1.63)
 - Day-to-day remote: `ethean-labs/ethean`
 
 ## External (unchanged)

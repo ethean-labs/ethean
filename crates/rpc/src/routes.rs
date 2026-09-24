@@ -9,7 +9,7 @@ pub enum Route {
     Health,
     /// GET `/lean/v0/ready` / `/lean/v1/ready`.
     Ready,
-    /// GET `/lean/v1/node/identity`.
+    /// GET `/lean/v0/node/identity` / `/lean/v1/node/identity`.
     NodeIdentity,
     /// GET `/lean/v1/chain/head`.
     ChainHead,
@@ -58,7 +58,7 @@ pub fn match_route(method: &str, path: &str) -> Result<Route> {
     match (method, path) {
         ("GET", "/lean/v0/health" | "/lean/v1/health") => Ok(Route::Health),
         ("GET", "/lean/v0/ready" | "/lean/v1/ready") => Ok(Route::Ready),
-        ("GET", "/lean/v1/node/identity") => Ok(Route::NodeIdentity),
+        ("GET", "/lean/v0/node/identity" | "/lean/v1/node/identity") => Ok(Route::NodeIdentity),
         ("GET", "/lean/v1/chain/head") => Ok(Route::ChainHead),
         ("GET", "/lean/v1/chain/finalized") => Ok(Route::ChainFinalized),
         ("GET", "/lean/v1/chain/sync") => Ok(Route::ChainSync),
@@ -126,6 +126,10 @@ mod tests {
         assert_eq!(match_route("GET", "/lean/v0/health").unwrap(), Route::Health);
         assert_eq!(match_route("GET", "/lean/v0/ready").unwrap(), Route::Ready);
         assert_eq!(match_route("GET", "/lean/v1/ready").unwrap(), Route::Ready);
+        assert_eq!(
+            match_route("GET", "/lean/v0/node/identity").unwrap(),
+            Route::NodeIdentity
+        );
     }
 
     #[test]
