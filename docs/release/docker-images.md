@@ -8,10 +8,9 @@ ghcr.io/<github-owner>/ethean
 ```
 
 The image name is lowercased from `${{ github.repository_owner }}`. When the
-GitHub owner is `ethean-labs` that is `ghcr.io/ethean-labs/ethean`. The git
-`origin` remote of this clone still points at `pamenarti/ethean`; GHCR follows
-whoever owns the GitHub repository that runs the workflow, not the URL printed
-in `Cargo.toml`.
+GitHub owner is `ethean-labs` that is `ghcr.io/ethean-labs/ethean`. Day-to-day
+`origin` for this clone is [ethean-labs/ethean](https://github.com/ethean-labs/ethean);
+GHCR follows whoever owns the GitHub repository that runs the workflow.
 
 The runtime image is Ubuntu 24.04 with `ethean` and `ethean-prover` in
 `/usr/local/bin` (the node finds the prover as a sibling) and
