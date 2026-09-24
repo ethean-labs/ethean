@@ -80,10 +80,12 @@ pub struct ChainOwner {
     pub is_aggregator: bool,
     /// Self-apply proposals + inject full-registry votes for local finality smoke.
     pub local_finality: bool,
-    /// Safe-target root (tracks justified until ForkChoiceStore is live).
+    /// Safe-target root (from FC store when live; else justified).
     pub safe_target: Hash32,
-    /// Head moves onto a non-extending parent (leanMetrics `fc_reorg_total`).
+    /// Head moves onto a competing branch (leanMetrics `fc_reorg_total`).
     pub reorg_total: u64,
+    /// Live lstar fork-choice store (structural until proofs are required in-node).
+    pub fc: Option<ethean_fork_choice::ForkChoiceStore>,
 }
 
 impl Default for ChainOwner {
@@ -113,6 +115,7 @@ impl Default for ChainOwner {
             local_finality: false,
             safe_target: Hash32::default(),
             reorg_total: 0,
+            fc: None,
         }
     }
 }
