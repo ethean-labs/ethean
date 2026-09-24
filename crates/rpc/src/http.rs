@@ -2,7 +2,9 @@
 
 use crate::auth::BindScope;
 use crate::error::RpcError;
-use crate::json_body::{duties_json, finalized_json, head_json, identity_json, sync_json};
+use crate::json_body::{
+    duties_json, finalized_json, fork_choice_json, head_json, identity_json, sync_json,
+};
 use crate::routes::Route;
 use crate::server::{dispatch, IncomingRequest};
 use crate::state::SharedApiState;
@@ -90,6 +92,7 @@ fn respond(route: Route, state: &SharedApiState) -> (u16, &'static str, String) 
         Route::ChainHead => json_ok(head_json(&snap.head)),
         Route::ChainFinalized => json_ok(finalized_json(&snap.finalized)),
         Route::ChainSync => json_ok(sync_json(&snap.sync)),
+        Route::ChainForkChoice => json_ok(fork_choice_json(&snap.fork_choice)),
         Route::ValidatorDuties => json_ok(duties_json()),
         Route::AdminShutdown => {
             state.request_shutdown();

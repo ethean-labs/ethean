@@ -16,7 +16,7 @@ pub mod state;
 
 pub use admin::request_shutdown;
 pub use auth::{authorize_admin, validate_admin_token, BindScope};
-pub use dto::{FinalizedView, HeadView, SyncView};
+pub use dto::{FinalizedView, ForkChoiceView, HeadView, SyncView};
 pub use error::{Result, RpcError};
 pub use events::{AdminEvent, EventBuffer};
 pub use http::spawn_lean_http;
