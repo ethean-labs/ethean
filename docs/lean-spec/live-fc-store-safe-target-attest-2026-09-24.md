@@ -20,9 +20,11 @@ attesters cannot vote the FC-backed target and metrics stay stubs.
 
 ## Deferred
 
-- FC-owned canonical head (competing tips / LMD replace of linear import).
-- Rebuild store from durable tip after non-genesis resume.
 - Upstream fixture re-fill for empty-body dumps.
+- Hive / operator A2–A3 pins only.
+
+Follow-up (done in v0.1.50): FC-driven head + durable rebuild —
+see [fc-driven-head-durable-rebuild-2026-09-24.md](./fc-driven-head-durable-rebuild-2026-09-24.md).
 
 ## Verify
 
