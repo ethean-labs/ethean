@@ -12,6 +12,12 @@ the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
+## [0.1.53] - 2026-09-24
+
+Milestone covering patch work from `0.1.48` through `0.1.53`: leanMultisig
+proving, leanMetrics v3, a live fork-choice store that owns tip and safe-target,
+vote ingest, and Lean HTTP surfaces for fork_choice and admin events.
+
 ### Added
 
 - leanMetrics standard metrics (`lean_*`, metrics schema `ethean-metrics-v3`):
@@ -31,6 +37,20 @@ the curated operator-facing summary, not a dump of every working note.
   `.github/workflows/release-binaries.yml`, each containing `ethean` and
   `ethean-prover`, with per-target `.sha256` files and a Binaries section on
   GitHub Release notes.
+- Live optional `ForkChoiceStore` on `ChainOwner`: init after genesis / durable
+  restore, `fc_on_block` / `fc_on_tick`, and interval-3 safe-target for local
+  attestations.
+- FC-driven canonical tip: import any parent known to the store, orphan/drain
+  sync against the FC parent set, rebuild the store from durable genesis and
+  block blobs after `--data-dir` resume.
+- Verified gossip and local attestation votes feed the live store
+  (`on_attestation_data` / `on_aggregated_attestation`).
+- `GET /lean/v1/chain/fork_choice` JSON snapshot (live flag, roots, reorg_total,
+  block and vote-pool sizes).
+- `GET /lean/v1/events` JSON poll drain for redacted admin events
+  (`DutySuppressed`, `HeadUpdated`, `HeadSlot`, `Readiness`).
+- Solo local-finality path persists applied blocks so `--data-dir` resume keeps
+  them across restarts.
 
 ### Changed
 
@@ -39,6 +59,11 @@ the curated operator-facing summary, not a dump of every working note.
   payloads are no longer accepted.
 - Attestation subnets carry `SignedAttestation` and every vote's XMSS signature
   is verified; aggregates are verified against their participants' keys.
+- Local attestations use the fork-choice tip as **head** and interval-3
+  safe-target as **target** when the store is live (no longer voting
+  safe-target for both fields).
+- When the FC store is live, local-finality smoke checkpoint promotion is
+  skipped; justified/finalized come from store post-states.
 - Release profile uses `panic = "unwind"` so a verifier panic on a hostile
   proof is contained and rejected.
 - Linux-first: PowerShell scripts and Windows-only docs were removed and CI runs
@@ -200,7 +225,8 @@ work that landed before the root `VERSION` file (`0.1.1`) through `0.1.12`.
   `blstrs` / `bls12_381` under `crates/` or `bin/` as hard-fail for release
   promotion.
 
-[Unreleased]: https://github.com/Pamenarti/Ethean/compare/v0.1.47...HEAD
+[Unreleased]: https://github.com/Pamenarti/Ethean/compare/v0.1.53...HEAD
+[0.1.53]: https://github.com/Pamenarti/Ethean/compare/v0.1.47...v0.1.53
 [0.1.47]: https://github.com/Pamenarti/Ethean/compare/v0.1.27...v0.1.47
 [0.1.27]: https://github.com/Pamenarti/Ethean/compare/v0.1.12...v0.1.27
 [0.1.12]: https://github.com/Pamenarti/Ethean/releases/tag/v0.1.12
