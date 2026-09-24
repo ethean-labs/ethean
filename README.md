@@ -308,6 +308,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Live ForkChoiceStore + safe-target attest**: [docs/live-fc-store-safe-target-attest-2026-09-24.md](./docs/lean-spec/live-fc-store-safe-target-attest-2026-09-24.md)
 - **FC-driven head + durable rebuild**: [docs/fc-driven-head-durable-rebuild-2026-09-24.md](./docs/lean-spec/fc-driven-head-durable-rebuild-2026-09-24.md)
 - **FC vote ingest (gossip/local)**: [docs/fc-vote-ingest-gossip-local-2026-09-24.md](./docs/lean-spec/fc-vote-ingest-gossip-local-2026-09-24.md)
+- **Attest head vs safe-target + fork_choice API**: [docs/attest-head-vs-safe-target-fork-choice-api-2026-09-24.md](./docs/lean-spec/attest-head-vs-safe-target-fork-choice-api-2026-09-24.md)
 - **FC store backlog**: [docs/dev-backlog-fc-store-2026-09-24.md](./docs/observability/dev-backlog-fc-store-2026-09-24.md)
 - **leanSpec FC payload LMD weights**: [docs/leanspec-fc-payload-lmd-weights-2026-09-20.md](./docs/lean-spec/leanspec-fc-payload-lmd-weights-2026-09-20.md)
 - **Full State SSZ encode/decode**: [docs/state-ssz-encode-decode-complete-2026-09-20.md](./docs/lean-spec/state-ssz-encode-decode-complete-2026-09-20.md)
