@@ -1,6 +1,7 @@
 //! Shared chain snapshot for the Lean HTTP listener.
 
 use crate::dto::{FinalizedView, ForkChoiceView, HeadView, SyncView};
+use crate::events::{AdminEvent, EventBuffer};
 use ethean_primitives::{Hash32, Slot, HASH32_ZERO};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -59,6 +60,8 @@ pub struct SharedApiState {
     ready: AtomicBool,
     shutdown: AtomicBool,
     snap: Mutex<ApiSnapshot>,
+    events: Mutex<EventBuffer>,
+    last_head_slot: Mutex<Option<u64>>,
     admin_token: String,
 }
 
@@ -69,13 +72,18 @@ impl SharedApiState {
             ready: AtomicBool::new(false),
             shutdown: AtomicBool::new(false),
             snap: Mutex::new(ApiSnapshot::default()),
+            events: Mutex::new(EventBuffer::default()),
+            last_head_slot: Mutex::new(None),
             admin_token: admin_token.into(),
         })
     }
 
     /// Mirror metrics readiness into `/lean/v1/ready`.
     pub fn set_ready(&self, ready: bool) {
-        self.ready.store(ready, Ordering::Relaxed);
+        let prev = self.ready.swap(ready, Ordering::Relaxed);
+        if prev != ready {
+            self.push_event(AdminEvent::Readiness { ready });
+        }
     }
 
     /// Current readiness bit.
@@ -93,8 +101,16 @@ impl SharedApiState {
         self.shutdown.load(Ordering::Relaxed)
     }
 
-    /// Replace the published chain views.
+    /// Replace the published chain views; emit head-slot events on change.
     pub fn publish(&self, snap: ApiSnapshot) {
+        let slot = snap.head.slot.get();
+        if let Ok(mut last) = self.last_head_slot.lock() {
+            if *last != Some(slot) {
+                *last = Some(slot);
+                drop(last);
+                self.push_event(AdminEvent::HeadSlot { slot });
+            }
+        }
         if let Ok(mut g) = self.snap.lock() {
             *g = snap;
         }
@@ -105,6 +121,21 @@ impl SharedApiState {
         self.snap
             .lock()
             .map(|g| g.clone())
+            .unwrap_or_default()
+    }
+
+    /// Push a redacted admin event into the ring buffer.
+    pub fn push_event(&self, ev: AdminEvent) {
+        if let Ok(mut q) = self.events.lock() {
+            q.push(ev);
+        }
+    }
+
+    /// Drain up to `n` buffered admin events (JSON poll consumer).
+    pub fn drain_events(&self, n: usize) -> Vec<AdminEvent> {
+        self.events
+            .lock()
+            .map(|mut q| q.drain(n))
             .unwrap_or_default()
     }
 
@@ -136,5 +167,9 @@ mod tests {
         st.publish(snap);
         assert_eq!(st.snapshot().head.slot.get(), 7);
         assert_eq!(st.snapshot().network, "local");
+        let drained = st.drain_events(8);
+        assert!(drained
+            .iter()
+            .any(|e| matches!(e, AdminEvent::HeadSlot { slot: 7 })));
     }
 }
