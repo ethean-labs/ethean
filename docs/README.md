@@ -24,7 +24,7 @@ Design notes, sprint write-ups, and working plans for the client.
 - [pq-devnet / operator run](./pq-devnet/README.md) (12 notes)
 - [leanSig / leanVM / aggregation](./lean-crypto/README.md) (24 notes)
 - [Storage / persist / prune](./storage/README.md) (8 notes)
-- [Hive / fixture testing](./hive-testing/README.md) (9 notes)
+- [Hive / fixture testing](./hive-testing/README.md) (10 notes)
 - [Lean migration phases](./migration/README.md) (25 notes)
 - [Process / README / git house rules](./process/README.md) (16 notes)
 - [Peer client references](./peer-clients/README.md) (6 notes)
