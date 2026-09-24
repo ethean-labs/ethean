@@ -44,6 +44,28 @@ pub struct ForkChoiceStatsView {
     pub known_votes: u64,
 }
 
+/// One bounded duty row for GET `/lean/v1/validator/duties`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DutyRow {
+    pub validator_index: u64,
+    /// `attestation` or `proposal` (visibility only; not a full schedule API).
+    pub kind: &'static str,
+    pub slot: u64,
+}
+
+/// Local validator duty visibility (owned indices + last tick).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct DutiesView {
+    pub slot: u64,
+    pub interval: u8,
+    pub syncing: bool,
+    pub is_aggregator: bool,
+    pub attester_loaded: bool,
+    pub proposer_loaded: bool,
+    pub owned_validator_indices: Vec<u64>,
+    pub duties: Vec<DutyRow>,
+}
+
 /// Checkpoint on the hive `/lean/v0` wire (`slot` as JSON number, `root` as 0x-hex).
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct CheckpointBody {

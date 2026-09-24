@@ -25,8 +25,8 @@ mod http_test;
 pub use admin::request_shutdown;
 pub use auth::{authorize_admin, validate_admin_token, BindScope};
 pub use dto::{
-    AggregatorStatusBody, AggregatorToggleBody, CheckpointBody, FinalizedView, ForkChoiceBody, ForkChoiceStatsView,
-    ForkChoiceNodeBody, HeadView, HealthBody, SyncView,
+    AggregatorStatusBody, AggregatorToggleBody, CheckpointBody, DutiesView, DutyRow, FinalizedView,
+    ForkChoiceBody, ForkChoiceStatsView, ForkChoiceNodeBody, HeadView, HealthBody, SyncView,
 };
 pub use error::{Result, RpcError};
 pub use events::{AdminEvent, EventBuffer};

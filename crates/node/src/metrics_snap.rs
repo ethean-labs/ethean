@@ -5,7 +5,9 @@ use crate::client::EtheanClient;
 use crate::Result;
 use ethean_genesis::SystemTimeSource;
 use ethean_primitives::{Hash32, Slot, HASH32_ZERO};
-use ethean_rpc::{ApiSnapshot, FinalizedView, ForkChoiceStatsView, HeadView, SyncView};
+use ethean_rpc::{
+    ApiSnapshot, DutiesView, DutyRow, FinalizedView, ForkChoiceStatsView, HeadView, SyncView,
+};
 use tracing::debug;
 
 impl EtheanClient {
@@ -163,6 +165,33 @@ impl EtheanClient {
             ),
             None => (0, 0, 0, false),
         };
+        let (tick_slot, tick_interval) = self
+            .owner
+            .last_tick
+            .map(|t| (t.slot.get(), t.interval))
+            .unwrap_or((head_slot, 0));
+        let attester_loaded = self.owner.attester.is_some();
+        let proposer_loaded = self.owner.proposer.is_some();
+        let mut duty_rows = Vec::new();
+        if attester_loaded && !self.owner.syncing {
+            for &idx in &self.owner.owned_validator_indices {
+                duty_rows.push(DutyRow {
+                    validator_index: idx,
+                    kind: "attestation",
+                    slot: tick_slot,
+                });
+            }
+        }
+        if proposer_loaded && !self.owner.syncing {
+            // Visibility only: mark owned indices as proposal candidates for this slot.
+            for &idx in &self.owner.owned_validator_indices {
+                duty_rows.push(DutyRow {
+                    validator_index: idx,
+                    kind: "proposal",
+                    slot: tick_slot,
+                });
+            }
+        }
         api.publish(ApiSnapshot {
             network: self.network_label.clone(),
             peer_id,
@@ -196,6 +225,16 @@ impl EtheanClient {
                 blocks,
                 pending_votes,
                 known_votes,
+            },
+            duties: DutiesView {
+                slot: tick_slot,
+                interval: tick_interval,
+                syncing: self.owner.syncing || lag > 0,
+                is_aggregator: self.owner.is_aggregator,
+                attester_loaded,
+                proposer_loaded,
+                owned_validator_indices: self.owner.owned_validator_indices.clone(),
+                duties: duty_rows,
             },
         });
     }
