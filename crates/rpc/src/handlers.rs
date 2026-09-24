@@ -69,7 +69,7 @@ pub fn handle_route(route: Route, state: &SharedApiState, body: &[u8]) -> HttpRe
         Route::ChainFinalized => json_ok(finalized_json(&state.snapshot().finalized)),
         Route::ChainSync => json_ok(sync_json(&state.snapshot().sync)),
         Route::ChainForkChoice => json_ok(fork_choice_json(&state.snapshot().fork_choice_stats)),
-        Route::ValidatorDuties => json_ok(duties_json()),
+        Route::ValidatorDuties => json_ok(duties_json(&state.snapshot().duties)),
         Route::AdminShutdown => {
             state.request_shutdown();
             HttpReply::json(200, r#"{"ok":true}"#)
