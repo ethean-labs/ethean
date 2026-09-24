@@ -14,29 +14,39 @@ use std::time::Instant;
 /// Outcome of importing a decoded block.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GossipStfResult {
-    /// Does not extend the head, no local state yet, or shutting down.
+    /// Parent unknown, no local state yet, or shutting down.
     Skipped,
-    /// Proof verified and transition applied; head advanced.
+    /// Proof verified and transition applied; store/head updated.
     Applied { root: Hash32 },
     /// Proof or transition rejected; head unchanged.
     Rejected { reason: String },
 }
 
 /// Verify the block proof against the parent registry, then transition.
+///
+/// With a live fork-choice store, any known parent in the store is admissible
+/// (not only the current linear head). After import, the owner head follows
+/// the store's LMD tip.
 pub fn import_decoded_block(
     owner: &mut ChainOwner,
     shutdown: &ShutdownState,
     decoded: &DecodedBlockGossip,
 ) -> GossipStfResult {
-    if shutdown.phase() == ShutdownPhase::Stopped || decoded.parent != owner.head_root {
+    if shutdown.phase() == ShutdownPhase::Stopped {
         return GossipStfResult::Skipped;
     }
-    let (Some(pre), Some(profile)) = (owner.head_state.as_ref(), owner.profile.clone()) else {
+    if !owner.can_import_parent(decoded.parent) {
+        return GossipStfResult::Skipped;
+    }
+    let Some(pre) = owner.pre_state_for_parent(decoded.parent) else {
+        return GossipStfResult::Skipped;
+    };
+    let Some(profile) = owner.profile.clone() else {
         return GossipStfResult::Skipped;
     };
     let ctx = TransitionContext::new(profile);
     let started = Instant::now();
-    let applied = apply_block(pre, &decoded.signed, &ctx, &LeanMultisigVerifier);
+    let applied = apply_block(&pre, &decoded.signed, &ctx, &LeanMultisigVerifier);
     observe_since(
         "lean_fork_choice_block_processing_time_seconds",
         &[],
@@ -46,9 +56,15 @@ pub fn import_decoded_block(
         Ok(out) => {
             lean_metrics::transition(started.elapsed(), &out.timings);
             let post = out.post_state;
-            owner.head_state = Some(post.clone());
-            owner.advance_head(decoded.root, decoded.parent);
-            owner.fc_on_block(decoded.block.clone(), post);
+            if owner.fc.is_some() {
+                // Tick store time so historical sync imports are not "too far".
+                let slot = decoded.block.slot.get();
+                owner.fc_on_tick(slot, 0, false);
+                owner.fc_on_block(decoded.block.clone(), post);
+            } else {
+                owner.head_state = Some(post);
+                owner.advance_head(decoded.root, decoded.parent);
+            }
             GossipStfResult::Applied { root: decoded.root }
         }
         Err(e) => GossipStfResult::Rejected {
