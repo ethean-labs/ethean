@@ -74,7 +74,11 @@ pub fn handle_route(route: Route, state: &SharedApiState, body: &[u8]) -> HttpRe
             state.request_shutdown();
             HttpReply::json(200, r#"{"ok":true}"#)
         }
-        Route::AdminEvents => json_ok(events_json(&state.drain_events(64))),
+        Route::AdminEvents => {
+            let drained = state.drain_events(64);
+            let pending = state.events_pending();
+            json_ok(events_json(&drained, pending))
+        }
         Route::CheckpointsJustified => checkpoints_justified(state),
         Route::ForkChoice => fork_choice(state),
         Route::StatesFinalized => ssz_or_missing(state, true),
