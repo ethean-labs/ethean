@@ -269,6 +269,7 @@ impl EtheanClient {
                 owned_validator_indices: self.owner.owned_validator_indices.clone(),
                 duties: duty_rows,
             },
+            ready: api.is_ready(),
         });
     }
 }
