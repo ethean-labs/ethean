@@ -194,8 +194,10 @@ pub fn accept_block_proof(
     );
     let gossip = encode_proposal_gossip(&plan, profile.fork_name)?;
     let root = gossip.block_root;
-    owner.head_state = Some(applied.post_state);
+    let post = applied.post_state;
+    owner.head_state = Some(post.clone());
     owner.advance_head(root, plan.parent_root);
+    owner.fc_on_block(plan.block.clone(), post);
     owner.remember_durable_block(root, gossip.payload.clone());
     let events = vec![
         ChainEvent::BlockProofAttached {
