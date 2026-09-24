@@ -16,7 +16,7 @@ attesters cannot vote the FC-backed target and metrics stay stubs.
 - Block apply paths (`local_finality`, gossip STF, proposal proof accept)
   call `fc_on_block` after advancing the linear head.
 - Wall duty ticks call `fc_on_tick` before attest/propose.
-- `duty_attest` uses `owner.safe_target` for head+target when non-zero.
+- `duty_attest` uses FC tip for head and `safe_target` for target when set.
 
 ## Deferred
 
