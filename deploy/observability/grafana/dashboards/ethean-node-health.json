@@ -334,9 +334,24 @@
         { "expr": "rate(ethean_blocks_by_range_serve_missing_total[5m])", "legendFormat": "missing/s", "refId": "B" }
       ]
     },
+    },
+    {
+      "type": "timeseries", "id": 28, "title": "Admin event backlog",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 41 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "lineInterpolation": "stepAfter" },
+          "color": { "mode": "fixed", "fixedColor": "semi-dark-blue" }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{ "expr": "ethean_admin_event_backlog", "legendFormat": "pending", "refId": "A" }]
+    },
     {
       "type": "timeseries", "id": 14, "title": "Scrape up",
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 41 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 47 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -358,5 +373,5 @@
   "timezone": "browser",
   "title": "Ethean Node Health",
   "uid": "ethean-node-health",
-  "version": 4
+  "version": 5
 }
