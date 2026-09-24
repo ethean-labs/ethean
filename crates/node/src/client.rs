@@ -84,6 +84,7 @@ impl EtheanClient {
         owner.head_state = Some(genesis.clone());
         owner.profile = Some(profile.clone());
         crate::local_finality::seal_genesis_head(&mut owner);
+        owner.try_init_fork_choice();
         match crate::local_proposer::LocalProposer::prefer_production() {
             Ok(prop) => {
                 let production = prop.is_production();
