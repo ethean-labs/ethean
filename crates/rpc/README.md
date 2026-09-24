@@ -10,5 +10,6 @@ handlers. **No** `/eth/v1/` Beacon compatibility.
 - Operator extras: `/lean/v1/ready`, identity, chain head/finalized/sync,
   `/lean/v1/chain/fork_choice` live-store stats,
   `/lean/v1/validator/duties` owned-index visibility (proposal = round-robin
-  `proposer_for_slot` when owned; attestation rows include gossip `subnet`)
+  `proposer_for_slot` when owned; attestation rows include gossip `subnet` and
+  top-level `attestation_committee_count`)
 - Body/rate budgets in `limits.rs` (64 MiB bodies for hive test-driver payloads)
