@@ -23,6 +23,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [leanspec fc wall clock tick justification](leanspec-fc-wall-clock-tick-justification-2026-09-20.md)
 - [leanspec stf full suite green](leanspec-stf-full-suite-green-2026-09-20.md)
 - [leanspec stf runner](leanspec-stf-runner-2026-09-20.md)
+- [fc driven head durable rebuild](fc-driven-head-durable-rebuild-2026-09-24.md)
 - [live fc store safe target attest](live-fc-store-safe-target-attest-2026-09-24.md)
 - [local attester duty](local-attester-duty-2026-09-20.md)
 - [local finality insufficient peers soft skip](local-finality-insufficient-peers-soft-skip-2026-09-20.md)
