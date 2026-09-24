@@ -2,6 +2,7 @@
 
 Dated development notes for this topic. Index: [../README.md](../../README.md).
 
+- [remote switch ethean labs](remote-switch-ethean-labs-2026-09-25.md)
 - [what external backlog means](what-external-backlog-means-2026-09-24.md)
 - [build path shim quiet success](build-path-shim-quiet-success-2026-09-20.md)
 - [bump version safe cargo lock](bump-version-safe-cargo-lock-2026-09-20.md)
