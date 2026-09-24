@@ -23,7 +23,7 @@ pub enum Route {
     ValidatorDuties,
     /// POST `/lean/v1/admin/shutdown`.
     AdminShutdown,
-    /// GET `/lean/v1/events`.
+    /// GET `/lean/v0/events` / `/lean/v1/events`.
     AdminEvents,
     /// GET `/lean/v0/checkpoints/justified`.
     CheckpointsJustified,
@@ -65,7 +65,7 @@ pub fn match_route(method: &str, path: &str) -> Result<Route> {
         ("GET", "/lean/v1/chain/fork_choice") => Ok(Route::ChainForkChoice),
         ("GET", "/lean/v1/validator/duties") => Ok(Route::ValidatorDuties),
         ("POST", "/lean/v1/admin/shutdown" | "/lean/v0/admin/shutdown") => Ok(Route::AdminShutdown),
-        ("GET", "/lean/v1/events") => Ok(Route::AdminEvents),
+        ("GET", "/lean/v0/events" | "/lean/v1/events") => Ok(Route::AdminEvents),
         ("GET", "/lean/v0/checkpoints/justified" | "/lean/v1/checkpoints/justified") => {
             Ok(Route::CheckpointsJustified)
         }
@@ -151,6 +151,14 @@ mod tests {
         assert_eq!(
             match_route("POST", "/lean/v0/admin/aggregator").unwrap(),
             Route::AggregatorPost
+        );
+        assert_eq!(
+            match_route("GET", "/lean/v0/events").unwrap(),
+            Route::AdminEvents
+        );
+        assert_eq!(
+            match_route("GET", "/lean/v1/events").unwrap(),
+            Route::AdminEvents
         );
     }
 
