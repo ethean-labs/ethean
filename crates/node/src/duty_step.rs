@@ -26,7 +26,13 @@ pub fn apply_wall_step(
     let generation = owner.generation.max(1);
     let time = SystemTimeSource;
     let tick = tick_from_wall(clock, &time, generation)?;
-    sync.observe(tick.slot, tick.slot);
+    // Local tip is the sealed head, not wall-clock slot. Keep Status peer horizon.
+    let local_head = owner
+        .head_state
+        .as_ref()
+        .map(|s| s.slot)
+        .unwrap_or(tick.slot);
+    sync.observe_local(local_head);
     let syncing = !sync.duties_allowed();
     events.push(apply_command(
         owner,

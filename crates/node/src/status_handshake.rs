@@ -25,6 +25,8 @@ pub struct StatusSyncOutbounds {
     pub blocks_by_root: Option<OutboundBlocksByRootRequest>,
     /// Deep slot catch-up via blocks-by-range (when remote head slot lag is large).
     pub blocks_by_range: Option<OutboundBlocksByRangeRequest>,
+    /// Remote Status tip (for follow-up catch-up while still behind).
+    pub remote: Option<Status>,
 }
 
 /// Queue Status handshakes for connected peer fingerprints.
@@ -102,6 +104,7 @@ pub fn complete_status_handshake(
     Ok(StatusSyncOutbounds {
         blocks_by_root,
         blocks_by_range,
+        remote: Some(exchange.remote),
     })
 }
 

@@ -73,6 +73,7 @@ fn peak_rss_windows() -> u64 {
         pagefile_usage: usize,
         peak_pagefile_usage: usize,
     }
+    #[link(name = "psapi")]
     extern "system" {
         fn GetCurrentProcess() -> *mut core::ffi::c_void;
         fn GetProcessMemoryInfo(

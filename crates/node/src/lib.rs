@@ -76,6 +76,7 @@ pub mod shutdown;
 pub mod signal_loop;
 pub mod start_config;
 pub mod status_handshake;
+pub mod sync_catchup;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump;
 #[cfg(feature = "libp2p-quic")]

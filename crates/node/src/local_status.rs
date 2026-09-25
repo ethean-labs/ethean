@@ -30,12 +30,16 @@ pub fn local_status(owner: &ChainOwner) -> Status {
 }
 
 /// Apply a compatible remote Status into the sync lag gate.
+///
+/// Horizon is the max of remote head and remote finalized so a late joiner
+/// behind a finalized tip stays duty-suppressed while catching up.
 pub fn observe_remote_status(
     sync: &mut ethean_sync::SyncStatus,
     local_head: Slot,
     remote: &Status,
 ) {
-    sync.observe(local_head, Slot::new(remote.head_slot()));
+    let horizon = remote.head_slot().max(remote.finalized_slot());
+    sync.observe(local_head, Slot::new(horizon));
 }
 
 #[cfg(test)]
@@ -67,5 +71,23 @@ mod tests {
         observe_remote_status(&mut sync, Slot::new(1), &remote);
         assert_eq!(sync.peer_horizon.get(), 12);
         assert_eq!(sync.lag(), 11);
+    }
+
+    #[test]
+    fn observe_uses_finalized_when_ahead_of_head() {
+        let mut sync = SyncStatus::new(Slot::new(0), Slot::new(0));
+        let remote = Status {
+            finalized: Checkpoint {
+                root: [2u8; 32],
+                slot: 40,
+            },
+            head: Checkpoint {
+                root: [1u8; 32],
+                slot: 10,
+            },
+        };
+        observe_remote_status(&mut sync, Slot::new(0), &remote);
+        assert_eq!(sync.peer_horizon.get(), 40);
+        assert_eq!(sync.lag(), 40);
     }
 }
