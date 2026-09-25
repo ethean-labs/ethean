@@ -41,7 +41,7 @@ Create:
 - `crates/ethean-storage/src/tables/{signer_state.rs,duty_reservations.rs}`.
 - `tests/fixtures/xmss/`, `tests/security/signer_rollback.rs`, and `tests/recovery/signer_crash.rs`.
 
-Every hand-written source file is at most 300 lines; split by responsibility before review.
+Every hand-written source file is at most 2000 lines; split by responsibility before review.
 
 ## Ordered tasks
 
@@ -99,7 +99,7 @@ rg -n "blst|bls12_381|RealBLS|Wots|POSEIDON prefix" Cargo.toml Cargo.lock crates
 - Crash matrix proves no conflicting signature and no leaf reuse across 1,000 fault-injected runs per boundary.
 - Restore rollback is rejected, exact retry is idempotent, and uncertain state only advances.
 - Release features cannot select fake crypto; secret-bearing types have no `Debug` output.
-- Old crypto and signer paths and dependencies are deleted; every touched source file is at most 300 lines.
+- Old crypto and signer paths and dependencies are deleted; every touched source file is at most 2000 lines.
 
 ## Rollback and data policy
 

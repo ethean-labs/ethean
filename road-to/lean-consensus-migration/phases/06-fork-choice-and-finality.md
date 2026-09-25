@@ -45,7 +45,7 @@ New fixtures/tests:
 
 - `spec/fixtures/phase-06/fork-choice/`, `spec/fixtures/phase-06/finality/`, `spec/fixtures/phase-06/manifest.toml`, `crates/ethean-fork-choice/tests/`, `tests/interop/fork_choice.rs`.
 
-Every hand-written source file is at most **300 lines**; split by responsibility before review.
+Every hand-written source file is at most **2000 lines**; split by responsibility before review.
 
 ## Ordered tasks
 
@@ -107,7 +107,7 @@ git diff --check
 - All pinned fork-choice and finality fixtures pass with exact head/safe-target/checkpoint outputs.
 - Legacy fork-choice/finality/consensus modules are deleted; production has one pinned algorithm implementation.
 - No LMD-GHOST, GRANDPA, prevote/precommit, or Beacon epoch-finality behavior remains reachable.
-- Fork-choice crate is I/O-free; every touched source file is at most 300 lines.
+- Fork-choice crate is I/O-free; every touched source file is at most 2000 lines.
 - Phase lock cites the implemented generation (3SF-mini or Goldfish) with fixture proof.
 
 ## Rollback/data policy

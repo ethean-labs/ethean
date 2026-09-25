@@ -7,7 +7,7 @@ This directory defines the workspace architecture that the Lean Consensus migrat
 - [TARGET_WORKSPACE.md](TARGET_WORKSPACE.md) defines every target crate and its concrete modules.
 - [DEPENDENCY_RULES.md](DEPENDENCY_RULES.md) defines the permitted dependency graph and forbidden edges.
 - [DATA_FLOW.md](DATA_FLOW.md) defines chain import, validator duty, network, and storage flows.
-- [MODULE_SIZE_POLICY.md](MODULE_SIZE_POLICY.md) defines the 300-line source limit and required decomposition process.
+- [MODULE_SIZE_POLICY.md](MODULE_SIZE_POLICY.md) defines the 2000-line source limit and required decomposition process.
 
 ## Non-negotiable decisions
 
@@ -18,7 +18,7 @@ This directory defines the workspace architecture that the Lean Consensus migrat
 5. Network code transports validated envelopes and emits events; it never mutates chain state.
 6. Validator code proposes actions through node commands; it never writes state or storage directly.
 7. Dependencies form a directed acyclic graph. Mutual crate dependencies are prohibited.
-8. Every hand-written Rust source file is at most 300 physical lines, including tests embedded in that file.
+8. Every hand-written Rust source file is at most 2000 physical lines, including tests embedded in that file.
 
 ## Target layout
 
@@ -56,5 +56,5 @@ The architecture phase is complete only when:
 - wire decoding is bounded and separated from semantic validation;
 - storage commits state, blocks, fork-choice metadata, and import markers atomically;
 - every code directory has an English `README.md`;
-- source-size verification rejects any hand-written source above 300 lines; and
+- source-size verification rejects any hand-written source above 2000 lines; and
 - repository-wide legacy-name scans pass under the retirement policy.

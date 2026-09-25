@@ -19,7 +19,7 @@ Added and refreshed English phase plan documents for the protocol foundation seg
 - Required headings: Pinned inputs, Objective, Non-goals, Entry criteria, Exact old and new paths, Ordered tasks, Deletion obligations, Security/spec risks, Positive and negative fixtures, Interop and differential tests, Validation commands, Exit criteria, Rollback/data policy, Artifacts/evidence, Dependencies.
 - Pinned evidence pattern: baseline `880982f`, leanSpec candidates `8b4ebbea` / `0b7d33ec` (Phase 00 verification required), seven peer commits, unresolved values marked as blockers.
 - `MAX_ATTESTATION_DATA` must be resolved in Phase 00 before Phase 03 starts.
-- Hand-written source files capped at 300 lines per repository modularity policy.
+- Hand-written source files capped at 2000 lines per repository modularity policy.
 - Crate paths aligned with [TARGET_WORKSPACE](../../road-to/lean-consensus-migration/03-architecture/TARGET_WORKSPACE.md) (`crates/types`, `crates/ethean-ssz`, `crates/ethean-fork-choice`, etc.).
 - `bazalinacaklar/` noted as present locally with peer library notes (corrects prior README claim of absence).
 

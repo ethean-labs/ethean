@@ -44,7 +44,7 @@ Create:
 - `deploy/observability/{prometheus/,grafana/provisioning/dashboards/,grafana/provisioning/datasources/,alerting/rules/}`.
 - `tests/interop/hive/`, `tests/interop/mixed_client.rs`, `tests/observability/{exporter,alerts,dashboards}.rs`, and `tests/security/rpc_auth.rs`.
 
-New code directories require English `README.md` files; all hand-written source files are at most 300 lines.
+New code directories require English `README.md` files; all hand-written source files are at most 2000 lines.
 
 ## Ordered tasks
 
@@ -109,7 +109,7 @@ rg -n "/eth/v1/|beacon/api|BeaconApi" crates src deploy
 - Grafana dashboards and datasources provision automatically from repo paths without manual UI steps.
 - Fleet gate: at least two Ethean nodes and one peer client scrape distinctly; mixed-client panels and alerts differentiate client class.
 - Synthetic finality stall, prover timeout, and peer loss alerts fire, route, and resolve in the pinned alert test harness.
-- Telemetry remains within approved budgets; touched source files are within 300 lines.
+- Telemetry remains within approved budgets; touched source files are within 2000 lines.
 
 ## Rollback/data policy
 

@@ -42,10 +42,26 @@ impl SyncStatus {
             .saturating_sub(self.local_head.get())
     }
 
-    /// Update heads and apply hysteresis.
+    /// Update local head and peer horizon, then apply hysteresis.
+    ///
+    /// Peer horizon is **monotonic**: it never decreases. Duty ticks must not
+    /// wipe a Status-derived catch-up target by passing the wall-clock slot as
+    /// both arguments.
     pub fn observe(&mut self, local_head: Slot, peer_horizon: Slot) {
         self.local_head = local_head;
-        self.peer_horizon = peer_horizon;
+        if peer_horizon.get() > self.peer_horizon.get() {
+            self.peer_horizon = peer_horizon;
+        }
+        self.apply_hysteresis();
+    }
+
+    /// Advance local head while keeping the remembered peer horizon.
+    pub fn observe_local(&mut self, local_head: Slot) {
+        self.local_head = local_head;
+        self.apply_hysteresis();
+    }
+
+    fn apply_hysteresis(&mut self) {
         let lag = self.lag();
         match self.mode {
             SyncMode::Synced if lag > self.lag_high => self.mode = SyncMode::Syncing,
@@ -72,5 +88,29 @@ mod tests {
         assert!(s.duties_allowed());
         s.observe(Slot::new(19), Slot::new(40));
         assert!(!s.duties_allowed());
+    }
+
+    #[test]
+    fn observe_does_not_shrink_peer_horizon() {
+        let mut s = SyncStatus::new(Slot::new(0), Slot::new(0));
+        s.observe(Slot::new(1), Slot::new(30));
+        assert_eq!(s.peer_horizon.get(), 30);
+        // Duty-tick style "observe(slot, slot)" must not erase the Status target.
+        s.observe(Slot::new(5), Slot::new(5));
+        assert_eq!(s.peer_horizon.get(), 30);
+        assert_eq!(s.local_head.get(), 5);
+        assert_eq!(s.lag(), 25);
+        assert!(!s.duties_allowed());
+    }
+
+    #[test]
+    fn observe_local_keeps_horizon() {
+        let mut s = SyncStatus::new(Slot::new(0), Slot::new(12));
+        s.observe_local(Slot::new(4));
+        assert_eq!(s.peer_horizon.get(), 12);
+        assert_eq!(s.lag(), 8);
+        assert!(!s.duties_allowed());
+        s.observe_local(Slot::new(11));
+        assert!(s.duties_allowed());
     }
 }

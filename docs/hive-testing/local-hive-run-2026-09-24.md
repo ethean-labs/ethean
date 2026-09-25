@@ -41,10 +41,16 @@ sync failures are open gaps, not tonight's work:
   leanSpec helper mesh (head tracked, finalized slot stayed 0). Needs the
   req/resp block sync from a spec peer plus vote aggregation on the joined
   chain.
+  **Partial fix 2026-09-25:** duty ticks no longer wipe Status `peer_horizon`;
+  range/root follow-up continues while tips remain ahead
+  (`docs/networking/late-joiner-sync-catchup-2026-09-25.md`). Re-run Hive sync
+  to confirm finalized advances.
 - Same-client late joiner: a 3-validator Ethean-only mesh did not finalize
   within 300 s (aggregator + Type-2 merge cost on a shared host).
 - Head-behind-finalized recovery: `fork_choice` not readable within 180 s
   during pre-pause catch-up.
+  **Partial fix 2026-09-25:** sync horizon uses `max(remote.head, remote.finalized)`
+  so duties stay suppressed while behind a finalized tip.
 - Two scenarios failed inside the helper itself (its head stayed at 0), so
   they say nothing about Ethean yet.
 

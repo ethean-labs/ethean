@@ -6,6 +6,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [auto flush block gossip](auto-flush-block-gossip-2026-09-19.md)
 - [blocks by range quic stream](blocks-by-range-quic-stream-2026-09-19.md)
 - [blocks by range scaffold](blocks-by-range-scaffold-2026-09-19.md)
+- [late joiner sync catchup](late-joiner-sync-catchup-2026-09-25.md)
 - [blocks by range serve gap warn](blocks-by-range-serve-gap-warn-2026-09-20.md)
 - [blocks by root multihop catchup](blocks-by-root-multihop-catchup-2026-09-19.md)
 - [blocks by root reqresp wire](blocks-by-root-reqresp-wire-2026-09-19.md)

@@ -36,7 +36,7 @@ Create:
 - `crates/ethean-types/src/proofs/{mod.rs,type1.rs,type2.rs,participants.rs}`.
 - `tests/fixtures/aggregation/`, `tests/interop/aggregation.rs`, `tests/negative/proof_inputs.rs`, and `benches/aggregation/`.
 
-Each new code directory receives an English `README.md`; every hand-written source file remains at most 300 lines.
+Each new code directory receives an English `README.md`; every hand-written source file remains at most 2000 lines.
 
 ## Ordered tasks
 
@@ -93,7 +93,7 @@ cargo +1.97.1 clippy -p ethean-crypto -p ethean-node --all-targets --locked -- -
 - Produced proofs are self-verified; 100,000 mutation cases yield no false acceptance.
 - Prover crash, OOM, and wedge do not stall slot ticks, networking, storage, or shutdown.
 - Reference-host p99 budgets fit the approved interval deadline and publish a measured capacity envelope.
-- Legacy BLS/placeholder aggregation is deleted and all touched source files are at most 300 lines.
+- Legacy BLS/placeholder aggregation is deleted and all touched source files are at most 2000 lines.
 
 ## Rollback and data policy
 

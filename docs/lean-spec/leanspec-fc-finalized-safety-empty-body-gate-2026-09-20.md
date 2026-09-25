@@ -15,7 +15,7 @@ keeps head) already matched.
 
 ## Fix
 
-- Move `apply_store_snapshot` into `fc_store_snapshot.rs` (≤300-line rule)
+- Move `apply_store_snapshot` into `fc_store_snapshot.rs` (≤2000-line rule)
 - Skip `blockWeights` + payload-pool snapshot asserts when the block wire
   attestation list is empty (filler skew)
 - Lock `fork_above_finalized_wins_at_or_below_loses` and

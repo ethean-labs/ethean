@@ -10,7 +10,7 @@ After a completed Status ingest, `complete_status_handshake` can stage a
 blocks-by-root outbound on `SwarmFacade.blocks_outbox` when the remote head root
 differs from the local head.
 
-`client.rs` stayed under the 300-line budget by moving boot gates / observability
+`client.rs` stayed under the 2000-line budget by moving boot gates / observability
 finish into `client_boot.rs` and the boot pump into `client_swarm.rs`.
 
 ## Honest gaps

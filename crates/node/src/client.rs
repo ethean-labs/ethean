@@ -31,8 +31,11 @@ pub struct EtheanClient {
     pub(crate) observability: NodeObservability,
     /// Pending / completed Lean Status handshakes.
     pub(crate) status_sessions: StatusSessionBook,
-    /// Last advertised local Status (set during boot).
+    /// Last advertised local Status (set during boot; refreshed while catching up).
     pub(crate) local_status: Option<Status>,
+    /// Peer Status tips we still need to catch up to (range/root follow-up).
+    #[cfg(feature = "libp2p-quic")]
+    pub(crate) sync_targets: Vec<crate::sync_catchup::PeerSyncTarget>,
     /// Durable libp2p QUIC facade (feature `libp2p-quic`).
     #[cfg(feature = "libp2p-quic")]
     pub(crate) swarm: Option<crate::network::SwarmFacade>,
@@ -109,6 +112,8 @@ impl EtheanClient {
             observability,
             status_sessions: StatusSessionBook::default(),
             local_status: None,
+            #[cfg(feature = "libp2p-quic")]
+            sync_targets: Vec::new(),
             #[cfg(feature = "libp2p-quic")]
             swarm: None,
             persist_dir: None,

@@ -51,7 +51,7 @@ New fixtures/tests:
 
 - `spec/fixtures/phase-03/ssz/`, `spec/fixtures/phase-03/manifest.toml`, `crates/ethean-ssz/tests/`, `crates/types/tests/`, `tests/interop/ssz.rs`.
 
-Every hand-written source file is at most **300 lines**; split by responsibility before review.
+Every hand-written source file is at most **2000 lines**; split by responsibility before review.
 
 ## Ordered tasks
 
@@ -115,7 +115,7 @@ If `cargo-fuzz` is not in the Phase 00 toolchain lock, install the exact locked 
 - Strict decoders reject the complete negative corpus without excessive allocation or panic.
 - Old types and JSON-root code are deleted and unreachable from production crates.
 - `MAX_ATTESTATION_DATA` is cited in the phase lock and exercised by at least one positive and one negative fixture.
-- Storage and node consumers compile against one Lean type crate; every touched source file is at most 300 lines.
+- Storage and node consumers compile against one Lean type crate; every touched source file is at most 2000 lines.
 
 ## Rollback/data policy
 

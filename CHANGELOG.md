@@ -14,6 +14,9 @@ the curated operator-facing summary, not a dump of every working note.
 
 ### Added
 
+- Late-joiner sync: monotonic peer horizon, duty ticks observe chain head,
+  Status tip follow-up range/root after each block response, horizon uses
+  `max(head, finalized)` (`docs/networking/late-joiner-sync-catchup-2026-09-25.md`).
 - Dependabot weekly updates for Cargo and GitHub Actions; Hive GHCR probe
   (`tools/hive/check-ghcr.ps1`); Docker workflow best-effort public package
   visibility for anonymous Hive pulls; `hive_rpc_compat_v0_surface` route lock.

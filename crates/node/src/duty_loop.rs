@@ -48,7 +48,12 @@ pub fn run_duty_loop(
         }
 
         let tick = tick_from_elapsed_ms(elapsed, profile, generation);
-        sync.observe(tick.slot, tick.slot);
+        let local_head = owner
+            .head_state
+            .as_ref()
+            .map(|s| s.slot)
+            .unwrap_or(tick.slot);
+        sync.observe_local(local_head);
         let syncing = !sync.duties_allowed();
         events.push(apply_command(
             owner,
@@ -106,5 +111,29 @@ mod tests {
             .any(|e| matches!(e, ChainEvent::TickAccepted(_))));
         assert_eq!(events.last(), Some(&ChainEvent::ShutdownComplete));
         assert!(!shutdown.accepts_new_duties());
+    }
+
+    #[test]
+    fn duty_ticks_preserve_status_peer_horizon() {
+        let profile = lstar_devnet().expect("lstar");
+        let mut owner = ChainOwner::new(SYNC_LAG_THRESHOLD_SLOTS);
+        owner.generation = 1;
+        owner.head_state = Some(State::default());
+        let mut shutdown = ShutdownState::default();
+        let mut sync = SyncStatus::new(Slot::new(0), Slot::new(0));
+        sync.observe(Slot::new(0), Slot::new(40));
+        assert!(!sync.duties_allowed());
+        let _ = run_duty_loop(
+            &profile,
+            &mut owner,
+            &mut shutdown,
+            &mut sync,
+            DutyLoopConfig {
+                max_ticks: 3,
+                start_elapsed_ms: 0,
+            },
+        );
+        assert_eq!(sync.peer_horizon.get(), 40);
+        assert!(!sync.duties_allowed());
     }
 }

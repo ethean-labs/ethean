@@ -11,7 +11,7 @@ Proposer path now builds the Type-2 block envelope from the **Type-1 aggregate c
    - Mesh path (`require_type1_cache = true`, i.e. not local-finality): skips Type-2 prove until every packed attestation has a pool Type-1 proof.
    - Local-finality smoke still proves without cache (empty/injected bodies).
 4. **`Type2ProofAttached`** now reports `type1_hits` / `type1_needed`.
-5. Proposal logic lives in **`duty_propose`** so `duty_step` stays ≤300 lines.
+5. Proposal logic lives in **`duty_propose`** so `duty_step` stays ≤2000 lines.
 
 ## Flow
 

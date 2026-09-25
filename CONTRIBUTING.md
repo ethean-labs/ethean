@@ -1,6 +1,6 @@
 # Contributing to Ethean
 
-Thanks for helping with **Ethean Lean Consensus Client** — a Rust consensus-only
+Thanks for helping with **Ethean Lean Consensus Client** a Rust consensus-only
 implementation of Ethereum Lean Consensus (historically “Beam Chain”).
 
 Ethean tracks [leanroadmap.org](https://leanroadmap.org/) research tracks and the
@@ -56,32 +56,14 @@ ethean start --until-signal --network pq-devnet-4 --metrics
 
 ## Code guidelines
 
-### Language
-
-Everything in the git tree is **English**: identifiers, comments, rustdoc, CLI,
-logs, tests, commit messages, and docs. Chat may follow the author’s language;
-files may not. See [docs/english.md](./docs/english.md).
-
-### File size
-
-Authored source files stay at **300 lines or fewer**. Split by responsibility and
-re-export from `mod.rs` when a file would grow past that. See
-[docs/source-file-size-limit.md](./docs/source-file-size-limit.md).
 
 ### Style
 
 - Boring, consistent Rust: small functions, explicit errors, names that match
   existing modules.
 - Comments only when intent is non-obvious.
-- No AI / “generated” banners, filler changelog comments, or assistant voice in
-  source.
 
-### Security and secrets
 
-- Never commit secrets, `.env`, or private keys.
-- Do not commit local research extracts under `bazalinacaklar/` (gitignored) or
-  peer client clones.
-- Do not commit `.cursor/` rules.
 
 ## Git workflow
 
@@ -91,29 +73,8 @@ re-export from `mod.rs` when a file would grow past that. See
 2. Keep PRs focused: one logical change per PR when practical.
 3. Ensure `cargo test`, `cargo clippy`, and `cargo fmt` are clean before asking
    for review.
-4. Write an English PR title and a short body: **why**, not a file dump.
-5. Do **not** advertise Cursor / Copilot / ChatGPT authorship in the PR.
+**why**, not a file dump.
 
-### Commits
-
-- Messages are English, 1–2 sentences, explaining **why**.
-- Prefer one coherent change per commit (often one source/docs file plus its
-  `mod.rs` wiring).
-- Never push unless maintainers ask you to, or your fork workflow requires it.
-- **No AI git attribution**: no `Co-authored-by: Cursor`, no
-  `cursoragent@cursor.com`, no `Made-with: Cursor`. Commits must use your normal
-  `user.name` / `user.email`. See
-  [docs/no-ai-git-attribution-2026-09-19.md](./docs/process/no-ai-git-attribution-2026-09-19.md).
-- Enable the repo hook when developing locally:
-
-```bash
-git config core.hooksPath .githooks
-```
-
-### Docs with each material change
-
-After a finished development update, add a short English note under `docs/` with
-a unique name and link it from [docs/README.md](./docs/README.md) / the root
 
 
 ## What to work on

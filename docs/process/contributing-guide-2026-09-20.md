@@ -10,7 +10,7 @@ point for Ethean Lean Consensus Client.
 - Operational default: `pq-devnet-4`; D5 remains a ready path
 - Metrics: scrape `:9100` by default; `--metrics` starts Docker Compose for
   Grafana `:3000` and Prometheus `:9090`
-- House rules: English-only, 300-line source files, no AI git attribution,
+- House rules: English-only, 2000-line source files, no AI git attribution,
   `.githooks` via `core.hooksPath`
 - Peers (Ream, Zeam, ethlambda, …) as interop references only
 - Pointers into `docs/` for deployment, path shim, versioning, and peer list

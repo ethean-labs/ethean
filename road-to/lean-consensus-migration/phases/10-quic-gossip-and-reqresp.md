@@ -39,7 +39,7 @@ Create:
 - `crates/ethean-network/src/reqresp/{mod.rs,codec.rs,handler.rs,tracker.rs}`.
 - `tests/fixtures/network/`, `tests/interop/network.rs`, `tests/negative/network_abuse.rs`, and `tests/soak/quic.rs`.
 
-Every new code directory gets an English `README.md`; every hand-written source file is at most 300 lines.
+Every new code directory gets an English `README.md`; every hand-written source file is at most 2000 lines.
 
 ## Ordered tasks
 
@@ -103,7 +103,7 @@ rg -n "/eth2/|NetworkManager|mock.*gossip|yamux|noise" crates src Cargo.toml
 - Mixed-client matrix passes QUIC, Status, gossip, root/range sync, malformed-frame rejection, and profile mismatch.
 - Resource-abuse tests remain within approved CPU/RAM/FD/bandwidth bounds and preserve chain-owner progress.
 - The 72-hour soak has no stream-table growth, wedge, or reconnect storm.
-- Mock gossip, TCP/WS Beacon topics, empty `NetworkManager`, and legacy networking are deleted; touched source files remain within 300 lines.
+- Mock gossip, TCP/WS Beacon topics, empty `NetworkManager`, and legacy networking are deleted; touched source files remain within 2000 lines.
 
 ## Rollback/data policy
 

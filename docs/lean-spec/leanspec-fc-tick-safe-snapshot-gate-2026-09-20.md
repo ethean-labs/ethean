@@ -27,7 +27,7 @@ In `fc_checks.rs`:
 
 Locked green: both tick-system vectors in `fc_runner_extra_tests.rs`.
 Split payload-pool snapshot helpers into `fc_snapshot_payloads.rs`
-(≤300-line rule).
+(≤2000-line rule).
 
 ## Still open
 

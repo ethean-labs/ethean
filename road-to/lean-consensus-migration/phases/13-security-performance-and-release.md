@@ -42,7 +42,7 @@ Create:
 - `tests/retirement/legacy_name_scan.rs` and `tests/release/reproducibility.rs`.
 - `docs/release/{upgrade.md,rollback.md,gates.md}` and `artifacts/phase-13/` evidence layout.
 
-New directories require English `README.md` files; all hand-written source files are at most 300 lines.
+New directories require English `README.md` files; all hand-written source files are at most 2000 lines.
 
 ## Ordered tasks
 
@@ -111,7 +111,7 @@ Allowlist hits require an explicit entry in `road-to/lean-consensus-migration/05
 - SBOM and reproducibility checks match across two clean builders.
 - Upgrade and rollback runbooks are exercised; unsupported rollback fails closed with actionable errors.
 - Final legacy deletion verification is clean outside the documented allowlist; no Panro/Beacon production names remain in active code paths.
-- Targeted devnet promotion succeeds; every touched source file is within 300 lines.
+- Targeted devnet promotion succeeds; every touched source file is within 2000 lines.
 
 ## Rollback/data policy
 

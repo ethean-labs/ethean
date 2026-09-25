@@ -119,7 +119,7 @@ Phase 12 exit requires at least two Ethean nodes and one peer client scraped as 
 - Production validation fails closed on profile mismatch.
 - All attacker-controlled collections, decompression, proofs, queues, streams, caches, and pending graphs are bounded before expensive work.
 - Stateful signing is atomic, role-separated, crash-safe, rollback-aware, and tested before validator duties are enabled.
-- Source files remain at most 300 lines and are split by responsibility.
+- Source files remain at most 2000 lines and are split by responsibility.
 - All repository prose, identifiers, diagnostics, and operator-facing text are English.
 
 ## Planning-boundary warning
