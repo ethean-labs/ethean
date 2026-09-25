@@ -59,25 +59,24 @@ bin/ethean/
 Each package root includes:
 
 - `Cargo.toml`;
-- English `README.md` (responsibility, public entry points, dependencies, I/O ownership, exclusions, architecture link);
-- `src/` with `lib.rs` (library) or `main.rs` (executable).
+- `src/` with `lib.rs` (library) or `main.rs` (executable);
+- optional English `README.md` only when useful as an operator/crate entry point (not required for every package or subfolder).
 
-Optional `tests/`, `benches/`, `examples/` subdirs are created only with real files and local README when the folder holds more than a single trivial file.
+Optional `tests/`, `benches/`, `examples/` subdirs are created only with real files. Do not add a local README by default.
 
 ---
 
 ## README contract
 
-Every directory that holds code, tests, examples, benchmarks, documentation, planning, deployment, observability assets, or tools must have an English `README.md`.
+Folder `README.md` files are **optional**. Agents must not create one in every new
+directory. Prefer:
 
-Organizational READMEs state:
+1. Root `README.md` + `docs/` notes for operator-facing material;
+2. A folder README only when the user asks, or when the folder is a clear entry
+   point that would be confusing without a short note.
 
-1. purpose and retention policy;
-2. naming conventions;
-3. index of important children;
-4. what must not live there.
-
-READMEs must not describe unimplemented behavior as current.
+When a folder README exists, it may state purpose, naming, and an index of
+important children. READMEs must not describe unimplemented behavior as current.
 
 ---
 
@@ -85,11 +84,11 @@ READMEs must not describe unimplemented behavior as current.
 
 | Situation | Action |
 | --- | --- |
-| Directory still required and current | **Preserve**; update README when responsibility shifts |
-| Required directory lost its last file during migration | **Recreate** immediately with README in the same commit |
+| Directory still required and current | **Preserve**; update any existing README when responsibility shifts |
+| Required directory lost its last file during migration | **Recreate** with real content (README optional) |
 | Directory listed in deletion register and fully migrated | **Remove**; verify with register search commands |
 | Directory exists only to preserve old links | **Remove**; fix links to target paths |
-| Temptation to use `.gitkeep` | **Forbidden** — README is the meaningful tracked file |
+| Temptation to use `.gitkeep` | Prefer a real tracked file; do not invent a README solely to hold the tree |
 
 ### Old `src/` rule
 

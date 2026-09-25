@@ -114,8 +114,7 @@ git config core.hooksPath .githooks
 
 After a finished development update, add a short English note under `docs/` with
 a unique name and link it from [docs/README.md](./docs/README.md) / the root
-README when operators need it. See [docs/commit-after-each-file.md](./docs/commit-after-each-file.md)
-and [docs/versioning.md](./docs/versioning.md) for version bumps.
+
 
 ## What to work on
 

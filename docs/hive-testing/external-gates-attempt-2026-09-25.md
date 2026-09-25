@@ -39,9 +39,14 @@ upstream regenerated JSON, then a fixture re-import here.
 
 Operator (or `gh auth login`) still must:
 
-1. Confirm `ghcr.io/ethean-labs/ethean:devnet5` exists.
+1. Confirm `ghcr.io/ethean-labs/ethean:devnet5` exists **and** is anonymously
+   pullable (`tools/hive/check-ghcr.ps1`). As of 2026-09-25 the org package
+   answered private to anonymous token probes — flip Packages visibility to
+   public (Docker workflow now attempts this after each publish).
 2. Clone `ethereum/hive`, run the apply script, open the PR.
 3. Run `./hive --sim lean --client ethean …`.
+
+Follow-up note: [dependabot-ghcr-apitest-honesty-2026-09-25.md](./dependabot-ghcr-apitest-honesty-2026-09-25.md).
 
 ## Rule reminder
 

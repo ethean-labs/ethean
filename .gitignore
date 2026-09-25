@@ -3,10 +3,11 @@ dist/
 # Local cargo patch (leanSig num-bigint vendor); example may be committed.
 .cargo/config.toml
 Cargo.lock.leansig-check.bak
-# Keep Cursor/local agent config out of git; allow CI workflows.
+# Keep Cursor/local agent config out of git; allow CI workflows + Dependabot.
 .github/*
 !.github/workflows/
 !.github/workflows/**
+!.github/dependabot.yml
 .rules
 .cursor/
 # Local research only — never commit or push (see .cursor/rules/12-no-research-on-github.mdc)

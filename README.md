@@ -276,13 +276,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ##  Support
 - **Documentation**: [docs](./docs/)
 - **Docs index**: [docs/README.md](./docs/README.md)
-- **Folder READMEs and local conventions**: [docs/folder-readmes-and-local-conventions.md](./docs/folder-readmes-and-local-conventions.md)
+- **Folder READMEs (optional) and local conventions**: [docs/folder-readmes-and-local-conventions.md](./docs/folder-readmes-and-local-conventions.md)
 - **Lean Consensus migration plans**: [road-to/lean-consensus-migration/README.md](./road-to/lean-consensus-migration/README.md) (active planning library; see also [road-to/README.md](./road-to/README.md))
 - **Source tree**: [src/README.md](./src/README.md)
 - **Lean Consensus tracks**: [leanroadmap.org research tracks](https://leanroadmap.org/#research-tracks)
 - **Lean Consensus R&D (full site)**: [leanroadmap.org](https://leanroadmap.org/)
 - **How we capture that locally**: [docs/leanroadmap-local-notes.md](./docs/leanroadmap-local-notes.md)
 - **Peer Lean clients (reference)**: [docs/peer-reference-clients.md](./docs/peer-reference-clients.md)
+- **ReamLabs leanstart + lean-spec-tests**: [docs/misc/reamlabs-leanstart-lean-spec-tests-2026-09-25.md](./docs/misc/reamlabs-leanstart-lean-spec-tests-2026-09-25.md)
 - **How Ream / ethlambda / Zeam run pq-devnets**: [docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](./docs/peer-clients/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
 - **Peer fixed genesis vs Ethean solo restart**: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](./docs/peer-clients/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md)
 - **Dual mode (persist + ephemeral)**: [docs/dual-mode-persist-and-ephemeral-2026-09-20.md](./docs/storage/dual-mode-persist-and-ephemeral-2026-09-20.md)
@@ -312,6 +313,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **What “external” backlog means**: [docs/what-external-backlog-means-2026-09-24.md](./docs/process/what-external-backlog-means-2026-09-24.md)
 - **Admin events poll**: [docs/external-backlog-and-admin-events-poll-2026-09-24.md](./docs/networking/external-backlog-and-admin-events-poll-2026-09-24.md)
 - **External gates attempt (A2/A3 / fixtures / Hive)**: [docs/external-gates-attempt-2026-09-25.md](./docs/hive-testing/external-gates-attempt-2026-09-25.md)
+- **Dependabot / GHCR / Hive apitest honesty**: [docs/dependabot-ghcr-apitest-honesty-2026-09-25.md](./docs/hive-testing/dependabot-ghcr-apitest-honesty-2026-09-25.md)
 - **Health version + v0 identity**: [docs/health-version-v0-identity-2026-09-25.md](./docs/networking/health-version-v0-identity-2026-09-25.md)
 - **Identity version/ready + v0 ready**: [docs/identity-version-ready-v0-alias-2026-09-25.md](./docs/networking/identity-version-ready-v0-alias-2026-09-25.md)
 - **Duties committee count + events pending**: [docs/duties-committee-count-events-pending-2026-09-25.md](./docs/networking/duties-committee-count-events-pending-2026-09-25.md)
@@ -324,8 +326,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **leanSpec FC payload LMD weights**: [docs/leanspec-fc-payload-lmd-weights-2026-09-20.md](./docs/lean-spec/leanspec-fc-payload-lmd-weights-2026-09-20.md)
 - **Full State SSZ encode/decode**: [docs/state-ssz-encode-decode-complete-2026-09-20.md](./docs/lean-spec/state-ssz-encode-decode-complete-2026-09-20.md)
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/peer-clients/lean-peer-client-research-library-2026-09-19.md)
-- **Language (English only)**: [docs/english.md](./docs/english.md)
-- **Commits (per file, English)**: [docs/commit-after-each-file.md](./docs/commit-after-each-file.md)
 - **GitHub Issues**: [Report bugs](https://github.com/ethean-labs/ethean/issues)
 - **Email**: support@Ethean.io
 

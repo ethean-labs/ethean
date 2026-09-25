@@ -57,7 +57,8 @@ Circular module imports are treated as a design defect. Shared value types move 
 
 ## Directory documentation
 
-Every directory containing code, tests, examples, or planning notes has an English `README.md` that states:
+Folder `README.md` files are optional. Do not create one for every new
+directory. When a folder README exists, it may state:
 
 - the directory's responsibility;
 - its permitted dependencies or parent package;
