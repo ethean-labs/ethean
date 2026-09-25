@@ -47,10 +47,16 @@ sync failures are open gaps, not tonight's work:
   to confirm finalized advances.
 - Same-client late joiner: a 3-validator Ethean-only mesh did not finalize
   within 300 s (aggregator + Type-2 merge cost on a shared host).
+  **Partial fix 2026-09-25:** proof inbox prioritizes Block over Split;
+  Type-2 may retry on intervals 0..=2
+  (`docs/lean-crypto/proof-queue-priority-type2-retry-2026-09-25.md`).
 - Head-behind-finalized recovery: `fork_choice` not readable within 180 s
   during pre-pause catch-up.
   **Partial fix 2026-09-25:** sync horizon uses `max(remote.head, remote.finalized)`
-  so duties stay suppressed while behind a finalized tip.
+  so duties stay suppressed while behind a finalized tip; catch-up also pins
+  the finalized root. **Majority Status tip** avoids chasing a lone ahead
+  adversarial peer
+  (`docs/networking/majority-status-tip-bad-checkpoint-2026-09-25.md`).
 - Two scenarios failed inside the helper itself (its head stayed at 0), so
   they say nothing about Ethean yet.
 

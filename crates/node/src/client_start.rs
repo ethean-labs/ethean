@@ -41,10 +41,12 @@ impl EtheanClient {
                         self.flush_chain_persist();
                     }
                 }
-                Err(error) => tracing::warn!(
-                    %error,
-                    "checkpoint sync failed; continuing from the local genesis"
-                ),
+                Err(error) => {
+                    // leanSpec: startup aborts rather than falling back to genesis.
+                    return Err(crate::Error::Config(format!(
+                        "checkpoint sync failed: {error}"
+                    )));
+                }
             }
         }
         capture_peer_id(&mut self, &cfg);

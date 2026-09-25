@@ -4,6 +4,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 
 - [leanbench alignment notes](leanbench-alignment-notes-2026-09-24.md)
 - [leanmultisig aggregation](leanmultisig-aggregation-2026-09-23.md)
+- [proof queue priority type2 retry](proof-queue-priority-type2-retry-2026-09-25.md)
 - [native xmss backend](native-xmss-backend-2026-09-22.md)
 - [aggregator prove ipc route](aggregator-prove-ipc-route-2026-09-20.md)
 - [attest before prove empty type1](attest-before-prove-empty-type1-2026-09-20.md)

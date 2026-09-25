@@ -16,9 +16,13 @@ Unit tests in `ethean-genesis`:
 - `FakeTime` regression rejection
 - `GenesisBuilder` slot 0 + validator count / indices
 
-## Upstream differential (pending)
+## Upstream differential
 
-Phase 00 pins `fixtures-prod-scheme.tar.gz` (sha256 in phase-00 lock). The full archive is not re-vendored here. Until it is available on the authoring host, genesis **state root** comparison against leanSpec fixture vectors remains an open risk.
+Genesis **state root** and sealed **header root** for prod-scheme 1- and
+4-validator sets are pinned in `ethean-genesis` against leanSpec fill
+parent roots — see
+[`docs/lean-spec/genesis-state-root-pin-2026-09-25.md`](../../../docs/lean-spec/genesis-state-root-pin-2026-09-25.md).
+The full `fixtures-prod-scheme.tar.gz` archive stays local (phase-00 lock).
 
 ## Timing under test
 

@@ -14,6 +14,16 @@
    Run workflow → `extra_tags=devnet5,latest-devnet5`.
 4. Docker Desktop (or a Linux Docker daemon) for a local `./hive` smoke.
 
+## Local smoke when GHCR is private
+
+```powershell
+# Builds ghcr.io/ethean-labs/ethean:devnet5 from this repo, applies the drop-in,
+# and (if hive.exe exists) runs --sim.limit sync:
+.\tools\hive\smoke-local.ps1 -HiveRoot G:\path\to\hive
+```
+
+`-SkipBuild` / `-SkipHiveRun` select stages. See [smoke-local.ps1](./smoke-local.ps1).
+
 ## PowerShell (Windows)
 
 ```powershell

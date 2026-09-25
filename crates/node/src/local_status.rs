@@ -29,10 +29,11 @@ pub fn local_status(owner: &ChainOwner) -> Status {
     }
 }
 
-/// Apply a compatible remote Status into the sync lag gate.
+/// Apply a single remote Status into the sync lag gate (tests / sole peer).
 ///
-/// Horizon is the max of remote head and remote finalized so a late joiner
-/// behind a finalized tip stays duty-suppressed while catching up.
+/// Live multi-peer catch-up uses
+/// [`crate::sync_catchup::apply_preferred_horizon`] so a lone ahead tip cannot
+/// pin the horizon above the agreeing majority.
 pub fn observe_remote_status(
     sync: &mut ethean_sync::SyncStatus,
     local_head: Slot,

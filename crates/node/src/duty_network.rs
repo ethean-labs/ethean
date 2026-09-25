@@ -155,59 +155,46 @@ impl EtheanClient {
             self.refresh_local_status_bytes();
         }
         for (peer, payload) in &budget.status_responses {
-            let Some(facade) = self.swarm.as_mut() else {
-                break;
+            let handshake = {
+                let Some(facade) = self.swarm.as_mut() else {
+                    break;
+                };
+                crate::status_handshake::complete_status_handshake(
+                    &mut self.status_sessions,
+                    &mut self.sync,
+                    &self.owner,
+                    *peer,
+                    payload,
+                    &mut facade.requests,
+                )
             };
-            match crate::status_handshake::complete_status_handshake(
-                &mut self.status_sessions,
-                &mut self.sync,
-                &self.owner,
-                *peer,
-                payload,
-                &mut facade.requests,
-            ) {
+            match handshake {
                 Ok(out) => {
-                    if let Some(remote) = out.remote.clone() {
+                    if let Some(remote) = out.remote {
                         crate::sync_catchup::remember_target(
                             &mut self.sync_targets,
                             *peer,
                             remote,
                         );
                     }
-                    let mut staged = false;
-                    if let Some(blocks_req) = out.blocks_by_root {
-                        staged = true;
-                        facade.enqueue_blocks_outbounds(vec![blocks_req]);
-                        match facade.flush_blocks_outbox() {
-                            Ok(sent) => info!(
-                                peer0 = peer[0],
-                                sent, "blocks-by-root flushed after Status response"
-                            ),
-                            Err(e) => info!(
-                                peer0 = peer[0],
-                                error = %e,
-                                "blocks-by-root staged; flush deferred"
-                            ),
-                        }
-                    }
-                    if let Some(range_req) = out.blocks_by_range {
-                        staged = true;
-                        facade.enqueue_blocks_range_outbounds(vec![range_req]);
-                        match facade.flush_blocks_range_outbox() {
-                            Ok(sent) => info!(
-                                peer0 = peer[0],
-                                sent, "blocks-by-range flushed after Status response"
-                            ),
-                            Err(e) => info!(
-                                peer0 = peer[0],
-                                error = %e,
-                                "blocks-by-range staged; flush deferred"
-                            ),
-                        }
-                    }
-                    if !staged {
-                        info!(peer0 = peer[0], "Status handshake completed; heads match");
-                    }
+                    let local_head = self
+                        .owner
+                        .head_state
+                        .as_ref()
+                        .map(|s| s.slot)
+                        .unwrap_or_default();
+                    crate::sync_catchup::apply_preferred_horizon(
+                        &self.sync_targets,
+                        &mut self.sync,
+                        local_head,
+                    );
+                    info!(
+                        peer0 = peer[0],
+                        lag = self.sync.lag(),
+                        targets = self.sync_targets.len(),
+                        "Status tip remembered; majority catch-up follows"
+                    );
+                    self.continue_sync_catchup();
                 }
                 Err(e) => {
                     info!(peer0 = peer[0], error = %e, "Status handshake failed");
@@ -281,7 +268,7 @@ impl EtheanClient {
             self.sync.observe_local(local_head);
         }
         // After a range/root response (even empty), keep fetching while tips remain ahead.
-        // Do not run on Status alone — handshake already staged the first batch.
+        // Status responses already call continue_sync_catchup after majority tip update.
         if had_block_resp {
             self.continue_sync_catchup();
         }

@@ -61,6 +61,16 @@ impl SyncStatus {
         self.apply_hysteresis();
     }
 
+    /// Replace peer horizon from a preferred-tip recompute (majority Status).
+    ///
+    /// Unlike [`Self::observe`], this may **lower** the horizon when an
+    /// adversarial singleton tip is dropped in favour of agreeing peers.
+    pub fn replace_peer_horizon(&mut self, local_head: Slot, peer_horizon: Slot) {
+        self.local_head = local_head;
+        self.peer_horizon = peer_horizon;
+        self.apply_hysteresis();
+    }
+
     fn apply_hysteresis(&mut self) {
         let lag = self.lag();
         match self.mode {
@@ -112,5 +122,13 @@ mod tests {
         assert!(!s.duties_allowed());
         s.observe_local(Slot::new(11));
         assert!(s.duties_allowed());
+    }
+
+    #[test]
+    fn replace_peer_horizon_may_lower() {
+        let mut s = SyncStatus::new(Slot::new(0), Slot::new(40));
+        s.replace_peer_horizon(Slot::new(5), Slot::new(12));
+        assert_eq!(s.peer_horizon.get(), 12);
+        assert_eq!(s.lag(), 7);
     }
 }

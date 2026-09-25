@@ -14,6 +14,14 @@ the curated operator-facing summary, not a dump of every working note.
 
 ### Added
 
+- Majority Status finalized tip for catch-up and duty horizon so a lone ahead
+  adversarial peer cannot hijack sync (Hive bad-checkpoint rejection path).
+- Head-behind-finalized catch-up pins the finalized root; local Hive smoke
+  script `tools/hive/smoke-local.ps1`.
+- Proof-service priority queue (Block > Attestation > Split), defer Split while
+  a block proof is in flight, and mesh Type-2 request retries on intervals 0..=2.
+- leanSpec prod-scheme genesis state / sealed header root pins for 1 and 4
+  validators (`PROD4_GENESIS_*`, `PROD1_GENESIS_BLOCK_ROOT`).
 - Late-joiner sync: monotonic peer horizon, duty ticks observe chain head,
   Status tip follow-up range/root after each block response, horizon uses
   `max(head, finalized)` (`docs/networking/late-joiner-sync-catchup-2026-09-25.md`).
@@ -22,8 +30,9 @@ the curated operator-facing summary, not a dump of every working note.
   visibility for anonymous Hive pulls; `hive_rpc_compat_v0_surface` route lock.
 - `--checkpoint-sync-url` bootstraps from a peer's `/lean/v0` finalized state
   and block pair after verifying they belong together (leanSpec checkpoint
-  sync); the last leanMetrics series are recorded: connected and mesh peers by
-  client family through libp2p identify, and fork-choice reorg depth.
+  sync); failed fetch aborts startup; the last leanMetrics series are recorded:
+  connected and mesh peers by client family through libp2p identify, and
+  fork-choice reorg depth.
 - `crates/spec-fixtures` runs every case of the leanSpec ssz, networking codec,
   slot clock, justifiability, Poseidon, sync, single-message proof and API
   endpoint suites, in addition to the full fork-choice and state-transition

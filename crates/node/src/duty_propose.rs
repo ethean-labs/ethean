@@ -74,12 +74,13 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
         }
     }
 
-    // Interval 0 is the publish window. Local finality also accepts the first
-    // tick of a future slot so solo runs survive a skipped interval.
+    // Interval 0 is the preferred publish window. Intervals 1–2 still allow a
+    // Type-2 request when interval 0 was blocked by a busy prover queue
+    // (same-client meshes). Local finality accepts any first tick of a future slot.
     let future_slot = tick.slot.get() > pre.slot.get();
     let publish_allowed = matches!(decide_publish(tick, tick, true), PublishDecision::Allow)
         && future_slot
-        && (tick.interval == 0 || owner.local_finality);
+        && (tick.interval <= 2 || owner.local_finality);
     let Ok(root) = plan.block_root() else {
         return out;
     };
