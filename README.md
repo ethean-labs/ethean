@@ -283,6 +283,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Lean Consensus R&D (full site)**: [leanroadmap.org](https://leanroadmap.org/)
 - **How we capture that locally**: [docs/leanroadmap-local-notes.md](./docs/leanroadmap-local-notes.md)
 - **Peer Lean clients (reference)**: [docs/peer-reference-clients.md](./docs/peer-reference-clients.md)
+- **ReamLabs leanstart + lean-spec-tests**: [docs/misc/reamlabs-leanstart-lean-spec-tests-2026-09-25.md](./docs/misc/reamlabs-leanstart-lean-spec-tests-2026-09-25.md)
 - **How Ream / ethlambda / Zeam run pq-devnets**: [docs/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](./docs/peer-clients/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md)
 - **Peer fixed genesis vs Ethean solo restart**: [docs/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md](./docs/peer-clients/peer-clients-fixed-genesis-vs-ethean-solo-2026-09-20.md)
 - **Dual mode (persist + ephemeral)**: [docs/dual-mode-persist-and-ephemeral-2026-09-20.md](./docs/storage/dual-mode-persist-and-ephemeral-2026-09-20.md)
