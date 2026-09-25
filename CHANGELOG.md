@@ -14,6 +14,9 @@ the curated operator-facing summary, not a dump of every working note.
 
 ### Added
 
+- Dependabot weekly updates for Cargo and GitHub Actions; Hive GHCR probe
+  (`tools/hive/check-ghcr.ps1`); Docker workflow best-effort public package
+  visibility for anonymous Hive pulls; `hive_rpc_compat_v0_surface` route lock.
 - `--checkpoint-sync-url` bootstraps from a peer's `/lean/v0` finalized state
   and block pair after verifying they belong together (leanSpec checkpoint
   sync); the last leanMetrics series are recorded: connected and mesh peers by

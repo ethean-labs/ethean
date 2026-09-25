@@ -11,8 +11,8 @@ Design notes, sprint write-ups, and working plans for the client.
 - Code of conduct: [../CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)
 - Peer reference list: [peer-reference-clients.md](./peer-reference-clients.md)
 - House rules: [english.md](./english.md), [versioning.md](./versioning.md),
-  [source-file-size-limit.md](./source-file-size-limit.md),
-  [commit-after-each-file.md](./commit-after-each-file.md)
+  [source-file-size-limit.md](./source-file-size-limit.md)
+  (commits: on request / single commit — see [CONTRIBUTING.md](../CONTRIBUTING.md))
 - Migration library: [../road-to/lean-consensus-migration/README.md](../road-to/lean-consensus-migration/README.md)
 - Lean R&D pointer: [leanroadmap-local-notes.md](./leanroadmap-local-notes.md)
 
@@ -24,7 +24,7 @@ Design notes, sprint write-ups, and working plans for the client.
 - [pq-devnet / operator run](./pq-devnet/README.md) (12 notes)
 - [leanSig / leanVM / aggregation](./lean-crypto/README.md) (24 notes)
 - [Storage / persist / prune](./storage/README.md) (8 notes)
-- [Hive / fixture testing](./hive-testing/README.md) (10 notes)
+- [Hive / fixture testing](./hive-testing/README.md) (11 notes)
 - [Lean migration phases](./migration/README.md) (25 notes)
 - [Process / README / git house rules](./process/README.md) (16 notes)
 - [Peer client references](./peer-clients/README.md) (6 notes)

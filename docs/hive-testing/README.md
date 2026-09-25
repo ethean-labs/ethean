@@ -3,6 +3,7 @@
 Dated development notes for this topic. Index: [../README.md](../../README.md).
 
 - [external gates attempt](external-gates-attempt-2026-09-25.md)
+- [dependabot ghcr apitest honesty](dependabot-ghcr-apitest-honesty-2026-09-25.md)
 - [hive client docker scaffold](hive-client-docker-scaffold-2026-09-20.md)
 - [hive and lean-quickstart registration](hive-quickstart-registration-2026-09-24.md)
 - [hive lean config consume](hive-lean-config-consume-2026-09-20.md)

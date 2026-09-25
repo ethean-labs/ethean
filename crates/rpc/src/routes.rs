@@ -175,4 +175,23 @@ mod tests {
             Route::ChainForkChoice
         );
     }
+
+    /// Paths ethereum/hive `simulators/lean` `rpc_compat` probes today.
+    /// Keep this list honest: do not claim extra hive routes here.
+    #[test]
+    fn hive_rpc_compat_v0_surface() {
+        let required = [
+            ("GET", "/lean/v0/health", Route::Health),
+            ("GET", "/lean/v0/checkpoints/justified", Route::CheckpointsJustified),
+            ("GET", "/lean/v0/fork_choice", Route::ForkChoice),
+            ("GET", "/lean/v0/states/finalized", Route::StatesFinalized),
+            ("GET", "/lean/v0/blocks/finalized", Route::BlocksFinalized),
+        ];
+        for (method, path, want) in required {
+            assert_eq!(match_route(method, path).unwrap(), want, "{method} {path}");
+        }
+        // Operator extras are not hive rpc_compat requirements.
+        assert!(match_route("GET", "/lean/v0/validator/duties").is_err());
+        assert!(match_route("GET", "/metrics").is_ok());
+    }
 }
