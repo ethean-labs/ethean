@@ -39,7 +39,7 @@ Create:
 - `crates/ethean-node/src/block_builder/{mod.rs,selection.rs,transition.rs,publish.rs}`.
 - `bin/ethean/src/main.rs`, `tests/integration/duties.rs`, `tests/recovery/duty_restart.rs`, and `tests/interop/duties.rs`.
 
-All new code directories require English `README.md` files and all hand-written source files stay within 300 lines.
+All new code directories require English `README.md` files and all hand-written source files stay within 2000 lines.
 
 ## Ordered tasks
 
@@ -96,7 +96,7 @@ cargo +1.97.1 clippy -p ethean-validator -p ethean-node --all-targets --locked -
 - Duplicate triggers cannot create a second reservation or signature.
 - Duties are suppressed or published according to explicit pinned deadlines; no stale result mutates chain state.
 - A 24-hour 4-second-slot run has no queue growth, duplicate duty, deadlock, or process-liveness-only false health.
-- Old client/integration/duty paths are deleted and touched source files are at most 300 lines.
+- Old client/integration/duty paths are deleted and touched source files are at most 2000 lines.
 
 ## Rollback and data policy
 

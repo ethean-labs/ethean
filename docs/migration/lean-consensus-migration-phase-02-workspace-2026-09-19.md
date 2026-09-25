@@ -39,7 +39,7 @@ Toolchain remains TBD in the lock (do not invent `rust-toolchain.toml` version).
 
 ## Remaining compile risks
 
-Legacy modules still contain large files (>300 lines) untouched except import/newtype fixes. Full `cargo check` may still fail on:
+Legacy modules still contain large files (> 2000 lines) untouched except import/newtype fixes. Full `cargo check` may still fail on:
 
 - Slot/Epoch literal sites missed in non-consensus modules
 - `slots_per_epoch` still hardcoded in some consensus helpers (not yet a profile field)

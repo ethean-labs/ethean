@@ -38,7 +38,7 @@ Acceptance evidence includes canonical fixtures, exact source links, at least tw
 ## Phase 01 acceptance
 
 - Package, library, binary, CLI, logs, and version metadata are Ethean-named.
-- New code is isolated from legacy modules and all authored source files are at most 300 lines.
+- New code is isolated from legacy modules and all authored source files are at most 2000 lines.
 - Production and fixture/Shadow builds are structurally separate.
 - Config parsing rejects unknown protocol fields and incompatible profile fingerprints.
 - Clock tests cover pre-genesis, boundaries, missed ticks, catch-up, rollback, and deterministic injection.

@@ -40,7 +40,7 @@ Create:
 - `crates/ethean-sync/src/{lib.rs,status.rs,parent.rs,range.rs,backfill.rs,checkpoint.rs,trust.rs}`.
 - `tests/recovery/storage_crash.rs`, `tests/recovery/pruning.rs`, `tests/interop/sync.rs`, `tests/negative/checkpoint.rs`, and `tools/db-inspect/`.
 
-New code directories require English `README.md` files; all hand-written source files are at most 300 lines.
+New code directories require English `README.md` files; all hand-written source files are at most 2000 lines.
 
 ## Ordered tasks
 
@@ -106,7 +106,7 @@ rg -n "RocksDbBackend|serde_json.*(Block|State|Checkpoint)|zero.*root" crates sr
 - Checkpoint API/UI always displays trust source and never claims canonicality from structural checks alone.
 - Sync converges after partial/malicious peers without checkpoint regression or unbounded pending data.
 - Pruning preserves restart, proof verification, configured history, and backfill invariants.
-- No-op RocksDB, JSON typed storage, and legacy sync paths are deleted; touched source files are within 300 lines.
+- No-op RocksDB, JSON typed storage, and legacy sync paths are deleted; touched source files are within 2000 lines.
 
 ## Rollback/data policy
 

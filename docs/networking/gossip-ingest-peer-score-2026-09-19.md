@@ -16,7 +16,7 @@
 
 ## Layout
 
-- `boot_network` extracts UDP/QuicSwarm bind from `client.rs` (≤300 line rule)
+- `boot_network` extracts UDP/QuicSwarm bind from `client.rs` (≤2000 line rule)
 - `swarm_pump::PumpBudgetResult` carries `drained` + `accepted`
 
 ## Verification

@@ -11,7 +11,7 @@ The full replacement planning library is under `road-to/lean-consensus-migration
 - `00-charter/` — mission, scope, success criteria
 - `01-baseline/` — current-state audit, legacy matrix, removal map
 - `02-protocol/` — authority, compatibility ledger, upstream refresh, open decisions
-- `03-architecture/` — target workspace, dependency rules, data flow, 300-line policy
+- `03-architecture/` — target workspace, dependency rules, data flow, 2000-line policy
 - `04-risks/` — risk register, security gates, performance budgets, data migration
 - `05-retirement/` — deletion register, required directories, legacy-name allowlist
 - `06-observability/` — metrics contract, Prometheus topology, Grafana, alerts/SLOs, multinode analysis

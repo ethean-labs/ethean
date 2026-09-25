@@ -37,7 +37,7 @@ cargo audit
 ## Adding features
 
 1. Pick the crate that owns the concern (types, transition, network, node, …).
-2. Keep each source file at 300 lines or fewer; split by responsibility.
+2. Keep each source file at 2000 lines or fewer; split by responsibility.
 3. Add tests with the change; keep public docs in English.
 4. Follow [CONTRIBUTING.md](../../CONTRIBUTING.md) and
    [source-file-size-limit.md](../source-file-size-limit.md).

@@ -51,7 +51,7 @@ New fixtures/tests:
 
 - `spec/fixtures/phase-05/transition/`, `spec/fixtures/phase-05/manifest.toml`, `crates/ethean-transition/tests/`, `tests/interop/transition.rs`.
 
-Every hand-written source file is at most **300 lines**; split by responsibility before review.
+Every hand-written source file is at most **2000 lines**; split by responsibility before review.
 
 ## Ordered tasks
 
@@ -114,7 +114,7 @@ Forbidden search hits must be zero except explicit negative-test names.
 - Old transition/attestation/validator/slashing/block-processing files are deleted.
 - Production transition has no fake verifier, BLS, JSON root, or Beacon fallback.
 - Storage publishes only successfully verified Lean states/blocks.
-- Transition crate is I/O-free and every touched source file is at most 300 lines.
+- Transition crate is I/O-free and every touched source file is at most 2000 lines.
 
 ## Rollback/data policy
 

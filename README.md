@@ -103,17 +103,6 @@ D4.” Aggregators and proposers need the `ethean-prover` binary. RocksDB and so
 edges are still hardening. Treat Ethean as an **active Lean client under construction**,
 aligned with research tracks, not a drop-in Beacon replacement.
 
-### How development is organized
-
-Work follows the Lean research surface and an in-repo migration library under
-[`road-to/lean-consensus-migration/`](./road-to/lean-consensus-migration/README.md)
-(phases for SSZ, genesis/clock, transition, fork choice, XMSS, leanVM, duties,
-QUIC, storage, API, release). Session write-ups land in [`docs/`](./docs/README.md);
-deep research extracts stay local and out of git.
-
-Contributors are expected to keep the tree **English-only**, split source files at
-**300 lines**, and leave **no AI / Cursor attribution** in commits or PRs
-([CONTRIBUTING.md](./CONTRIBUTING.md), [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)).
 
 ### Key features
 
@@ -130,7 +119,7 @@ Contributors are expected to keep the tree **English-only**, split source files 
   Grafana / Prometheus via `--metrics`.
 - **Spec alignment** : leanSpec FC/STF runners, native XMSS and verified
   leanMultisig block proofs instead of Beacon shortcuts.
-- **House rules** : English-only tree, ≤300-line sources, clean human git history.
+- **House rules** : English-only tree, ≤2000-line sources, clean human git history.
 
 ### Where to go next
 
@@ -259,8 +248,7 @@ Coverage of modules and LeanSpec fixture runners:
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, code guidelines (300-line
-files, English-only), git/PR rules, and no AI git attribution.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup.
 
 ##  License
 

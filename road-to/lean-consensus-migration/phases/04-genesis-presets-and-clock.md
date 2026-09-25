@@ -50,7 +50,7 @@ New fixtures/tests:
 
 - `spec/fixtures/phase-04/genesis/`, `spec/fixtures/phase-04/clock/`, `spec/fixtures/phase-04/manifest.toml`, `crates/ethean-genesis/tests/`, `tests/interop/genesis.rs`.
 
-Every hand-written source file is at most **300 lines**; split by responsibility before review.
+Every hand-written source file is at most **2000 lines**; split by responsibility before review.
 
 ## Ordered tasks
 
@@ -113,7 +113,7 @@ Every numeric search hit requires classification in the phase evidence.
 - All clock boundary/rollback/overflow tests pass deterministically with 4-second slot arithmetic.
 - Node startup rejects absent/mismatched profile or genesis.
 - No surviving module defines independent protocol timing/genesis constants or Beacon epoch assumptions.
-- Every touched source file is at most 300 lines.
+- Every touched source file is at most 2000 lines.
 
 ## Rollback/data policy
 

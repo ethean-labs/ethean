@@ -15,7 +15,7 @@ owner field, and publish `ethean_fc_reorg_total` from real head moves.
   finality promotion call `advance_head` / `refresh_fc_view`
 - Metrics: `safe_target_slot()` from the owner; `record_fc_reorg_total` sets
   the absolute counter each scrape
-- Split durable/range helpers into `metrics/record_persist.rs` (≤300 lines)
+- Split durable/range helpers into `metrics/record_persist.rs` (≤2000 lines)
 
 ## Still open
 

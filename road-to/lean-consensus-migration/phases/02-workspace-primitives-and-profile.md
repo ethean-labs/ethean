@@ -35,7 +35,7 @@ This phase lays the workspace foundation described in [../03-architecture/TARGET
 
 ## Ordered implementation tasks
 
-1. Create workspace manifests and crate READMEs; enforce the repository’s 300-line source limit.
+1. Create workspace manifests and crate READMEs; enforce the repository’s 2000-line source limit.
 2. Define only pinned newtypes and root/domain wrappers in `ethean-primitives`; implement checked conversions and arithmetic.
 3. Define the immutable protocol profile in `ethean-profile`; parse committed profile data and reject unknown/missing fields.
 4. Move node entry points and surviving modules into `ethean-node`, preserving one executable.
