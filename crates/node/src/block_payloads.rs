@@ -50,7 +50,10 @@ pub fn seed_known_payloads(
             .prover
             .as_ref()
             .is_some_and(|p| p.attestation_in_flight(&data_root));
-        if covered || in_flight {
+        // Defer Split while a Type-2 block proof is in flight so the critical
+        // path is not queued behind reaggregation on a busy host.
+        let block_busy = owner.prover.as_ref().is_some_and(|p| p.block_in_flight());
+        if covered || in_flight || block_busy {
             continue;
         }
         let job = ProofJob::Split {

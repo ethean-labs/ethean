@@ -27,9 +27,11 @@ slot 0 (`docs/hive-testing/local-hive-run-2026-09-24.md`). Root cause in-repo:
 
 ## Still open
 
-- Same-client 3-validator finality under Type-2 / prover load (perf).
+- Same-client 3-validator finality under Type-2 / prover load (perf; partial
+  proof-queue fix in lean-crypto notes).
 - Hive re-run of the sync suite (needs Docker + public `:devnet5`).
-- Full genesis state-root pin vs leanSpec `genesis.ssz`.
+- Bad-checkpoint rejection: **in-repo majority tip** landed — see
+  [majority-status-tip-bad-checkpoint-2026-09-25.md](./majority-status-tip-bad-checkpoint-2026-09-25.md).
 
 ## Smoke
 

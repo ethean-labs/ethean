@@ -141,7 +141,7 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
 mod tests {
     use super::*;
     use crate::local_attester::LocalAttester;
-    use ethean_primitives::{Bytes52, Slot, ValidatorIndex, HASH32_ZERO};
+    use ethean_primitives::{Bytes52, Slot, ValidatorIndex};
     use ethean_types::{BlockHeader, GenesisConfig, State, Validator};
 
     fn state_n(n: usize) -> State {

@@ -199,10 +199,9 @@ impl EtheanClient {
             }
         }
         if proposer_loaded && !self.owner.syncing {
-            // Visibility matches try_plan_proposal: publish window is interval 0
-            // (local_finality may still propose on a late first tick — duties
-            // stay conservative and only advertise interval 0).
-            if tick_interval == 0 {
+            // Visibility matches try_plan_proposal: Type-2 request window is
+            // intervals 0..=2 (retry when the prover queue was busy).
+            if tick_interval <= 2 {
                 let n = self
                     .owner
                     .head_state

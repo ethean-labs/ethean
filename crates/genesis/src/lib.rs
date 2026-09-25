@@ -7,6 +7,7 @@ mod clock;
 mod config_yaml;
 mod error;
 mod hex;
+mod leanspec_pins;
 mod loader;
 
 pub use builder::{
@@ -18,4 +19,8 @@ pub use config_yaml::{
 };
 pub use error::{ClockError, GenesisError};
 pub use hex::decode_hex_fixed;
+pub use leanspec_pins::{
+    prod_scheme_genesis, seal_genesis_header, PROD1_GENESIS_BLOCK_ROOT, PROD4_GENESIS_BLOCK_ROOT,
+    PROD4_GENESIS_STATE_ROOT,
+};
 pub use loader::load_genesis_ssz;

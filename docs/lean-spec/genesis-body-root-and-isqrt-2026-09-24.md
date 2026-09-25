@@ -16,5 +16,7 @@ a test recomputes it from `BlockBody::default()`.
 `math.isqrt`. The helper is now an exact integer floor square root and is tested
 against a reference loop for deltas up to 10 000 and near `u64::MAX`.
 
-Still open: pin the full genesis state root against a leanSpec-generated
-`genesis.ssz` for a small validator set (needs the leanSpec CLI run locally).
+Still open: ~~pin the full genesis state root against a leanSpec-generated
+`genesis.ssz` for a small validator set~~ — **done** via prod-scheme pins in
+`crates/genesis/src/leanspec_pins.rs` (see
+[genesis-state-root-pin-2026-09-25.md](./genesis-state-root-pin-2026-09-25.md)).

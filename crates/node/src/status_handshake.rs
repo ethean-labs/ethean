@@ -1,14 +1,13 @@
 //! Drive StatusSessionBook from QuicSwarm pump events.
 
 use crate::chain_owner::ChainOwner;
-use crate::local_status::{local_status, observe_remote_status};
+use crate::local_status::local_status;
 use ethean_network::{
-    prepare_blocks_by_range_outbound, prepare_blocks_by_root_outbound,
     OutboundBlocksByRangeRequest, OutboundBlocksByRootRequest, PumpEvent, RequestTracker,
     StatusSessionBook,
 };
 use ethean_network_wire::Status;
-use ethean_primitives::{Hash32, Slot};
+use ethean_primitives::Hash32;
 use ethean_sync::SyncStatus;
 use tracing::info;
 
@@ -18,12 +17,12 @@ use tracing::info;
 /// threshold so deep catch-up does not double-fetch root + range.
 pub const RANGE_PREFER_LAG_SLOTS: u64 = 4;
 
-/// Blocks fetch requests staged after a successful Status handshake.
+/// Result of a Status handshake. Block catch-up is staged by `sync_catchup`.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct StatusSyncOutbounds {
-    /// Immediate head catch-up via blocks-by-root (when heads differ and lag is small).
+    /// Always `None` — majority catch-up stages via `sync_catchup`.
     pub blocks_by_root: Option<OutboundBlocksByRootRequest>,
-    /// Deep slot catch-up via blocks-by-range (when remote head slot lag is large).
+    /// Always `None` — majority catch-up stages via `sync_catchup`.
     pub blocks_by_range: Option<OutboundBlocksByRangeRequest>,
     /// Remote Status tip (for follow-up catch-up while still behind).
     pub remote: Option<Status>,
@@ -64,46 +63,31 @@ pub fn on_pump_event(book: &mut StatusSessionBook, event: &PumpEvent, local: &St
     }
 }
 
-/// Complete a handshake with remote Status bytes and stage block sync requests.
+/// Complete a handshake with remote Status bytes.
+///
+/// Block catch-up is **not** staged here: the caller remembers the tip and runs
+/// majority-aware [`crate::sync_catchup::prepare_follow_up`] so a lone ahead
+/// adversarial peer cannot hijack sync when honest helpers agree.
 pub fn complete_status_handshake(
     book: &mut StatusSessionBook,
     sync: &mut SyncStatus,
-    owner: &ChainOwner,
+    _owner: &ChainOwner,
     peer: Hash32,
     remote_bytes: &[u8],
-    tracker: &mut RequestTracker,
+    _tracker: &mut RequestTracker,
 ) -> Result<StatusSyncOutbounds, String> {
     let exchange = book
         .ingest_remote(peer, remote_bytes)
         .map_err(|e| e.to_string())?;
-    let local_head = owner
-        .head_state
-        .as_ref()
-        .map(|s| s.slot)
-        .unwrap_or(Slot::new(exchange.local.head_slot()));
-    observe_remote_status(sync, local_head, &exchange.remote);
+    let _ = sync;
     info!(
         peer_head = exchange.remote.head_slot(),
-        lag = sync.lag(),
+        peer_finalized = exchange.remote.finalized_slot(),
         "Status handshake completed"
     );
-    let lag = exchange.remote.head_slot().saturating_sub(local_head.get());
-    let (blocks_by_root, blocks_by_range) = if lag >= RANGE_PREFER_LAG_SLOTS {
-        (
-            None,
-            prepare_blocks_by_range_outbound(peer, local_head.get(), &exchange.remote, tracker)
-                .map_err(|e| e.to_string())?,
-        )
-    } else {
-        (
-            prepare_blocks_by_root_outbound(peer, owner.head_root, &exchange.remote, tracker)
-                .map_err(|e| e.to_string())?,
-            None,
-        )
-    };
     Ok(StatusSyncOutbounds {
-        blocks_by_root,
-        blocks_by_range,
+        blocks_by_root: None,
+        blocks_by_range: None,
         remote: Some(exchange.remote),
     })
 }
