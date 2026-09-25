@@ -325,9 +325,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **leanSpec FC payload LMD weights**: [docs/leanspec-fc-payload-lmd-weights-2026-09-20.md](./docs/lean-spec/leanspec-fc-payload-lmd-weights-2026-09-20.md)
 - **Full State SSZ encode/decode**: [docs/state-ssz-encode-decode-complete-2026-09-20.md](./docs/lean-spec/state-ssz-encode-decode-complete-2026-09-20.md)
 - **Seven-client source research**: [docs/lean-peer-client-research-library-2026-09-19.md](./docs/peer-clients/lean-peer-client-research-library-2026-09-19.md)
-- **Language (English only)**: [docs/english.md](./docs/english.md)
-- **Commits (per file, English)**: [docs/commit-after-each-file.md](./docs/commit-after-each-file.md)
-- **GitHub Issues**: [Report bugs](https://github.com/ethean-labs/ethean/issues)
+
 - **Email**: support@Ethean.io
 
 ---

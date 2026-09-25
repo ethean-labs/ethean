@@ -12,7 +12,7 @@ Design notes, sprint write-ups, and working plans for the client.
 - Peer reference list: [peer-reference-clients.md](./peer-reference-clients.md)
 - House rules: [english.md](./english.md), [versioning.md](./versioning.md),
   [source-file-size-limit.md](./source-file-size-limit.md),
-  [commit-after-each-file.md](./commit-after-each-file.md)
+  [commit-after-each-file.md](./commit-after-each-file.md) (commit on request)
 - Migration library: [../road-to/lean-consensus-migration/README.md](../road-to/lean-consensus-migration/README.md)
 - Lean R&D pointer: [leanroadmap-local-notes.md](./leanroadmap-local-notes.md)
 
