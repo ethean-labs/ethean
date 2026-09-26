@@ -1460,7 +1460,7 @@ name = "ethean-network"
 version = "0.1.70"
 dependencies = [
  "async-trait",
- "base64 0.22.1",
+ "base64 0.23.1",
  "bs58",
  "ethean-network-wire",
  "ethean-primitives",
