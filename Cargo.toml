@@ -65,7 +65,7 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "ansi"] }
 clap = { version = "4.0", features = ["derive"] }
 tempfile = "3.8"
-libp2p = { version = "0.54", default-features = false, features = ["quic", "tokio", "ping", "macros", "secp256k1"] }
+libp2p = { version = "0.57", default-features = false, features = ["quic", "tokio", "ping", "macros", "secp256k1"] }
 
 [profile.release]
 lto = true
