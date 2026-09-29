@@ -12,4 +12,4 @@ pub use attestations::{candidates_from_pool, ProofVariant};
 pub use publish::{decide_publish, PublishDecision};
 pub use selection::select_parent;
 pub use spec_select::{select_body, SelectedBody};
-pub use transition::{plan_from_pool, PlanTransition};
+pub use transition::{plan_from_pool, PlanTransition, DEFAULT_MAX_BLOCK_ATTESTATION_DATA};

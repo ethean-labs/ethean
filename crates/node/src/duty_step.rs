@@ -59,9 +59,13 @@ pub fn apply_wall_step(
             events.push(ChainEvent::DutySuppressed { tick, reason });
         } else {
             events.extend(crate::duty_attest::try_local_attest(owner, tick));
-            events.extend(crate::aggregation_duty::schedule_aggregations(owner));
+            // Block jobs go first: the prover runs one job at a time, and an
+            // aggregate submitted ahead would be picked up before the block.
             events.extend(try_plan_proposal(owner, tick));
             events.extend(try_plan_next_slot_proposal(owner, tick));
+            if tick.interval == crate::aggregation_duty::AGGREGATION_INTERVAL {
+                events.extend(crate::aggregation_duty::schedule_aggregations(owner));
+            }
         }
     }
     Ok(events)

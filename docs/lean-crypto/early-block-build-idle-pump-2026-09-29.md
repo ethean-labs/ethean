@@ -3,7 +3,9 @@
 ## Problem
 
 At leanVM `e2592df4` the block's Type-2 merge takes about 3.3 s on a dev
-machine (Type-1 about 0.33 s, cold start about 4 s, verify about 33 ms). lstar
+machine for two components (Type-1 about 0.5 s, cold start about 4 s, verify
+about 33 ms; scaling in
+[prover-timing-block-data-cap-2026-09-29.md](prover-timing-block-data-cap-2026-09-29.md)). lstar
 slots are 4 s with five 0.8 s intervals. Two things made the block even later:
 
 1. The proposer started the merge at interval 0 of its own slot, so the block

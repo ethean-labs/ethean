@@ -14,3 +14,4 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [start pq devnet 5 network target](start-pq-devnet-5-network-target-2026-09-19.md)
 - [working client pq devnet 5 plan](working-client-pq-devnet-5-plan-2026-09-19.md)
 - [wait-for-genesis-2026-09-24.md](./wait-for-genesis-2026-09-24.md) — duty loops idle until `GENESIS_TIME` instead of exiting (hive / quickstart start clients before genesis)
+- [local-proving-devnet-windows-2026-09-29.md](./local-proving-devnet-windows-2026-09-29.md) — `ethean devnet-init` + `scripts/local-devnet.ps1`: N proving nodes with PROD keys on one host

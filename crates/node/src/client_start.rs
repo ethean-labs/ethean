@@ -15,9 +15,13 @@ impl EtheanClient {
     /// Verify schema, smoke health, run the configured duty loop, record metrics.
     pub async fn start_with(mut self, cfg: StartConfig) -> Result<()> {
         self.apply_local_roles(cfg.roles);
+        if !cfg.roles.local_finality {
+            warm_proof_verifier();
+        }
         self.bootnode_count = cfg.network.bootnodes.len() as u64;
         self.network_label = cfg.network.id.as_str().to_string();
         self.prune_keep_slots = cfg.prune_keep_slots;
+        self.owner.max_block_attestation_data = cfg.max_block_attestation_data;
         if !cfg.aggregate_subnet_ids.is_empty() {
             info!(
                 ids = ?cfg.aggregate_subnet_ids,
@@ -77,6 +81,25 @@ impl EtheanClient {
         self.finish_observability(&events)?;
         self.flush_chain_persist();
         Ok(())
+    }
+}
+
+/// Compile the leanMultisig verifier bytecode off the duty loop. The first
+/// proof verification otherwise pays it inline: 5–10 s in release, long
+/// enough to miss several intervals on the first gossiped block.
+fn warm_proof_verifier() {
+    let spawned = std::thread::Builder::new()
+        .name("lean-verifier-setup".into())
+        .spawn(|| {
+            let started = std::time::Instant::now();
+            ethean_multisig::init_verifier();
+            info!(
+                elapsed_ms = started.elapsed().as_millis() as u64,
+                "leanMultisig verifier ready"
+            );
+        });
+    if let Err(e) = spawned {
+        tracing::warn!(error = %e, "verifier warm-up thread not started");
     }
 }
 

@@ -41,17 +41,26 @@ impl ForkChoiceStore {
             .collect()
     }
 
-    /// Pending votes for safe-target (payload pool first).
+    /// Pending votes for safe-target: newest per validator across the pending
+    /// payload pool and verified single votes.
+    ///
+    /// leanSpec counts pending aggregates only, but a Type-1 proof often lands
+    /// after interval 3; taking payloads alone then lets one late aggregate hide
+    /// this slot's single votes and drops the safe target back to justified.
     pub(crate) fn relevant_new_votes(&self) -> HashMap<ValidatorIndex, AttestationData> {
-        let from_payloads = self.votes_from_new_payloads();
-        if !from_payloads.is_empty() {
-            return from_payloads;
+        let mut votes = self.votes_from_new_payloads();
+        for (validator, data) in &self.latest_new_attestations {
+            if data.head.slot <= self.latest_finalized.slot {
+                continue;
+            }
+            match votes.get(validator) {
+                Some(existing) if existing.slot >= data.slot => {}
+                _ => {
+                    votes.insert(*validator, *data);
+                }
+            }
         }
-        self.latest_new_attestations
-            .iter()
-            .filter(|(_, data)| data.head.slot > self.latest_finalized.slot)
-            .map(|(k, v)| (*k, *v))
-            .collect()
+        votes
     }
 
     /// Ancestor weights from the finalized checkpoint (leanSpec `compute_block_weights`).

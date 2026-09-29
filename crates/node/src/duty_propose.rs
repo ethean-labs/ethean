@@ -17,7 +17,7 @@ use ethean_metrics::lean::{inc, observe_since};
 use ethean_multisig::{KeyedProof, LeanMultisigVerifier};
 use ethean_primitives::{Slot, ValidatorIndex};
 use ethean_transition::{apply_block, TransitionContext};
-use ethean_types::{MultiMessageAggregate, SignedBlock};
+use ethean_types::{MultiMessageAggregate, SignedBlock, State};
 use ethean_validator::DutyTick;
 use std::time::Instant;
 
@@ -47,9 +47,23 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     if owner.block_proof_slot == Some(tick.slot.get()) {
         return out;
     }
+    // One block proof at a time: planning now would be thrown away.
+    if !owner.local_finality && owner.prover.as_ref().is_some_and(|p| p.block_in_flight()) {
+        tracing::debug!(
+            slot = tick.slot.get(),
+            "proposal waits: an earlier block proof is still running"
+        );
+        return out;
+    }
     let proposer = ValidatorIndex::new(tick.slot.get() % n);
     let build_started = Instant::now();
     let known_roots = owner.known_block_roots();
+    // Solo blocks carry no proof, so only proved blocks pay the merge budget.
+    let max_data = if owner.local_finality {
+        ethean_types::MAX_ATTESTATIONS_DATA
+    } else {
+        owner.block_attestation_data_cap()
+    };
     let planned = plan_from_pool(
         &owner.aggregates,
         owner.head_root,
@@ -58,6 +72,7 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
         &pre,
         profile,
         &known_roots,
+        max_data,
     );
     observe_since("lean_block_building_time_seconds", &[], build_started);
     let mut plan = match planned {
@@ -198,18 +213,39 @@ fn request_block_proof(
     ])
 }
 
+/// Pre-state for a finished block proof, or why the plan went stale.
+///
+/// With a live store the block stays publishable while its parent is still in
+/// the tree and no block at or past its slot has become head: it is still the
+/// only block for our slot. Without a store the head must not have moved.
+fn proof_pre_state(owner: &ChainOwner, plan: &PlanTransition) -> Result<State, String> {
+    if owner.fc.is_none() {
+        if owner.head_root != plan.parent_root {
+            return Err("head moved while the block proof was built".into());
+        }
+        return owner
+            .head_state
+            .clone()
+            .ok_or_else(|| "no head state".into());
+    }
+    let head_slot = owner.head_state.as_ref().map(|s| s.slot.get()).unwrap_or(0);
+    if head_slot >= plan.block.slot.get() {
+        return Err("a block at or past our slot became head while the proof was built".into());
+    }
+    owner
+        .pre_state_for_parent(plan.parent_root)
+        .ok_or_else(|| "parent left the fork-choice tree while the proof was built".into())
+}
+
 /// Verify a returned block proof against the parent registry, import the
-/// block, and queue it for gossip. Stale plans (head moved) are dropped.
+/// block, and queue it for gossip. Stale plans are dropped.
 pub fn accept_block_proof(
     owner: &mut ChainOwner,
     mut plan: PlanTransition,
     proof: Vec<u8>,
     aggregation: std::time::Duration,
 ) -> Result<Vec<ChainEvent>, String> {
-    if owner.head_root != plan.parent_root {
-        return Err("head moved while the block proof was built".into());
-    }
-    let pre = owner.head_state.clone().ok_or("no head state")?;
+    let pre = proof_pre_state(owner, &plan)?;
     let profile = owner.profile.clone().ok_or("no profile")?;
     plan.aggregate_proof = proof;
     let signed = assemble_signed_block(&plan)?;
@@ -249,6 +285,15 @@ pub fn accept_block_proof(
         owner.advance_head(root, plan.parent_root);
     }
     owner.remember_durable_block(root, gossip.payload.clone());
+    let head_slot = owner.head_state.as_ref().map(|s| s.slot.get()).unwrap_or(0);
+    tracing::debug!(
+        slot = plan.block.slot.get(),
+        parent_slot = pre.latest_block_header.slot.get(),
+        attestations = plan.block.body.attestations.len(),
+        head_slot,
+        is_head = owner.head_root == root,
+        "own block proved and imported"
+    );
     let events = vec![
         ChainEvent::BlockProofAttached {
             root,
@@ -261,8 +306,8 @@ pub fn accept_block_proof(
             proof_len: gossip.proof_len,
         },
         ChainEvent::HeadUpdated {
-            root,
-            slot: plan.block.slot.get(),
+            root: owner.head_root,
+            slot: head_slot,
         },
     ];
     owner.pending_block_gossip = Some(gossip);

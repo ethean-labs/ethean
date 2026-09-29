@@ -1,6 +1,6 @@
 //! Rebuild a live fork-choice store from durable genesis + block blobs.
 
-use crate::chain_fc::genesis_anchor_block;
+use crate::chain_fc::genesis_anchor;
 use crate::chain_owner::ChainOwner;
 use ethean_fork_choice::{create_store, ForkChoiceOpts};
 use ethean_primitives::Hash32;
@@ -35,16 +35,17 @@ impl ChainOwner {
         profile: &ChainProfile,
         blobs: &[(Hash32, Vec<u8>)],
     ) -> bool {
-        let Ok(anchor) = genesis_anchor_block(&genesis) else {
+        let Ok((anchor, anchor_state)) = genesis_anchor(&genesis) else {
             return false;
         };
-        let mut store = match create_store(genesis, anchor, profile, ForkChoiceOpts::STRUCTURAL) {
-            Ok(s) => s,
-            Err(e) => {
-                debug!(error = %e, "fork-choice replay create_store failed");
-                return false;
-            }
-        };
+        let mut store =
+            match create_store(anchor_state, anchor, profile, ForkChoiceOpts::STRUCTURAL) {
+                Ok(s) => s,
+                Err(e) => {
+                    debug!(error = %e, "fork-choice replay create_store failed");
+                    return false;
+                }
+            };
 
         let mut blocks = decode_sorted_blocks(blobs);
         if blocks.is_empty() && self.head_state.as_ref().is_some_and(|s| s.slot.get() == 0) {

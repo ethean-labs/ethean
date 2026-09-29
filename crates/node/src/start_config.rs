@@ -111,6 +111,8 @@ pub struct StartConfig {
     pub checkpoint_sync_url: Option<String>,
     /// Slots retained below finalized before durable block prune (default 256).
     pub prune_keep_slots: u64,
+    /// `--max-block-attestation-data`; `None` keeps the built-in default.
+    pub max_block_attestation_data: Option<usize>,
 }
 
 impl Default for StartConfig {
@@ -127,6 +129,7 @@ impl Default for StartConfig {
             aggregate_subnet_ids: Vec::new(),
             checkpoint_sync_url: None,
             prune_keep_slots: crate::block_prune::KEEP_BELOW_FINALIZED,
+            max_block_attestation_data: None,
         }
     }
 }
@@ -224,6 +227,12 @@ impl StartConfig {
     /// Slots to keep below the finalized checkpoint before pruning durable blobs.
     pub fn with_prune_keep_slots(mut self, prune_keep_slots: u64) -> Self {
         self.prune_keep_slots = prune_keep_slots;
+        self
+    }
+
+    /// Cap the attestation data of proposed blocks.
+    pub fn with_max_block_attestation_data(mut self, max: Option<usize>) -> Self {
+        self.max_block_attestation_data = max;
         self
     }
 }

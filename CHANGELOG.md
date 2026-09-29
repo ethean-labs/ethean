@@ -31,19 +31,54 @@ the curated operator-facing summary, not a dump of every working note.
 - Gossip vote signatures of each network pump window are verified in one
   parallel batch before in-order admission (about 10× faster than serial on
   20 cores).
+- Block proofs are submitted before aggregation work in the same duty step.
+- Aggregators prove pooled votes once per slot at interval 2, as leanSpec
+  `tick_interval` does, instead of on every interval; on a shared host the
+  extra Type-1 jobs slowed every node's block proof.
+- Proposed blocks carry at most 1 attestation data by default
+  (`--max-block-attestation-data`, 0–8): the Type-2 merge time steps with the
+  next power of two of its component count, the spec maximum needs about
+  12 s or more to prove, and with cap 3 proofs overran the 4 s slot often
+  enough to fork the chain and stall finality. Under a cap the data with the
+  widest proof coverage wins for each target slot.
+- Fork-choice safe target also counts single gossip votes newer than the
+  pending aggregates (deviation from leanSpec), so non-aggregators no longer
+  lag the aggregator's safe target and split votes across targets.
 - CI runs `cargo fmt --check`, `clippy -D warnings` and the `ethean-node` /
   `ethean-spec-fixtures` tests; the workspace is formatted and clippy-clean.
+- Local votes use leanSpec `get_attestation_target` (lookback toward the safe
+  target, then back to a slot justifiable after finalization) and the head
+  state's justified source; votes for unjustifiable targets never counted.
+- A finished block proof is published while its parent is still in the
+  fork-choice tree and no block at or past its slot became head, instead of
+  being dropped whenever the head moved.
+- Below the spec maximum, block building skips votes that change no
+  justification bookkeeping, so stale pool data cannot fill the data cap.
 
 ### Fixed
 
+- The fork-choice store was never created on a `config.yaml` genesis (the
+  sealed genesis header failed the anchor check), so mesh nodes ran without LMD
+  head, safe target or justification.
+- A peer that dialed us while we dialed it was forgotten when the duplicate
+  connection closed; Status requests to it failed every second.
+
 - XMSS key generation on Windows: `OsRandom` read `/dev/urandom` directly and
   now uses `getrandom`.
+- A prover queue full of aggregation and split jobs no longer refuses the
+  block proof.
+- The leanMultisig verifier is compiled on a background thread at start; the
+  first block or aggregate verification used to stall the duty loop for 5–10 s.
 
 - `/lean/v0/health` returns exactly the leanSpec body (`status`, `service`);
   the extra `version` field failed the leanSpec API endpoint fixture.
 
 ### Added
 
+- `ethean devnet-init` writes a lean-quickstart shaped bundle (config.yaml,
+  validators.yaml, PROD XMSS keys, nodes.yaml, node keys) and
+  `scripts/local-devnet.ps1` runs N proving nodes on one host without Docker;
+  three nodes finalize.
 - Grandine lean (`grandinetech/lean`) added to the peer reference list.
 
 - Majority Status finalized tip for catch-up and duty horizon so a lone ahead

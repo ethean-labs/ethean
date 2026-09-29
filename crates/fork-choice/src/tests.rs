@@ -85,6 +85,48 @@ fn import_child(
     (root, out.post_state)
 }
 
+/// Store with empty blocks at slots `0..=last` in a line; roots indexed by slot.
+pub(crate) fn chain_store(last: u64) -> (ForkChoiceStore, Vec<Hash32>) {
+    let (mut store, anchor, mut state) = anchor_store(3);
+    let mut roots = vec![anchor];
+    for slot in 1..=last {
+        let (root, post) = import_child(&mut store, &state, slot, slot % 3);
+        roots.push(root);
+        state = post;
+    }
+    (store, roots)
+}
+
+#[test]
+fn late_aggregate_does_not_hide_newer_single_votes() {
+    use crate::AggregatedPayloadEntry;
+    let (mut store, roots) = chain_store(4);
+    let cp = |slot: u64| Checkpoint::new(roots[slot as usize], Slot::new(slot));
+    let vote = |slot: u64| AttestationData {
+        slot: Slot::new(slot),
+        head: cp(slot),
+        target: cp(slot),
+        source: cp(0),
+    };
+    let stale = vote(1);
+    store.latest_new_payloads.insert(
+        stale.hash_tree_root(),
+        AggregatedPayloadEntry {
+            data_root: stale.hash_tree_root(),
+            data: stale,
+            participant_sets: vec![vec![0]],
+        },
+    );
+    for v in 0..3 {
+        store
+            .latest_new_attestations
+            .insert(ValidatorIndex::new(v), vote(4));
+    }
+    let votes = store.relevant_new_votes();
+    assert_eq!(votes.len(), 3);
+    assert!(votes.values().all(|d| d.head.root == roots[4]));
+}
+
 #[test]
 fn create_store_and_chain_advances_head() {
     let (mut store, anchor, state) = anchor_store(3);

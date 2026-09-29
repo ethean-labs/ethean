@@ -19,7 +19,9 @@ use ethean_types::AttestationData;
 
 use crate::block_builder::PlanTransition;
 
-/// Jobs queued beyond this are refused (the prover serves one at a time).
+/// Attestation and split jobs queued beyond this are refused (the prover
+/// serves one at a time). Block jobs are never refused for depth: only one is
+/// in flight, and a queue full of aggregation work must not cost a proposal.
 const QUEUE_DEPTH: usize = 16;
 
 /// Work for the prover.
@@ -93,8 +95,11 @@ struct PriorityInbox {
 }
 
 impl PriorityInbox {
-    fn len(&self) -> usize {
-        self.blocks.len() + self.attestations.len() + self.splits.len()
+    fn has_room_for(&self, job: &ProofJob) -> bool {
+        match job {
+            ProofJob::Block { .. } => self.blocks.is_empty(),
+            _ => self.attestations.len() + self.splits.len() < QUEUE_DEPTH,
+        }
     }
 
     fn push(&mut self, job: ProofJob) {
@@ -129,7 +134,7 @@ impl SharedInbox {
     fn try_push(&self, job: ProofJob) -> bool {
         let mut guard = self.inner.lock().expect("proof inbox");
         let (inbox, closed) = &mut *guard;
-        if *closed || inbox.len() >= QUEUE_DEPTH {
+        if *closed || !inbox.has_room_for(&job) {
             return false;
         }
         inbox.push(job);
@@ -409,6 +414,19 @@ mod tests {
         for i in 0..QUEUE_DEPTH {
             assert!(inbox.try_push(split_job(i as u64)));
         }
-        assert!(!inbox.try_push(block_job(99)));
+        assert!(!inbox.try_push(split_job(99)));
+        assert!(!inbox.try_push(att_job(99)));
+    }
+
+    #[test]
+    fn a_full_aggregation_queue_never_refuses_the_block() {
+        let inbox = SharedInbox::new();
+        for i in 0..QUEUE_DEPTH {
+            assert!(inbox.try_push(att_job(i as u64)));
+        }
+        assert!(inbox.try_push(block_job(99)));
+        assert!(!inbox.try_push(block_job(100)), "one block at a time");
+        let first = inbox.pop_blocking();
+        assert!(matches!(first, Some(ProofJob::Block { .. })));
     }
 }

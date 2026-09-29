@@ -251,8 +251,12 @@ impl QuicSwarm {
                 num_established,
                 ..
             } => {
-                let peer = self.forget_peer(&peer_id);
-                self.agents.remove(&peer_id);
+                let peer = if num_established == 0 {
+                    self.agents.remove(&peer_id);
+                    self.forget_peer(&peer_id)
+                } else {
+                    crate::quic_events::peer_fingerprint(&peer_id)
+                };
                 let reason = match &cause {
                     None => "local_close",
                     Some(libp2p::swarm::ConnectionError::KeepAliveTimeout) => "timeout",

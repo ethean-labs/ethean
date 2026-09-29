@@ -138,6 +138,118 @@ fn empty_candidates_give_an_empty_body() {
     assert!(body.attestations.is_empty() && body.proofs.is_empty());
 }
 
+/// Apply a block at `slot` on `pre`; returns the post-state and block root.
+fn apply_block_at(
+    pre: &State,
+    slot: u64,
+    attestations: Vec<AggregatedAttestation>,
+) -> (State, Hash32) {
+    let ctx = TransitionContext::new(lstar_devnet().unwrap());
+    let mut post = pre.clone();
+    process_slots(&mut post, Slot::new(slot)).unwrap();
+    let mut block = Block {
+        slot: Slot::new(slot),
+        proposer_index: ValidatorIndex::new(slot % pre.validators.len() as u64),
+        parent_root: post.latest_block_header.hash_tree_root(),
+        state_root: HASH32_ZERO,
+        body: BlockBody::new(attestations).unwrap(),
+    };
+    process_block(&mut post, &block, &ctx).unwrap();
+    block.state_root = post.hash_tree_root().unwrap();
+    (post, block.hash_tree_root().unwrap())
+}
+
+#[test]
+fn capped_selection_skips_votes_already_counted() {
+    let genesis = genesis_state(4);
+    let genesis_root = parent_of(&genesis);
+    let (s1, b1) = apply_block_at(&genesis, 1, Vec::new());
+    let source = Checkpoint::new(genesis_root, Slot::ZERO);
+    let target = Checkpoint::new(b1, Slot::new(1));
+    let counted = AttestationData {
+        slot: Slot::new(1),
+        head: target,
+        target,
+        source,
+    };
+    let v0 = vec![true, false, false, false];
+    let included = AggregatedAttestation {
+        aggregation_bits: AggregationBits::new(v0.clone()).unwrap(),
+        data: counted,
+    };
+    let (s2, b2) = apply_block_at(&s1, 2, vec![included]);
+    let fresh = AttestationData {
+        slot: Slot::new(2),
+        head: Checkpoint::new(b2, Slot::new(2)),
+        target,
+        source,
+    };
+    let candidates = vec![
+        (counted, vec![variant(&v0, 1)]),
+        (fresh, vec![variant(&[false, true, false, false], 2)]),
+    ];
+    let known: HashSet<Hash32> = [genesis_root, b1, b2].into_iter().collect();
+    let select = |cap| {
+        select_body_capped(
+            &candidates,
+            &s2,
+            Slot::new(3),
+            ValidatorIndex::new(3),
+            b2,
+            &known,
+            lstar_devnet().unwrap(),
+            cap,
+        )
+        .unwrap()
+    };
+    assert_eq!(select(MAX_ATTESTATIONS_DATA).attestations.len(), 2);
+    let capped = select(1);
+    assert_eq!(capped.attestations.len(), 1);
+    assert_eq!(capped.attestations[0].data, fresh);
+    assert_eq!(capped.proofs, vec![vec![2u8; 4]]);
+    assert!(select(0).attestations.is_empty());
+}
+
+#[test]
+fn capped_selection_takes_the_widest_data_for_a_target() {
+    let genesis = genesis_state(4);
+    let genesis_root = parent_of(&genesis);
+    let (s1, b1) = apply_block_at(&genesis, 1, Vec::new());
+    let (s2, b2) = apply_block_at(&s1, 2, Vec::new());
+    let source = Checkpoint::new(genesis_root, Slot::ZERO);
+    let target = Checkpoint::new(b1, Slot::new(1));
+    let narrow = AttestationData {
+        slot: Slot::new(1),
+        head: target,
+        target,
+        source,
+    };
+    let wide = AttestationData {
+        slot: Slot::new(2),
+        head: Checkpoint::new(b2, Slot::new(2)),
+        target,
+        source,
+    };
+    let candidates = vec![
+        (narrow, vec![variant(&[true, false, false, false], 1)]),
+        (wide, vec![variant(&[false, true, true, false], 2)]),
+    ];
+    let known: HashSet<Hash32> = [genesis_root, b1, b2].into_iter().collect();
+    let body = select_body_capped(
+        &candidates,
+        &s2,
+        Slot::new(3),
+        ValidatorIndex::new(3),
+        b2,
+        &known,
+        lstar_devnet().unwrap(),
+        1,
+    )
+    .unwrap();
+    assert_eq!(body.attestations.len(), 1);
+    assert_eq!(body.attestations[0].data, wide);
+}
+
 #[test]
 fn chain_view_appends_parent_and_skipped_slots() {
     let pre = genesis_state(1);

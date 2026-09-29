@@ -30,3 +30,5 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [early block build idle pump](early-block-build-idle-pump-2026-09-29.md)
 - [xmss background window prep](xmss-background-window-prep-2026-09-29.md)
 - [gossip vote batch verify](gossip-vote-batch-verify-2026-09-29.md)
+- [prover block priority](prover-block-priority-2026-09-29.md)
+- [prover timing block data cap](prover-timing-block-data-cap-2026-09-29.md)

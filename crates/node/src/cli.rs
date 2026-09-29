@@ -19,6 +19,29 @@ pub enum Command {
     Validator,
     /// Show version information
     Version,
+    /// Write a local multi-node devnet bundle (PROD XMSS keys, config.yaml,
+    /// validators.yaml, node keys, nodes.yaml). Keys are reused across runs.
+    DevnetInit(DevnetInitArgs),
+}
+
+/// Flags for `ethean devnet-init`.
+#[derive(Args, Debug, Clone)]
+pub struct DevnetInitArgs {
+    /// Output directory (created if missing; existing keys are reused).
+    #[arg(long, default_value = "target/local-devnet")]
+    pub out: String,
+    /// Number of nodes.
+    #[arg(long, default_value_t = 3)]
+    pub nodes: usize,
+    /// Validators owned by each node.
+    #[arg(long, default_value_t = 1)]
+    pub validators_per_node: usize,
+    /// Seconds from now until genesis (key generation for missing keys runs first).
+    #[arg(long, default_value_t = 30)]
+    pub genesis_delay: u64,
+    /// QUIC port of node 0; node k uses base + k.
+    #[arg(long, default_value_t = 9000)]
+    pub base_port: u16,
 }
 
 /// Flags for `ethean start` (Hive / lean-quickstart command lines mirror ream's).
@@ -142,6 +165,15 @@ pub struct StartArgs {
     /// Node id used with `--validator-registry` (e.g. `ethean_0`).
     #[arg(long = "node-id", default_value = "ethean_0")]
     pub node_id: String,
+    /// Attestation data per proposed block (0–8; default 1). Each one adds a
+    /// component to the block's Type-2 merge, whose time steps with the next
+    /// power of two of the component count.
+    #[arg(
+        long = "max-block-attestation-data",
+        value_name = "N",
+        value_parser = clap::value_parser!(u8).range(0..=8)
+    )]
+    pub max_block_attestation_data: Option<u8>,
 }
 
 #[cfg(test)]
@@ -209,5 +241,17 @@ mod tests {
         ]);
         assert!(a.until_signal && a.no_aggregator && a.no_metrics && a.observability_stack);
         assert_eq!(a.socket_address, "0.0.0.0");
+    }
+
+    #[test]
+    fn block_attestation_data_cap_is_bounded_by_the_spec() {
+        assert_eq!(parse(&[]).max_block_attestation_data, None);
+        assert_eq!(
+            parse(&["--max-block-attestation-data", "1"]).max_block_attestation_data,
+            Some(1)
+        );
+        let too_many =
+            Cli::try_parse_from(["ethean", "start", "--max-block-attestation-data", "9"]);
+        assert!(too_many.is_err());
     }
 }

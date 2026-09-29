@@ -36,9 +36,17 @@ pub fn import_decoded_block(
         return GossipStfResult::Skipped;
     }
     if !owner.can_import_parent(decoded.parent) {
+        tracing::debug!(
+            slot = decoded.block.slot.get(),
+            "gossip block skipped: parent not importable"
+        );
         return GossipStfResult::Skipped;
     }
     let Some(pre) = owner.pre_state_for_parent(decoded.parent) else {
+        tracing::debug!(
+            slot = decoded.block.slot.get(),
+            "gossip block skipped: no parent state"
+        );
         return GossipStfResult::Skipped;
     };
     let Some(profile) = owner.profile.clone() else {

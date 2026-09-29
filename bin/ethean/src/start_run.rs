@@ -123,7 +123,8 @@ pub async fn prepare(args: StartArgs) -> Result<(EtheanClient, StartPlan)> {
         .with_roles(roles)
         .with_aggregate_subnet_ids(subnet_ids)
         .with_checkpoint_sync_url(args.checkpoint_sync_url.clone())
-        .with_prune_keep_slots(prune_keep);
+        .with_prune_keep_slots(prune_keep)
+        .with_max_block_attestation_data(args.max_block_attestation_data.map(usize::from));
 
     Ok((
         client,
@@ -205,6 +206,9 @@ fn log_start(
         listen_port = args.listen_port,
         socket_address = args.socket_address.as_str(),
         prune_keep_slots = prune_keep,
+        max_block_attestation_data = args
+            .max_block_attestation_data
+            .map_or(ethean_node::block_builder::DEFAULT_MAX_BLOCK_ATTESTATION_DATA, usize::from),
         lean_config = args.lean_config.as_deref().unwrap_or(""),
         node_id = args.node_id.as_str(),
         "Starting lean consensus node"

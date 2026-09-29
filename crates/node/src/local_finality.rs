@@ -212,6 +212,7 @@ mod tests {
             owner.head_state.as_ref().unwrap(),
             profile,
             &owner.known_block_roots(),
+            ethean_types::MAX_ATTESTATIONS_DATA,
         )
         .unwrap();
         inject_local_aggregate(&mut owner, &mut plan);

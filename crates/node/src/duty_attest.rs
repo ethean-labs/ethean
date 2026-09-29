@@ -42,18 +42,8 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         root: owner.head_root,
         slot: state.slot,
     };
-    let source = state.latest_justified;
-    // Target follows interval-3 safe-target when the live store has set it;
-    // head stays the FC tip (owner.head_root after sync).
-    let target = if owner.safe_target != HASH32_ZERO {
-        Checkpoint {
-            root: owner.safe_target,
-            slot: ethean_primitives::Slot::new(owner.safe_target_slot()),
-        }
-    } else if head.slot > source.slot {
-        head
-    } else {
-        source
+    let Some((source, target)) = vote_checkpoints(owner, head) else {
+        return out;
     };
     let data = AttestationData {
         slot: tick.slot,
@@ -137,6 +127,40 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
     out
 }
 
+/// Source and target for a local vote on `head`.
+///
+/// With a live store this is leanSpec `produce_attestation_data`: the head
+/// state's justified checkpoint and `get_attestation_target` (lookback toward
+/// the safe target, then back to a slot justifiable after finalization).
+fn vote_checkpoints(owner: &ChainOwner, head: Checkpoint) -> Option<(Checkpoint, Checkpoint)> {
+    let state = owner.head_state.as_ref()?;
+    if let (Some(fc), Some(profile)) = (owner.fc.as_ref(), owner.profile.as_ref()) {
+        let source = fc.attestation_source()?;
+        let target = fc.attestation_target(profile.justification_lookback_slots);
+        if target.slot < source.slot {
+            tracing::debug!(
+                source = source.slot.get(),
+                target = target.slot.get(),
+                "attestation skipped: target behind the head's justified source"
+            );
+            return None;
+        }
+        return Some((source, target));
+    }
+    let source = state.latest_justified;
+    let target = if owner.safe_target != HASH32_ZERO {
+        Checkpoint {
+            root: owner.safe_target,
+            slot: ethean_primitives::Slot::new(owner.safe_target_slot()),
+        }
+    } else if head.slot > source.slot {
+        head
+    } else {
+        source
+    };
+    Some((source, target))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -195,6 +219,35 @@ mod tests {
         let vote = SignedAttestation::ssz_decode(&gossip.payload).unwrap();
         assert_eq!(vote.validator_index.get(), 2);
         assert_eq!(vote.data.hash_tree_root(), gossip.data_root);
+    }
+
+    #[test]
+    fn live_store_votes_carry_the_real_genesis_root_as_source() {
+        let mut genesis = state_n(4);
+        genesis.slot = Slot::ZERO;
+        genesis.latest_block_header = BlockHeader {
+            body_root: ethean_types::BlockBody::default().hash_tree_root().unwrap(),
+            ..Default::default()
+        };
+        let mut owner = ChainOwner::new(4);
+        owner.head_state = Some(genesis);
+        owner.profile = Some(ethean_profile::lstar_devnet().unwrap());
+        crate::local_finality::seal_genesis_head(&mut owner);
+        owner.try_init_fork_choice();
+        assert!(owner.fc.is_some());
+        owner.attester = Some(LocalAttester::smoke().unwrap());
+        owner.owned_validator_indices = vec![1];
+        let tick = DutyTick {
+            slot: Slot::new(1),
+            interval: 1,
+            generation: 1,
+        };
+        assert_eq!(try_local_attest(&mut owner, tick).len(), 1);
+        let vote =
+            SignedAttestation::ssz_decode(&owner.pending_aggregation_gossip[0].payload).unwrap();
+        assert_eq!(vote.data.source.root, owner.head_root);
+        assert_eq!(vote.data.target.root, owner.head_root);
+        assert_eq!(vote.data.head.root, owner.head_root);
     }
 
     #[test]

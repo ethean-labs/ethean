@@ -54,6 +54,15 @@ fn justified(bits: &[bool], finalized: Slot, slot: Slot) -> bool {
     is_slot_justified(bits, finalized, slot).unwrap_or(false)
 }
 
+/// Equal justification bookkeeping (the header's body root always differs).
+fn same_vote_state(a: &State, b: &State) -> bool {
+    a.latest_justified == b.latest_justified
+        && a.latest_finalized == b.latest_finalized
+        && a.justified_slots == b.justified_slots
+        && a.justifications_roots == b.justifications_roots
+        && a.justifications_validators == b.justifications_validators
+}
+
 fn trial_post_state(
     advanced: &State,
     slot: Slot,
@@ -85,13 +94,55 @@ pub fn select_body(
     known_roots: &HashSet<Hash32>,
     profile: ChainProfile,
 ) -> Result<SelectedBody, String> {
+    select_body_capped(
+        candidates,
+        pre,
+        slot,
+        proposer,
+        parent_root,
+        known_roots,
+        profile,
+        MAX_ATTESTATIONS_DATA,
+    )
+}
+
+/// [`select_body`] keeping at most `max_data` attestations.
+///
+/// Below the spec maximum, votes that leave the post-state unchanged (every
+/// participant already counted for that target) are skipped so stale pool
+/// data cannot fill the budget ahead of votes that still count.
+#[allow(clippy::too_many_arguments)]
+pub fn select_body_capped(
+    candidates: &[(AttestationData, Vec<ProofVariant>)],
+    pre: &State,
+    slot: Slot,
+    proposer: ValidatorIndex,
+    parent_root: Hash32,
+    known_roots: &HashSet<Hash32>,
+    profile: ChainProfile,
+    max_data: usize,
+) -> Result<SelectedBody, String> {
     let mut out = SelectedBody::default();
-    if candidates.is_empty() {
+    let cap = max_data.min(MAX_ATTESTATIONS_DATA);
+    if candidates.is_empty() || cap == 0 {
         return Ok(out);
     }
+    let skip_noops = cap < MAX_ATTESTATIONS_DATA;
     let ctx = TransitionContext::new(profile);
     let mut advanced = pre.clone();
     process_slots(&mut advanced, slot).map_err(|e| e.to_string())?;
+    let mut current = if skip_noops {
+        Some(trial_post_state(
+            &advanced,
+            slot,
+            proposer,
+            parent_root,
+            &[],
+            &ctx,
+        )?)
+    } else {
+        None
+    };
 
     // Genesis parents are justified at slot 0 by header processing.
     let mut justified_cp = if pre.latest_block_header.slot == Slot::ZERO {
@@ -108,10 +159,23 @@ pub fn select_body(
     let chain = extended_chain_view(pre, parent_root, slot);
 
     let mut ordered: Vec<&(AttestationData, Vec<ProofVariant>)> = candidates.iter().collect();
+    // Under a cap, equal target slots go widest first so the budget carries the most votes.
+    let coverage = |c: &(AttestationData, Vec<ProofVariant>)| {
+        if skip_noops {
+            best_variant(&c.1).map(|v| v.coverage()).unwrap_or(0)
+        } else {
+            0
+        }
+    };
     ordered.sort_by(|a, b| {
-        (a.0.target.slot, a.0.hash_tree_root()).cmp(&(b.0.target.slot, b.0.hash_tree_root()))
+        a.0.target
+            .slot
+            .cmp(&b.0.target.slot)
+            .then_with(|| coverage(b).cmp(&coverage(a)))
+            .then_with(|| a.0.hash_tree_root().cmp(&b.0.hash_tree_root()))
     });
     let mut processed: HashSet<Hash32> = HashSet::new();
+    let mut skips = SelectionSkips::default();
 
     loop {
         let before = out.attestations.len();
@@ -120,24 +184,31 @@ pub fn select_body(
             if processed.contains(&root) {
                 continue;
             }
-            if processed.len() >= MAX_ATTESTATIONS_DATA {
+            if out.attestations.len() >= cap
+                || (!skip_noops && processed.len() >= MAX_ATTESTATIONS_DATA)
+            {
                 break;
             }
             if !known_roots.contains(&data.head.root) {
+                skips.unknown_head += 1;
                 continue;
             }
             if data.source.slot != justified_cp.slot {
+                skips.other_source += 1;
                 continue;
             }
             if !lies_on_chain(data, &chain) {
+                skips.off_chain += 1;
                 continue;
             }
             if !justified(&justified_bits, finalized_slot, data.source.slot) {
+                skips.other_source += 1;
                 continue;
             }
             let genesis_self_vote =
                 data.source.slot == Slot::ZERO && data.target.slot == Slot::ZERO;
             if !genesis_self_vote && justified(&justified_bits, finalized_slot, data.target.slot) {
+                skips.target_justified += 1;
                 continue;
             }
             let Some(best) = best_variant(variants) else {
@@ -151,11 +222,19 @@ pub fn select_body(
             // Keep the body valid: drop a vote the transition refuses.
             let mut trial = out.attestations.clone();
             trial.push(attestation.clone());
-            if trial_post_state(&advanced, slot, proposer, parent_root, &trial, &ctx).is_err() {
-                processed.insert(root);
-                continue;
-            }
             processed.insert(root);
+            let Ok(post) = trial_post_state(&advanced, slot, proposer, parent_root, &trial, &ctx)
+            else {
+                skips.refused += 1;
+                continue;
+            };
+            if let Some(cur) = current.as_mut() {
+                if same_vote_state(cur, &post) {
+                    skips.no_effect += 1;
+                    continue;
+                }
+                *cur = post;
+            }
             out.attestations.push(attestation);
             out.proofs.push(best.proof.clone());
         }
@@ -178,7 +257,29 @@ pub fn select_body(
         }
         break;
     }
+    tracing::debug!(
+        slot = slot.get(),
+        justified = justified_cp.slot.get(),
+        unknown_head = skips.unknown_head,
+        other_source = skips.other_source,
+        off_chain = skips.off_chain,
+        target_justified = skips.target_justified,
+        refused = skips.refused,
+        no_effect = skips.no_effect,
+        "block vote selection skips"
+    );
     Ok(out)
+}
+
+/// Why candidates were left out of a body (debug visibility only).
+#[derive(Debug, Default)]
+struct SelectionSkips {
+    unknown_head: u32,
+    other_source: u32,
+    off_chain: u32,
+    target_justified: u32,
+    refused: u32,
+    no_effect: u32,
 }
 
 #[cfg(test)]

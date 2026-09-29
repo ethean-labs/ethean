@@ -39,6 +39,7 @@ pub mod client_swarm;
 pub mod clock;
 pub mod commands;
 pub mod crypto_status;
+pub mod devnet_bundle;
 pub mod dispatch;
 pub mod duty_attest;
 pub mod duty_loop;

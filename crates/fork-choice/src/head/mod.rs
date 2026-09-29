@@ -2,5 +2,6 @@
 
 mod payload_votes;
 mod select;
+mod target;
 mod tie_break;
 mod weights;

@@ -38,3 +38,5 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [genesis state root pin](genesis-state-root-pin-2026-09-25.md)
 - [block production spec selection](block-production-spec-selection-2026-09-24.md)
 - [fixture suites full coverage](fixture-suites-full-coverage-2026-09-24.md)
+- [mesh finality fixes](mesh-finality-fixes-2026-09-29.md)
+- [safe-target vote merge, block data cap 1, aggregation at interval 2](safe-target-merge-block-data-cap-1-2026-09-29.md)

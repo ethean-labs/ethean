@@ -3,6 +3,7 @@
 mod banner;
 mod banner_art;
 mod console_fmt;
+mod devnet_init;
 mod file_log;
 mod lean_assets;
 mod log_filter;
@@ -53,6 +54,7 @@ async fn main() -> Result<()> {
     match cli.command {
         Command::Start(args) => run_start(*args).await?,
         Command::Validator => run_validator(),
+        Command::DevnetInit(args) => devnet_init::run(&args)?,
         Command::Version => {
             println!(
                 "Ethean Lean Consensus Client v{}",

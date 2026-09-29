@@ -68,6 +68,10 @@ fn select_children(owner: &ChainOwner, data_root: Hash32) -> (Vec<BitsAndProof>,
     (chosen, covered)
 }
 
+/// Interval in which aggregators prove the pooled votes (leanSpec lstar
+/// `tick_interval`): once per slot, after the interval-1 votes have spread.
+pub const AGGREGATION_INTERVAL: u8 = 2;
+
 /// Queue Type-1 jobs for every attestation data with fresh signatures.
 pub fn schedule_aggregations(owner: &mut ChainOwner) -> Vec<ChainEvent> {
     let mut events = Vec::new();

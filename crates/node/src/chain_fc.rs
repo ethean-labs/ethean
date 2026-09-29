@@ -15,11 +15,11 @@ impl ChainOwner {
         let (Some(state), Some(profile)) = (self.head_state.clone(), self.profile.clone()) else {
             return;
         };
-        let Ok(anchor) = genesis_anchor_block(&state) else {
-            debug!("fork-choice init skipped: cannot rebuild genesis block");
+        let Ok((anchor, anchor_state)) = genesis_anchor(&state) else {
+            warn!("fork-choice init skipped: cannot rebuild genesis block");
             return;
         };
-        match create_store(state, anchor, &profile, ForkChoiceOpts::STRUCTURAL) {
+        match create_store(anchor_state, anchor, &profile, ForkChoiceOpts::STRUCTURAL) {
             Ok(store) => {
                 self.fc = Some(store);
                 self.sync_from_fork_choice();
@@ -70,6 +70,10 @@ impl ChainOwner {
         };
         let ips = fc.intervals_per_slot.max(1);
         let target = slot.saturating_mul(ips).saturating_add(u64::from(interval));
+        // Block imports tick to their slot start, usually already passed.
+        if target <= fc.time {
+            return;
+        }
         if let Err(e) = fc.on_tick_with(target, has_proposal) {
             debug!(error = %e, target, "fork-choice on_tick skipped");
             return;
@@ -113,32 +117,35 @@ impl ChainOwner {
     }
 }
 
-pub(crate) fn genesis_anchor_block(state: &State) -> Result<Block, ()> {
+/// Rebuild the genesis block and the anchor state it commits to.
+///
+/// The anchor state keeps `latest_block_header.state_root` zero (leanSpec
+/// genesis); a header already sealed by [`crate::local_finality::seal_genesis_head`]
+/// is accepted when its cached root matches that unsealed state.
+pub(crate) fn genesis_anchor(state: &State) -> Result<(Block, State), ()> {
     if state.slot.get() != 0 {
         return Err(());
     }
     let empty = BlockBody::default();
     let body_root = empty.hash_tree_root().map_err(|_| ())?;
-    let h = &state.latest_block_header;
+    let h = state.latest_block_header.clone();
     if h.body_root != HASH32_ZERO && h.body_root != body_root {
         return Err(());
     }
-    let state_root = if h.state_root == HASH32_ZERO {
-        state.hash_tree_root().map_err(|_| ())?
-    } else {
-        h.state_root
-    };
-    let computed = state.hash_tree_root().map_err(|_| ())?;
-    if state_root != computed {
+    let mut anchor_state = state.clone();
+    anchor_state.latest_block_header.state_root = HASH32_ZERO;
+    let state_root = anchor_state.hash_tree_root().map_err(|_| ())?;
+    if h.state_root != HASH32_ZERO && h.state_root != state_root {
         return Err(());
     }
-    Ok(Block {
+    let block = Block {
         slot: h.slot,
         proposer_index: h.proposer_index,
         parent_root: h.parent_root,
         state_root,
         body: empty,
-    })
+    };
+    Ok((block, anchor_state))
 }
 
 #[cfg(test)]
@@ -182,6 +189,19 @@ mod tests {
         assert!(owner.fc.is_some());
         assert_ne!(owner.safe_target, Hash32::default());
         assert_eq!(owner.head_root, owner.fc.as_ref().unwrap().head());
+    }
+
+    #[test]
+    fn store_initializes_after_the_genesis_header_is_sealed() {
+        let mut owner = ChainOwner::new(2);
+        owner.head_state = Some(genesis_state());
+        owner.profile = Some(lstar_devnet().unwrap());
+        crate::local_finality::seal_genesis_head(&mut owner);
+        let sealed_root = owner.head_root;
+        owner.try_init_fork_choice();
+        let fc = owner.fc.as_ref().expect("live store");
+        assert_eq!(fc.head(), sealed_root);
+        assert_eq!(owner.head_root, sealed_root);
     }
 
     #[test]

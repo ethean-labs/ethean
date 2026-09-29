@@ -61,7 +61,8 @@ proposer signature as an out-of-proof "sidecar", and accepted synthetic
   with a merged Type-2 proof -> tampered copy rejected, real block imported.
 - Release timings on this machine: Type-1 verify ~26 ms, Type-2 verify
   ~33 ms, warm Type-1 prove ~0.33 s, Type-2 merge ~3.3 s, cold prover start
-  ~4 s.
+  ~4 s. Scaling by signature and component count (2026-09-29):
+  [prover-timing-block-data-cap-2026-09-29.md](prover-timing-block-data-cap-2026-09-29.md).
 
 ## Operating
 

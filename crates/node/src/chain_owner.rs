@@ -82,6 +82,9 @@ pub struct ChainOwner {
     pub sync_orphans: SyncOrphanCache,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
+    /// Attestation data per proved block; `None` means
+    /// [`crate::block_builder::DEFAULT_MAX_BLOCK_ATTESTATION_DATA`].
+    pub max_block_attestation_data: Option<usize>,
     /// Collect/prove aggregates (Lean aggregator role).
     pub is_aggregator: bool,
     /// Self-apply proposals + inject full-registry votes for local finality smoke.
@@ -104,6 +107,12 @@ impl ChainOwner {
             max_head_lag_slots,
             ..Self::default()
         }
+    }
+
+    /// Attestation data a proved block may carry.
+    pub fn block_attestation_data_cap(&self) -> usize {
+        self.max_block_attestation_data
+            .unwrap_or(crate::block_builder::DEFAULT_MAX_BLOCK_ATTESTATION_DATA)
     }
 
     /// Apply a clock tick; returns false when duplicate.
