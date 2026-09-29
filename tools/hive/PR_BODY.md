@@ -19,5 +19,5 @@ Apply helper (idempotent):
 
 - [ ] `ghcr.io/ethean-labs/ethean:devnet5` pulls successfully
 - [ ] `./hive --sim lean --client-file simulators/lean/clients/devnet5.yaml --client ethean --docker.output`
-- [ ] Health `GET /lean/v0/health` returns `healthy` + `version`
+- [ ] Health `GET /lean/v0/health` returns `{"status":"healthy","service":"lean-rpc-api"}`; version is on the identity endpoint
 - [ ] Smoke against one peer client (e.g. ream) on the same lean sim profile

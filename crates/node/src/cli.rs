@@ -14,7 +14,7 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Command {
     /// Start the lean consensus node
-    Start(StartArgs),
+    Start(Box<StartArgs>),
     /// Start the validator client
     Validator,
     /// Show version information
@@ -152,7 +152,7 @@ mod tests {
         let mut full = vec!["ethean", "start"];
         full.extend_from_slice(args);
         match Cli::parse_from(full).command {
-            Command::Start(a) => a,
+            Command::Start(a) => *a,
             _ => panic!("expected start"),
         }
     }

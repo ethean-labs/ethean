@@ -97,15 +97,15 @@ async fn two_nodes_dial_and_status_response() {
     let start = std::time::Instant::now();
     while start.elapsed() < Duration::from_secs(5) {
         let _ = tokio::time::timeout(Duration::from_millis(20), a.pump_once()).await;
-        if let Ok(ev) = tokio::time::timeout(Duration::from_millis(50), b.pump_once()).await {
-            if let PumpEvent::StatusResponse { peer, payload } = ev {
-                assert_eq!(peer, peer_a);
-                let remote = Status::decode(&payload).expect("decode status");
-                assert_eq!(remote.head_slot(), 1);
-                assert_eq!(remote.head_root(), [1u8; 32]);
-                got_response = true;
-                break;
-            }
+        if let Ok(PumpEvent::StatusResponse { peer, payload }) =
+            tokio::time::timeout(Duration::from_millis(50), b.pump_once()).await
+        {
+            assert_eq!(peer, peer_a);
+            let remote = Status::decode(&payload).expect("decode status");
+            assert_eq!(remote.head_slot(), 1);
+            assert_eq!(remote.head_root(), [1u8; 32]);
+            got_response = true;
+            break;
         }
     }
     assert!(got_response, "B should receive StatusResponse from A");

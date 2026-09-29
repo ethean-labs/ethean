@@ -87,10 +87,9 @@ impl ForkChoiceStore {
         };
 
         if new_head != previous_head {
-            if let (Some(prev_block), Some(new_block)) = (
-                self.blocks.get(&previous_head),
-                self.blocks.get(&new_head),
-            ) {
+            if let (Some(prev_block), Some(new_block)) =
+                (self.blocks.get(&previous_head), self.blocks.get(&new_head))
+            {
                 let prev_cp = Checkpoint {
                     root: previous_head,
                     slot: prev_block.slot,
@@ -121,14 +120,11 @@ impl ForkChoiceStore {
         let min_target_score = if num_validators == 0 {
             0
         } else {
-            (num_validators * 2 + 2) / 3
+            (num_validators * 2).div_ceil(3)
         };
         let votes = self.relevant_new_votes();
-        self.safe_target = self.compute_weighted_head(
-            self.latest_justified.root,
-            &votes,
-            Some(min_target_score),
-        )?;
+        self.safe_target =
+            self.compute_weighted_head(self.latest_justified.root, &votes, Some(min_target_score))?;
         Ok(())
     }
 

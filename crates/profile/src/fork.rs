@@ -12,9 +12,7 @@ pub struct ForkId {
 impl ForkId {
     /// Pinned lstar fork name from Phase 00 / leanSpec.
     pub fn lstar() -> Self {
-        Self {
-            fork_name: "lstar",
-        }
+        Self { fork_name: "lstar" }
     }
 
     /// Construct from an explicit non-empty name (validated by callers).

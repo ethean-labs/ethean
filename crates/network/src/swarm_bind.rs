@@ -53,12 +53,9 @@ impl SwarmFacade {
         fork_segment: &str,
         attestation_subnets: u16,
     ) -> Result<()> {
-        let swarm = QuicSwarm::bind_for_fork_segment_subnets(
-            cfg,
-            fork_segment,
-            attestation_subnets,
-        )
-        .await?;
+        let swarm =
+            QuicSwarm::bind_for_fork_segment_subnets(cfg, fork_segment, attestation_subnets)
+                .await?;
         self.quic = Some(swarm);
         self.note_progress();
         Ok(())
@@ -73,7 +70,8 @@ impl SwarmFacade {
         attestation_subnets: u16,
         who: &ListenIdentity,
     ) -> Result<()> {
-        let swarm = QuicSwarm::bind_with_identity(cfg, fork_segment, attestation_subnets, who).await?;
+        let swarm =
+            QuicSwarm::bind_with_identity(cfg, fork_segment, attestation_subnets, who).await?;
         self.quic = Some(swarm);
         self.note_progress();
         Ok(())

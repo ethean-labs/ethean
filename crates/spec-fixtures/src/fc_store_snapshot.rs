@@ -128,12 +128,9 @@ pub fn apply_store_snapshot(store: &ForkChoiceStore, step: &Value) -> Result<(),
     if let Some(list) = snap.get("blockWeights").and_then(|v| v.as_array()) {
         // All-zero weight dumps appear on older tick vectors where the filler
         // jumped the clock without interval actions; they are not authoritative.
-        let any_positive = list.iter().any(|item| {
-            item.get("weight")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0)
-                > 0
-        });
+        let any_positive = list
+            .iter()
+            .any(|item| item.get("weight").and_then(|v| v.as_u64()).unwrap_or(0) > 0);
         if any_positive {
             let got = store.block_weights_from_known();
             for item in list {
@@ -144,9 +141,7 @@ pub fn apply_store_snapshot(store: &ForkChoiceStore, step: &Value) -> Result<(),
                 let want_w = item
                     .get("weight")
                     .and_then(|v| v.as_u64())
-                    .ok_or_else(|| {
-                        FcRunError::Step("blockWeights entry missing weight".into())
-                    })?;
+                    .ok_or_else(|| FcRunError::Step("blockWeights entry missing weight".into()))?;
                 let root = parse_root(root_s)?;
                 let got_w = got.get(&root).copied().unwrap_or(0);
                 if got_w != want_w {
@@ -157,17 +152,7 @@ pub fn apply_store_snapshot(store: &ForkChoiceStore, step: &Value) -> Result<(),
             }
         }
     }
-    crate::fc_snapshot_payloads::apply_payload_pool(
-        store,
-        snap,
-        "knownAggregatedPayloads",
-        true,
-    )?;
-    crate::fc_snapshot_payloads::apply_payload_pool(
-        store,
-        snap,
-        "newAggregatedPayloads",
-        false,
-    )?;
+    crate::fc_snapshot_payloads::apply_payload_pool(store, snap, "knownAggregatedPayloads", true)?;
+    crate::fc_snapshot_payloads::apply_payload_pool(store, snap, "newAggregatedPayloads", false)?;
     Ok(())
 }

@@ -13,6 +13,9 @@ use std::path::Path;
 pub struct LeanNetworkConfig {
     pub genesis_time: u64,
     pub attestation_committee_count: u64,
+    /// leanVM WHIR rate some generators write (Grandine reads it); `None`
+    /// when the file does not set it.
+    pub log_inv_rate: Option<u8>,
     pub validators: Vec<(Bytes52, Bytes52)>,
 }
 
@@ -22,6 +25,8 @@ struct RawConfig {
     genesis_time: u64,
     #[serde(rename = "ATTESTATION_COMMITTEE_COUNT", default)]
     attestation_committee_count: Option<u64>,
+    #[serde(rename = "LOG_INV_RATE", default)]
+    log_inv_rate: Option<u8>,
     #[serde(rename = "GENESIS_VALIDATORS", default)]
     genesis_validators: Vec<RawValidator>,
 }
@@ -43,16 +48,15 @@ struct RawDualKeys {
 
 /// Read `config.yaml` from disk.
 pub fn load_lean_network_config(path: &Path) -> Result<LeanNetworkConfig, GenesisError> {
-    let text = fs::read_to_string(path).map_err(|e| {
-        GenesisError::LeanConfig(format!("read {}: {e}", path.display()))
-    })?;
+    let text = fs::read_to_string(path)
+        .map_err(|e| GenesisError::LeanConfig(format!("read {}: {e}", path.display())))?;
     parse_lean_network_config(&text)
 }
 
 /// Parse Lean `config.yaml` text.
 pub fn parse_lean_network_config(text: &str) -> Result<LeanNetworkConfig, GenesisError> {
-    let raw: RawConfig = serde_yaml::from_str(text)
-        .map_err(|e| GenesisError::LeanConfig(format!("yaml: {e}")))?;
+    let raw: RawConfig =
+        serde_yaml::from_str(text).map_err(|e| GenesisError::LeanConfig(format!("yaml: {e}")))?;
     if raw.genesis_validators.is_empty() {
         return Err(GenesisError::EmptyValidators);
     }
@@ -85,6 +89,7 @@ pub fn parse_lean_network_config(text: &str) -> Result<LeanNetworkConfig, Genesi
     Ok(LeanNetworkConfig {
         genesis_time: raw.genesis_time,
         attestation_committee_count: raw.attestation_committee_count.unwrap_or(1),
+        log_inv_rate: raw.log_inv_rate,
         validators,
     })
 }
@@ -135,7 +140,18 @@ mod tests {
         );
         let cfg = parse_lean_network_config(&yaml).unwrap();
         assert_eq!(cfg.attestation_committee_count, 2);
+        assert_eq!(cfg.log_inv_rate, None);
         assert_eq!(cfg.validators[0].0.as_bytes()[0], 0xaa);
         assert_eq!(cfg.validators[0].1.as_bytes()[0], 0xbb);
+    }
+
+    #[test]
+    fn reads_optional_log_inv_rate() {
+        let yaml = format!(
+            "GENESIS_TIME: 1\nLOG_INV_RATE: 1\nGENESIS_VALIDATORS:\n  - \"{}\"\n",
+            key(0x11)
+        );
+        let cfg = parse_lean_network_config(&yaml).unwrap();
+        assert_eq!(cfg.log_inv_rate, Some(1));
     }
 }

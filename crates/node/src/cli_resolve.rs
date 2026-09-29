@@ -121,7 +121,7 @@ pub fn resolve_node_key(
 pub fn node_key_peer_id(key: &NodeKey) -> Option<String> {
     #[cfg(feature = "libp2p-quic")]
     {
-        return key.peer_id().ok().map(|p| p.to_string());
+        key.peer_id().ok().map(|p| p.to_string())
     }
     #[cfg(not(feature = "libp2p-quic"))]
     {

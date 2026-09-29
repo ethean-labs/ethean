@@ -48,7 +48,11 @@ pub fn decode_bool(input: &[u8], cursor: &mut usize) -> Result<bool, SszError> {
 }
 
 /// Decode exactly `len` fixed bytes into `out`.
-pub fn decode_fixed_bytes(input: &[u8], cursor: &mut usize, out: &mut [u8]) -> Result<(), SszError> {
+pub fn decode_fixed_bytes(
+    input: &[u8],
+    cursor: &mut usize,
+    out: &mut [u8],
+) -> Result<(), SszError> {
     need(input, *cursor, out.len())?;
     out.copy_from_slice(&input[*cursor..*cursor + out.len()]);
     *cursor += out.len();
@@ -56,10 +60,7 @@ pub fn decode_fixed_bytes(input: &[u8], cursor: &mut usize, out: &mut [u8]) -> R
 }
 
 /// Decode an offset list of variable elements; each slice is a contiguous payload.
-pub fn decode_offset_list<'a>(
-    input: &'a [u8],
-    limit: usize,
-) -> Result<Vec<&'a [u8]>, SszError> {
+pub fn decode_offset_list(input: &[u8], limit: usize) -> Result<Vec<&[u8]>, SszError> {
     if input.is_empty() {
         return Ok(Vec::new());
     }
@@ -70,7 +71,7 @@ pub fn decode_offset_list<'a>(
         });
     }
     let first = u32::from_le_bytes(input[0..4].try_into().unwrap()) as usize;
-    if first % 4 != 0 || first == 0 {
+    if !first.is_multiple_of(4) || first == 0 {
         return Err(SszError::OffsetBeforeFixed {
             offset: first,
             fixed_end: 4,
@@ -78,10 +79,7 @@ pub fn decode_offset_list<'a>(
     }
     let count = first / 4;
     if count > limit {
-        return Err(SszError::ListTooLong {
-            got: count,
-            limit,
-        });
+        return Err(SszError::ListTooLong { got: count, limit });
     }
     let mut offsets = Vec::with_capacity(count);
     for i in 0..count {

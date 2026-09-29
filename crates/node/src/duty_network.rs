@@ -13,16 +13,26 @@ impl EtheanClient {
         max_events: u32,
         idle: std::time::Duration,
     ) -> Result<u32> {
+        self.apply_network_window(max_events, idle, None).await
+    }
+
+    /// [`Self::apply_network_budget`] that never waits past `deadline`.
+    pub(crate) async fn apply_network_window(
+        &mut self,
+        max_events: u32,
+        idle: std::time::Duration,
+        deadline: Option<tokio::time::Instant>,
+    ) -> Result<u32> {
         #[cfg(feature = "libp2p-quic")]
         {
-            let budget = self.pump_network_idle(max_events, idle).await?;
+            let budget = self.pump_network_window(max_events, idle, deadline).await?;
             let drained = budget.drained;
             self.drive_status_and_gossip(&budget)?;
-            return Ok(drained);
+            Ok(drained)
         }
         #[cfg(not(feature = "libp2p-quic"))]
         {
-            let _ = (max_events, idle);
+            let _ = (max_events, idle, deadline);
             let _ = self.status_sessions.pending_len();
             Ok(0)
         }
@@ -103,10 +113,42 @@ impl EtheanClient {
     }
 
     #[cfg(feature = "libp2p-quic")]
+    fn forget_disconnected_peers(&mut self, peers: &[ethean_primitives::Hash32]) {
+        let mut dropped = 0usize;
+        for peer in peers {
+            self.status_sessions.on_peer_disconnected(peer);
+            if crate::sync_catchup::forget_peer(&mut self.sync_targets, peer) {
+                dropped += 1;
+            }
+        }
+        if dropped == 0 {
+            return;
+        }
+        let local_head = self
+            .owner
+            .head_state
+            .as_ref()
+            .map(|s| s.slot)
+            .unwrap_or_default();
+        crate::sync_catchup::apply_preferred_horizon(
+            &self.sync_targets,
+            &mut self.sync,
+            local_head,
+        );
+        info!(
+            dropped,
+            targets = self.sync_targets.len(),
+            lag = self.sync.lag(),
+            "disconnected peers dropped from sync targets"
+        );
+    }
+
+    #[cfg(feature = "libp2p-quic")]
     fn drive_status_and_gossip(
         &mut self,
         budget: &crate::swarm_pump::PumpBudgetResult,
     ) -> Result<()> {
+        self.forget_disconnected_peers(&budget.disconnected_peers);
         if let Some(local) = self.local_status.clone() {
             let queued = crate::status_handshake::queue_peers(
                 &mut self.status_sessions,
@@ -171,11 +213,7 @@ impl EtheanClient {
             match handshake {
                 Ok(out) => {
                     if let Some(remote) = out.remote {
-                        crate::sync_catchup::remember_target(
-                            &mut self.sync_targets,
-                            *peer,
-                            remote,
-                        );
+                        crate::sync_catchup::remember_target(&mut self.sync_targets, *peer, remote);
                     }
                     let local_head = self
                         .owner

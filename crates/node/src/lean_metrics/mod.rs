@@ -3,8 +3,8 @@
 //! Each helper maps one Ethean event onto the `lean_*` series defined by
 //! leanEthereum/leanMetrics; see `ethean_metrics::lean` for the table.
 
-mod gossip;
 pub mod coverage;
+mod gossip;
 mod peers;
 
 pub use gossip::{

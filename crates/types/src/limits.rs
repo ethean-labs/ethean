@@ -22,5 +22,4 @@ pub const XMSS_SIGNATURE_BYTES: usize = 2536;
 pub const BYTE_LIST_512_KIB: usize = 512 * 1024;
 
 /// JustificationValidators bitlist limit: roots × validators.
-pub const JUSTIFICATION_VALIDATORS_LIMIT: usize =
-    HISTORICAL_ROOTS_LIMIT * VALIDATOR_REGISTRY_LIMIT;
+pub const JUSTIFICATION_VALIDATORS_LIMIT: usize = HISTORICAL_ROOTS_LIMIT * VALIDATOR_REGISTRY_LIMIT;

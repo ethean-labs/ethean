@@ -3,7 +3,7 @@
 use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::events::ChainEvent;
-use crate::gossip_attestation::ingest_attestation_gossip;
+use crate::gossip_attestation::{ingest_attestation_gossip_with, PreVerifiedVote};
 use crate::gossip_decode::{content_root_for, try_decode_block};
 use crate::gossip_stf::import_decoded_block;
 use crate::shutdown::ShutdownState;
@@ -30,7 +30,7 @@ pub fn apply_command(
             topic,
             payload,
             peer: _,
-        } => ingest_gossip(owner, shutdown, topic, payload),
+        } => ingest_gossip(owner, shutdown, topic, payload, None),
         ChainCommand::SetSyncing(syncing) => {
             owner.syncing = syncing;
             ChainEvent::SyncingUpdated(syncing)
@@ -65,11 +65,14 @@ fn import_block(
     }
 }
 
-fn ingest_gossip(
+/// Ingest one gossip payload; `vote` is a signature verdict made ahead of
+/// time for attestation-subnet payloads.
+pub(crate) fn ingest_gossip(
     owner: &mut ChainOwner,
     shutdown: &ShutdownState,
     topic: String,
     payload: Vec<u8>,
+    vote: Option<PreVerifiedVote>,
 ) -> ChainEvent {
     if shutdown.phase() == crate::shutdown::ShutdownPhase::Stopped {
         return ChainEvent::ShutdownComplete;
@@ -77,7 +80,7 @@ fn ingest_gossip(
     let content_root = content_root_for(&topic, &payload);
     owner.last_gossip_root = Some(content_root);
 
-    if let Some(Err(reason)) = ingest_attestation_gossip(owner, &topic, &payload) {
+    if let Some(Err(reason)) = ingest_attestation_gossip_with(owner, &topic, &payload, vote) {
         tracing::debug!(%topic, %reason, "attestation gossip rejected");
     }
 

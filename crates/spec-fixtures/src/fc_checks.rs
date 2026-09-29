@@ -97,9 +97,7 @@ pub fn apply_checks(store: &ForkChoiceStore, step: &Value) -> Result<(), FcRunEr
             .blocks
             .get(&store.safe_target)
             .map(|b| b.slot.get())
-            .ok_or_else(|| {
-                FcRunError::Step("checks.safeTargetSlot: safe block missing".into())
-            })?;
+            .ok_or_else(|| FcRunError::Step("checks.safeTargetSlot: safe block missing".into()))?;
         if got != want {
             return Err(FcRunError::Step(format!(
                 "checks.safeTargetSlot got {got}, want {want}"

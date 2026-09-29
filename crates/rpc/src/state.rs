@@ -214,8 +214,10 @@ mod tests {
     #[test]
     fn publish_round_trip() {
         let st = SharedApiState::new("");
-        let mut snap = ApiSnapshot::default();
-        snap.network = "local".into();
+        let mut snap = ApiSnapshot {
+            network: "local".into(),
+            ..ApiSnapshot::default()
+        };
         snap.head.slot = Slot::new(7);
         st.publish(snap);
         assert_eq!(st.snapshot().head.slot.get(), 7);

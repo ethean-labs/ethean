@@ -6,7 +6,7 @@ use crate::json_types::{
 use ethean_primitives::ValidatorIndex;
 fn hex_bytes(s: &str) -> Result<Vec<u8>, JsonTypesError> {
     let s = s.trim().trim_start_matches("0x");
-    if s.len() % 2 != 0 {
+    if !s.len().is_multiple_of(2) {
         return Err(JsonTypesError::Serde("odd hex length".into()));
     }
     (0..s.len())

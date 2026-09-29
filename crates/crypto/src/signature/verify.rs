@@ -1,9 +1,9 @@
 //! Verification entry points (fail closed; never always-true on production paths).
 
+use crate::backend::CryptoBackend;
 use crate::error::{CryptoError, Result};
 use crate::signature::{PublicKey, Signature};
 use crate::xmss::config::MESSAGE_BYTES;
-use crate::backend::CryptoBackend;
 
 /// Verify a message under `pk` at `epoch` using the active backend.
 pub fn verify(

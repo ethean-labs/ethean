@@ -1,9 +1,9 @@
 //! Request dispatch helpers (HTTP server wiring deferred to binary).
 
+use crate::auth::{authorize_admin, BindScope};
 use crate::error::{Result, RpcError};
 use crate::limits::MAX_BODY_BYTES;
 use crate::routes::{match_route, requires_admin, Route};
-use crate::auth::{authorize_admin, BindScope};
 
 /// Inbound request after HTTP parsing.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -15,11 +15,7 @@ pub struct IncomingRequest<'a> {
 }
 
 /// Validate body size and route; enforce admin auth when required.
-pub fn dispatch(
-    req: &IncomingRequest<'_>,
-    scope: BindScope,
-    admin_token: &str,
-) -> Result<Route> {
+pub fn dispatch(req: &IncomingRequest<'_>, scope: BindScope, admin_token: &str) -> Result<Route> {
     if req.body_len > MAX_BODY_BYTES {
         return Err(RpcError::BodyTooLarge {
             got: req.body_len,

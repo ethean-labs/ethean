@@ -175,7 +175,7 @@ mod tests {
     fn resolve_prefers_cli_over_default() {
         assert_eq!(resolve_prune_keep_slots(Some(64)), 64);
         // Without CLI and without a valid env override, default keep applies.
-        let _ = std::env::remove_var("ETHEAN_PRUNE_KEEP_SLOTS");
+        std::env::remove_var("ETHEAN_PRUNE_KEEP_SLOTS");
         assert_eq!(resolve_prune_keep_slots(None), KEEP_BELOW_FINALIZED);
     }
 

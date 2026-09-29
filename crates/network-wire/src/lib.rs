@@ -15,8 +15,8 @@ pub mod topics;
 pub mod varint;
 
 pub use codec::{
-    decode_request, decode_response, decode_response_chunk, decode_response_stream,
-    encode_request, encode_response, encode_response_stream, split_one_chunk, ResponseChunk,
+    decode_request, decode_response, decode_response_chunk, decode_response_stream, encode_request,
+    encode_response, encode_response_stream, split_one_chunk, ResponseChunk,
 };
 pub use error::{Result, WireError};
 pub use fork_id::{

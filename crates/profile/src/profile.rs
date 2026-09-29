@@ -77,9 +77,7 @@ impl ChainProfile {
         if self.milliseconds_per_slot != self.seconds_per_slot.saturating_mul(1000) {
             return Err(ProfileError::InconsistentSlotMilliseconds);
         }
-        if self.milliseconds_per_interval
-            != self.milliseconds_per_slot / self.intervals_per_slot
-        {
+        if self.milliseconds_per_interval != self.milliseconds_per_slot / self.intervals_per_slot {
             return Err(ProfileError::InconsistentIntervalMilliseconds);
         }
         Ok(())

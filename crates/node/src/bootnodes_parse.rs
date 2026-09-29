@@ -48,7 +48,7 @@ pub fn load_bootnodes_file(path: &Path) -> Result<Vec<String>, String> {
 }
 
 fn split_list(raw: &str) -> Vec<String> {
-    raw.split(|c| c == ',' || c == ';' || c == '\n')
+    raw.split([',', ';', '\n'])
         .map(str::trim)
         .map(|s| s.trim_start_matches("- ").trim())
         .filter(|s| !s.is_empty() && !s.starts_with('#'))

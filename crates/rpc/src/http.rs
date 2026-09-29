@@ -125,7 +125,11 @@ async fn read_one_request(
     }
 }
 
-async fn write_reply(stream: &mut TcpStream, reply: &HttpReply, keep_alive: bool) -> io::Result<()> {
+async fn write_reply(
+    stream: &mut TcpStream,
+    reply: &HttpReply,
+    keep_alive: bool,
+) -> io::Result<()> {
     let conn = if keep_alive { "keep-alive" } else { "close" };
     let head = format!(
         "HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: {conn}\r\n\r\n",

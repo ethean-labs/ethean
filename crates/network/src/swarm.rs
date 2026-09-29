@@ -3,7 +3,8 @@
 use crate::error::{NetworkError, Result};
 use crate::peer_manager::PeerManager;
 use crate::reqresp::{
-    OutboundBlocksByRangeRequest, OutboundBlocksByRootRequest, OutboundStatusRequest, RequestTracker,
+    OutboundBlocksByRangeRequest, OutboundBlocksByRootRequest, OutboundStatusRequest,
+    RequestTracker,
 };
 use crate::transport::{dial_quic, BoundTransport};
 
@@ -160,7 +161,11 @@ impl SwarmFacade {
 
     /// Cache a block body for inbound blocks-by-root replies.
     #[cfg(feature = "libp2p-quic")]
-    pub fn put_block_bytes(&mut self, root: ethean_primitives::Hash32, bytes: Vec<u8>) -> Result<()> {
+    pub fn put_block_bytes(
+        &mut self,
+        root: ethean_primitives::Hash32,
+        bytes: Vec<u8>,
+    ) -> Result<()> {
         let Some(swarm) = self.quic.as_mut() else {
             return Err(NetworkError::TransportPending(
                 "bind_quic_swarm before put_block_bytes",

@@ -1,9 +1,10 @@
 //! Remember peer Status tips and stage follow-up block sync while catching up.
 //!
-//! When several peers advertise tips, catch-up follows the **majority** finalized
-//! checkpoint (Hive “rejects ahead bad checkpoint”: two honest helpers beat one
-//! artificially ahead adversarial peer). A singleton tip is only chased when no
-//! finalized group has two or more votes.
+//! The sync target follows leanSpec `PeerManager.get_network_finalized_slot`:
+//! the finalized slot reported by the most connected peers, higher slot on an
+//! equal count. Two agreeing honest peers therefore outvote one artificially
+//! ahead peer (Hive “rejects ahead bad checkpoint”), and a 1–1 split still
+//! yields a target instead of stalling.
 
 use ethean_network::{
     prepare_blocks_by_range_outbound, prepare_blocks_by_root_for_roots,
@@ -43,6 +44,13 @@ pub fn remember_target(targets: &mut Vec<PeerSyncTarget>, peer: Hash32, remote: 
     targets.push(PeerSyncTarget { peer, remote });
 }
 
+/// Forget a peer whose last connection closed; its tip no longer votes.
+pub fn forget_peer(targets: &mut Vec<PeerSyncTarget>, peer: &Hash32) -> bool {
+    let before = targets.len();
+    targets.retain(|t| &t.peer != peer);
+    targets.len() != before
+}
+
 /// Drop targets that are no longer ahead on head **or** finalized.
 pub fn prune_caught_up(targets: &mut Vec<PeerSyncTarget>, local_head_slot: u64) {
     targets.retain(|t| {
@@ -79,31 +87,23 @@ fn still_ahead(remote: &Status, local_head_slot: u64) -> bool {
     remote.head_slot() > local_head_slot || remote.finalized_slot() > local_head_slot
 }
 
-/// Finalized tip with the strongest peer agreement.
+/// Network finalized estimate: `(root, slot)` reported by the most peers.
 ///
-/// Prefers any `(root, slot)` with **≥2** votes (highest slot, then vote count).
-/// With a single remembered peer, that peer's finalized tip wins. With a 1–1
-/// disagreement and no multi-vote group, returns `None` so we do not chase a
-/// lone adversarial tip.
+/// Slot is ranked by `(report count, slot)` exactly as leanSpec does. Within the
+/// winning slot the most reported root is used (larger root on a tie) so the
+/// result does not depend on handshake order.
 pub fn preferred_finalized(targets: &[PeerSyncTarget]) -> Option<(Hash32, u64)> {
-    if targets.is_empty() {
-        return None;
-    }
-    if targets.len() == 1 {
-        let t = &targets[0];
-        return Some((t.remote.finalized_root(), t.remote.finalized_slot()));
-    }
-    let mut counts: HashMap<(Hash32, u64), usize> = HashMap::new();
+    let mut by_slot: HashMap<u64, usize> = HashMap::new();
     for t in targets {
-        *counts
-            .entry((t.remote.finalized_root(), t.remote.finalized_slot()))
-            .or_default() += 1;
+        *by_slot.entry(t.remote.finalized_slot()).or_default() += 1;
     }
-    counts
-        .into_iter()
-        .filter(|(_, n)| *n >= 2)
-        .max_by_key(|((_, slot), n)| (*n, *slot))
-        .map(|((root, slot), _)| (root, slot))
+    let (slot, _) = by_slot.into_iter().max_by_key(|(slot, n)| (*n, *slot))?;
+    let mut by_root: HashMap<Hash32, usize> = HashMap::new();
+    for t in targets.iter().filter(|t| t.remote.finalized_slot() == slot) {
+        *by_root.entry(t.remote.finalized_root()).or_default() += 1;
+    }
+    let (root, _) = by_root.into_iter().max_by_key(|(root, n)| (*n, *root))?;
+    Some((root, slot))
 }
 
 /// Peer to fetch from: majority finalized tip that is still ahead of local head.
@@ -162,13 +162,9 @@ pub fn prepare_follow_up(
     let need_finalized_pin = behind_finalized(&target.remote, local_head_slot);
 
     if lag >= RANGE_PREFER_LAG_SLOTS {
-        let blocks_by_range = prepare_blocks_by_range_outbound(
-            target.peer,
-            local_head_slot,
-            &target.remote,
-            tracker,
-        )
-        .map_err(|e| e.to_string())?;
+        let blocks_by_range =
+            prepare_blocks_by_range_outbound(target.peer, local_head_slot, &target.remote, tracker)
+                .map_err(|e| e.to_string())?;
         let blocks_by_root = if need_finalized_pin {
             let roots = recovery_roots(&target.remote, local_head_root);
             prepare_blocks_by_root_for_roots(target.peer, roots, tracker)
@@ -322,7 +318,7 @@ mod tests {
     }
 
     #[test]
-    fn no_majority_skips_disputed_ahead_tips() {
+    fn equal_count_split_prefers_higher_slot() {
         let targets = vec![
             PeerSyncTarget {
                 peer: [1u8; 32],
@@ -333,8 +329,58 @@ mod tests {
                 remote: tip_finalized(40, 30, [2u8; 32]),
             },
         ];
-        assert_eq!(preferred_finalized(&targets), None);
-        assert!(select_catchup_target(&targets, 5).is_none());
+        assert_eq!(preferred_finalized(&targets), Some(([2u8; 32], 30)));
+        let chosen = select_catchup_target(&targets, 5).expect("1-1 split must not stall");
+        assert_eq!(chosen.peer, [2u8; 32]);
+    }
+
+    #[test]
+    fn same_slot_fork_picks_most_reported_root() {
+        let targets = vec![
+            PeerSyncTarget {
+                peer: [1u8; 32],
+                remote: tip_finalized(12, 10, [1u8; 32]),
+            },
+            PeerSyncTarget {
+                peer: [2u8; 32],
+                remote: tip_finalized(12, 10, [5u8; 32]),
+            },
+            PeerSyncTarget {
+                peer: [3u8; 32],
+                remote: tip_finalized(12, 10, [1u8; 32]),
+            },
+        ];
+        assert_eq!(preferred_finalized(&targets), Some(([1u8; 32], 10)));
+    }
+
+    #[test]
+    fn forgotten_peer_stops_voting() {
+        let honest = [0xau8; 32];
+        let bad = [0xbbu8; 32];
+        let mut targets = vec![
+            PeerSyncTarget {
+                peer: [1u8; 32],
+                remote: tip_finalized(12, 10, honest),
+            },
+            PeerSyncTarget {
+                peer: [2u8; 32],
+                remote: tip_finalized(40, 30, bad),
+            },
+            PeerSyncTarget {
+                peer: [3u8; 32],
+                remote: tip_finalized(40, 30, bad),
+            },
+        ];
+        assert_eq!(preferred_finalized(&targets), Some((bad, 30)));
+        assert!(forget_peer(&mut targets, &[2u8; 32]));
+        assert!(forget_peer(&mut targets, &[3u8; 32]));
+        assert!(!forget_peer(&mut targets, &[3u8; 32]));
+        assert_eq!(preferred_finalized(&targets), Some((honest, 10)));
+    }
+
+    #[test]
+    fn empty_targets_have_no_preference() {
+        assert_eq!(preferred_finalized(&[]), None);
     }
 
     #[test]

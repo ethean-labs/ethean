@@ -77,7 +77,9 @@ pub fn parse_http_request(raw: &[u8]) -> Result<ParsedRequest, ParseError> {
         });
     }
     let body_start = header_end;
-    let body_end = body_start.checked_add(body_len).ok_or(ParseError::BadRequest)?;
+    let body_end = body_start
+        .checked_add(body_len)
+        .ok_or(ParseError::BadRequest)?;
     if raw.len() < body_end {
         return Err(ParseError::Incomplete);
     }
@@ -103,7 +105,8 @@ pub fn parse_http_request(raw: &[u8]) -> Result<ParsedRequest, ParseError> {
 /// How many bytes of `raw` this request consumed (headers + body).
 pub fn request_span(raw: &[u8]) -> Result<usize, ParseError> {
     let header_end = find_header_end(raw).ok_or(ParseError::Incomplete)?;
-    let header_text = std::str::from_utf8(&raw[..header_end]).map_err(|_| ParseError::BadRequest)?;
+    let header_text =
+        std::str::from_utf8(&raw[..header_end]).map_err(|_| ParseError::BadRequest)?;
     let mut content_length = 0usize;
     for line in header_text.split("\r\n").skip(1) {
         if line.is_empty() {
@@ -174,7 +177,8 @@ mod tests {
 
     #[test]
     fn parses_get_with_query_and_accept() {
-        let raw = b"GET /lean/v0/health?x=1 HTTP/1.1\r\nAccept: application/json\r\nHost: x\r\n\r\n";
+        let raw =
+            b"GET /lean/v0/health?x=1 HTTP/1.1\r\nAccept: application/json\r\nHost: x\r\n\r\n";
         let p = parse_http_request(raw).unwrap();
         assert_eq!(p.method, "GET");
         assert_eq!(p.path, "/lean/v0/health");

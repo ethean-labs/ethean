@@ -37,7 +37,7 @@ pub fn extended_chain_view(pre: &State, parent_root: Hash32, slot: Slot) -> Vec<
     view.push(parent_root);
     let parent_slot = pre.latest_block_header.slot.get();
     let empty = slot.get().saturating_sub(parent_slot + 1);
-    view.extend(std::iter::repeat(HASH32_ZERO).take(empty as usize));
+    view.extend(std::iter::repeat_n(HASH32_ZERO, empty as usize));
     view
 }
 

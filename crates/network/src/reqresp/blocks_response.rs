@@ -1,7 +1,9 @@
 //! Spec req/resp block response: one SignedBlock per SUCCESS chunk, read to EOF.
 
 use ethean_network_wire::limits::MAX_BLOCKS_PER_REQUEST;
-use ethean_network_wire::{decode_response_stream, encode_response, encode_response_stream, ResponseCode};
+use ethean_network_wire::{
+    decode_response_stream, encode_response, encode_response_stream, ResponseCode,
+};
 
 use crate::error::{NetworkError, Result};
 

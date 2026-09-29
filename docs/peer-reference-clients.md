@@ -1,6 +1,8 @@
 # Peer reference clients
 
-When a change is interop-critical (SSZ, signatures, aggregation, fork choice, gossip), look at Ream, Zeam, Qlean-mini, ethlambda, Lantern (`bitminetech/lantern`), gean, and Peam. Copy protocol behavior, not their code style or layout. leanSpec still wins if they disagree.
+When a change is interop-critical (SSZ, signatures, aggregation, fork choice, gossip), look at Ream, Zeam, Qlean-mini, ethlambda, Lantern (`bitminetech/lantern`), gean, Peam, and Grandine lean (`grandinetech/lean`, branch `devnet-5-leanvm-main`). Copy protocol behavior, not their code style or layout. leanSpec still wins if they disagree.
+
+Grandine lean review (health body, interval-4 block pre-build, `LOG_INV_RATE` in config.yaml): [grandine-lean-reference-2026-09-29.md](peer-clients/grandine-lean-reference-2026-09-29.md).
 
 How Ream, ethlambda, and Zeam actually start and join a pq-devnet (shared genesis YAML, static ENRs, aggregator flag, D4 vs D5): [peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md](peer-clients/peer-clients-ream-ethlambda-zeam-devnets-2026-09-20.md).
 

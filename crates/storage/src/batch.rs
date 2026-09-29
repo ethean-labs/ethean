@@ -56,8 +56,11 @@ impl WriteBatch {
     }
 }
 
+/// In-memory table rows keyed by `(table, key)`, holding `(value, checksum)`.
+pub type MemRows = HashMap<(String, Vec<u8>), (Vec<u8>, Hash32)>;
+
 /// Apply puts into an in-memory map (test / process-local backend).
-pub fn apply_puts(map: &mut HashMap<(String, Vec<u8>), (Vec<u8>, Hash32)>, puts: &[BatchPut]) {
+pub fn apply_puts(map: &mut MemRows, puts: &[BatchPut]) {
     for p in puts {
         map.insert(
             (p.table.to_string(), p.key.clone()),

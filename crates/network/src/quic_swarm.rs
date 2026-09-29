@@ -248,6 +248,7 @@ impl QuicSwarm {
                 peer_id,
                 endpoint,
                 cause,
+                num_established,
                 ..
             } => {
                 let peer = self.forget_peer(&peer_id);
@@ -261,6 +262,7 @@ impl QuicSwarm {
                     peer: Some(peer),
                     outbound: endpoint.is_dialer(),
                     reason,
+                    last: num_established == 0,
                 }
             }
             SwarmEvent::OutgoingConnectionError { .. } => PumpEvent::OutgoingError,

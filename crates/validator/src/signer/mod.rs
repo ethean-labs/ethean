@@ -12,7 +12,7 @@ pub use recovery::reconcile_on_startup;
 
 use crate::error::{Result, SignerError};
 use ethean_crypto::{
-    signature_hash, sign, verify, CryptoBackend, PublicKey, SecretKeyMaterial, Signature,
+    sign, signature_hash, verify, CryptoBackend, PublicKey, SecretKeyMaterial, Signature,
 };
 use std::sync::Arc;
 
@@ -43,12 +43,18 @@ impl<B: CryptoBackend, S: SignerStore> Signer<B, S> {
             return Err(SignerError::LeafBurned);
         }
 
-        let record = self.store.get_key(&duty.key_id)?.ok_or(SignerError::KeyNotFound)?;
+        let record = self
+            .store
+            .get_key(&duty.key_id)?
+            .ok_or(SignerError::KeyNotFound)?;
         if record.role != duty.role {
             return Err(SignerError::CrossRoleKeyUse);
         }
         if duty.slot < record.activation_slot
-            || duty.slot >= record.activation_slot.saturating_add(record.num_active_slots)
+            || duty.slot
+                >= record
+                    .activation_slot
+                    .saturating_add(record.num_active_slots)
         {
             return Err(SignerError::LifetimeExhausted);
         }
@@ -117,7 +123,10 @@ impl<B: CryptoBackend, S: SignerStore> Signer<B, S> {
             return Err(SignerError::CrossRoleKeyUse);
         }
         if duty.slot < record.activation_slot
-            || duty.slot >= record.activation_slot.saturating_add(record.num_active_slots)
+            || duty.slot
+                >= record
+                    .activation_slot
+                    .saturating_add(record.num_active_slots)
         {
             return Err(SignerError::LifetimeExhausted);
         }

@@ -48,8 +48,8 @@ impl StatusSessionBook {
             .pending
             .remove(&peer)
             .ok_or_else(|| NetworkError::Handshake("no pending status for peer".into()))?;
-        let remote = Status::decode(remote_bytes)
-            .map_err(|e| NetworkError::Handshake(e.to_string()))?;
+        let remote =
+            Status::decode(remote_bytes).map_err(|e| NetworkError::Handshake(e.to_string()))?;
         let exchange = handle_status(&local, remote)?;
         self.completed.push(exchange.clone());
         Ok(exchange)

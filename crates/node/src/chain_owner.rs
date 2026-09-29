@@ -34,7 +34,7 @@ pub struct ChainSnapshot {
 }
 
 /// Owns chain mutation; workers only read snapshots / send commands.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ChainOwner {
     /// Current generation for stale rejection.
     pub generation: u64,
@@ -60,6 +60,10 @@ pub struct ChainOwner {
     pub planned_proposal: Option<PlanTransition>,
     /// Tick that produced `planned_proposal`, if any.
     pub planned_tick: Option<DutyTick>,
+    /// Slot whose block proof was submitted and has not failed yet.
+    pub block_proof_slot: Option<u64>,
+    /// Block proof that finished before the wall clock reached its slot.
+    pub deferred_block_proof: Option<crate::proof_collect::DeferredBlockProof>,
     /// Encoded SignedBlock waiting for network gossip publish.
     pub pending_block_gossip: Option<ProposalGossip>,
     /// Recently applied block SSZ blobs waiting for `--data-dir` flush.
@@ -70,6 +74,8 @@ pub struct ChainOwner {
     pub proposer: Option<LocalProposer>,
     /// Optional local attestation signer (Hive registry / smoke).
     pub attester: Option<LocalAttester>,
+    /// Keeps installed XMSS keys' windows prepared off the signing path.
+    pub key_prep: crate::key_prep::KeyPreparer,
     /// Validator indices owned by this node (from Hive registry).
     pub owned_validator_indices: Vec<u64>,
     /// Sync blobs waiting for a missing parent (blocks-by-root catch-up).
@@ -89,39 +95,6 @@ pub struct ChainOwner {
     /// Attestation data seen on chain, by data root -> vote slot
     /// (leanSpec `latest_known_aggregated_payloads`).
     pub known_payloads: std::collections::HashMap<Hash32, u64>,
-}
-
-impl Default for ChainOwner {
-    fn default() -> Self {
-        Self {
-            generation: 0,
-            last_tick: None,
-            head_root: Hash32::default(),
-            head_state: None,
-            syncing: false,
-            last_gossip_root: None,
-            profile: None,
-            aggregates: AggregatePool::default(),
-            signatures: AttestationSignaturePool::default(),
-            prover: None,
-            planned_proposal: None,
-            planned_tick: None,
-            pending_block_gossip: None,
-            durable_blocks: Vec::new(),
-            pending_aggregation_gossip: Vec::new(),
-            proposer: None,
-            attester: None,
-            owned_validator_indices: Vec::new(),
-            sync_orphans: SyncOrphanCache::default(),
-            max_head_lag_slots: 0,
-            is_aggregator: false,
-            local_finality: false,
-            safe_target: Hash32::default(),
-            reorg_total: 0,
-            fc: None,
-            known_payloads: std::collections::HashMap::new(),
-        }
-    }
 }
 
 impl ChainOwner {

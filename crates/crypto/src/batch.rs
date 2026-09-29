@@ -93,6 +93,50 @@ mod tests {
         assert_eq!(verify_batch(&items), vec![false; 5]);
     }
 
+    /// Serial vs batched PROD verify of one real signature; run with
+    /// `--release --ignored --nocapture`. Key generation builds two PROD
+    /// bottom trees first (about 20 s in release).
+    #[test]
+    #[ignore]
+    fn timing_probe_prod_batch_verify() {
+        use crate::backend::{CryptoBackend, ProductionBackend};
+
+        let (pk, sk) = ProductionBackend.key_gen(0, 8).unwrap();
+        let message = [5u8; 32];
+        let sig = ProductionBackend.sign(&sk, 3, &message).unwrap();
+        let pk = XmssPublicKey::from_ssz(pk.as_bytes()).unwrap();
+        let items: Vec<BatchVerifyItem> = (0..256)
+            .map(|_| BatchVerifyItem {
+                public_key: &pk,
+                epoch: 3,
+                message: &message,
+                signature: &sig,
+            })
+            .collect();
+        let start = std::time::Instant::now();
+        for item in &items {
+            let decoded = XmssSignature::from_ssz(&PROD, item.signature.as_bytes()).unwrap();
+            assert!(native::verify(
+                &PROD,
+                item.public_key,
+                3,
+                item.message,
+                &decoded
+            ));
+        }
+        let serial = start.elapsed();
+        let start = std::time::Instant::now();
+        assert!(verify_batch(&items).into_iter().all(|ok| ok));
+        let batched = start.elapsed();
+        eprintln!(
+            "prod verify x{}: serial {serial:?} ({:?}/sig), batch {batched:?} ({:?}/sig) on {} workers",
+            items.len(),
+            serial / items.len() as u32,
+            batched / items.len() as u32,
+            parallel::worker_count(),
+        );
+    }
+
     #[test]
     fn cache_decodes_once_and_replaces_on_change() {
         let cache = PublicKeyCache::new();

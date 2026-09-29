@@ -4,6 +4,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 
 - [build path shim quiet success](build-path-shim-quiet-success-2026-09-20.md)
 - [bump version safe cargo lock](bump-version-safe-cargo-lock-2026-09-20.md)
+- [ci lint gates node tests](ci-lint-gates-node-tests-2026-09-29.md)
 - [changelog three milestone releases](changelog-three-milestone-releases-2026-09-23.md)
 - [code of conduct](code-of-conduct-2026-09-20.md)
 - [contributing guide](contributing-guide-2026-09-20.md)

@@ -74,7 +74,7 @@ impl ForkChoiceStore {
         )?;
         for (i, bit) in participants.iter().enumerate() {
             if *bit {
-                self.insert_pending_vote(ValidatorIndex::new(i as u64), data.clone());
+                self.insert_pending_vote(ValidatorIndex::new(i as u64), data);
             }
         }
         self.record_new_payload(data, participants);
@@ -100,10 +100,7 @@ impl ForkChoiceStore {
         }
     }
 
-    pub fn validate_attestation(
-        &self,
-        data: &AttestationData,
-    ) -> Result<(), ForkChoiceError> {
+    pub fn validate_attestation(&self, data: &AttestationData) -> Result<(), ForkChoiceError> {
         if !self.blocks.contains_key(&data.source.root) {
             return Err(ForkChoiceError::UnknownSourceBlock);
         }

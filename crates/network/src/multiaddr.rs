@@ -40,7 +40,9 @@ pub fn parse_quic_udp(multiaddr: &str) -> Result<QuicUdpAddr> {
         .parse()
         .map_err(|_| NetworkError::Handshake(format!("bad udp port: {}", parts[3])))?;
     if port == 0 {
-        return Err(NetworkError::Handshake("udp port 0 refused for dial".into()));
+        return Err(NetworkError::Handshake(
+            "udp port 0 refused for dial".into(),
+        ));
     }
     Ok(QuicUdpAddr { ip, port })
 }

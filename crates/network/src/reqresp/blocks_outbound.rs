@@ -97,9 +97,11 @@ mod tests {
             head: ethean_network_wire::Checkpoint { root, slot: 1 },
         };
         let mut tracker = RequestTracker::default();
-        assert!(prepare_blocks_by_root_outbound([1u8; 32], root, &remote, &mut tracker)
-            .unwrap()
-            .is_none());
+        assert!(
+            prepare_blocks_by_root_outbound([1u8; 32], root, &remote, &mut tracker)
+                .unwrap()
+                .is_none()
+        );
         assert!(tracker.is_empty());
     }
 }

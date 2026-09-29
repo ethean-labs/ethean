@@ -25,8 +25,7 @@ impl ForkChoiceStore {
         }
 
         let parent_state = &self.block_states[&block.parent_root];
-        if block.slot.get().saturating_sub(parent_state.slot.get()) > self.historical_roots_limit
-        {
+        if block.slot.get().saturating_sub(parent_state.slot.get()) > self.historical_roots_limit {
             return Err(ForkChoiceError::BlockSlotGapTooLarge);
         }
         let current_slot = self.current_slot();
@@ -54,7 +53,9 @@ impl ForkChoiceStore {
             .map(|a| (a.aggregation_bits.bits.clone(), a.data))
             .collect();
 
-        self.latest_justified = self.latest_justified.advance_to(post_state.latest_justified);
+        self.latest_justified = self
+            .latest_justified
+            .advance_to(post_state.latest_justified);
         self.blocks.insert(block_root, block);
         self.block_states.insert(block_root, post_state);
 

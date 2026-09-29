@@ -54,7 +54,9 @@ pub fn on_pump_event(book: &mut StatusSessionBook, event: &PumpEvent, local: &St
             1
         }
         PumpEvent::ConnectionClosed {
-            peer: Some(peer), ..
+            peer: Some(peer),
+            last: true,
+            ..
         } => {
             book.on_peer_disconnected(peer);
             0

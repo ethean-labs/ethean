@@ -53,7 +53,10 @@ mod tests {
     fn rejects_wrong_length() {
         assert!(matches!(
             PublicKey::try_from_slice(&[0u8; 51]),
-            Err(CryptoError::InvalidPublicKeyLength { expected: 52, got: 51 })
+            Err(CryptoError::InvalidPublicKeyLength {
+                expected: 52,
+                got: 51
+            })
         ));
     }
 

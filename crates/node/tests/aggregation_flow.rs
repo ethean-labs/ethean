@@ -14,7 +14,9 @@ use ethean_genesis::GenesisBuilder;
 use ethean_multisig::ProverConfig;
 use ethean_node::chain_owner::ChainOwner;
 use ethean_node::events::ChainEvent;
-use ethean_node::gossip_attestation::ingest_attestation_gossip;
+use ethean_node::gossip_attestation::{
+    ingest_attestation_gossip, ingest_attestation_gossip_with, preverify_votes,
+};
 use ethean_node::local_proposer::LocalProposer;
 use ethean_node::proof_service::ProofService;
 use ethean_node::shutdown::ShutdownState;
@@ -140,23 +142,21 @@ fn votes_aggregate_into_a_block_that_a_peer_verifies() {
         source: genesis,
     };
     let data_root = data.hash_tree_root();
-    for index in [0usize, 2, 3] {
-        let signature = ProductionBackend
-            .sign(&keys[index].attestation.1, 0, &data_root)
-            .unwrap();
-        let vote = SignedAttestation::new(
-            ValidatorIndex::new(index as u64),
-            data,
-            signature.as_bytes().to_vec(),
-        )
-        .unwrap();
-        let accepted = ingest_attestation_gossip(
-            &mut aggregator,
-            "/leanconsensus/x/attestation_0/ssz_snappy",
-            &vote.ssz_encode(),
-        );
-        assert_eq!(accepted, Some(Ok(data_root)));
-    }
+    let mut window: Vec<Vec<u8>> = [0usize, 2, 3]
+        .into_iter()
+        .map(|index| {
+            let signature = ProductionBackend
+                .sign(&keys[index].attestation.1, 0, &data_root)
+                .unwrap();
+            SignedAttestation::new(
+                ValidatorIndex::new(index as u64),
+                data,
+                signature.as_bytes().to_vec(),
+            )
+            .unwrap()
+            .ssz_encode()
+        })
+        .collect();
     let forged = SignedAttestation::new(
         ValidatorIndex::new(1),
         data,
@@ -167,6 +167,25 @@ fn votes_aggregate_into_a_block_that_a_peer_verifies() {
             .to_vec(),
     )
     .unwrap();
+    window.push(forged.ssz_encode());
+
+    // The whole window verifies in one parallel batch, then admits in order.
+    let topic = "/leanconsensus/x/attestation_0/ssz_snappy";
+    let batch: Vec<(&str, &[u8])> = window.iter().map(|p| (topic, p.as_slice())).collect();
+    let verdicts = preverify_votes(&aggregator, &batch);
+    assert!(verdicts.iter().all(Option::is_some));
+    let outcomes: Vec<_> = window
+        .iter()
+        .zip(verdicts)
+        .map(|(payload, vote)| {
+            ingest_attestation_gossip_with(&mut aggregator, topic, payload, vote).unwrap()
+        })
+        .collect();
+    assert_eq!(
+        &outcomes[..3],
+        &[Ok(data_root), Ok(data_root), Ok(data_root)]
+    );
+    assert!(outcomes[3].is_err());
     assert!(matches!(
         ingest_attestation_gossip(&mut aggregator, "/x/attestation_0/y", &forged.ssz_encode()),
         Some(Err(_))
@@ -280,6 +299,9 @@ fn votes_aggregate_into_a_block_that_a_peer_verifies() {
         "lean_gossip_attestation_size_bytes",
         "lean_gossip_aggregation_size_bytes",
     ] {
-        assert!(observations(histogram, &[]).unwrap_or(0) >= 1, "{histogram} not observed");
+        assert!(
+            observations(histogram, &[]).unwrap_or(0) >= 1,
+            "{histogram} not observed"
+        );
     }
 }

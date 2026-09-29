@@ -40,9 +40,9 @@ fn run_ok(rel: &str) -> Option<FcRunReport> {
 
 #[test]
 fn safe_target_holds_below_supermajority() {
-    let Some(r) = run_ok(
-        "test_safe_target/test_safe_target_does_not_advance_below_supermajority.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_safe_target/test_safe_target_does_not_advance_below_supermajority.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -53,9 +53,9 @@ fn safe_target_holds_below_supermajority() {
 
 #[test]
 fn safe_target_advances_incrementally() {
-    let Some(r) = run_ok(
-        "test_safe_target/test_safe_target_advances_incrementally_along_the_chain.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_safe_target/test_safe_target_advances_incrementally_along_the_chain.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -90,9 +90,8 @@ fn supermajority_three_of_five_holds_genesis() {
 
 #[test]
 fn head_retreats_onto_shorter_justified_fork() {
-    let Some(r) = run_ok(
-        "test_head_movement/test_head_retreats_onto_shorter_justified_fork.json",
-    ) else {
+    let Some(r) = run_ok("test_head_movement/test_head_retreats_onto_shorter_justified_fork.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -102,9 +101,9 @@ fn head_retreats_onto_shorter_justified_fork() {
 
 #[test]
 fn equal_slot_justified_keeps_original_root() {
-    let Some(r) = run_ok(
-        "test_head_movement/test_equal_slot_justified_candidate_keeps_original_root.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_head_movement/test_equal_slot_justified_candidate_keeps_original_root.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -114,9 +113,9 @@ fn equal_slot_justified_keeps_original_root() {
 
 #[test]
 fn finalization_prunes_stale_aggregated_payloads() {
-    let Some(r) = run_ok(
-        "test_store_pruning/test_finalization_prunes_stale_aggregated_payloads.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_store_pruning/test_finalization_prunes_stale_aggregated_payloads.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };

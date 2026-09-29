@@ -157,14 +157,16 @@ fn decode_by_name(name: &str, bytes: &[u8]) -> Option<Decoded> {
                 Err(format!("Bytes4 needs 4 bytes, got {}", bytes.len()))
             }
         }
-        "Validators" => ethean_types::decode_validator_list(bytes).map_err(s).and_then(|list| {
-            let roots: Vec<Root> = list.iter().map(Validator::hash_tree_root).collect();
-            let mut enc = Vec::with_capacity(list.len() * 112);
-            for v in &list {
-                enc.extend_from_slice(&v.ssz_encode());
-            }
-            Ok((enc, Some(hash_tree_root_list(&roots, 1 << 12).map_err(s)?)))
-        }),
+        "Validators" => ethean_types::decode_validator_list(bytes)
+            .map_err(s)
+            .and_then(|list| {
+                let roots: Vec<Root> = list.iter().map(Validator::hash_tree_root).collect();
+                let mut enc = Vec::with_capacity(list.len() * 112);
+                for v in &list {
+                    enc.extend_from_slice(&v.ssz_encode());
+                }
+                Ok((enc, Some(hash_tree_root_list(&roots, 1 << 12).map_err(s)?)))
+            }),
         "DecodeBitlist8" => decode_bitlist(bytes, 8)
             .map_err(s)
             .map(|bits| (encode_bitlist(&bits), None)),

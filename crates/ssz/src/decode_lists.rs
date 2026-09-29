@@ -5,7 +5,7 @@ use crate::error::SszError;
 
 /// Decode packed `Hash32` / `[u8; 32]` list (no per-element offsets).
 pub fn decode_hash32_list(input: &[u8], limit: usize) -> Result<Vec<[u8; 32]>, SszError> {
-    if input.len() % 32 != 0 {
+    if !input.len().is_multiple_of(32) {
         return Err(SszError::InvalidFixedVector {
             got: input.len(),
             element: 32,
@@ -28,20 +28,18 @@ pub fn decode_hash32_list(input: &[u8], limit: usize) -> Result<Vec<[u8; 32]>, S
 /// Decode `field_count` variable-size fields after a fixed section of a container.
 ///
 /// Offsets are absolute from the start of `input` (SSZ container layout).
-pub fn decode_container_offsets<'a>(
-    input: &'a [u8],
+pub fn decode_container_offsets(
+    input: &[u8],
     fixed_end: usize,
     field_count: usize,
-) -> Result<Vec<&'a [u8]>, SszError> {
+) -> Result<Vec<&[u8]>, SszError> {
     if field_count == 0 {
         return Ok(Vec::new());
     }
-    let offsets_len = field_count
-        .checked_mul(4)
-        .ok_or(SszError::ListTooLong {
-            got: field_count,
-            limit: usize::MAX / 4,
-        })?;
+    let offsets_len = field_count.checked_mul(4).ok_or(SszError::ListTooLong {
+        got: field_count,
+        limit: usize::MAX / 4,
+    })?;
     need(input, fixed_end, offsets_len)?;
     let expected_first = fixed_end + offsets_len;
     let mut offsets = Vec::with_capacity(field_count);

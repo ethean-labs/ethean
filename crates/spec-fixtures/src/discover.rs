@@ -73,10 +73,6 @@ mod tests {
             return;
         };
         let files = discover_json_fixtures(&root).expect("walk");
-        assert!(
-            !files.is_empty(),
-            "expected json under {}",
-            root.display()
-        );
+        assert!(!files.is_empty(), "expected json under {}", root.display());
     }
 }

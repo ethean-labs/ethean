@@ -25,10 +25,20 @@ impl EtheanClient {
         max_events: u32,
         idle: std::time::Duration,
     ) -> Result<crate::swarm_pump::PumpBudgetResult> {
+        self.pump_network_window(max_events, idle, None).await
+    }
+
+    /// Drain QuicSwarm events without waiting past `deadline`.
+    pub(crate) async fn pump_network_window(
+        &mut self,
+        max_events: u32,
+        idle: std::time::Duration,
+        deadline: Option<tokio::time::Instant>,
+    ) -> Result<crate::swarm_pump::PumpBudgetResult> {
         let Some(facade) = self.swarm.as_mut() else {
             return Ok(crate::swarm_pump::PumpBudgetResult::default());
         };
-        crate::swarm_pump::pump_swarm_budget(facade, max_events, idle).await
+        crate::swarm_pump::pump_swarm_window(facade, max_events, idle, deadline).await
     }
 
     /// Drain a small budget of QuicSwarm events and return accepted gossip.

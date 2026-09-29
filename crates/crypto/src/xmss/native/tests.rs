@@ -3,7 +3,7 @@
 use super::keys::{XmssPublicKey, XmssSecretKey, XmssSignature};
 use super::leaves::bottom_tree_leaves;
 use super::params::{PROD, TEST};
-use super::rand::SeededRandom;
+use super::rand::{self, SeededRandom};
 use super::scheme::{
     advance_preparation, expand_activation_time, key_gen, prepare_for_epoch, sign, verify,
 };
@@ -83,6 +83,40 @@ fn test_scheme_sign_verify_roundtrip() {
         &sign(&TEST, &sk, 111, &message).unwrap()
     ));
     assert!(prepare_for_epoch(&TEST, &mut sk, 112).is_err());
+}
+
+#[test]
+fn window_slides_on_a_tree_built_off_the_key() {
+    use super::leaves::bottom_tree_from_prf;
+    use super::scheme::{install_bottom_tree, pending_bottom_tree};
+    let (pk, mut sk) = test_key(2, "proposal");
+    assert_eq!(sk.prepared_interval(&TEST), 0..32);
+    assert_eq!(
+        pending_bottom_tree(&TEST, &sk, 15),
+        None,
+        "left half: nothing to do"
+    );
+    assert_eq!(pending_bottom_tree(&TEST, &sk, 16), Some(2));
+
+    let tree = bottom_tree_from_prf(&TEST, &sk.prf_key, &sk.parameter, 2).unwrap();
+    assert!(install_bottom_tree(&mut sk, 2, tree.clone()));
+    assert_eq!(sk.prepared_interval(&TEST), 16..48);
+    assert!(
+        !install_bottom_tree(&mut sk, 2, tree),
+        "stale tree is dropped"
+    );
+    assert_eq!(sk.prepared_interval(&TEST), 16..48);
+
+    let message = [5u8; 32];
+    let sig = sign(&TEST, &sk, 40, &message).expect("prepared without a signing-path build");
+    assert!(verify(&TEST, &pk, 40, &message, &sig));
+
+    prepare_for_epoch(&TEST, &mut sk, 111).unwrap();
+    assert_eq!(
+        pending_bottom_tree(&TEST, &sk, 111),
+        None,
+        "window already ends at the activation end"
+    );
 }
 
 #[test]
@@ -182,6 +216,19 @@ fn prod_scheme_sign_verify_with_published_keys() {
         "prod-scheme verify: {:?} per signature",
         start.elapsed() / 20
     );
+}
+
+/// One PROD bottom tree (65536 leaves); what a window slide costs.
+/// `cargo test -p ethean-crypto --release -- --ignored prod_bottom_tree --nocapture`
+#[test]
+#[ignore = "seconds of CPU on every core"]
+fn timing_probe_prod_bottom_tree() {
+    let mut rng = SeededRandom::new(b"prod-bottom-tree");
+    let prf_key = rand::RandomExt::prf_key(&mut rng).unwrap();
+    let parameter = rand::RandomExt::parameter(&mut rng).unwrap();
+    let start = std::time::Instant::now();
+    super::leaves::bottom_tree_from_prf(&PROD, &prf_key, &parameter, 1).unwrap();
+    eprintln!("prod bottom tree: {:?}", start.elapsed());
 }
 
 /// Rough timing probe; run with `--release --nocapture` to read the numbers.

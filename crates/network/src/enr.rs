@@ -62,7 +62,7 @@ pub fn decode_enr(text: &str) -> Result<EnrRecord> {
         return Err(NetworkError::Handshake("ENR is not an RLP list".into()));
     }
     let items: Vec<rlp::Rlp<'_>> = rlp.iter().collect();
-    if items.len() < 2 || items.len() % 2 != 0 {
+    if items.len() < 2 || !items.len().is_multiple_of(2) {
         return Err(NetworkError::Handshake(format!(
             "ENR list has {} items (expected signature, seq, key/value pairs)",
             items.len()
@@ -212,7 +212,9 @@ mod tests {
     fn peer_id_matches_libp2p_derivation() {
         let rec = decode_enr(QUICKSTART_ENR).unwrap();
         let pk = libp2p::identity::secp256k1::PublicKey::try_from_bytes(&rec.secp256k1).unwrap();
-        let expected = libp2p::identity::PublicKey::from(pk).to_peer_id().to_string();
+        let expected = libp2p::identity::PublicKey::from(pk)
+            .to_peer_id()
+            .to_string();
         assert_eq!(rec.peer_id(), expected);
         // The record was signed by lean-quickstart node zeam_0; its secret must yield the same id.
         let key = crate::node_key::NodeKey::from_hex(

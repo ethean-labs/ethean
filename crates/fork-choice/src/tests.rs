@@ -57,13 +57,7 @@ fn anchor_store(validators: usize) -> (ForkChoiceStore, Hash32, State) {
     let profile = lstar_devnet().unwrap();
     let (state, block) = make_anchor(validators);
     let root = block.hash_tree_root().unwrap();
-    let store = create_store(
-        state.clone(),
-        block,
-        &profile,
-        ForkChoiceOpts::STRUCTURAL,
-    )
-    .unwrap();
+    let store = create_store(state.clone(), block, &profile, ForkChoiceOpts::STRUCTURAL).unwrap();
     (store, root, state)
 }
 
@@ -170,8 +164,7 @@ fn tie_break_prefers_lexicographically_larger_root() {
 fn require_proofs_rejects_attestation_data() {
     let profile = lstar_devnet().unwrap();
     let (state, block) = make_anchor(1);
-    let mut store =
-        create_store(state, block, &profile, ForkChoiceOpts::REQUIRE_PROOFS).unwrap();
+    let mut store = create_store(state, block, &profile, ForkChoiceOpts::REQUIRE_PROOFS).unwrap();
     let err = store
         .on_attestation_data(ValidatorIndex::ZERO, AttestationData::default())
         .unwrap_err();

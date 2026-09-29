@@ -64,10 +64,7 @@ impl GenesisBuilder {
             let index = ValidatorIndex::new(expected);
             let v = Validator::new(att, prop, index).map_err(|e| match e {
                 ethean_types::TypesError::ValidatorIndexOutOfRange { index, .. } => {
-                    GenesisError::InvalidValidatorIndex {
-                        index,
-                        expected,
-                    }
+                    GenesisError::InvalidValidatorIndex { index, expected }
                 }
                 other => GenesisError::Types(other.to_string()),
             })?;

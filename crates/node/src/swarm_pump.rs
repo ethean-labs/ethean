@@ -14,6 +14,8 @@ pub struct PumpBudgetResult {
     pub accepted: Vec<GossipIngress>,
     /// Peer fingerprints from `ConnectionEstablished` events.
     pub connected_peers: Vec<ethean_primitives::Hash32>,
+    /// Peers whose last connection closed.
+    pub disconnected_peers: Vec<ethean_primitives::Hash32>,
     /// Decompressed Status response payloads keyed by peer fingerprint.
     pub status_responses: Vec<(ethean_primitives::Hash32, Vec<u8>)>,
     /// Decompressed blocks-by-root response payloads keyed by peer fingerprint.
@@ -39,9 +41,27 @@ pub async fn pump_swarm_budget(
     max_events: u32,
     idle: Duration,
 ) -> Result<PumpBudgetResult> {
+    pump_swarm_window(facade, max_events, idle, None).await
+}
+
+/// Like [`pump_swarm_budget`], but never waits past `deadline`, even when
+/// events keep trickling in.
+pub async fn pump_swarm_window(
+    facade: &mut SwarmFacade,
+    max_events: u32,
+    idle: Duration,
+    deadline: Option<tokio::time::Instant>,
+) -> Result<PumpBudgetResult> {
     let mut out = PumpBudgetResult::default();
     for _ in 0..max_events {
-        match tokio::time::timeout(idle, facade.pump_quic_once()).await {
+        let wait = match deadline {
+            Some(d) => idle.min(d.saturating_duration_since(tokio::time::Instant::now())),
+            None => idle,
+        };
+        if wait.is_zero() {
+            break;
+        }
+        match tokio::time::timeout(wait, facade.pump_quic_once()).await {
             Ok(Ok(event)) => {
                 out.drained = out.drained.saturating_add(1);
                 record_peer_event(&event);
@@ -49,6 +69,14 @@ pub async fn pump_swarm_budget(
                     &event
                 {
                     out.connected_peers.push(*p);
+                }
+                if let crate::network::PumpEvent::ConnectionClosed {
+                    peer: Some(p),
+                    last: true,
+                    ..
+                } = &event
+                {
+                    out.disconnected_peers.push(*p);
                 }
                 if let crate::network::PumpEvent::StatusResponse { peer, payload } = &event {
                     out.status_responses.push((*peer, payload.clone()));
@@ -156,6 +184,20 @@ pub fn flush_all_pending_gossip(
     Ok(out)
 }
 
+fn record_peer_event(event: &crate::network::PumpEvent) {
+    use crate::lean_metrics::{peer_connect_failed, peer_connected, peer_disconnected};
+    use crate::network::PumpEvent;
+    match event {
+        PumpEvent::ConnectionEstablished { outbound, .. } => peer_connected(*outbound),
+        PumpEvent::ConnectionClosed {
+            outbound, reason, ..
+        } => peer_disconnected(*outbound, reason),
+        PumpEvent::OutgoingError => peer_connect_failed(true),
+        PumpEvent::IncomingError => peer_connect_failed(false),
+        _ => {}
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -195,19 +237,5 @@ mod tests {
         assert!(publish_pending_block(&mut facade, &mut owner)
             .expect("flush")
             .is_none());
-    }
-}
-
-fn record_peer_event(event: &crate::network::PumpEvent) {
-    use crate::lean_metrics::{peer_connect_failed, peer_connected, peer_disconnected};
-    use crate::network::PumpEvent;
-    match event {
-        PumpEvent::ConnectionEstablished { outbound, .. } => peer_connected(*outbound),
-        PumpEvent::ConnectionClosed {
-            outbound, reason, ..
-        } => peer_disconnected(*outbound, reason),
-        PumpEvent::OutgoingError => peer_connect_failed(true),
-        PumpEvent::IncomingError => peer_connect_failed(false),
-        _ => {}
     }
 }

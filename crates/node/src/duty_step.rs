@@ -3,7 +3,7 @@
 use crate::chain_owner::ChainOwner;
 use crate::commands::ChainCommand;
 use crate::dispatch::apply_command;
-use crate::duty_propose::try_plan_proposal;
+use crate::duty_propose::{try_plan_next_slot_proposal, try_plan_proposal};
 use crate::events::ChainEvent;
 use crate::shutdown::ShutdownState;
 use crate::wall_tick::tick_from_wall;
@@ -47,6 +47,12 @@ pub fn apply_wall_step(
     }
     events.push(accepted);
     if was_accepted {
+        events.extend(crate::proof_collect::release_deferred_block(owner));
+        if tick.interval == 0 {
+            owner.key_prep.on_slot(tick.slot.get());
+        }
+    }
+    if was_accepted {
         let lag = sync.lag();
         let snap = owner.snapshot(tick.slot, lag);
         if let Err(reason) = evaluate_gate(&snap.duty_view) {
@@ -55,6 +61,7 @@ pub fn apply_wall_step(
             events.extend(crate::duty_attest::try_local_attest(owner, tick));
             events.extend(crate::aggregation_duty::schedule_aggregations(owner));
             events.extend(try_plan_proposal(owner, tick));
+            events.extend(try_plan_next_slot_proposal(owner, tick));
         }
     }
     Ok(events)

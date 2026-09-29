@@ -49,9 +49,7 @@ pub struct InMemorySignerStore {
 }
 
 impl InMemorySignerStore {
-    fn slot_key(
-        duty: &SigningDuty,
-    ) -> (KeyId, u32, crate::signer::duty::SigningRole) {
+    fn slot_key(duty: &SigningDuty) -> (KeyId, u32, crate::signer::duty::SigningRole) {
         (duty.key_id, duty.slot, duty.role)
     }
 }

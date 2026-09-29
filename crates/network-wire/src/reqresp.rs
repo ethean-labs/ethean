@@ -44,18 +44,16 @@ impl BlocksByRootRequest {
         }
         let offset = u32::from_le_bytes(input[0..4].try_into().unwrap()) as usize;
         if offset != 4 || offset > input.len() {
-            return Err(WireError::InvalidReqResp(
-                "blocks-by-root offset".into(),
-            ));
+            return Err(WireError::InvalidReqResp("blocks-by-root offset".into()));
         }
         let rest = &input[offset..];
-        if rest.len() % 32 != 0 {
+        if !rest.len().is_multiple_of(32) {
             return Err(WireError::InvalidReqResp(
                 "blocks-by-root roots not multiple of 32".into(),
             ));
         }
         let mut roots = Vec::with_capacity(rest.len() / 32);
-        for chunk in rest.chunks_exact(32) {
+        for chunk in rest.as_chunks::<32>().0 {
             let mut root = [0u8; 32];
             root.copy_from_slice(chunk);
             roots.push(root);

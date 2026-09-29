@@ -10,9 +10,7 @@ pub fn recover_on_open(db: &Database) -> Result<()> {
     for key in [META_HEAD, META_JUSTIFIED, META_FINALIZED] {
         if let Some(root) = db.get(TABLE_METADATA, key)? {
             if root.len() != 32 {
-                return Err(StorageError::Corruption(
-                    "metadata root length".into(),
-                ));
+                return Err(StorageError::Corruption("metadata root length".into()));
             }
             // Presence of metadata without a block is quarantined.
             if db.get(crate::tables::TABLE_BLOCKS, &root)?.is_none() {

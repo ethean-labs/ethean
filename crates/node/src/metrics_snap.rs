@@ -62,15 +62,16 @@ impl EtheanClient {
             .as_ref()
             .map(|s| s.genesis_time())
             .unwrap_or_else(|| self.genesis.genesis_time());
-        self.observability.record_slots(
-            head_slot,
-            justified,
-            finalized,
-            self.owner.safe_target_slot(),
-            current,
-            self.sync.lag(),
-            peers,
-        )?;
+        self.observability
+            .record_slots(crate::observability::SlotPanel {
+                head_slot,
+                justified_slot: justified,
+                finalized_slot: finalized,
+                safe_target_slot: self.owner.safe_target_slot(),
+                current_slot: current,
+                sync_lag: self.sync.lag(),
+                peer_count: peers,
+            })?;
         self.observability
             .record_reorg_total(self.owner.reorg_total)?;
         if let Some(api) = self.api.as_ref() {
@@ -208,8 +209,7 @@ impl EtheanClient {
                     .as_ref()
                     .map(|s| s.validators.len() as u64)
                     .unwrap_or(0);
-                if let Ok(proposer) =
-                    ethean_transition::proposer_for_slot(Slot::new(tick_slot), n)
+                if let Ok(proposer) = ethean_transition::proposer_for_slot(Slot::new(tick_slot), n)
                 {
                     let idx = proposer.get();
                     if self.owner.owned_validator_indices.contains(&idx) {

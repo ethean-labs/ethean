@@ -17,8 +17,7 @@ pub fn prune_stale_attestation_data(store: &mut ForkChoiceStore) {
         .latest_new_attestations
         .iter()
         .filter(|(_, data)| {
-            !(data.head.slot > finalized.slot
-                && store.checkpoint_is_ancestor(finalized, data.head))
+            !(data.head.slot > finalized.slot && store.checkpoint_is_ancestor(finalized, data.head))
         })
         .map(|(k, _)| *k)
         .collect();
@@ -30,8 +29,7 @@ pub fn prune_stale_attestation_data(store: &mut ForkChoiceStore) {
         .latest_known_attestations
         .iter()
         .filter(|(_, data)| {
-            !(data.head.slot > finalized.slot
-                && store.checkpoint_is_ancestor(finalized, data.head))
+            !(data.head.slot > finalized.slot && store.checkpoint_is_ancestor(finalized, data.head))
         })
         .map(|(k, _)| *k)
         .collect();

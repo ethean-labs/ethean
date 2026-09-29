@@ -40,17 +40,14 @@ pub trait RandomExt: RandomSource {
 
 impl<R: RandomSource + ?Sized> RandomExt for R {}
 
-/// Operating-system entropy (`/dev/urandom`).
+/// Operating-system entropy (`getrandom`: `/dev/urandom` / `getrandom(2)` on
+/// Unix, `ProcessPrng` on Windows).
 #[derive(Debug, Default, Clone, Copy)]
 pub struct OsRandom;
 
 impl RandomSource for OsRandom {
     fn fill(&mut self, out: &mut [u8]) -> Result<()> {
-        use std::io::Read;
-        let mut file = std::fs::File::open("/dev/urandom")
-            .map_err(|e| CryptoError::RandomnessUnavailable(e.to_string()))?;
-        file.read_exact(out)
-            .map_err(|e| CryptoError::RandomnessUnavailable(e.to_string()))
+        getrandom::fill(out).map_err(|e| CryptoError::RandomnessUnavailable(e.to_string()))
     }
 }
 

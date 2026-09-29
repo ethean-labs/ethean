@@ -40,13 +40,10 @@ pub fn encode_offset_list(elements: &[Vec<u8>]) -> Result<Vec<u8>, SszError> {
     if elements.is_empty() {
         return Ok(Vec::new());
     }
-    let fixed_end = elements
-        .len()
-        .checked_mul(4)
-        .ok_or(SszError::ListTooLong {
-            got: elements.len(),
-            limit: usize::MAX / 4,
-        })?;
+    let fixed_end = elements.len().checked_mul(4).ok_or(SszError::ListTooLong {
+        got: elements.len(),
+        limit: usize::MAX / 4,
+    })?;
     let mut out = Vec::with_capacity(fixed_end + elements.iter().map(Vec::len).sum::<usize>());
     let mut cursor = fixed_end as u32;
     for el in elements {
@@ -67,7 +64,7 @@ pub fn encode_offset_list(elements: &[Vec<u8>]) -> Result<Vec<u8>, SszError> {
 /// Encode a bitlist: packed bits plus a delimiting `1` bit after the last data bit.
 pub fn encode_bitlist(bits: &[bool]) -> Vec<u8> {
     let bit_len = bits.len() + 1; // delimiter
-    let byte_len = (bit_len + 7) / 8;
+    let byte_len = bit_len.div_ceil(8);
     let mut out = vec![0u8; byte_len];
     for (i, &bit) in bits.iter().enumerate() {
         if bit {

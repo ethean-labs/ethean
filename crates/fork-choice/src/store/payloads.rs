@@ -23,11 +23,13 @@ fn upsert_payload(
         return;
     }
     let data_root = data.hash_tree_root();
-    let entry = map.entry(data_root).or_insert_with(|| AggregatedPayloadEntry {
-        data_root,
-        data,
-        participant_sets: Vec::new(),
-    });
+    let entry = map
+        .entry(data_root)
+        .or_insert_with(|| AggregatedPayloadEntry {
+            data_root,
+            data,
+            participant_sets: Vec::new(),
+        });
     if !entry.participant_sets.iter().any(|s| s == &participants) {
         entry.participant_sets.push(participants);
     }
@@ -45,11 +47,7 @@ impl ForkChoiceStore {
 
     /// Record a gossip aggregate into the pending (new) payload pool.
     pub fn record_new_payload(&mut self, data: AttestationData, bits: &[bool]) {
-        upsert_payload(
-            &mut self.latest_new_payloads,
-            data,
-            indices_from_bits(bits),
-        );
+        upsert_payload(&mut self.latest_new_payloads, data, indices_from_bits(bits));
     }
 
     /// Move pending payloads into the known pool (merge participant sets).

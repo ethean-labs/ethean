@@ -89,7 +89,9 @@ mod tests {
         };
         owner.fc_on_attestation(ValidatorIndex::new(0), data);
         let fc = owner.fc.as_ref().unwrap();
-        assert!(fc.latest_new_attestations.contains_key(&ValidatorIndex::new(0)));
+        assert!(fc
+            .latest_new_attestations
+            .contains_key(&ValidatorIndex::new(0)));
         let _ = HASH32_ZERO;
     }
 }

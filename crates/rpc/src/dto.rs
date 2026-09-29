@@ -135,13 +135,12 @@ fn de_root<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Hash32, D::Error> {
     parse_hex_root(&s).map_err(serde::de::Error::custom)
 }
 
-/// GET `/lean/v0/health`.
+/// GET `/lean/v0/health`. Exactly the leanSpec body: API fixtures compare it
+/// field for field, so the client version lives on the identity endpoint.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HealthBody {
     pub status: String,
     pub service: String,
-    /// Crate/workspace semver for Hive / operator probes.
-    pub version: String,
 }
 
 /// GET `/lean/v0/admin/aggregator`.

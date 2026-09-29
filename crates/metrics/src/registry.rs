@@ -80,7 +80,7 @@ impl Registry {
         let m = self
             .metrics
             .get_mut(&name)
-            .ok_or_else(|| MetricsError::UnknownMetric(name))?;
+            .ok_or(MetricsError::UnknownMetric(name))?;
         m.value = value;
         Ok(())
     }
@@ -91,7 +91,7 @@ impl Registry {
         let m = self
             .metrics
             .get_mut(&name)
-            .ok_or_else(|| MetricsError::UnknownMetric(name))?;
+            .ok_or(MetricsError::UnknownMetric(name))?;
         m.value += delta;
         Ok(())
     }

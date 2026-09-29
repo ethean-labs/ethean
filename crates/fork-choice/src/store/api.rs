@@ -78,13 +78,11 @@ impl ForkChoiceStore {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
     use crate::{create_store, ForkChoiceOpts};
     use ethean_primitives::{Bytes52, Slot, ValidatorIndex, HASH32_ZERO};
     use ethean_profile::lstar_devnet;
-    use ethean_types::{
-        BlockBody, BlockHeader, Checkpoint, GenesisConfig, State, Validator,
-    };
+    use ethean_types::{BlockBody, BlockHeader, Checkpoint, GenesisConfig, State, Validator};
 
     fn genesis_pair() -> (State, ethean_types::Block) {
         let val = Validator::new(Bytes52::ZERO, Bytes52::ZERO, ValidatorIndex::ZERO).unwrap();

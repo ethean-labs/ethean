@@ -83,7 +83,7 @@ impl AggregatePool {
 
     /// All retained variants for a key (insertion order).
     pub fn variants(&self, key: &PoolKey) -> Option<Vec<PoolEntry>> {
-        self.entries.get(key).map(|v| v.clone())
+        self.entries.get(key).cloned()
     }
 
     /// Best-coverage entry per key, sorted by message root for deterministic builds.
@@ -97,7 +97,7 @@ impl AggregatePool {
                     .map(|e| (*k, e.clone()))
             })
             .collect();
-        out.sort_by(|a, b| a.0.message_root.cmp(&b.0.message_root));
+        out.sort_by_key(|a| a.0.message_root);
         out
     }
 }

@@ -85,12 +85,8 @@ pub fn match_route(method: &str, path: &str) -> Result<Route> {
         ("GET", "/metrics") => Ok(Route::Metrics),
         ("POST", "/lean/v0/test_driver/fork_choice/init") => Ok(Route::DriverForkChoiceInit),
         ("POST", "/lean/v0/test_driver/fork_choice/step") => Ok(Route::DriverForkChoiceStep),
-        ("POST", "/lean/v0/test_driver/state_transition/run") => {
-            Ok(Route::DriverStateTransition)
-        }
-        ("POST", "/lean/v0/test_driver/verify_signatures/run") => {
-            Ok(Route::DriverVerifySignatures)
-        }
+        ("POST", "/lean/v0/test_driver/state_transition/run") => Ok(Route::DriverStateTransition),
+        ("POST", "/lean/v0/test_driver/verify_signatures/run") => Ok(Route::DriverVerifySignatures),
         _ => Err(RpcError::UnknownRoute(format!("{method} {path}"))),
     }
 }
@@ -122,8 +118,14 @@ mod tests {
 
     #[test]
     fn matches_v0_and_v1_health() {
-        assert_eq!(match_route("GET", "/lean/v1/health").unwrap(), Route::Health);
-        assert_eq!(match_route("GET", "/lean/v0/health").unwrap(), Route::Health);
+        assert_eq!(
+            match_route("GET", "/lean/v1/health").unwrap(),
+            Route::Health
+        );
+        assert_eq!(
+            match_route("GET", "/lean/v0/health").unwrap(),
+            Route::Health
+        );
         assert_eq!(match_route("GET", "/lean/v0/ready").unwrap(), Route::Ready);
         assert_eq!(match_route("GET", "/lean/v1/ready").unwrap(), Route::Ready);
         assert_eq!(
@@ -182,7 +184,11 @@ mod tests {
     fn hive_rpc_compat_v0_surface() {
         let required = [
             ("GET", "/lean/v0/health", Route::Health),
-            ("GET", "/lean/v0/checkpoints/justified", Route::CheckpointsJustified),
+            (
+                "GET",
+                "/lean/v0/checkpoints/justified",
+                Route::CheckpointsJustified,
+            ),
             ("GET", "/lean/v0/fork_choice", Route::ForkChoice),
             ("GET", "/lean/v0/states/finalized", Route::StatesFinalized),
             ("GET", "/lean/v0/blocks/finalized", Route::BlocksFinalized),

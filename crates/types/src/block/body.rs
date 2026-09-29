@@ -68,10 +68,7 @@ impl BlockBody {
         for a in &self.attestations {
             roots.push(a.hash_tree_root()?);
         }
-        Ok(hash_tree_root_list(
-            &roots,
-            AGGREGATED_ATTESTATIONS_LIMIT,
-        )?)
+        Ok(hash_tree_root_list(&roots, AGGREGATED_ATTESTATIONS_LIMIT)?)
     }
 }
 

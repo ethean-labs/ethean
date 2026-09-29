@@ -51,10 +51,8 @@ impl AggPin {
                         pin.leanvm_rev = Some(val.to_string());
                     }
                 }
-                "LEANSIG_REV" => {
-                    if !val.is_empty() {
-                        pin.leansig_rev = Some(val.to_string());
-                    }
+                "LEANSIG_REV" if !val.is_empty() => {
+                    pin.leansig_rev = Some(val.to_string());
                 }
                 _ => {}
             }

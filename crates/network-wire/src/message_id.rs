@@ -26,11 +26,7 @@ pub fn compute_message_id(topic: &[u8], data: &[u8], domain: [u8; 4]) -> Message
 
 /// Message-id for valid-snappy gossip (`data` is the decompressed payload).
 pub fn message_id_valid_snappy(topic: &str, decompressed: &[u8]) -> MessageId {
-    compute_message_id(
-        topic.as_bytes(),
-        decompressed,
-        MESSAGE_DOMAIN_VALID_SNAPPY,
-    )
+    compute_message_id(topic.as_bytes(), decompressed, MESSAGE_DOMAIN_VALID_SNAPPY)
 }
 
 /// Message-id for invalid-snappy gossip (`data` is the raw on-wire payload).
@@ -70,16 +66,28 @@ mod tests {
         let topic = b"/leanconsensus/12345678/block/ssz_snappy";
         let deadbeef = [0xde, 0xad, 0xbe, 0xef];
         assert_eq!(
-            hex(&compute_message_id(topic, &deadbeef, MESSAGE_DOMAIN_VALID_SNAPPY)),
+            hex(&compute_message_id(
+                topic,
+                &deadbeef,
+                MESSAGE_DOMAIN_VALID_SNAPPY
+            )),
             "8505fa518a9a5bb8376e4aba7bce5eae12a3dd48"
         );
         let large = vec![0xab; 256];
         assert_eq!(
-            hex(&compute_message_id(topic, &large, MESSAGE_DOMAIN_VALID_SNAPPY)),
+            hex(&compute_message_id(
+                topic,
+                &large,
+                MESSAGE_DOMAIN_VALID_SNAPPY
+            )),
             "d962d4a07a499c918aa0dda5844ec09cdd14080b"
         );
         assert_eq!(
-            hex(&compute_message_id(topic, &deadbeef, MESSAGE_DOMAIN_INVALID_SNAPPY)),
+            hex(&compute_message_id(
+                topic,
+                &deadbeef,
+                MESSAGE_DOMAIN_INVALID_SNAPPY
+            )),
             "2aff5124db8064dd9ddcdd7fc251397ab02527c7"
         );
         assert_eq!(
@@ -87,7 +95,11 @@ mod tests {
             "dec01e3e1997dcc2c46c0633116bc6a4ee521086"
         );
         assert_eq!(
-            hex(&compute_message_id(b"", &deadbeef, MESSAGE_DOMAIN_VALID_SNAPPY)),
+            hex(&compute_message_id(
+                b"",
+                &deadbeef,
+                MESSAGE_DOMAIN_VALID_SNAPPY
+            )),
             "285f038cae99a63f9861ed5868790bf251ee0904"
         );
         assert_eq!(

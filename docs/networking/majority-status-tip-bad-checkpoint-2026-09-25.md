@@ -11,7 +11,7 @@ highest Status tip would import and finalize the adversary's checkpoint.
 
 | Piece | Change |
 | --- | --- |
-| `sync_catchup::preferred_finalized` | Prefer any finalized `(root, slot)` with **≥2** peer votes |
+| `sync_catchup::preferred_finalized` | leanSpec `get_network_finalized_slot`: most-reported finalized slot, ties go to the higher slot; within that slot the most-reported root (see 2026-09-29 update) |
 | `select_catchup_target` | Stage range/root only toward a majority tip still ahead |
 | `apply_preferred_horizon` | Duty lag uses majority tip; may lower after a bad tip drops |
 | `SyncStatus::replace_peer_horizon` | Non-monotonic replace for preferred-tip recompute |
@@ -27,6 +27,27 @@ Also retained from the same readiness pass: head-behind-finalized root pin,
 cargo test -p ethean-sync --lib -- status::
 cargo test -p ethean-node --lib --features libp2p-quic -- sync_catchup::
 ```
+
+## Update 2026-09-29: tie rule and disconnects
+
+The first cut required two agreeing votes, so a 1–1 split (or a single peer)
+left no preferred tip. It now follows leanSpec `PeerManager.get_network_finalized_slot`:
+
+- count finalized slots across remembered peers and rank by `(count, slot)`,
+  so an even split resolves to the higher slot;
+- inside the winning slot, pick the most-reported root (larger root on a tie).
+
+With 2 honest helpers and 1 ahead adversary the honest slot still wins 2–1.
+
+Peers also stop voting when they leave. `PumpEvent::ConnectionClosed` carries
+`last` (libp2p `num_established == 0`); the pump collects those peers,
+`forget_disconnected_peers` drops them from Status sessions and sync targets,
+and the duty horizon is recomputed. A peer with a second live connection keeps
+its vote.
+
+Tests: `equal_count_split_prefers_higher_slot`,
+`same_slot_fork_picks_most_reported_root`, `forgotten_peer_stops_voting`,
+`empty_targets_have_no_preference`.
 
 ## Still open
 

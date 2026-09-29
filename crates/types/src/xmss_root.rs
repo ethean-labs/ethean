@@ -22,7 +22,7 @@ fn u32_at(bytes: &[u8], at: usize) -> Result<usize, TypesError> {
 }
 
 fn digest_list_root(bytes: &[u8]) -> Result<Root, TypesError> {
-    if bytes.len() % DIGEST_BYTES != 0 {
+    if !bytes.len().is_multiple_of(DIGEST_BYTES) {
         return Err(TypesError::InvalidContainer(
             "digest list is not a multiple of 32 bytes".into(),
         ));

@@ -86,7 +86,10 @@ mod tests {
 
     #[test]
     fn lstar_default_is_gossip_digest() {
-        assert_eq!(fork_segment_from_name("lstar").unwrap(), LSTAR_GOSSIP_DIGEST);
+        assert_eq!(
+            fork_segment_from_name("lstar").unwrap(),
+            LSTAR_GOSSIP_DIGEST
+        );
         assert_eq!(fork_segment_hex("lstar").unwrap(), "12345678");
         assert_eq!(
             fork_identifier_bytes("lstar").unwrap(),

@@ -8,10 +8,7 @@ use crate::error::GenesisError;
 /// Decode genesis from SSZ and optionally verify the state root.
 ///
 /// Uses full [`State::ssz_decode`] (same field order as ethlambda / Ream Lean).
-pub fn load_genesis_ssz(
-    bytes: &[u8],
-    expected_root: Option<&Root>,
-) -> Result<State, GenesisError> {
+pub fn load_genesis_ssz(bytes: &[u8], expected_root: Option<&Root>) -> Result<State, GenesisError> {
     if bytes.is_empty() {
         return Err(GenesisError::TruncatedOrEmpty);
     }

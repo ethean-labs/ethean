@@ -22,7 +22,10 @@ fn ensure_cache_env() {
 fn fixture(rel: &str) -> Option<PathBuf> {
     ensure_cache_env();
     let root = fixtures_root_from_env()?;
-    let mut p = root.join("fixtures").join("consensus").join("state_transition");
+    let mut p = root
+        .join("fixtures")
+        .join("consensus")
+        .join("state_transition");
     p.push("lstar");
     p.push("state_transition");
     for part in rel.split('/') {
@@ -33,9 +36,7 @@ fn fixture(rel: &str) -> Option<PathBuf> {
 
 #[test]
 fn runs_block_at_large_slot_number() {
-    let Some(path) =
-        fixture("test_block_processing/test_block_at_large_slot_number.json")
-    else {
+    let Some(path) = fixture("test_block_processing/test_block_at_large_slot_number.json") else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -47,9 +48,9 @@ fn runs_block_at_large_slot_number() {
 
 #[test]
 fn runs_empty_aggregation_bits_rejection() {
-    let Some(path) = fixture(
-        "test_aggregation_bits/test_zero_length_aggregation_bits_rejects_block.json",
-    ) else {
+    let Some(path) =
+        fixture("test_aggregation_bits/test_zero_length_aggregation_bits_rejects_block.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };

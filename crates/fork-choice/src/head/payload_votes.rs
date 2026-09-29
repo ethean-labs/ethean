@@ -10,16 +10,15 @@ use crate::store::ForkChoiceStore;
 
 impl ForkChoiceStore {
     /// leanSpec `_extract_attestations_from_aggregated_payloads` on the known pool.
-    pub(crate) fn votes_from_known_payloads(
-        &self,
-    ) -> HashMap<ValidatorIndex, AttestationData> {
-        extract_latest_votes(&self.latest_known_payloads, self.latest_finalized.slot.get())
+    pub(crate) fn votes_from_known_payloads(&self) -> HashMap<ValidatorIndex, AttestationData> {
+        extract_latest_votes(
+            &self.latest_known_payloads,
+            self.latest_finalized.slot.get(),
+        )
     }
 
     /// Same extraction over the pending (new) payload pool — safe-target path.
-    pub(crate) fn votes_from_new_payloads(
-        &self,
-    ) -> HashMap<ValidatorIndex, AttestationData> {
+    pub(crate) fn votes_from_new_payloads(&self) -> HashMap<ValidatorIndex, AttestationData> {
         extract_latest_votes(&self.latest_new_payloads, self.latest_finalized.slot.get())
     }
 }

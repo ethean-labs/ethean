@@ -16,10 +16,7 @@ pub fn wants_sse(accept: Option<&str>) -> bool {
 }
 
 /// Stream drained admin events until disconnect, shutdown, or idle timeout.
-pub async fn stream_admin_events(
-    stream: &mut TcpStream,
-    state: &SharedApiState,
-) -> io::Result<()> {
+pub async fn stream_admin_events(stream: &mut TcpStream, state: &SharedApiState) -> io::Result<()> {
     let head = concat!(
         "HTTP/1.1 200 OK\r\n",
         "Content-Type: text/event-stream\r\n",

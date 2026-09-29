@@ -44,7 +44,7 @@ mod tests {
             root: SigningRoot::from_bytes([3u8; 32]),
         };
         let _ = store.reserve(&duty).unwrap();
-        let n = reconcile_on_startup(&mut store, &[duty.clone()]).unwrap();
+        let n = reconcile_on_startup(&mut store, std::slice::from_ref(&duty)).unwrap();
         assert_eq!(n, 1);
         assert!(store.is_burned(&duty).unwrap());
     }

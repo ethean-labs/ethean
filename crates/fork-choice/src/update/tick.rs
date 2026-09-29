@@ -13,11 +13,7 @@ impl ForkChoiceStore {
     }
 
     /// Same as [`Self::on_tick`] with an explicit proposal flag.
-    pub fn on_tick_with(
-        &mut self,
-        target: u64,
-        has_proposal: bool,
-    ) -> Result<(), ForkChoiceError> {
+    pub fn on_tick_with(&mut self, target: u64, has_proposal: bool) -> Result<(), ForkChoiceError> {
         if target < self.time {
             return Err(ForkChoiceError::TickInPast);
         }

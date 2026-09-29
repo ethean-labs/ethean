@@ -40,9 +40,9 @@ fn run_ok(rel: &str) -> Option<FcRunReport> {
 
 #[test]
 fn lmd_higher_slot_vote_replaces_lower() {
-    let Some(r) = run_ok(
-        "test_lmd_latest_message/test_higher_slot_vote_replaces_lower_slot_vote.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_lmd_latest_message/test_higher_slot_vote_replaces_lower_slot_vote.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -76,8 +76,7 @@ fn simple_one_block_reorg() {
 
 #[test]
 fn two_block_reorg_progressive() {
-    let Some(r) =
-        run_ok("test_fork_choice_reorgs/test_two_block_reorg_progressive_building.json")
+    let Some(r) = run_ok("test_fork_choice_reorgs/test_two_block_reorg_progressive_building.json")
     else {
         eprintln!("skip: cache missing");
         return;
@@ -131,9 +130,9 @@ fn head_selection_by_weight_not_depth() {
 
 #[test]
 fn justifies_reanchors_within_one_import() {
-    let Some(r) = run_ok(
-        "test_head_movement/test_block_that_justifies_reanchors_within_one_import.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_head_movement/test_block_that_justifies_reanchors_within_one_import.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -143,8 +142,7 @@ fn justifies_reanchors_within_one_import() {
 
 #[test]
 fn duplicate_block_processed_idempotently() {
-    let Some(r) =
-        run_ok("test_fork_choice_head/test_duplicate_block_processed_idempotently.json")
+    let Some(r) = run_ok("test_fork_choice_head/test_duplicate_block_processed_idempotently.json")
     else {
         eprintln!("skip: cache missing");
         return;

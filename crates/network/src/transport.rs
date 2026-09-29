@@ -78,10 +78,7 @@ pub fn reject_non_quic(multiaddr: &str) -> Result<()> {
 }
 
 /// Bind a UDP listen socket for QUIC-v1 on all IPv4 interfaces.
-pub fn prepare_transport(
-    identity: &NodeIdentity,
-    cfg: &TransportConfig,
-) -> Result<BoundTransport> {
+pub fn prepare_transport(identity: &NodeIdentity, cfg: &TransportConfig) -> Result<BoundTransport> {
     prepare_transport_on(identity, cfg, IpAddr::V4(Ipv4Addr::UNSPECIFIED))
 }
 
@@ -104,10 +101,7 @@ pub fn prepare_transport_on(
     reject_non_quic(&listen)?;
 
     let socket = UdpSocket::bind((ip, cfg.listen_port)).map_err(|e| {
-        NetworkError::Handshake(format!(
-            "UDP bind failed on {ip}:{}: {e}",
-            cfg.listen_port
-        ))
+        NetworkError::Handshake(format!("UDP bind failed on {ip}:{}: {e}", cfg.listen_port))
     })?;
     socket
         .set_nonblocking(true)

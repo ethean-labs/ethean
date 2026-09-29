@@ -108,6 +108,49 @@ impl SecretKeyMaterial {
         native::prepare_for_epoch(&PROD, &mut guard, epoch as u64)
     }
 
+    /// Whether [`Self::prepare_ahead`] has work for `epoch`.
+    pub fn needs_prepare_ahead(&self, epoch: u32) -> bool {
+        let Ok(shared) = self.xmss() else {
+            return false;
+        };
+        shared
+            .lock()
+            .map(|sk| native::pending_bottom_tree(&PROD, &sk, epoch as u64).is_some())
+            .unwrap_or(false)
+    }
+
+    /// Slide the prepared window so the tree after `epoch`'s is ready before
+    /// signing reaches it. Trees are built without holding the key lock, so
+    /// concurrent signing never waits on a build (about 10 s on all cores at
+    /// PROD size), using at most `max_workers` threads. Returns how many trees
+    /// were installed. Blocking: run off the duty loop.
+    pub fn prepare_ahead(&self, epoch: u32, max_workers: usize) -> Result<usize> {
+        native::parallel::with_worker_cap(max_workers, || self.prepare_ahead_inner(epoch))
+    }
+
+    fn prepare_ahead_inner(&self, epoch: u32) -> Result<usize> {
+        let shared = self.xmss()?;
+        let lock = || {
+            shared
+                .lock()
+                .map_err(|_| CryptoError::SigningFailed("key lock".into()))
+        };
+        let mut installed = 0;
+        loop {
+            let (index, prf_key, parameter) = {
+                let sk = lock()?;
+                let Some(index) = native::pending_bottom_tree(&PROD, &sk, epoch as u64) else {
+                    return Ok(installed);
+                };
+                (index, sk.prf_key, sk.parameter)
+            };
+            let tree = native::leaves::bottom_tree_from_prf(&PROD, &prf_key, &parameter, index)?;
+            if native::install_bottom_tree(&mut *lock()?, index, tree) {
+                installed += 1;
+            }
+        }
+    }
+
     /// Activation start epoch.
     pub fn activation_epoch(&self) -> u32 {
         self.activation_epoch

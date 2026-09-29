@@ -35,7 +35,11 @@ pub struct FixtureStep {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub valid: Option<bool>,
     /// leanSpec `SpecRejectionError` name when `valid` is false.
-    #[serde(rename = "rejectionReason", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rejectionReason",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub rejection_reason: Option<String>,
     /// Opaque checks / block payloads until typed runners land.
     #[serde(flatten)]

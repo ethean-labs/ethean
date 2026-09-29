@@ -17,7 +17,7 @@ pub struct DutyTick {
 /// Convert elapsed milliseconds since genesis into a duty tick.
 pub fn tick_from_elapsed_ms(elapsed_ms: u64, profile: &ChainProfile, generation: u64) -> DutyTick {
     let slot_ms = profile.milliseconds_per_slot.max(1);
-    let intervals = profile.intervals_per_slot.max(1) as u64;
+    let intervals = profile.intervals_per_slot.max(1);
     let interval_ms = (slot_ms / intervals).max(1);
     let slot = elapsed_ms / slot_ms;
     let rem = elapsed_ms % slot_ms;

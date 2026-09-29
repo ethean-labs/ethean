@@ -27,3 +27,6 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [type2 prove attach](type2-prove-attach-2026-09-19.md)
 - [type2 structural split pool reseed](type2-structural-split-pool-reseed-2026-09-19.md)
 - [post block split reaggregation](post-block-split-reaggregation-2026-09-24.md)
+- [early block build idle pump](early-block-build-idle-pump-2026-09-29.md)
+- [xmss background window prep](xmss-background-window-prep-2026-09-29.md)
+- [gossip vote batch verify](gossip-vote-batch-verify-2026-09-29.md)

@@ -31,7 +31,10 @@ pub fn aggregation_fingerprint() -> &'static str {
 pub fn assert_aggregation_invariants() {
     assert_eq!(MAX_PROOF_BYTES, 512 * 1024);
     assert_eq!(LOG_INV_RATE, 2);
-    assert!((1..=4).contains(&LOG_INV_RATE), "LOG_INV_RATE outside D4 1..=4");
+    assert!(
+        (1..=4).contains(&LOG_INV_RATE),
+        "LOG_INV_RATE outside D4 1..=4"
+    );
     assert_eq!(MAX_TYPE2_COMPONENTS, 9);
 }
 

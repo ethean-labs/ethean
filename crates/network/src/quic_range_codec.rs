@@ -34,11 +34,7 @@ impl request_response::Codec for BlocksByRangeCodec {
     type Request = Vec<u8>;
     type Response = Vec<u8>;
 
-    async fn read_request<T>(
-        &mut self,
-        _: &Self::Protocol,
-        io: &mut T,
-    ) -> io::Result<Self::Request>
+    async fn read_request<T>(&mut self, _: &Self::Protocol, io: &mut T) -> io::Result<Self::Request>
     where
         T: AsyncRead + Unpin + Send,
     {

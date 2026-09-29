@@ -30,14 +30,9 @@ pub fn canonical_state_ssz(state: &State) -> Result<Vec<u8>, String> {
 pub fn genesis_signed_pair(state: &State) -> Result<(SignedBlock, State, Hash32), String> {
     let canonical = canonical_state(state);
     let state_root = canonical.hash_tree_root().map_err(|e| e.to_string())?;
-    let empty_body = BlockBody::default();
-    let empty_body_root = empty_body.hash_tree_root().map_err(|e| e.to_string())?;
-    let header_body_root = canonical.latest_block_header.body_root;
-    let body = if header_body_root == HASH32_ZERO || header_body_root == empty_body_root {
-        empty_body
-    } else {
-        empty_body
-    };
+    // Genesis always carries an empty body; a non-empty sealed body_root only
+    // breaks the root equality above, it never changes what we serve.
+    let body = BlockBody::default();
     let block = Block {
         slot: Slot::ZERO,
         proposer_index: ValidatorIndex::ZERO,
@@ -86,10 +81,7 @@ mod tests {
         let state = sample_genesis();
         let (signed, canonical, root) = genesis_signed_pair(&state).unwrap();
         assert_eq!(signed.block.slot, canonical.slot);
-        assert_eq!(
-            signed.block.state_root,
-            canonical.hash_tree_root().unwrap()
-        );
+        assert_eq!(signed.block.state_root, canonical.hash_tree_root().unwrap());
         assert_eq!(signed.block.hash_tree_root().unwrap(), root);
         assert!(signed.proof.proof.is_empty());
         assert_eq!(canonical.latest_block_header.state_root, HASH32_ZERO);

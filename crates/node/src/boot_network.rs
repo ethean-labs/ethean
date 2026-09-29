@@ -53,7 +53,7 @@ pub async fn prepare_boot_network(
             .as_ref()
             .and_then(|q| parse_udp_port(&q.listen_addr.to_string()))
             .unwrap_or(listen_port);
-        return Ok((quic_port, Some(facade)));
+        Ok((quic_port, Some(facade)))
     }
     #[cfg(not(feature = "libp2p-quic"))]
     {

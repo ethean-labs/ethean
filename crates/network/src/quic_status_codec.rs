@@ -2,9 +2,7 @@
 
 #![cfg(feature = "libp2p-quic")]
 
-use crate::quic_framed::{
-    read_framed, read_framed_request, write_framed, write_framed_request,
-};
+use crate::quic_framed::{read_framed, read_framed_request, write_framed, write_framed_request};
 use async_trait::async_trait;
 use ethean_network_wire::rpc_status;
 use futures::prelude::*;
@@ -34,11 +32,7 @@ impl request_response::Codec for StatusCodec {
     type Request = Vec<u8>;
     type Response = Vec<u8>;
 
-    async fn read_request<T>(
-        &mut self,
-        _: &Self::Protocol,
-        io: &mut T,
-    ) -> io::Result<Self::Request>
+    async fn read_request<T>(&mut self, _: &Self::Protocol, io: &mut T) -> io::Result<Self::Request>
     where
         T: AsyncRead + Unpin + Send,
     {

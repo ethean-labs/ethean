@@ -40,8 +40,7 @@ fn run_ok(rel: &str) -> Option<FcRunReport> {
 
 #[test]
 fn safe_target_follows_heavier_fork_on_split() {
-    let Some(r) =
-        run_ok("test_safe_target/test_safe_target_follows_heavier_fork_on_split.json")
+    let Some(r) = run_ok("test_safe_target/test_safe_target_follows_heavier_fork_on_split.json")
     else {
         eprintln!("skip: cache missing");
         return;
@@ -52,8 +51,7 @@ fn safe_target_follows_heavier_fork_on_split() {
 
 #[test]
 fn safe_target_ignores_known_pool_at_interval_3() {
-    let Some(r) =
-        run_ok("test_safe_target/test_safe_target_ignores_known_pool_at_interval_3.json")
+    let Some(r) = run_ok("test_safe_target/test_safe_target_ignores_known_pool_at_interval_3.json")
     else {
         eprintln!("skip: cache missing");
         return;
@@ -88,8 +86,7 @@ fn supermajority_four_of_seven_holds_genesis() {
 
 #[test]
 fn same_slot_equivocating_attesters_count_once() {
-    let Some(r) =
-        run_ok("test_equivocation/test_same_slot_equivocating_attesters_count_once.json")
+    let Some(r) = run_ok("test_equivocation/test_same_slot_equivocating_attesters_count_once.json")
     else {
         eprintln!("skip: cache missing");
         return;
@@ -100,9 +97,9 @@ fn same_slot_equivocating_attesters_count_once() {
 
 #[test]
 fn finalization_prunes_stale_attestation_signatures() {
-    let Some(r) = run_ok(
-        "test_store_pruning/test_finalization_prunes_stale_attestation_signatures.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_store_pruning/test_finalization_prunes_stale_attestation_signatures.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -135,9 +132,7 @@ fn justified_divergence_self_heals() {
 
 #[test]
 fn reorg_on_newly_justified_slot() {
-    let Some(r) =
-        run_ok("test_fork_choice_reorgs/test_reorg_on_newly_justified_slot.json")
-    else {
+    let Some(r) = run_ok("test_fork_choice_reorgs/test_reorg_on_newly_justified_slot.json") else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -146,8 +141,7 @@ fn reorg_on_newly_justified_slot() {
 
 #[test]
 fn reorg_depth_across_deep_chain_split() {
-    let Some(r) =
-        run_ok("test_fork_choice_reorgs/test_reorg_depth_across_deep_chain_split.json")
+    let Some(r) = run_ok("test_fork_choice_reorgs/test_reorg_depth_across_deep_chain_split.json")
     else {
         eprintln!("skip: cache missing");
         return;
@@ -169,9 +163,9 @@ fn non_genesis_anchor_internally_consistent() {
 
 #[test]
 fn losing_fork_higher_finalized_does_not_latch() {
-    let Some(r) = run_ok(
-        "test_finalized_safety/test_losing_fork_higher_finalized_does_not_latch.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_finalized_safety/test_losing_fork_higher_finalized_does_not_latch.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -181,9 +175,9 @@ fn losing_fork_higher_finalized_does_not_latch() {
 
 #[test]
 fn fork_above_finalized_wins_at_or_below_loses() {
-    let Some(r) = run_ok(
-        "test_finalized_safety/test_fork_above_finalized_wins_at_or_below_loses.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_finalized_safety/test_fork_above_finalized_wins_at_or_below_loses.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -193,9 +187,9 @@ fn fork_above_finalized_wins_at_or_below_loses() {
 
 #[test]
 fn heavier_fork_below_finalized_slot_never_wins() {
-    let Some(r) = run_ok(
-        "test_finalized_safety/test_heavier_fork_below_finalized_slot_never_wins.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_finalized_safety/test_heavier_fork_below_finalized_slot_never_wins.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -205,9 +199,9 @@ fn heavier_fork_below_finalized_slot_never_wins() {
 
 #[test]
 fn tick_interval_0_skips_acceptance_when_not_proposer() {
-    let Some(r) = run_ok(
-        "test_tick_system/test_tick_interval_0_skips_acceptance_when_not_proposer.json",
-    ) else {
+    let Some(r) =
+        run_ok("test_tick_system/test_tick_interval_0_skips_acceptance_when_not_proposer.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -218,9 +212,8 @@ fn tick_interval_0_skips_acceptance_when_not_proposer() {
 
 #[test]
 fn tick_interval_progression_advances_safe_target() {
-    let Some(r) = run_ok(
-        "test_tick_system/test_tick_interval_progression_through_full_slot.json",
-    ) else {
+    let Some(r) = run_ok("test_tick_system/test_tick_interval_progression_through_full_slot.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };

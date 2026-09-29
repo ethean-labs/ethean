@@ -5,7 +5,10 @@ use crate::error::GenesisError;
 /// Parse a hex string into exactly `N` bytes.
 pub fn decode_hex_fixed<const N: usize>(s: &str) -> Result<[u8; N], GenesisError> {
     let t = s.trim();
-    let hex = t.strip_prefix("0x").or_else(|| t.strip_prefix("0X")).unwrap_or(t);
+    let hex = t
+        .strip_prefix("0x")
+        .or_else(|| t.strip_prefix("0X"))
+        .unwrap_or(t);
     if hex.len() != N * 2 {
         return Err(GenesisError::LeanConfig(format!(
             "hex length {} != {} (need {} bytes)",

@@ -19,12 +19,7 @@ impl PrunePolicy {
     }
 
     /// Refuse pruning a root still required for recovery (pending parent, proofs, signer).
-    pub fn may_delete(
-        &self,
-        slot: u64,
-        root: &Hash32,
-        protected: &[Hash32],
-    ) -> Result<bool> {
+    pub fn may_delete(&self, slot: u64, root: &Hash32, protected: &[Hash32]) -> Result<bool> {
         if protected.iter().any(|r| r == root) {
             return Err(StorageError::PruneUnsafe(
                 "root is a recovery dependency".into(),
@@ -46,7 +41,7 @@ mod tests {
         };
         let root = [1u8; 32];
         assert!(p.may_delete(50, &root, &[root]).is_err());
-        assert_eq!(p.may_delete(50, &root, &[]).unwrap(), true);
-        assert_eq!(p.may_delete(95, &root, &[]).unwrap(), false);
+        assert!(p.may_delete(50, &root, &[]).unwrap());
+        assert!(!p.may_delete(95, &root, &[]).unwrap());
     }
 }

@@ -1,5 +1,12 @@
 # B1 leanSig production backend — local vendor compile path (2026-09-20)
 
+> **Closed (re-checked 2026-09-29).** XMSS is native since 0.1.47
+> ([native-xmss-backend-2026-09-22.md](native-xmss-backend-2026-09-22.md)) and the
+> `leansig-backend` feature and vendor patch are gone. leanSig only arrives
+> transitively through leanVM `e2592df4` (leanSig `devnet4#15cbdd43`), and the
+> workspace resolves a single `num-bigint 0.4.8` without any `[patch]`. The rest of
+> this note is history.
+
 ## Status
 
 `ethean-crypto` feature `leansig-backend` **compiles and unit-tests green** when leanSig

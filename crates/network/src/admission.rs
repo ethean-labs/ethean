@@ -10,7 +10,12 @@ pub const MAX_OUTBOUND_PEERS: usize = 50;
 pub const MAX_PEERS_PER_IP: usize = 5;
 
 /// Decide whether a new peer may be admitted.
-pub fn admit(inbound: bool, current_inbound: usize, current_outbound: usize, same_ip: usize) -> bool {
+pub fn admit(
+    inbound: bool,
+    current_inbound: usize,
+    current_outbound: usize,
+    same_ip: usize,
+) -> bool {
     if same_ip >= MAX_PEERS_PER_IP {
         return false;
     }

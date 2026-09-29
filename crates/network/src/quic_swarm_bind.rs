@@ -87,7 +87,7 @@ pub(crate) async fn wait_quic_listen(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
     use crate::quic_swarm::QuicSwarm;
     use crate::transport::TransportConfig;
 

@@ -213,8 +213,8 @@ mod tests {
         };
         let ev = try_local_attest(&mut owner, tick);
         assert_eq!(ev.len(), 1);
-        let vote = SignedAttestation::ssz_decode(&owner.pending_aggregation_gossip[0].payload)
-            .unwrap();
+        let vote =
+            SignedAttestation::ssz_decode(&owner.pending_aggregation_gossip[0].payload).unwrap();
         assert_eq!(vote.data.head.root, [7u8; 32]);
         assert_eq!(vote.data.target.root, [9u8; 32]);
     }

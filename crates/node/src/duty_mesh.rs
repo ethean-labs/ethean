@@ -11,6 +11,10 @@ use ethean_genesis::{SystemTimeSource, TimeSource};
 use std::time::Duration;
 use tracing::{debug, info, warn};
 
+/// Longest single swarm wait between duty intervals; bounds how late a
+/// finished proof is noticed.
+const IDLE_PUMP_SLICE_MS: u64 = 50;
+
 impl EtheanClient {
     /// Wall-clock duty loop that pumps the swarm then flushes gossip each tick.
     pub(crate) async fn run_wall_with_flush(
@@ -52,10 +56,7 @@ impl EtheanClient {
             }
             let _ = self.refresh_slot_metrics();
             if enable_sleep && i + 1 < ticks {
-                let now_ms = time.unix_millis().map_err(Error::Clock)?;
-                let wait = ms_until_next_interval(&self.clock, now_ms)?;
-                debug!(wait_ms = wait, "Sleeping until next duty interval");
-                tokio::time::sleep(Duration::from_millis(wait)).await;
+                events.extend(self.pump_until_next_interval(&time).await?);
             }
         }
         events.push(apply_command(
@@ -133,11 +134,58 @@ impl EtheanClient {
         crate::api_events::publish_optional(&self.api, &step_events);
         let _ = self.refresh_slot_metrics();
         if enable_sleep && self.shutdown.accepts_new_duties() {
-            let now_ms = time.unix_millis().map_err(Error::Clock)?;
-            let wait = ms_until_next_interval(&self.clock, now_ms)?;
-            tokio::time::sleep(Duration::from_millis(wait)).await;
+            step_events.extend(self.pump_until_next_interval(time).await?);
         }
         Ok(step_events)
+    }
+
+    /// Keep the swarm polled until the next duty interval and pick up proofs
+    /// the moment they finish. Sleeping through the interval would hold a
+    /// finished block proof (and inbound gossip) for up to one interval.
+    async fn pump_until_next_interval(
+        &mut self,
+        time: &SystemTimeSource,
+    ) -> Result<Vec<ChainEvent>> {
+        let mut events = Vec::new();
+        let now_ms = time.unix_millis().map_err(Error::Clock)?;
+        let deadline_ms = now_ms + ms_until_next_interval(&self.clock, now_ms)?;
+        loop {
+            let now_ms = time.unix_millis().map_err(Error::Clock)?;
+            if now_ms >= deadline_ms || !self.shutdown.accepts_new_duties() {
+                break;
+            }
+            let slice = Duration::from_millis((deadline_ms - now_ms).min(IDLE_PUMP_SLICE_MS));
+            if self.has_swarm() {
+                let deadline = tokio::time::Instant::now() + slice;
+                self.apply_network_window(64, slice, Some(deadline)).await?;
+            } else {
+                tokio::time::sleep(slice).await;
+            }
+            #[cfg_attr(not(feature = "libp2p-quic"), allow(unused_mut))]
+            let mut ready = crate::proof_collect::collect_proofs(&mut self.owner);
+            if !ready.is_empty() {
+                self.flush_chain_persist();
+            }
+            #[cfg(feature = "libp2p-quic")]
+            ready.extend(self.flush_pending_events()?);
+            if !ready.is_empty() {
+                debug!(n = ready.len(), "events produced between duty intervals");
+                crate::api_events::publish_optional(&self.api, &ready);
+                events.extend(ready);
+            }
+        }
+        Ok(events)
+    }
+
+    fn has_swarm(&self) -> bool {
+        #[cfg(feature = "libp2p-quic")]
+        {
+            self.swarm.is_some()
+        }
+        #[cfg(not(feature = "libp2p-quic"))]
+        {
+            false
+        }
     }
 
     /// Before genesis there are no duties: keep the swarm pumped and the HTTP

@@ -56,7 +56,9 @@ mod tests {
         assert_eq!(reqs.len(), 1);
         assert_eq!(reqs[0].peer, peer);
         assert!(!reqs[0].payload.is_empty());
-        assert!(reqs[0].protocol_id.starts_with("/leanconsensus/req/status/"));
+        assert!(reqs[0]
+            .protocol_id
+            .starts_with("/leanconsensus/req/status/"));
         assert_eq!(tracker.len(), 1);
     }
 }

@@ -154,7 +154,7 @@ impl MultiMessageAggregate {
 }
 
 fn merkleize_bytes(bytes: &[u8], limit: usize) -> Root {
-    let chunk_limit = next_pow2(((limit + 31) / 32).max(1));
+    let chunk_limit = next_pow2(limit.div_ceil(32).max(1));
     let chunks: Vec<Root> = if bytes.is_empty() {
         Vec::new()
     } else {

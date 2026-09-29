@@ -11,6 +11,18 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Slot panel values published together on each metrics refresh.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct SlotPanel {
+    pub head_slot: u64,
+    pub justified_slot: u64,
+    pub finalized_slot: u64,
+    pub safe_target_slot: u64,
+    pub current_slot: u64,
+    pub sync_lag: u64,
+    pub peer_count: u64,
+}
+
 /// Process-local observability state.
 #[derive(Debug)]
 pub struct NodeObservability {
@@ -91,27 +103,18 @@ impl NodeObservability {
     }
 
     /// Full slot panel snapshot for Grafana (head / justified / finalized / safe / current).
-    pub fn record_slots(
-        &mut self,
-        head_slot: u64,
-        justified_slot: u64,
-        finalized_slot: u64,
-        safe_target_slot: u64,
-        current_slot: u64,
-        sync_lag: u64,
-        peer_count: u64,
-    ) -> Result<(), MetricsError> {
+    pub fn record_slots(&mut self, panel: SlotPanel) -> Result<(), MetricsError> {
         self.registry.with_mut(|reg| {
             record_slot_gauges(
                 reg,
-                head_slot,
-                justified_slot,
-                finalized_slot,
-                safe_target_slot,
-                current_slot,
-                sync_lag,
+                panel.head_slot,
+                panel.justified_slot,
+                panel.finalized_slot,
+                panel.safe_target_slot,
+                panel.current_slot,
+                panel.sync_lag,
             )?;
-            reg.set("peer_count", peer_count as f64)?;
+            reg.set("peer_count", panel.peer_count as f64)?;
             Ok(())
         })
     }

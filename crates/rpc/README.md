@@ -3,7 +3,7 @@
 Lean HTTP API. Hive interop is `/lean/v0/…`; `/lean/v1/…` is an alias of the same
 handlers. **No** `/eth/v1/` Beacon compatibility.
 
-- Public: health (includes `version`), checkpoints/justified, fork_choice,
+- Public: health (exact leanSpec `status` + `service` body), checkpoints/justified, fork_choice,
   states/finalized (SSZ), blocks/finalized (SSZ)
 - Admin: aggregator GET/POST, shutdown, event poll or SSE
   (`Accept: text/event-stream` on `/lean/v0/events` / `/lean/v1/events`)

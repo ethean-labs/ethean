@@ -1,8 +1,6 @@
 //! Route handlers for `/lean/v0` (hive) and `/lean/v1` (operator aliases).
 
-use crate::dto::{
-    AggregatorStatusBody, AggregatorToggleBody, AggregatorToggleRequest, HealthBody,
-};
+use crate::dto::{AggregatorStatusBody, AggregatorToggleBody, AggregatorToggleRequest, HealthBody};
 use crate::error::RpcError;
 use crate::json_body::{
     duties_json, events_json, finalized_json, fork_choice_json, head_json, identity_json, sync_json,
@@ -54,9 +52,11 @@ pub fn handle_route(route: Route, state: &SharedApiState, body: &[u8]) -> HttpRe
             let v = HealthBody {
                 status: HEALTHY.into(),
                 service: SERVICE.into(),
-                version: env!("CARGO_PKG_VERSION").into(),
             };
-            HttpReply::json(200, serde_json::to_string(&v).unwrap_or_else(|_| "{}".into()))
+            HttpReply::json(
+                200,
+                serde_json::to_string(&v).unwrap_or_else(|_| "{}".into()),
+            )
         }
         Route::Ready => {
             if state.is_ready() {
@@ -92,7 +92,10 @@ pub fn handle_route(route: Route, state: &SharedApiState, body: &[u8]) -> HttpRe
             let v = AggregatorStatusBody {
                 is_aggregator: state.is_aggregator(),
             };
-            HttpReply::json(200, serde_json::to_string(&v).unwrap_or_else(|_| "{}".into()))
+            HttpReply::json(
+                200,
+                serde_json::to_string(&v).unwrap_or_else(|_| "{}".into()),
+            )
         }
         Route::AggregatorPost => aggregator_post(state, body),
         Route::Metrics => HttpReply::text(
@@ -126,8 +129,7 @@ fn fork_choice(state: &SharedApiState) -> HttpReply {
     if !snap.fork_choice.chain_ready {
         return error_json(RpcError::Unavailable("chain not ready".into()));
     }
-    let body =
-        serde_json::to_string(&snap.fork_choice.fork_choice).unwrap_or_else(|_| "{}".into());
+    let body = serde_json::to_string(&snap.fork_choice.fork_choice).unwrap_or_else(|_| "{}".into());
     HttpReply::json(200, body)
 }
 
@@ -143,7 +145,9 @@ fn ssz_or_missing(state: &SharedApiState, state_bytes: bool) -> HttpReply {
     };
     match blob {
         Some(bytes) if !bytes.is_empty() => HttpReply::ssz(bytes),
-        _ => error_json(RpcError::UnknownRoute("finalized payload missing".into())).with_status(404),
+        _ => {
+            error_json(RpcError::UnknownRoute("finalized payload missing".into())).with_status(404)
+        }
     }
 }
 
@@ -156,7 +160,10 @@ fn aggregator_post(state: &SharedApiState, body: &[u8]) -> HttpReply {
                 is_aggregator: req.enabled,
                 previous,
             };
-            HttpReply::json(200, serde_json::to_string(&v).unwrap_or_else(|_| "{}".into()))
+            HttpReply::json(
+                200,
+                serde_json::to_string(&v).unwrap_or_else(|_| "{}".into()),
+            )
         }
         Err(_) => error_json(RpcError::BadRequest(
             "body must be JSON {\"enabled\": bool}".into(),
@@ -202,7 +209,12 @@ mod tests {
         let v: HealthBody = serde_json::from_slice(&r.body).unwrap();
         assert_eq!(v.status, "healthy");
         assert_eq!(v.service, "lean-rpc-api");
-        assert_eq!(v.version, env!("CARGO_PKG_VERSION"));
+        let raw: serde_json::Value = serde_json::from_slice(&r.body).unwrap();
+        assert_eq!(
+            raw.as_object().map(|o| o.len()),
+            Some(2),
+            "leanSpec body only"
+        );
     }
 
     #[test]

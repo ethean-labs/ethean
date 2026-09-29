@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn payload_is_10_mib() {
         assert_eq!(MAX_PAYLOAD_SIZE, 10 * 1024 * 1024);
-        assert!(MAX_MESSAGE_SIZE > MAX_PAYLOAD_SIZE);
+        const { assert!(MAX_MESSAGE_SIZE > MAX_PAYLOAD_SIZE) };
         assert_eq!(
             MAX_MESSAGE_SIZE,
             (max_compressed_len(MAX_PAYLOAD_SIZE as u64) + 1024) as usize

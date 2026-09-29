@@ -71,7 +71,12 @@ pub fn import_decoded_block(
             let block_bits = crate::lean_metrics::coverage::union_bits(
                 decoded.signed.block.body.attestations.iter(),
             );
-            crate::lean_metrics::coverage::record_block_coverage(&block_bits, &timely, &[], committees);
+            crate::lean_metrics::coverage::record_block_coverage(
+                &block_bits,
+                &timely,
+                &[],
+                committees,
+            );
             let seeded = crate::block_payloads::seed_known_payloads(
                 owner,
                 &decoded.signed.block,

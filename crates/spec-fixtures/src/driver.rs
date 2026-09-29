@@ -252,7 +252,7 @@ fn drive_state_transition(case: &Value) -> Result<State, String> {
 /// Decode `0x`-prefixed hex of any length.
 pub fn decode_hex_bytes(s: &str) -> Result<Vec<u8>, String> {
     let s = s.trim().trim_start_matches("0x");
-    if s.len() % 2 != 0 {
+    if !s.len().is_multiple_of(2) {
         return Err("odd hex length".into());
     }
     (0..s.len())

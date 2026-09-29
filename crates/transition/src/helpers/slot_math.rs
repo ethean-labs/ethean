@@ -69,7 +69,12 @@ mod tests {
             }
             assert_eq!(isqrt(n), r, "n={n}");
         }
-        for n in [u64::MAX, u64::MAX - 1, (1u64 << 63) + 7, 999_999_999_999_999_999] {
+        for n in [
+            u64::MAX,
+            u64::MAX - 1,
+            (1u64 << 63) + 7,
+            999_999_999_999_999_999,
+        ] {
             let r = isqrt(n);
             assert!(r.checked_mul(r).is_some_and(|sq| sq <= n));
             assert!((r + 1).checked_mul(r + 1).is_none_or(|sq| sq > n));

@@ -18,7 +18,7 @@ pub fn blocks_by_range_for_status_gap(
         return Ok(None);
     }
     let lag = remote.head_slot().saturating_sub(local_head_slot);
-    let count = lag.min(MAX_BLOCKS_PER_REQUEST).max(1);
+    let count = lag.clamp(1, MAX_BLOCKS_PER_REQUEST);
     let start = local_head_slot.saturating_add(1);
     BlocksByRangeRequest::new(start, count)
         .map(Some)

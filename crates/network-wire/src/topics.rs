@@ -42,7 +42,9 @@ pub fn rpc_blocks_by_range() -> &'static str {
 
 fn validate_fork(fork: &str) -> Result<()> {
     if fork.is_empty() || fork.contains('/') {
-        return Err(WireError::InvalidTopic(format!("invalid fork segment {fork}")));
+        return Err(WireError::InvalidTopic(format!(
+            "invalid fork segment {fork}"
+        )));
     }
     Ok(())
 }

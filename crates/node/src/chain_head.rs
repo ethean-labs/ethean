@@ -10,11 +10,7 @@ impl ChainOwner {
     /// store after [`Self::fc_on_block`] / sync — skip the parent heuristic.
     pub fn advance_head(&mut self, new_root: Hash32, parent_root: Hash32) {
         let prev = self.head_root;
-        if self.fc.is_none()
-            && prev != HASH32_ZERO
-            && prev != new_root
-            && parent_root != prev
-        {
+        if self.fc.is_none() && prev != HASH32_ZERO && prev != new_root && parent_root != prev {
             self.reorg_total = self.reorg_total.saturating_add(1);
             let depth = self.reorg_depth(prev, new_root).max(1);
             ethean_metrics::lean::observe("lean_fork_choice_reorg_depth", &[], depth as f64);

@@ -15,7 +15,7 @@ use crate::registry_keys_view::{attestation_keys_for_bits, proposal_key};
 use ethean_crypto::Signature;
 use ethean_metrics::lean::{inc, observe_since};
 use ethean_multisig::{KeyedProof, LeanMultisigVerifier};
-use ethean_primitives::ValidatorIndex;
+use ethean_primitives::{Slot, ValidatorIndex};
 use ethean_transition::{apply_block, TransitionContext};
 use ethean_types::{MultiMessageAggregate, SignedBlock};
 use ethean_validator::DutyTick;
@@ -40,6 +40,11 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     // The head already holds a block for this slot (ours or imported); later
     // ticks of the same slot have nothing to build.
     if pre.slot.get() >= tick.slot.get() {
+        return out;
+    }
+    // Already proving (or holding) this slot's block, e.g. one started during
+    // the previous slot's last interval. Re-planning would sign the slot twice.
+    if owner.block_proof_slot == Some(tick.slot.get()) {
         return out;
     }
     let proposer = ValidatorIndex::new(tick.slot.get() % n);
@@ -110,6 +115,30 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     out
 }
 
+/// During the last interval of a slot, start the next slot's block when we
+/// propose it. The Type-2 merge takes seconds at leanVM `e2592df4`; starting
+/// one interval early lets it overlap the boundary. Import and gossip still
+/// wait until the wall clock reaches the block's slot
+/// ([`crate::proof_collect::release_deferred_block`]).
+pub fn try_plan_next_slot_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEvent> {
+    let last_interval = owner
+        .profile
+        .as_ref()
+        .map(|p| p.intervals_per_slot.saturating_sub(1));
+    if owner.local_finality
+        || owner.prover.is_none()
+        || last_interval != Some(u64::from(tick.interval))
+    {
+        return Vec::new();
+    }
+    let next = DutyTick {
+        slot: Slot::new(tick.slot.get() + 1),
+        interval: 0,
+        generation: tick.generation,
+    };
+    try_plan_proposal(owner, next)
+}
+
 fn request_block_proof(
     owner: &mut ChainOwner,
     tick: DutyTick,
@@ -156,6 +185,7 @@ fn request_block_proof(
     if !owner.prover.as_mut().is_some_and(|p| p.submit(job)) {
         return Err("prover queue is full".into());
     }
+    owner.block_proof_slot = Some(tick.slot.get());
     Ok(vec![
         ChainEvent::ProposalSigned {
             root,
@@ -206,9 +236,10 @@ pub fn accept_block_proof(
         profile.attestation_subnet_count() as u64,
     );
     for attestation in &plan.block.body.attestations {
-        owner
-            .known_payloads
-            .insert(attestation.data.hash_tree_root(), attestation.data.slot.get());
+        owner.known_payloads.insert(
+            attestation.data.hash_tree_root(),
+            attestation.data.slot.get(),
+        );
     }
     let post = applied.post_state;
     if owner.fc.is_some() {

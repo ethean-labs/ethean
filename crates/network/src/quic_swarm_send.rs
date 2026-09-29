@@ -25,11 +25,7 @@ impl QuicSwarm {
     }
 
     /// Send a blocks-by-root request to a connected peer fingerprint.
-    pub fn send_blocks_by_root_request(
-        &mut self,
-        peer: Hash32,
-        payload: Vec<u8>,
-    ) -> NetResult<()> {
+    pub fn send_blocks_by_root_request(&mut self, peer: Hash32, payload: Vec<u8>) -> NetResult<()> {
         let Some(peer_id) = self.peers.get(&peer).copied() else {
             return Err(NetworkError::Handshake(
                 "peer not connected for blocks-by-root request".into(),

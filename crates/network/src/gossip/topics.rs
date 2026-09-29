@@ -53,10 +53,7 @@ impl LeanGossipTopics {
 
     /// Subnet 0 topic (compat for single-subnet callers).
     pub fn attestation_0(&self) -> &str {
-        self.attestations
-            .first()
-            .map(|s| s.as_str())
-            .unwrap_or("")
+        self.attestations.first().map(|s| s.as_str()).unwrap_or("")
     }
 
     /// All mesh topics in subscription order.
@@ -101,6 +98,9 @@ mod tests {
         assert_eq!(t.as_slice().len(), 3);
         assert!(t.attestations.iter().any(|s| s.contains("attestation_0")));
         let four = LeanGossipTopics::from_fork_segment_subnets("aabbccdd", 4).unwrap();
-        assert!(four.attestations.iter().any(|s| s.contains("attestation_3")));
+        assert!(four
+            .attestations
+            .iter()
+            .any(|s| s.contains("attestation_3")));
     }
 }

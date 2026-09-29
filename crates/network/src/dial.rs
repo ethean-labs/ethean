@@ -35,9 +35,8 @@ pub fn probe_udp_status(
         .map_err(|e| NetworkError::Wire(e.to_string()))?;
 
     // Dedicated connected socket so we do not disturb the listen socket's peers.
-    let dial = UdpSocket::bind(("0.0.0.0", 0)).map_err(|e| {
-        NetworkError::Handshake(format!("udp dial bind failed: {e}"))
-    })?;
+    let dial = UdpSocket::bind(("0.0.0.0", 0))
+        .map_err(|e| NetworkError::Handshake(format!("udp dial bind failed: {e}")))?;
     dial.set_read_timeout(Some(timeout))
         .map_err(|e| NetworkError::Handshake(format!("set_read_timeout: {e}")))?;
     dial.connect(addr.socket_addr())
@@ -58,7 +57,10 @@ pub fn probe_udp_status(
                 return Err(NetworkError::Wire(format!("peer status decode: {e}")));
             }
         },
-        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock || e.kind() == std::io::ErrorKind::TimedOut => {
+        Err(e)
+            if e.kind() == std::io::ErrorKind::WouldBlock
+                || e.kind() == std::io::ErrorKind::TimedOut =>
+        {
             let _ = bound.listen_port; // keep API using bound identity context
             None
         }
@@ -132,19 +134,12 @@ mod tests {
             let (n, peer) = server.recv_from(&mut buf).unwrap();
             let got = Status::decode(&buf[..n]).unwrap();
             assert_eq!(got, echo);
-            server
-                .send_to(&echo.encode().unwrap(), peer)
-                .unwrap();
+            server.send_to(&echo.encode().unwrap(), peer).unwrap();
         });
 
         let remote = format!("/ip4/127.0.0.1/udp/{server_port}/quic-v1");
-        let probe = probe_udp_status(
-            &listener,
-            &remote,
-            &status,
-            Duration::from_millis(500),
-        )
-        .unwrap();
+        let probe =
+            probe_udp_status(&listener, &remote, &status, Duration::from_millis(500)).unwrap();
         assert_eq!(probe.peer_status.as_ref(), Some(&status));
         handle.join().unwrap();
     }

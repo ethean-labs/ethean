@@ -1405,6 +1405,7 @@ name = "ethean-crypto"
 version = "0.1.70"
 dependencies = [
  "ethean-primitives",
+ "getrandom 0.3.4",
  "serde",
  "sha2",
  "thiserror 1.0.69",

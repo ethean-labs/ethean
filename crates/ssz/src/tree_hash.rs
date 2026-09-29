@@ -130,7 +130,7 @@ pub fn hash_tree_root_bitlist(bits: &[bool], limit: usize) -> Result<Root, SszEr
             limit,
         });
     }
-    let mut packed = vec![0u8; (bits.len() + 7) / 8];
+    let mut packed = vec![0u8; bits.len().div_ceil(8)];
     for (i, &b) in bits.iter().enumerate() {
         if b {
             packed[i / 8] |= 1 << (i % 8);
@@ -141,7 +141,7 @@ pub fn hash_tree_root_bitlist(bits: &[bool], limit: usize) -> Result<Root, SszEr
     } else {
         packed.chunks(32).map(chunk_from_bytes).collect()
     };
-    let chunk_limit = next_power_of_two(((limit + 255) / 256).max(1));
+    let chunk_limit = next_power_of_two(limit.div_ceil(256).max(1));
     let tree = merkleize(&chunks, chunk_limit);
     Ok(mix_in_length(&tree, bits.len() as u64))
 }

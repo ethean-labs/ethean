@@ -116,9 +116,8 @@ fn infer_role(privkey_file: &str, ordinal_for_index: usize) -> SigningRole {
     let lower = privkey_file.to_ascii_lowercase();
     if lower.contains("proposal") || lower.contains("proposer") {
         SigningRole::Proposal
-    } else if lower.contains("attestation") || lower.contains("attester") {
-        SigningRole::Attestation
-    } else if ordinal_for_index == 0 {
+    } else if lower.contains("attestation") || lower.contains("attester") || ordinal_for_index == 0
+    {
         SigningRole::Attestation
     } else {
         SigningRole::Proposal

@@ -13,5 +13,8 @@ fn package_name_is_not_panro() {
 #[test]
 fn public_client_type_exists() {
     let name = std::any::type_name::<ethean_node::EtheanClient>();
-    assert!(name.contains("EtheanClient"), "unexpected type name: {name}");
+    assert!(
+        name.contains("EtheanClient"),
+        "unexpected type name: {name}"
+    );
 }

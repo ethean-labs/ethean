@@ -63,7 +63,7 @@ pub fn apply_justifications(
         ));
     }
 
-    if state.justifications_roots.iter().any(|r| *r == HASH32_ZERO) {
+    if state.justifications_roots.contains(&HASH32_ZERO) {
         return Err(TransitionError::ZeroHashJustificationRoot(
             "Tracked justification roots contain the zero hash".into(),
         ));

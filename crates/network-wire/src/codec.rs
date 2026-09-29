@@ -224,9 +224,9 @@ mod tests {
     fn leanspec_request_payload_roundtrips() {
         roundtrip_request(&[]);
         roundtrip_request(&[1, 2, 3, 4]);
-        roundtrip_request(&vec![0xab; 127]);
-        roundtrip_request(&vec![0xcd; 128]);
-        roundtrip_request(&vec![0xde, 0xad, 0xbe, 0xef].repeat(256));
+        roundtrip_request(&[0xab; 127]);
+        roundtrip_request(&[0xcd; 128]);
+        roundtrip_request(&[0xde, 0xad, 0xbe, 0xef].repeat(256));
         roundtrip_request(&(0u8..=255).collect::<Vec<_>>());
         roundtrip_request(&[0u8; 32]);
         roundtrip_request(&crate::BlocksByRootRequest::new(vec![]).unwrap().encode());
@@ -245,7 +245,7 @@ mod tests {
         roundtrip_response(ResponseCode::ServerError, b"internal error");
         roundtrip_response(ResponseCode::ResourceUnavailable, b"block not found");
         roundtrip_response(ResponseCode::Success, &(0u8..=255).collect::<Vec<_>>());
-        roundtrip_response(ResponseCode::Success, &vec![0xca, 0xfe, 0xba, 0xbe].repeat(256));
+        roundtrip_response(ResponseCode::Success, &[0xca, 0xfe, 0xba, 0xbe].repeat(256));
         roundtrip_response(ResponseCode::Success, &[0xff; 32]);
     }
 

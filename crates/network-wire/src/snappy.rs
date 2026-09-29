@@ -156,7 +156,10 @@ mod tests {
         let empty = compress_frame(b"").unwrap();
         assert_eq!(decompress_frame(&empty).unwrap(), b"");
         let repeated = vec![0u8; 1024];
-        assert_eq!(decompress_frame(&compress_frame(&repeated).unwrap()).unwrap(), repeated);
+        assert_eq!(
+            decompress_frame(&compress_frame(&repeated).unwrap()).unwrap(),
+            repeated
+        );
     }
 
     #[test]
@@ -205,7 +208,10 @@ mod tests {
     }
 
     fn roundtrip_raw(plain: &[u8]) {
-        assert_eq!(decompress_raw(&compress_raw(plain).unwrap()).unwrap(), plain);
+        assert_eq!(
+            decompress_raw(&compress_raw(plain).unwrap()).unwrap(),
+            plain
+        );
     }
 
     fn roundtrip_frame(plain: &[u8]) {

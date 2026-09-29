@@ -19,7 +19,10 @@ pub use keys::{XmssPublicKey, XmssSecretKey, XmssSignature};
 pub use merkle::{HashSubTree, HashTreeLayer, HashTreeOpening};
 pub use params::{SchemeParams, PROD, TEST};
 pub use rand::{OsRandom, RandomExt, RandomSource, SeededRandom};
-pub use scheme::{advance_preparation, key_gen, prepare_for_epoch, sign, verify};
+pub use scheme::{
+    advance_preparation, install_bottom_tree, key_gen, pending_bottom_tree, prepare_for_epoch,
+    sign, verify,
+};
 pub use tweak::Tweak;
 pub use tweak_hash::{Digest, Parameter};
 

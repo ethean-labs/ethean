@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
     );
 
     match cli.command {
-        Command::Start(args) => run_start(args).await?,
+        Command::Start(args) => run_start(*args).await?,
         Command::Validator => run_validator(),
         Command::Version => {
             println!(

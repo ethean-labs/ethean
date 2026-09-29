@@ -86,7 +86,10 @@ mod tests {
     fn prod4_state_root_pinned() {
         let built = prod_scheme_genesis(4);
         assert_eq!(built.state.validators.len(), 4);
-        assert_eq!(built.state.latest_block_header.body_root, EMPTY_BLOCK_BODY_ROOT);
+        assert_eq!(
+            built.state.latest_block_header.body_root,
+            EMPTY_BLOCK_BODY_ROOT
+        );
         assert_eq!(built.state_root, PROD4_GENESIS_STATE_ROOT);
     }
 

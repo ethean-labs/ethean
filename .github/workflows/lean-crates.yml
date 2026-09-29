@@ -14,6 +14,12 @@ jobs:
         with:
           toolchain: "1.98.1"
           components: rustfmt, clippy
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: |
+          cargo clippy --locked --workspace --all-targets \
+            --features ethean-node/libp2p-quic -- -D warnings
       - name: Test Lean crates
         run: |
           cargo test --locked \
@@ -22,5 +28,7 @@ jobs:
             -p ethean-validator -p ethean-network-wire -p ethean-network \
             -p ethean-storage -p ethean-sync -p ethean-rpc -p ethean-metrics \
             -p ethean-multisig -p ethean-prover
+      - name: Test node (libp2p-quic)
+        run: cargo test --locked -p ethean-node -p ethean-spec-fixtures --features ethean-node/libp2p-quic
       - name: Legacy scan (soft)
         run: ./tools/release/legacy-scan.sh

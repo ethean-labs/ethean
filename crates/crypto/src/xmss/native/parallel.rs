@@ -1,10 +1,26 @@
 //! Minimal scoped-thread fan-out; keeps the crate free of runtime dependencies.
 
+use std::cell::Cell;
+
+thread_local! {
+    static WORKER_CAP: Cell<Option<usize>> = const { Cell::new(None) };
+}
+
 /// Number of worker threads to use for CPU-bound fan-out.
 pub fn worker_count() -> usize {
-    std::thread::available_parallelism()
+    let all = std::thread::available_parallelism()
         .map(|n| n.get())
-        .unwrap_or(1)
+        .unwrap_or(1);
+    WORKER_CAP.with(|cap| cap.get().map_or(all, |c| c.clamp(1, all)))
+}
+
+/// Run `f` with fan-out on this thread limited to `cap` workers, so
+/// background work leaves cores to latency-sensitive jobs.
+pub fn with_worker_cap<R>(cap: usize, f: impl FnOnce() -> R) -> R {
+    let previous = WORKER_CAP.with(|c| c.replace(Some(cap)));
+    let out = f();
+    WORKER_CAP.with(|c| c.set(previous));
+    out
 }
 
 /// Map `items` to outputs in order, splitting the work into contiguous
@@ -43,5 +59,13 @@ mod tests {
         let out = map_parallel(&items, |x| x * 2);
         assert_eq!(out, items.iter().map(|x| x * 2).collect::<Vec<_>>());
         assert!(map_parallel::<u64, u64, _>(&[], |x| *x).is_empty());
+    }
+
+    #[test]
+    fn worker_cap_is_scoped_to_the_call() {
+        let all = worker_count();
+        assert_eq!(with_worker_cap(1, worker_count), 1);
+        assert_eq!(with_worker_cap(usize::MAX, worker_count), all);
+        assert_eq!(worker_count(), all);
     }
 }

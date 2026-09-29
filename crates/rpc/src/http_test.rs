@@ -66,7 +66,8 @@ fn split_http(raw: &[u8]) -> (u16, String, Vec<u8>) {
 async fn lean_v0_routes_on_ephemeral_port() {
     let state = SharedApiState::new("");
     let mut snap = state.snapshot();
-    snap.fork_choice = ForkChoiceView::genesis(HASH32_ZERO, 4, b"STATE".to_vec(), b"BLOCK".to_vec());
+    snap.fork_choice =
+        ForkChoiceView::genesis(HASH32_ZERO, 4, b"STATE".to_vec(), b"BLOCK".to_vec());
     state.publish(snap);
     state.set_ready(true);
 
@@ -118,9 +119,11 @@ async fn lean_v0_routes_on_ephemeral_port() {
 
     let (st, _, body) = http_post(addr, "/lean/v0/admin/aggregator", r#"{"enabled":true}"#);
     assert_eq!(st, 200);
-    assert!(serde_json::from_slice::<serde_json::Value>(&body).unwrap()["is_aggregator"]
-        .as_bool()
-        .unwrap());
+    assert!(
+        serde_json::from_slice::<serde_json::Value>(&body).unwrap()["is_aggregator"]
+            .as_bool()
+            .unwrap()
+    );
 
     let (st, _, _) = http_get(addr, "/eth/v1/node/health");
     assert_eq!(st, 404);
@@ -140,7 +143,10 @@ impl crate::test_driver::TestDriver for EchoDriver {
         }
     }
     fn fork_choice_step(&self, body: &[u8]) -> Result<String, String> {
-        Ok(format!(r#"{{"accepted":true,"error":null,"len":{}}}"#, body.len()))
+        Ok(format!(
+            r#"{{"accepted":true,"error":null,"len":{}}}"#,
+            body.len()
+        ))
     }
     fn state_transition(&self, _: &[u8]) -> Result<String, String> {
         Ok(r#"{"succeeded":true,"error":null,"post":null}"#.into())

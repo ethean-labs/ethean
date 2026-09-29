@@ -16,7 +16,9 @@ pub struct NodeKey {
 
 impl std::fmt::Debug for NodeKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NodeKey").field("secret", &"<redacted>").finish()
+        f.debug_struct("NodeKey")
+            .field("secret", &"<redacted>")
+            .finish()
     }
 }
 
@@ -38,7 +40,10 @@ impl NodeKey {
     /// Parse 64 hex chars (optional `0x`, surrounding whitespace / newline tolerated).
     pub fn from_hex(text: &str) -> Result<Self> {
         let t = text.trim();
-        let t = t.strip_prefix("0x").or_else(|| t.strip_prefix("0X")).unwrap_or(t);
+        let t = t
+            .strip_prefix("0x")
+            .or_else(|| t.strip_prefix("0X"))
+            .unwrap_or(t);
         if t.len() != 64 {
             return Err(NetworkError::Handshake(format!(
                 "node key must be 64 hex chars, got {}",
@@ -90,9 +95,8 @@ impl NodeKey {
     /// Write the key as hex (+ newline), owner-only permissions on Unix.
     pub fn save_file(&self, path: &Path) -> Result<()> {
         if let Some(dir) = path.parent() {
-            fs::create_dir_all(dir).map_err(|e| {
-                NetworkError::Handshake(format!("create {}: {e}", dir.display()))
-            })?;
+            fs::create_dir_all(dir)
+                .map_err(|e| NetworkError::Handshake(format!("create {}: {e}", dir.display())))?;
         }
         let mut text = self.to_hex();
         text.push('\n');

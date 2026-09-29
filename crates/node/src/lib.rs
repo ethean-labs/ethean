@@ -5,30 +5,30 @@
 
 #![forbid(unsafe_code)]
 
-pub mod api_ssz;
-pub mod api_view;
 pub mod agg_pin;
 pub mod aggregation;
 pub mod aggregation_duty;
 pub mod aggregation_gossip;
 pub mod api_events;
+pub mod api_ssz;
+pub mod api_view;
 pub mod block_builder;
 pub mod block_payloads;
 pub mod block_prune;
 pub mod blocks_sync;
 pub mod boot_network;
 pub mod bootnodes_parse;
-pub mod chain_head;
 pub mod chain_fc;
 pub mod chain_fc_rebuild;
 pub mod chain_fc_votes;
+pub mod chain_head;
 pub mod chain_known;
 pub mod chain_owner;
-pub mod checkpoint_http;
-pub mod checkpoint_sync;
 pub mod chain_persist;
 pub mod chain_redb;
 pub mod chain_snap;
+pub mod checkpoint_http;
+pub mod checkpoint_sync;
 pub mod cli;
 pub mod cli_resolve;
 pub mod client;
@@ -54,6 +54,7 @@ pub mod gossip_attestation;
 pub mod gossip_decode;
 pub mod gossip_ingest;
 pub mod gossip_stf;
+pub mod key_prep;
 pub mod lean_metrics;
 pub mod local_attester;
 pub mod local_finality;
@@ -76,11 +77,11 @@ pub mod shutdown;
 pub mod signal_loop;
 pub mod start_config;
 pub mod status_handshake;
-pub mod sync_catchup;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump;
 #[cfg(feature = "libp2p-quic")]
 pub mod swarm_pump_agg;
+pub mod sync_catchup;
 pub mod sync_orphan;
 pub mod test_driver;
 pub mod validator_registry;

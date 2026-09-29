@@ -95,7 +95,9 @@ async fn bind_listeners(client: &mut EtheanClient, cfg: &StartConfig) -> Result<
         let state = ethean_rpc::SharedApiState::new(http.admin_token.clone());
         state.set_aggregator(client.owner.is_aggregator);
         if crate::test_driver::enabled_by_env() {
-            state.install_driver(std::sync::Arc::new(crate::test_driver::NodeTestDriver::default()));
+            state.install_driver(std::sync::Arc::new(
+                crate::test_driver::NodeTestDriver::default(),
+            ));
             info!("hive test driver enabled (HIVE_LEAN_TEST_DRIVER=1)");
         }
         let bound = ethean_rpc::spawn_lean_http(http.addr, state.clone())

@@ -24,7 +24,10 @@ pub struct ProposerPlan {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProposerOutcome {
     /// Proposal signature ready for Type-2 envelope assembly.
-    Signed { signature: Signature, parent_root: Hash32 },
+    Signed {
+        signature: Signature,
+        parent_root: Hash32,
+    },
     /// Duty suppressed.
     Suppressed(SuppressReason),
     /// Build / sign failure.

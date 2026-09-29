@@ -210,7 +210,11 @@ fn run(client: &ProverClient, job: ProofJob) -> ProofOutcome {
             public_keys_per_component,
         } => {
             let proof = client
-                .split_type2(block_proof, public_keys_per_component, data.hash_tree_root())
+                .split_type2(
+                    block_proof,
+                    public_keys_per_component,
+                    data.hash_tree_root(),
+                )
                 .map_err(|e| e.to_string());
             ProofOutcome::Split {
                 data,

@@ -29,9 +29,7 @@ impl ForkChoiceStore {
     }
 
     /// Counted votes: prefer payload-pool LMD (leanSpec); fall back to the map.
-    pub(crate) fn relevant_known_votes(
-        &self,
-    ) -> HashMap<ValidatorIndex, AttestationData> {
+    pub(crate) fn relevant_known_votes(&self) -> HashMap<ValidatorIndex, AttestationData> {
         let from_payloads = self.votes_from_known_payloads();
         if !from_payloads.is_empty() {
             return from_payloads;

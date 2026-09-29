@@ -146,10 +146,7 @@ mod tests {
 
     #[test]
     fn from_slot_divides() {
-        assert_eq!(
-            Epoch::from_slot(Slot::new(64), 32).unwrap(),
-            Epoch::new(2)
-        );
+        assert_eq!(Epoch::from_slot(Slot::new(64), 32).unwrap(), Epoch::new(2));
     }
 
     #[test]

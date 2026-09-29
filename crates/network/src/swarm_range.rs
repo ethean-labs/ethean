@@ -10,12 +10,7 @@ use ethean_primitives::Hash32;
 impl SwarmFacade {
     /// Index a block body by slot for inbound blocks-by-range replies.
     #[cfg(feature = "libp2p-quic")]
-    pub fn put_block_at_slot(
-        &mut self,
-        slot: u64,
-        root: Hash32,
-        bytes: Vec<u8>,
-    ) -> Result<()> {
+    pub fn put_block_at_slot(&mut self, slot: u64, root: Hash32, bytes: Vec<u8>) -> Result<()> {
         let Some(swarm) = self.quic.as_mut() else {
             return Err(NetworkError::TransportPending(
                 "bind_quic_swarm before put_block_at_slot",

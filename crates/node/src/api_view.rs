@@ -40,11 +40,8 @@ fn from_store(owner: &ChainOwner, store: &ethean_fork_choice::ForkChoiceStore) -
             weight: n.weight,
         })
         .collect();
-    let (state_ssz, block_ssz) = finalized_pair(
-        owner,
-        snap.finalized.root,
-        snap.finalized.slot.get(),
-    );
+    let (state_ssz, block_ssz) =
+        finalized_pair(owner, snap.finalized.root, snap.finalized.slot.get());
     ForkChoiceView {
         fork_choice: ForkChoiceBody {
             nodes,
@@ -157,9 +154,7 @@ fn from_owner_blocks(owner: &ChainOwner) -> ForkChoiceView {
     nodes.retain(|n| n.slot >= finalized_slot);
     nodes.sort_by_key(|n| n.slot);
 
-    let safe_target = if at_genesis {
-        head
-    } else if owner.safe_target == HASH32_ZERO {
+    let safe_target = if at_genesis || owner.safe_target == HASH32_ZERO {
         head
     } else {
         owner.safe_target
@@ -246,8 +241,14 @@ pub fn fresh_node_ok(view: &ForkChoiceView) -> bool {
         && fc.finalized.root == fc.head
         && fc.safe_target == fc.head
         && fc.validator_count > 0
-        && view.finalized_state_ssz.as_ref().is_some_and(|b| !b.is_empty())
-        && view.finalized_block_ssz.as_ref().is_some_and(|b| !b.is_empty())
+        && view
+            .finalized_state_ssz
+            .as_ref()
+            .is_some_and(|b| !b.is_empty())
+        && view
+            .finalized_block_ssz
+            .as_ref()
+            .is_some_and(|b| !b.is_empty())
 }
 
 /// Decode the published SSZ pair and check hive pairing invariants.
@@ -283,11 +284,17 @@ mod tests {
     #[test]
     fn fresh_owner_matches_hive_invariants() {
         let built = local_smoke_genesis(1_700_000_000).unwrap();
-        let mut owner = ChainOwner::default();
-        owner.head_state = Some(built.state);
+        let mut owner = ChainOwner {
+            head_state: Some(built.state),
+            ..ChainOwner::default()
+        };
         seal_genesis_head(&mut owner);
         let view = fork_choice_view(&owner);
-        assert!(fresh_node_ok(&view), "fresh forkchoice: {:?}", view.fork_choice);
+        assert!(
+            fresh_node_ok(&view),
+            "fresh forkchoice: {:?}",
+            view.fork_choice
+        );
         assert!(ssz_pair_ok(&view), "ssz pair must match hive pairing");
     }
 }

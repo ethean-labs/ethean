@@ -14,7 +14,10 @@ pub fn hex_root_0x(root: &Hash32) -> String {
 
 /// Parse `0x`-prefixed or bare 64-char hex into a root.
 pub fn parse_hex_root(s: &str) -> Result<Hash32, String> {
-    let hex = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")).unwrap_or(s);
+    let hex = s
+        .strip_prefix("0x")
+        .or_else(|| s.strip_prefix("0X"))
+        .unwrap_or(s);
     if hex.len() != 64 {
         return Err(format!("expected 32-byte hex, got len {}", hex.len()));
     }
@@ -36,7 +39,10 @@ mod tests {
         let s = hex_root_0x(&HASH32_ZERO);
         assert!(s.starts_with("0x"));
         assert_eq!(s.len(), 66);
-        assert_eq!(s, "0x0000000000000000000000000000000000000000000000000000000000000000");
+        assert_eq!(
+            s,
+            "0x0000000000000000000000000000000000000000000000000000000000000000"
+        );
         assert_eq!(parse_hex_root(&s).unwrap(), HASH32_ZERO);
     }
 }

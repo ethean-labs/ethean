@@ -58,7 +58,9 @@ so `apply_block` accepted keyless synthetic Type-2 proofs.
 ## Follow-ups
 
 - Karatsuba / NTT circulant MDS to close the gap to Plonky3's SIMD path.
-- Hook `verify_batch` into gossip attestation admission once the pool
-  verifies individual `SignedAttestation` XMSS signatures.
-- Background preparation task that advances the window before slot
-  boundaries instead of on the signing path.
+- ~~Hook `verify_batch` into gossip attestation admission once the pool
+  verifies individual `SignedAttestation` XMSS signatures.~~ Done:
+  [gossip-vote-batch-verify-2026-09-29.md](gossip-vote-batch-verify-2026-09-29.md).
+- ~~Background preparation task that advances the window before slot
+  boundaries instead of on the signing path.~~ Done:
+  [xmss-background-window-prep-2026-09-29.md](xmss-background-window-prep-2026-09-29.md).

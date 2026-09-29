@@ -201,7 +201,12 @@ pub fn accept_recovered_proof(
         .map_err(|e| format!("recovered proof does not verify: {e}"))?;
     let coverage = keys.len() as u32;
     let proof_len = proof.len();
-    tracing::debug!(coverage, proof_len, elapsed_ms = building.as_millis() as u64, "block vote proof recovered");
+    tracing::debug!(
+        coverage,
+        proof_len,
+        elapsed_ms = building.as_millis() as u64,
+        "block vote proof recovered"
+    );
     insert_proved(owner, &data, participants, proof)?;
     owner.known_payloads.insert(data_root, data.slot.get());
     Ok(ChainEvent::AggregateProved {

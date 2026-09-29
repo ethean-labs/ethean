@@ -24,8 +24,10 @@ impl EtheanClient {
             self.owner.owned_validator_indices = keys.indices.clone();
         }
         if let Some(att) = keys.attestation.clone() {
+            let secret = att.secret.clone();
             match LocalAttester::from_key_record(att) {
                 Ok(attester) => {
+                    self.owner.key_prep.track(secret);
                     info!(
                         production = attester.is_production(),
                         "installed registry attestation privkey into LocalAttester"
@@ -43,8 +45,10 @@ impl EtheanClient {
         let Some(prop) = keys.proposal.clone() else {
             return;
         };
+        let secret = prop.secret.clone();
         match LocalProposer::from_key_record(prop) {
             Ok(proposer) => {
+                self.owner.key_prep.track(secret);
                 info!(
                     production = proposer.is_production(),
                     "installed registry proposal privkey into LocalProposer"

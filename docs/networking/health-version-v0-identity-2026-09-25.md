@@ -1,5 +1,9 @@
 # Health version + Hive v0 identity alias (2026-09-25)
 
+> **2026-09-29:** `HealthBody.version` was reverted. The leanSpec API endpoint
+> fixture (and Grandine lean) expect exactly `status` + `service`, so the extra
+> field failed conformance. The version stays on `/lean/v0/node/identity`.
+
 ## Why
 
 1. `/lean/v0/health` returned only `status` + `service`; operators and Hive

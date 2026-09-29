@@ -10,7 +10,7 @@ use crate::quic_swarm::QuicSwarm;
 /// leanMetrics client family of an identify agent version (`ream/0.4.1` -> `ream`).
 pub fn client_family(agent_version: &str) -> String {
     let head = agent_version
-        .split(|c: char| c == '/' || c == ' ' || c == '-')
+        .split(['/', ' ', '-'])
         .next()
         .unwrap_or("")
         .trim()

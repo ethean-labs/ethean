@@ -110,7 +110,7 @@ fn encode_hash_list(hashes: &[Hash32]) -> Vec<u8> {
 
 /// Decode an SSZ `List[Validator, VALIDATOR_REGISTRY_LIMIT]` (fixed-size elements).
 pub fn decode_validator_list(input: &[u8]) -> Result<Vec<Validator>, TypesError> {
-    if input.len() % VALIDATOR_BYTES != 0 {
+    if !input.len().is_multiple_of(VALIDATOR_BYTES) {
         return Err(TypesError::InvalidContainer(format!(
             "validator list length {} is not a multiple of {VALIDATOR_BYTES}",
             input.len()
@@ -144,10 +144,13 @@ mod tests {
     use ethean_primitives::{Bytes52, ValidatorIndex, HASH32_ZERO};
 
     fn sample_state() -> State {
-        let v0 = Validator::new(Bytes52::ZERO, Bytes52([1u8; 52]), ValidatorIndex::new(0))
-            .unwrap();
-        let v1 = Validator::new(Bytes52([2u8; 52]), Bytes52([3u8; 52]), ValidatorIndex::new(1))
-            .unwrap();
+        let v0 = Validator::new(Bytes52::ZERO, Bytes52([1u8; 52]), ValidatorIndex::new(0)).unwrap();
+        let v1 = Validator::new(
+            Bytes52([2u8; 52]),
+            Bytes52([3u8; 52]),
+            ValidatorIndex::new(1),
+        )
+        .unwrap();
         State {
             config: GenesisConfig::new(1_700_000_000),
             slot: Slot::new(7),

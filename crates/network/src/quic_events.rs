@@ -90,8 +90,8 @@ impl QuicSwarm {
                 blocks.push(block.clone());
             }
         }
-        let payload = crate::reqresp::encode_blocks_by_root_response(&blocks)
-            .unwrap_or_else(|_| Vec::new());
+        let payload =
+            crate::reqresp::encode_blocks_by_root_response(&blocks).unwrap_or_else(|_| Vec::new());
         let _ = self
             .swarm
             .behaviour_mut()
@@ -132,12 +132,8 @@ impl QuicSwarm {
     ) {
         let blocks = match crate::reqresp::decode_blocks_by_range(request) {
             Ok(req) => {
-                let collected = collect_slot_range(
-                    &self.blocks_by_slot,
-                    req.start_slot,
-                    req.count,
-                    1,
-                );
+                let collected =
+                    collect_slot_range(&self.blocks_by_slot, req.start_slot, req.count, 1);
                 self.range_serve_found
                     .fetch_add(collected.found, Ordering::Relaxed);
                 self.range_serve_missing
@@ -166,8 +162,8 @@ impl QuicSwarm {
                 Vec::new()
             }
         };
-        let payload = crate::reqresp::encode_blocks_by_root_response(&blocks)
-            .unwrap_or_else(|_| Vec::new());
+        let payload =
+            crate::reqresp::encode_blocks_by_root_response(&blocks).unwrap_or_else(|_| Vec::new());
         let _ = self
             .swarm
             .behaviour_mut()

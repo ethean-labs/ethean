@@ -33,9 +33,9 @@ fn fixture(rel: &str) -> Option<PathBuf> {
 
 #[test]
 fn runs_beyond_future_horizon_when_cache_present() {
-    let Some(path) = fixture(
-        "test_block_future_horizon/test_block_beyond_future_horizon_rejected.json",
-    ) else {
+    let Some(path) =
+        fixture("test_block_future_horizon/test_block_beyond_future_horizon_rejected.json")
+    else {
         eprintln!("skip: fetch-leanspec-fixtures.sh cache missing");
         return;
     };
@@ -46,8 +46,7 @@ fn runs_beyond_future_horizon_when_cache_present() {
 
 #[test]
 fn runs_one_past_horizon_after_tick() {
-    let Some(path) =
-        fixture("test_block_future_horizon/test_block_one_past_horizon_rejected.json")
+    let Some(path) = fixture("test_block_future_horizon/test_block_one_past_horizon_rejected.json")
     else {
         eprintln!("skip: cache missing");
         return;
@@ -61,9 +60,9 @@ fn runs_one_past_horizon_after_tick() {
 
 #[test]
 fn runs_unknown_parent_after_valid_import() {
-    let Some(path) = fixture(
-        "test_block_unknown_parent/test_block_with_fabricated_parent_is_rejected.json",
-    ) else {
+    let Some(path) =
+        fixture("test_block_unknown_parent/test_block_with_fabricated_parent_is_rejected.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };
@@ -172,9 +171,9 @@ fn runs_block_includes_genesis_self_vote() {
 
 #[test]
 fn runs_justification_fixed_point_with_gossip_aggregates() {
-    let Some(path) = fixture(
-        "test_block_production/test_block_builder_fixed_point_advances_justification.json",
-    ) else {
+    let Some(path) =
+        fixture("test_block_production/test_block_builder_fixed_point_advances_justification.json")
+    else {
         eprintln!("skip: cache missing");
         return;
     };

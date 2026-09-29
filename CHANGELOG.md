@@ -12,7 +12,39 @@ the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
+### Changed
+
+- Proposers build, sign and prove the next slot's block during the last
+  interval of the current slot and hold it until the slot starts (same pattern
+  as ethlambda and Grandine lean); a slot already being proved is never
+  re-planned or re-signed.
+- The mesh duty loop keeps the swarm pumped between intervals and collects
+  finished proofs immediately instead of sleeping until the next interval.
+- Majority Status tip follows leanSpec `get_network_finalized_slot` (ties go
+  to the higher slot, then the most-reported root); peers stop voting once
+  their last connection closes.
+- `config.yaml` `LOG_INV_RATE` is parsed and a mismatch with the built-in rate
+  is logged.
+- Installed XMSS keys build their next bottom tree on a background thread
+  (a quarter of the cores) once the slot reaches the right half of the window,
+  so signing no longer stalls about 10 s every 65536 slots.
+- Gossip vote signatures of each network pump window are verified in one
+  parallel batch before in-order admission (about 10× faster than serial on
+  20 cores).
+- CI runs `cargo fmt --check`, `clippy -D warnings` and the `ethean-node` /
+  `ethean-spec-fixtures` tests; the workspace is formatted and clippy-clean.
+
+### Fixed
+
+- XMSS key generation on Windows: `OsRandom` read `/dev/urandom` directly and
+  now uses `getrandom`.
+
+- `/lean/v0/health` returns exactly the leanSpec body (`status`, `service`);
+  the extra `version` field failed the leanSpec API endpoint fixture.
+
 ### Added
+
+- Grandine lean (`grandinetech/lean`) added to the peer reference list.
 
 - Majority Status finalized tip for catch-up and duty horizon so a lone ahead
   adversarial peer cannot hijack sync (Hive bad-checkpoint rejection path).

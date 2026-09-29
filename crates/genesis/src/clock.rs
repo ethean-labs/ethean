@@ -127,7 +127,9 @@ impl SlotClock {
         let elapsed = now_ms - genesis_ms;
         let ms_slot = self.profile.milliseconds_per_slot;
         let ms_iv = self.profile.milliseconds_per_interval;
-        let slot = elapsed.checked_div(ms_slot).ok_or(ClockError::ZeroDuration)?;
+        let slot = elapsed
+            .checked_div(ms_slot)
+            .ok_or(ClockError::ZeroDuration)?;
         let within = elapsed % ms_slot;
         let interval = within.checked_div(ms_iv).ok_or(ClockError::ZeroDuration)?;
         Ok((Slot::new(slot), interval))
@@ -176,10 +178,7 @@ mod tests {
     #[test]
     fn pre_genesis() {
         let c = clock(100);
-        assert_eq!(
-            c.slot_at_millis(99_999),
-            Err(ClockError::PreGenesis)
-        );
+        assert_eq!(c.slot_at_millis(99_999), Err(ClockError::PreGenesis));
     }
 
     #[test]

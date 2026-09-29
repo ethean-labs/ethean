@@ -38,12 +38,7 @@ impl ChainOwner {
         let Ok(anchor) = genesis_anchor_block(&genesis) else {
             return false;
         };
-        let mut store = match create_store(
-            genesis,
-            anchor,
-            profile,
-            ForkChoiceOpts::STRUCTURAL,
-        ) {
+        let mut store = match create_store(genesis, anchor, profile, ForkChoiceOpts::STRUCTURAL) {
             Ok(s) => s,
             Err(e) => {
                 debug!(error = %e, "fork-choice replay create_store failed");
@@ -72,7 +67,10 @@ impl ChainOwner {
                 continue;
             };
             // Advance store time so far-future checks do not reject historical blobs.
-            let need = block.slot.get().saturating_mul(store.intervals_per_slot.max(1));
+            let need = block
+                .slot
+                .get()
+                .saturating_mul(store.intervals_per_slot.max(1));
             if store.time < need {
                 let _ = store.on_tick_with(need, false);
             }
@@ -200,7 +198,10 @@ mod tests {
         child.state_root = probe.hash_tree_root().unwrap();
         let out = apply_block_unverified(&pre, &child, &ctx).unwrap();
         let root = child.hash_tree_root().unwrap();
-        let signed = SignedBlock::new(child.clone(), MultiMessageAggregate::new(Vec::new()).unwrap());
+        let signed = SignedBlock::new(
+            child.clone(),
+            MultiMessageAggregate::new(Vec::new()).unwrap(),
+        );
         let blob = signed.ssz_encode().unwrap();
 
         // Fresh owner at tip with durable blob — no live store yet.

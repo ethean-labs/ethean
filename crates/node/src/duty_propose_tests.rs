@@ -122,6 +122,76 @@ fn local_finality_blocks_are_recorded_for_durable_flush() {
 }
 
 #[test]
+fn a_slot_with_a_block_proof_in_flight_is_not_replanned() {
+    let mut owner = owner_at_slot_one();
+    owner.block_proof_slot = Some(1);
+    assert!(try_plan_proposal(&mut owner, tick(1)).is_empty());
+    assert!(owner.planned_proposal.is_none());
+}
+
+#[test]
+fn next_slot_build_only_runs_in_the_last_interval_with_a_prover() {
+    let mut owner = owner_at_slot_one();
+    let last = DutyTick {
+        slot: Slot::new(0),
+        interval: 4,
+        generation: 1,
+    };
+    assert!(
+        try_plan_next_slot_proposal(&mut owner, last).is_empty(),
+        "no prover, no early build"
+    );
+    owner.local_finality = true;
+    assert!(try_plan_next_slot_proposal(&mut owner, last).is_empty());
+    let early = DutyTick {
+        interval: 3,
+        ..last
+    };
+    owner.local_finality = false;
+    assert!(try_plan_next_slot_proposal(&mut owner, early).is_empty());
+    assert!(owner.planned_proposal.is_none());
+}
+
+#[test]
+fn early_block_proof_is_held_until_its_slot() {
+    use crate::proof_collect::{release_deferred_block, DeferredBlockProof};
+    let mut owner = owner_at_slot_one();
+    try_plan_proposal(&mut owner, tick(1));
+    let plan = owner.planned_proposal.clone().unwrap();
+    owner.block_proof_slot = Some(1);
+    owner.deferred_block_proof = Some(DeferredBlockProof {
+        plan,
+        proof: vec![0u8; 64],
+        elapsed: Default::default(),
+    });
+    owner.last_tick = Some(DutyTick {
+        slot: Slot::new(0),
+        interval: 4,
+        generation: 1,
+    });
+    assert!(release_deferred_block(&mut owner).is_empty());
+    assert!(
+        owner.deferred_block_proof.is_some(),
+        "held before the boundary"
+    );
+
+    owner.last_tick = Some(tick(1));
+    let events = release_deferred_block(&mut owner);
+    assert!(owner.deferred_block_proof.is_none());
+    assert!(
+        matches!(
+            events.as_slice(),
+            [ChainEvent::ProofFailed { kind: "block", .. }]
+        ),
+        "a bogus proof is verified and rejected at the boundary: {events:?}"
+    );
+    assert_eq!(
+        owner.block_proof_slot, None,
+        "failure frees the slot for a retry"
+    );
+}
+
+#[test]
 fn later_ticks_of_a_built_slot_do_not_rebuild() {
     let mut owner = owner_at_slot_one();
     owner.local_finality = true;

@@ -5,18 +5,18 @@ use thiserror::Error;
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum HexError {
     #[error("expected 0x-prefixed hex, got {0}")]
-    BadPrefix(String),
+    Prefix(String),
     #[error("invalid hex digit in {0}")]
-    BadDigit(String),
+    Digit(String),
     #[error("expected {expected} bytes, got {got}")]
-    BadLength { expected: usize, got: usize },
+    Length { expected: usize, got: usize },
 }
 
 /// Decode `0x`-prefixed hex into a fixed-size array.
 pub fn decode_hex_fixed<const N: usize>(s: &str) -> Result<[u8; N], HexError> {
     let raw = s.strip_prefix("0x").unwrap_or(s);
     if raw.len() != N * 2 {
-        return Err(HexError::BadLength {
+        return Err(HexError::Length {
             expected: N,
             got: raw.len() / 2,
         });
@@ -35,7 +35,7 @@ fn from_digit(b: u8, ctx: &str) -> Result<u8, HexError> {
         b'0'..=b'9' => Ok(b - b'0'),
         b'a'..=b'f' => Ok(b - b'a' + 10),
         b'A'..=b'F' => Ok(b - b'A' + 10),
-        _ => Err(HexError::BadDigit(ctx.to_string())),
+        _ => Err(HexError::Digit(ctx.to_string())),
     }
 }
 

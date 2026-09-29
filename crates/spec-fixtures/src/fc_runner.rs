@@ -60,8 +60,8 @@ pub fn run_fork_choice_case(case: &FixtureCase) -> Result<FcRunReport, FcRunErro
         .ok_or(FcRunError::MissingAnchor)?;
     let state = state_from_value(anchor_state_v)?;
     let block = block_from_value(anchor_block_v)?;
-    let profile = lstar_devnet()
-        .map_err(|e| FcRunError::Create(ForkChoiceError::Types(e.to_string())))?;
+    let profile =
+        lstar_devnet().map_err(|e| FcRunError::Create(ForkChoiceError::Types(e.to_string())))?;
     let mut store = create_store(state, block, &profile, ForkChoiceOpts::STRUCTURAL)
         .map_err(FcRunError::Create)?;
     let ctx = TransitionContext::new(profile);
@@ -71,18 +71,15 @@ pub fn run_fork_choice_case(case: &FixtureCase) -> Result<FcRunReport, FcRunErro
         let step_v = serde_json::to_value(step)
             .map_err(|e| FcRunError::Json(JsonTypesError::Serde(e.to_string())))?;
         // Prefer explicit stepType; fall back to field presence.
-        let step_type = step_v
-            .get("stepType")
-            .and_then(|v| v.as_str())
-            .or_else(|| {
-                if step_v.get("interval").is_some() {
-                    Some("tick")
-                } else if step_v.get("block").is_some() {
-                    Some("block")
-                } else {
-                    None
-                }
-            });
+        let step_type = step_v.get("stepType").and_then(|v| v.as_str()).or_else(|| {
+            if step_v.get("interval").is_some() {
+                Some("tick")
+            } else if step_v.get("block").is_some() {
+                Some("block")
+            } else {
+                None
+            }
+        });
         match step_type {
             Some("tick") => {
                 apply_tick(&mut store, &step_v)?;
@@ -137,7 +134,7 @@ pub fn run_fork_choice_file(bytes: &[u8]) -> Result<Vec<(String, FcRunReport)>, 
         .map_err(|e| FcRunError::Json(JsonTypesError::Serde(e.to_string())))?;
     let mut out = Vec::new();
     for (id, case) in &file.cases {
-        if case.rest.get("anchorState").is_none() {
+        if !case.rest.contains_key("anchorState") {
             continue;
         }
         let report = run_fork_choice_case(case)?;
@@ -167,4 +164,3 @@ mod safe_target_tests;
 #[cfg(test)]
 #[path = "fc_runner_extra_tests.rs"]
 mod extra_tests;
-

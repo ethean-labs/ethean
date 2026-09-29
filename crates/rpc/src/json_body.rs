@@ -200,9 +200,11 @@ mod tests {
 
     #[test]
     fn identity_includes_version_and_ready() {
-        let mut snap = ApiSnapshot::default();
-        snap.network = "pq-devnet-4".into();
-        snap.ready = true;
+        let snap = ApiSnapshot {
+            network: "pq-devnet-4".into(),
+            ready: true,
+            ..ApiSnapshot::default()
+        };
         let j = identity_json(&snap);
         assert_eq!(j["network"], "pq-devnet-4");
         assert_eq!(j["ready"], true);

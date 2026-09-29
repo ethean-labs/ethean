@@ -80,9 +80,11 @@ mod tests {
             },
         };
         let mut tracker = RequestTracker::default();
-        assert!(prepare_blocks_by_range_outbound([1u8; 32], 3, &remote, &mut tracker)
-            .unwrap()
-            .is_none());
+        assert!(
+            prepare_blocks_by_range_outbound([1u8; 32], 3, &remote, &mut tracker)
+                .unwrap()
+                .is_none()
+        );
         assert!(tracker.is_empty());
     }
 }

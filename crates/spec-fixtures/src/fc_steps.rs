@@ -9,10 +9,7 @@ use ethean_types::State;
 use serde_json::Value;
 
 /// Apply a `stepType=tick` (`interval` count or wall-clock `time` seconds).
-pub fn apply_tick(
-    store: &mut ForkChoiceStore,
-    step: &Value,
-) -> Result<(), FcRunError> {
+pub fn apply_tick(store: &mut ForkChoiceStore, step: &Value) -> Result<(), FcRunError> {
     let target = if let Some(interval) = step.get("interval").and_then(|v| v.as_u64()) {
         interval
     } else if let Some(wall_secs) = step.get("time").and_then(|v| v.as_u64()) {
@@ -25,9 +22,7 @@ pub fn apply_tick(
             (timestamp_ms - genesis_ms) / store.milliseconds_per_interval
         }
     } else {
-        return Err(FcRunError::Step(
-            "tick step missing interval/time".into(),
-        ));
+        return Err(FcRunError::Step("tick step missing interval/time".into()));
     };
     let has_proposal = step
         .get("hasProposal")
@@ -63,7 +58,10 @@ pub(crate) fn maybe_tick_to_slot(
 }
 
 /// Advance clock to the earliest interval that admits a slot-N vote (Gean/leanSpec).
-pub(crate) fn maybe_tick_to_admit(store: &mut ForkChoiceStore, slot: u64) -> Result<(), FcRunError> {
+pub(crate) fn maybe_tick_to_admit(
+    store: &mut ForkChoiceStore,
+    slot: u64,
+) -> Result<(), FcRunError> {
     let start = slot.saturating_mul(store.intervals_per_slot);
     let need = start.saturating_sub(store.gossip_disparity_intervals);
     if store.time < need {
@@ -171,9 +169,9 @@ pub fn apply_gossip_aggregated_step(
     step: &Value,
 ) -> Result<BlockStepKind, FcRunError> {
     let valid = step.get("valid").and_then(|v| v.as_bool());
-    let att_v = step
-        .get("attestation")
-        .ok_or_else(|| FcRunError::Step("gossipAggregatedAttestation missing attestation".into()))?;
+    let att_v = step.get("attestation").ok_or_else(|| {
+        FcRunError::Step("gossipAggregatedAttestation missing attestation".into())
+    })?;
     let (data, participants) = signed_aggregated_from_value(att_v)?;
     if valid != Some(false) {
         maybe_tick_to_admit(store, data.slot.get())?;

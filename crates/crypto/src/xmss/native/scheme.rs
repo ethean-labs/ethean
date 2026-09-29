@@ -93,20 +93,40 @@ pub fn key_gen(
 /// Slide the prepared window one bottom tree to the right, if possible.
 /// Returns `false` when the window already reaches the activation end.
 pub fn advance_preparation(params: &SchemeParams, sk: &mut XmssSecretKey) -> Result<bool> {
-    let w = params.leaves_per_bottom_tree();
-    let next_end = (sk.left_bottom_tree_index + 3) * w;
-    if next_end > sk.activation_interval().end {
+    let index = sk.left_bottom_tree_index + 2;
+    if !window_can_slide(params, sk) {
         return Ok(false);
     }
-    let fresh = bottom_tree_from_prf(
-        params,
-        &sk.prf_key,
-        &sk.parameter,
-        sk.left_bottom_tree_index + 2,
-    )?;
-    sk.left_bottom_tree = std::mem::replace(&mut sk.right_bottom_tree, fresh);
+    let fresh = bottom_tree_from_prf(params, &sk.prf_key, &sk.parameter, index)?;
+    Ok(install_bottom_tree(sk, index, fresh))
+}
+
+fn window_can_slide(params: &SchemeParams, sk: &XmssSecretKey) -> bool {
+    let w = params.leaves_per_bottom_tree();
+    (sk.left_bottom_tree_index + 3) * w <= sk.activation_interval().end
+}
+
+/// Bottom tree to build ahead of time once `epoch` has reached the right half
+/// of the prepared window (the left tree holds only past epochs by then).
+/// `None` while the window is still fresh or already at the activation end.
+pub fn pending_bottom_tree(params: &SchemeParams, sk: &XmssSecretKey, epoch: u64) -> Option<u64> {
+    let w = params.leaves_per_bottom_tree();
+    if epoch < (sk.left_bottom_tree_index + 1) * w || !window_can_slide(params, sk) {
+        return None;
+    }
+    Some(sk.left_bottom_tree_index + 2)
+}
+
+/// Slide the window onto a bottom tree built elsewhere (for example off the
+/// key lock). Returns `false` and drops the tree when the window has moved
+/// since `index` was chosen.
+pub fn install_bottom_tree(sk: &mut XmssSecretKey, index: u64, tree: HashSubTree) -> bool {
+    if sk.left_bottom_tree_index + 2 != index {
+        return false;
+    }
+    sk.left_bottom_tree = std::mem::replace(&mut sk.right_bottom_tree, tree);
     sk.left_bottom_tree_index += 1;
-    Ok(true)
+    true
 }
 
 /// Advance the window until `epoch` is prepared (no-op if already prepared).

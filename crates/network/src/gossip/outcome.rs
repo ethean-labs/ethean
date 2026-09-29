@@ -21,6 +21,8 @@ pub enum PumpEvent {
         outbound: bool,
         /// leanMetrics reason: `local_close`, `timeout` or `error`.
         reason: &'static str,
+        /// No other connection to this peer remains open.
+        last: bool,
     },
     /// Outbound dial failed.
     OutgoingError,

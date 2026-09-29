@@ -2,8 +2,8 @@
 
 use crate::hex::decode_hex_fixed;
 use crate::json_types::{block_from_value, state_from_value, JsonTypesError};
-use ethean_profile::lstar_devnet;
 use ethean_primitives::HASH32_ZERO;
+use ethean_profile::lstar_devnet;
 use ethean_transition::{
     apply_block_unverified, apply_block_unverified_no_slots, process_block, process_slots,
     proposer_for_slot, TransitionContext, TransitionError, TransitionOutcome,
@@ -57,7 +57,9 @@ fn blocks_list(v: &Value) -> Result<&Vec<Value>, StfRunError> {
     } else if let Some(arr) = v.as_array() {
         Ok(arr)
     } else {
-        Err(StfRunError::Step("blocks must be a list or {data:[…]}".into()))
+        Err(StfRunError::Step(
+            "blocks must be a list or {data:[…]}".into(),
+        ))
     }
 }
 
@@ -138,8 +140,7 @@ pub(crate) fn apply_stf_block(
 pub fn run_state_transition_case(case: &Value) -> Result<StfRunReport, StfRunError> {
     let pre_v = case.get("pre").ok_or(StfRunError::MissingPre)?;
     let mut state = state_from_value(pre_v)?;
-    let profile =
-        lstar_devnet().map_err(|e| StfRunError::Profile(e.to_string()))?;
+    let profile = lstar_devnet().map_err(|e| StfRunError::Profile(e.to_string()))?;
     let ctx = TransitionContext::new(profile);
 
     let blocks_v = case
@@ -165,9 +166,9 @@ pub fn run_state_transition_case(case: &Value) -> Result<StfRunReport, StfRunErr
                 }
             }
         }
-        if expected_reject.is_some() {
+        if let Some(reason) = expected_reject {
             return Err(StfRunError::WrongOutcome {
-                expected: expected_reject.unwrap().to_string(),
+                expected: reason.to_string(),
                 got: Ok(()),
             });
         }

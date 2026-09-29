@@ -242,6 +242,18 @@ async fn open_client(
             attestation_committee_count = acc,
             "loaded Lean network config.yaml genesis"
         );
+        if let Some(rate) = lean
+            .log_inv_rate
+            .filter(|r| u32::from(*r) != ethean_crypto::LOG_INV_RATE)
+        {
+            // Verification reads the rate from each proof, so peers still accept
+            // ours; the network just runs a prover profile we do not.
+            warn!(
+                config = rate,
+                local = ethean_crypto::LOG_INV_RATE,
+                "config.yaml LOG_INV_RATE differs from this build; proofs keep the local rate"
+            );
+        }
         let built = GenesisBuilder::new(lean.genesis_time)
             .with_validator_keys(lean.validators)
             .build()?;

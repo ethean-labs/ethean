@@ -209,7 +209,9 @@ pub(crate) struct JsonSignedAggregatedAttestation {
     pub(crate) proof: JsonAggregateProof,
 }
 
-pub(crate) fn attestation_data(j: &JsonAttestationData) -> Result<ethean_types::AttestationData, JsonTypesError> {
+pub(crate) fn attestation_data(
+    j: &JsonAttestationData,
+) -> Result<ethean_types::AttestationData, JsonTypesError> {
     Ok(ethean_types::AttestationData {
         slot: Slot::new(j.slot),
         head: checkpoint(&j.head)?,
@@ -252,4 +254,3 @@ pub fn attestation_from_value(
         attestation_data(&j.data)?,
     ))
 }
-
