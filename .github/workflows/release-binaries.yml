@@ -146,51 +146,59 @@ jobs:
             "${{ steps.ver.outputs.version }}" dist > binaries-section.md
           cat binaries-section.md
 
-      - name: Upload assets to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare release notes and title
+        id: notes
         shell: bash
         run: |
-          TAG="${{ steps.ver.outputs.tag }}"
-          # Ensure the release exists (tag push creates notes-only release if missing).
-          if ! gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --repo "${{ github.repository }}" \
-              --title "${{ steps.ver.outputs.version }}" \
-              --notes "Ethean Lean Consensus Client ${{ steps.ver.outputs.version }}" \
-              --latest
-          fi
-          gh release upload "$TAG" dist/* \
-            --repo "${{ github.repository }}" \
-            --clobber
-
-      - name: Merge binaries section into release notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          TAG="${{ steps.ver.outputs.tag }}"
-          gh release view "$TAG" --repo "${{ github.repository }}" --json body \
-            --jq .body > old-body.md || echo -n "" > old-body.md
           python3 - <<'PY'
           from pathlib import Path
           import re
-          binaries = Path("binaries-section.md").read_text(encoding="utf-8").strip() + "\n"
-          old = Path("old-body.md").read_text(encoding="utf-8")
-          # Remove a prior ## Binaries section only. Changelog uses ### headings
-          # (Added/Changed/...), so requiring a following ## would wipe notes.
-          strip = re.compile(
-              r"(?ms)^## Binaries\n.*?"
-              r"(?:See \[docs/release/binaries\.md\][^\n]*\n|"
-              r"(?=\n### |\n## (?!Binaries))|\Z)"
-          )
-          changelog = strip.sub("", old).strip()
-          if changelog:
-              new = binaries + "\n" + changelog + "\n"
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          ver = "${{ steps.ver.outputs.version }}"
+          pat = rf"(?ms)^## \[{re.escape(ver)}\][^\n]*\n(.*?)(?=\n## \[|\Z)"
+          m = re.search(pat, changelog)
+          notes = m.group(1).strip() if m else f"Ethean Lean Consensus Client {ver}"
+          binaries = Path("binaries-section.md").read_text(encoding="utf-8").strip() if Path("binaries-section.md").exists() else ""
+          if binaries:
+              body = binaries + "\n\n---\n\n" + notes + "\n"
           else:
-              new = binaries
-          Path("new-body.md").write_text(new, encoding="utf-8")
+              body = notes + "\n"
+          Path("release-notes.md").write_text(body, encoding="utf-8")
+
+          m_summary = re.search(r"Milestone covering[^:]*:\s*([^.]+?)\.", notes, re.DOTALL)
+          if m_summary:
+              topic = " ".join(m_summary.group(1).split())
+              if len(topic) > 80:
+                  topic = topic[:77].rsplit(" ", 1)[0] + "..."
+              title = f"{ver} - {topic}"
+          else:
+              title = f"{ver} - Ethean Lean Consensus Client"
+          Path("release-title.txt").write_text(title, encoding="utf-8")
           PY
-          gh release edit "$TAG" \
-            --repo "${{ github.repository }}" \
-            --notes-file new-body.md
+          echo "Title: $(cat release-title.txt)"
+
+      - name: Create or publish release with assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          TITLE="$(cat release-title.txt)"
+
+          if ! gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Creating release $TAG with assets in single atomic step (Immutable Releases safe)..."
+            gh release create "$TAG" dist/* \
+              --repo "${{ github.repository }}" \
+              --title "$TITLE" \
+              --notes-file release-notes.md \
+              --latest
+          else
+            echo "Release $TAG already exists, uploading assets and updating notes..."
+            gh release upload "$TAG" dist/* \
+              --repo "${{ github.repository }}" \
+              --clobber || true
+            gh release edit "$TAG" \
+              --repo "${{ github.repository }}" \
+              --title "$TITLE" \
+              --notes-file release-notes.md || true
+          fi

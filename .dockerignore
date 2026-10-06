@@ -17,7 +17,7 @@ dist/
 .cursor/
 agent-transcripts/
 bazalinacaklar/
-
+cursor_common_purpose_of_projects.md
 # Runtime data and logs (never bake node state into an image)
 data/
 **/data/
