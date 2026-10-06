@@ -21,6 +21,18 @@ impl SwarmFacade {
         Ok(())
     }
 
+    /// Serve blocks that left the in-memory cache through `loader`.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn set_block_loader(&mut self, loader: crate::serve_cache::BlockLoader) -> Result<()> {
+        let Some(swarm) = self.quic.as_mut() else {
+            return Err(NetworkError::TransportPending(
+                "bind_quic_swarm before set_block_loader",
+            ));
+        };
+        swarm.set_block_loader(loader);
+        Ok(())
+    }
+
     /// Cumulative range-serve found/missing totals and cache slot count.
     #[cfg(feature = "libp2p-quic")]
     pub fn range_serve_stats(&self) -> (u64, u64, u64) {
@@ -50,11 +62,9 @@ impl SwarmFacade {
             ));
         };
         let pending = std::mem::take(&mut self.blocks_range_outbox);
-        let mut sent = 0;
-        for req in pending {
-            swarm.send_blocks_by_range_request(req.peer, req.payload)?;
-            sent += 1;
-        }
+        let sent = crate::swarm::send_each(pending, |req| {
+            swarm.send_blocks_by_range_request(req.peer, req.payload)
+        })?;
         if sent > 0 {
             self.note_progress();
         }

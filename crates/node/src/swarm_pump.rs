@@ -12,7 +12,8 @@ pub struct PumpBudgetResult {
     pub drained: u32,
     /// ACCEPT gossip messages with decompressed payloads.
     pub accepted: Vec<GossipIngress>,
-    /// Peer fingerprints from `ConnectionEstablished` events.
+    /// Peers still connected at the end of the window after a
+    /// `ConnectionEstablished` event in it.
     pub connected_peers: Vec<ethean_primitives::Hash32>,
     /// Peers whose last connection closed.
     pub disconnected_peers: Vec<ethean_primitives::Hash32>,
@@ -22,6 +23,24 @@ pub struct PumpBudgetResult {
     pub blocks_by_root_responses: Vec<(ethean_primitives::Hash32, Vec<u8>)>,
     /// Decompressed blocks-by-range response payloads keyed by peer fingerprint.
     pub blocks_by_range_responses: Vec<(ethean_primitives::Hash32, Vec<u8>)>,
+}
+
+impl PumpBudgetResult {
+    fn note_connected(&mut self, peer: ethean_primitives::Hash32) {
+        if !self.connected_peers.contains(&peer) {
+            self.connected_peers.push(peer);
+        }
+    }
+
+    /// Disconnects are applied before connects, so a peer that connected and
+    /// dropped inside one window must not stay listed as connected; its Status
+    /// session would otherwise never flush.
+    fn note_disconnected(&mut self, peer: ethean_primitives::Hash32) {
+        self.connected_peers.retain(|p| *p != peer);
+        if !self.disconnected_peers.contains(&peer) {
+            self.disconnected_peers.push(peer);
+        }
+    }
 }
 
 /// Result of flushing a pending local block proposal to gossip.
@@ -68,7 +87,7 @@ pub async fn pump_swarm_window(
                 if let crate::network::PumpEvent::ConnectionEstablished { peer: Some(p), .. } =
                     &event
                 {
-                    out.connected_peers.push(*p);
+                    out.note_connected(*p);
                 }
                 if let crate::network::PumpEvent::ConnectionClosed {
                     peer: Some(p),
@@ -76,7 +95,7 @@ pub async fn pump_swarm_window(
                     ..
                 } = &event
                 {
-                    out.disconnected_peers.push(*p);
+                    out.note_disconnected(*p);
                 }
                 if let crate::network::PumpEvent::StatusResponse { peer, payload } = &event {
                     out.status_responses.push((*peer, payload.clone()));
@@ -237,5 +256,20 @@ mod tests {
         assert!(publish_pending_block(&mut facade, &mut owner)
             .expect("flush")
             .is_none());
+    }
+
+    #[test]
+    fn peer_that_drops_inside_the_window_is_not_connected() {
+        let (a, b) = ([1u8; 32], [2u8; 32]);
+        let mut r = PumpBudgetResult::default();
+        r.note_connected(a);
+        r.note_connected(b);
+        r.note_disconnected(a);
+        assert_eq!(r.connected_peers, vec![b]);
+        assert_eq!(r.disconnected_peers, vec![a]);
+
+        r.note_connected(a);
+        assert_eq!(r.connected_peers, vec![b, a]);
+        assert_eq!(r.disconnected_peers, vec![a]);
     }
 }

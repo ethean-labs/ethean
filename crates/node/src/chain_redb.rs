@@ -11,6 +11,9 @@ use tracing::info;
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("ethean_meta");
 const STATES: TableDefinition<&[u8], &[u8]> = TableDefinition::new("ethean_states");
 const BLOCKS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("ethean_blocks");
+/// Slot (8 little-endian bytes) of each stored block, so pruning can drop old
+/// rows without decoding them. Filled lazily for rows written before it existed.
+const BLOCK_SLOTS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("ethean_block_slots");
 
 const KEY_SCHEMA: &str = "schema";
 const KEY_HEAD: &str = "head";
@@ -65,6 +68,7 @@ pub fn save_head(
             .map_err(map_redb)?;
         if !blocks.is_empty() {
             let mut table = txn.open_table(BLOCKS).map_err(map_redb)?;
+            let mut slots = txn.open_table(BLOCK_SLOTS).map_err(map_redb)?;
             for (root, payload) in blocks {
                 if payload.is_empty() {
                     continue;
@@ -72,6 +76,11 @@ pub fn save_head(
                 table
                     .insert(root.as_slice(), payload.as_slice())
                     .map_err(map_redb)?;
+                if let Some(slot) = crate::serve_cache_seed::slot_from_block_ssz(payload) {
+                    slots
+                        .insert(root.as_slice(), slot.to_le_bytes().as_slice())
+                        .map_err(map_redb)?;
+                }
             }
         }
     }
@@ -153,6 +162,82 @@ pub fn load_all_blocks(paths: &PersistPaths) -> Result<Vec<(Hash32, Vec<u8>)>> {
         }
     }
     Ok(out)
+}
+
+/// Roots of stored blocks whose slot is strictly below `floor_slot`.
+///
+/// Rows written before the slot index existed have no entry; `known` supplies
+/// those (the caller reads the slot from the block files). They are written
+/// back, so the next pass needs nothing else.
+pub fn block_roots_below(
+    paths: &PersistPaths,
+    floor_slot: u64,
+    known: &[(Hash32, u64)],
+) -> Result<Vec<Hash32>> {
+    if !paths.redb().exists() {
+        return Ok(Vec::new());
+    }
+    let db = open_db(paths)?;
+    let txn = db.begin_write().map_err(map_redb)?;
+    let mut below = Vec::new();
+    {
+        let blocks = match txn.open_table(BLOCKS) {
+            Ok(t) => t,
+            Err(_) => return Ok(Vec::new()),
+        };
+        let mut slots = txn.open_table(BLOCK_SLOTS).map_err(map_redb)?;
+        for (root, slot) in known {
+            if slots.get(root.as_slice()).map_err(map_redb)?.is_none() {
+                slots
+                    .insert(root.as_slice(), slot.to_le_bytes().as_slice())
+                    .map_err(map_redb)?;
+            }
+        }
+        for item in blocks.iter().map_err(map_redb)? {
+            let (k, _) = item.map_err(map_redb)?;
+            let key = k.value();
+            if key.len() != 32 {
+                continue;
+            }
+            let Some(slot) = slots.get(key).map_err(map_redb)? else {
+                continue;
+            };
+            let bytes = slot.value();
+            if bytes.len() != 8 {
+                continue;
+            }
+            let slot = u64::from_le_bytes(bytes.try_into().expect("len checked"));
+            if slot < floor_slot {
+                let mut root = [0u8; 32];
+                root.copy_from_slice(key);
+                below.push(root);
+            }
+        }
+    }
+    txn.commit().map_err(map_redb)?;
+    Ok(below)
+}
+
+/// Remove block rows and their slot index entries.
+pub fn remove_blocks(paths: &PersistPaths, roots: &[Hash32]) -> Result<u32> {
+    if roots.is_empty() || !paths.redb().exists() {
+        return Ok(0);
+    }
+    let db = open_db(paths)?;
+    let txn = db.begin_write().map_err(map_redb)?;
+    let mut removed = 0u32;
+    {
+        let mut blocks = txn.open_table(BLOCKS).map_err(map_redb)?;
+        let mut slots = txn.open_table(BLOCK_SLOTS).map_err(map_redb)?;
+        for root in roots {
+            if blocks.remove(root.as_slice()).map_err(map_redb)?.is_some() {
+                removed = removed.saturating_add(1);
+            }
+            let _ = slots.remove(root.as_slice()).map_err(map_redb)?;
+        }
+    }
+    txn.commit().map_err(map_redb)?;
+    Ok(removed)
 }
 
 /// Persist genesis SSZ on first open (no head yet).

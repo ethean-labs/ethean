@@ -267,8 +267,12 @@ async fn open_client(
             attestation_subnets = profile.attestation_subnet_count(),
             "applied ATTESTATION_COMMITTEE_COUNT onto chain profile"
         );
+        let genesis_state = built.state.clone();
         let mut client = EtheanClient::with_genesis(profile, built.state).await?;
         client.apply_local_roles(*roles);
+        if let (Some(path), false) = (args.data_dir.as_deref(), args.ephemeral) {
+            client.attach_network_data_dir(path, &genesis_state)?;
+        }
         return Ok(client);
     }
     if let Some(acc) = args.attestation_committee_count {

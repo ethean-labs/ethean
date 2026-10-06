@@ -51,6 +51,10 @@ pub struct EtheanClient {
     pub(crate) peer_id: String,
     /// Slots retained below finalized before durable prune (see `--prune-keep-slots`).
     pub(crate) prune_keep_slots: u64,
+    /// Head root and finalized slot of the last durable save.
+    pub(crate) persisted_head: Option<(ethean_primitives::Hash32, u64)>,
+    /// Floor used by the last durable prune pass.
+    pub(crate) pruned_floor: u64,
     /// Set once the pre-genesis wait has been logged (one line, not per round).
     pub(crate) pre_genesis_logged: bool,
 }
@@ -122,6 +126,8 @@ impl EtheanClient {
             network_label: String::new(),
             peer_id: String::new(),
             prune_keep_slots: crate::block_prune::KEEP_BELOW_FINALIZED,
+            persisted_head: None,
+            pruned_floor: 0,
             pre_genesis_logged: false,
         })
     }

@@ -128,6 +128,35 @@ fn late_aggregate_does_not_hide_newer_single_votes() {
 }
 
 #[test]
+fn pruning_keeps_only_the_finalized_block_and_its_descendants() {
+    let (mut store, roots) = chain_store(6);
+    let fork = empty_block(3, 2, roots[1]);
+    let fork_root = fork.hash_tree_root().unwrap();
+    let fork_state = store.block_states[&roots[3]].clone();
+    store.blocks.insert(fork_root, fork);
+    store.block_states.insert(fork_root, fork_state);
+    let cp = |slot: u64| Checkpoint::new(roots[slot as usize], Slot::new(slot));
+
+    store.latest_finalized = cp(4);
+    store.latest_justified = Checkpoint::new(fork_root, Slot::new(3));
+    assert_eq!(
+        store.prune_finalized_history(),
+        0,
+        "justified off the finalized chain"
+    );
+
+    store.latest_justified = cp(5);
+    assert_eq!(store.prune_finalized_history(), 5);
+    let mut kept: Vec<Hash32> = store.blocks.keys().copied().collect();
+    kept.sort();
+    let mut want = roots[4..].to_vec();
+    want.sort();
+    assert_eq!(kept, want);
+    assert_eq!(store.block_states.len(), 3);
+    assert_eq!(store.prune_finalized_history(), 0);
+}
+
+#[test]
 fn create_store_and_chain_advances_head() {
     let (mut store, anchor, state) = anchor_store(3);
     assert_eq!(store.head(), anchor);

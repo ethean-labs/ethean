@@ -1,17 +1,24 @@
 //! Prune durable block blobs older than a finalized keep window.
 
 use crate::persist_paths::PersistPaths;
+use crate::persist_ssz;
 use crate::serve_cache_seed::slot_from_block_ssz;
 use crate::{Error, Result};
 use ethean_primitives::Hash32;
-use redb::{Database, ReadableTable, TableDefinition};
 use std::fs;
 use tracing::info;
 
-const BLOCKS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("ethean_blocks");
-
 /// Slots retained below the finalized checkpoint before pruning.
 pub const KEEP_BELOW_FINALIZED: u64 = 256;
+
+/// Floor advance that triggers the next prune pass. Each pass decodes every
+/// stored block, so it runs in batches instead of on every flush.
+pub const PRUNE_FLOOR_STEP: u64 = 32;
+
+/// True once `floor` has moved at least [`PRUNE_FLOOR_STEP`] past the last pass.
+pub fn prune_due(last_floor: u64, floor: u64) -> bool {
+    floor >= last_floor.saturating_add(PRUNE_FLOOR_STEP)
+}
 
 /// Summary of one prune pass.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -22,10 +29,6 @@ pub struct BlockPruneReport {
     pub files_removed: u32,
     /// `ethean.redb` block rows removed.
     pub redb_removed: u32,
-}
-
-fn map_redb(err: impl std::fmt::Display) -> Error {
-    Error::Config(format!("ethean.redb prune: {err}"))
 }
 
 /// First slot that must be kept: `finalized.saturating_sub(keep)`.
@@ -55,8 +58,10 @@ pub fn prune_below_floor(paths: &PersistPaths, floor_slot: u64) -> Result<BlockP
     if floor_slot == 0 {
         return Ok(report);
     }
-    report.files_removed = prune_ssz_files(paths, floor_slot)?;
-    report.redb_removed = prune_redb_blocks(paths, floor_slot)?;
+    let mut known = Vec::new();
+    let below = collect_block_slots(paths, floor_slot, &mut known)?;
+    report.files_removed = remove_block_files(paths, &below)?;
+    report.redb_removed = prune_redb_blocks(paths, floor_slot, &known)?;
     if report.files_removed > 0 || report.redb_removed > 0 {
         info!(
             floor_slot,
@@ -68,14 +73,23 @@ pub fn prune_below_floor(paths: &PersistPaths, floor_slot: u64) -> Result<BlockP
     Ok(report)
 }
 
-fn prune_ssz_files(paths: &PersistPaths, floor_slot: u64) -> Result<u32> {
+/// Roots of block files whose slot is strictly below `floor_slot`.
+///
+/// The slot is read from the first bytes of each file, so nothing is decoded.
+/// `block_root_slot` receives each root with its slot so a caller can remember
+/// them (the redb slot index is filled from this pass).
+pub fn collect_block_slots(
+    paths: &PersistPaths,
+    floor_slot: u64,
+    block_root_slot: &mut Vec<(Hash32, u64)>,
+) -> Result<Vec<Hash32>> {
     let dir = paths.blocks_dir();
     if !dir.exists() {
-        return Ok(0);
+        return Ok(Vec::new());
     }
     let entries = fs::read_dir(&dir)
         .map_err(|e| Error::Config(format!("read blocks dir {}: {e}", dir.display())))?;
-    let mut removed = 0u32;
+    let mut below = Vec::new();
     for entry in entries {
         let entry = entry
             .map_err(|e| Error::Config(format!("read blocks entry {}: {e}", dir.display())))?;
@@ -83,72 +97,68 @@ fn prune_ssz_files(paths: &PersistPaths, floor_slot: u64) -> Result<u32> {
         if path.extension().and_then(|e| e.to_str()) != Some("ssz") {
             continue;
         }
-        let bytes = match fs::read(&path) {
-            Ok(b) => b,
-            Err(_) => continue,
-        };
-        let Some(slot) = slot_from_block_ssz(&bytes) else {
+        let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
             continue;
         };
-        if slot >= floor_slot {
+        let Some(root) = root_from_hex(stem) else {
             continue;
+        };
+        let Some(slot) = slot_of_file_head(&path) else {
+            continue;
+        };
+        block_root_slot.push((root, slot));
+        if slot < floor_slot {
+            below.push(root);
         }
+    }
+    Ok(below)
+}
+
+fn root_from_hex(hex: &str) -> Option<Hash32> {
+    if hex.len() != 64 {
+        return None;
+    }
+    let mut root = [0u8; 32];
+    for (i, byte) in root.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(hex.get(i * 2..i * 2 + 2)?, 16).ok()?;
+    }
+    Some(root)
+}
+
+/// Slot from the first 16 bytes of a block file.
+fn slot_of_file_head(path: &std::path::Path) -> Option<u64> {
+    use std::io::Read;
+    let mut file = fs::File::open(path).ok()?;
+    let mut head = [0u8; 16];
+    file.read_exact(&mut head).ok()?;
+    slot_from_block_ssz(&head)
+}
+
+fn remove_block_files(paths: &PersistPaths, roots: &[Hash32]) -> Result<u32> {
+    let mut removed = 0u32;
+    for root in roots {
+        let path = paths.block_ssz(&persist_ssz::hex32(root));
         match fs::remove_file(&path) {
             Ok(()) => removed = removed.saturating_add(1),
-            Err(e) => {
-                return Err(Error::Config(format!("remove {}: {e}", path.display())));
-            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(Error::Config(format!("remove {}: {e}", path.display()))),
         }
     }
     Ok(removed)
 }
 
-fn prune_redb_blocks(paths: &PersistPaths, floor_slot: u64) -> Result<u32> {
-    if !paths.redb().exists() {
-        return Ok(0);
-    }
-    let db = Database::open(paths.redb()).map_err(map_redb)?;
-    let mut doomed: Vec<Hash32> = Vec::new();
-    {
-        let txn = db.begin_read().map_err(map_redb)?;
-        let table = match txn.open_table(BLOCKS) {
-            Ok(t) => t,
-            Err(_) => return Ok(0),
-        };
-        for item in table.iter().map_err(map_redb)? {
-            let (k, v) = item.map_err(map_redb)?;
-            let key = k.value();
-            if key.len() != 32 {
-                continue;
-            }
-            let Some(slot) = slot_from_block_ssz(v.value()) else {
-                continue;
-            };
-            if slot < floor_slot {
-                let mut root = [0u8; 32];
-                root.copy_from_slice(key);
-                doomed.push(root);
-            }
-        }
-    }
-    if doomed.is_empty() {
-        return Ok(0);
-    }
-    let txn = db.begin_write().map_err(map_redb)?;
-    {
-        let mut table = txn.open_table(BLOCKS).map_err(map_redb)?;
-        for root in &doomed {
-            let _ = table.remove(root.as_slice()).map_err(map_redb)?;
-        }
-    }
-    txn.commit().map_err(map_redb)?;
-    Ok(doomed.len() as u32)
+fn prune_redb_blocks(
+    paths: &PersistPaths,
+    floor_slot: u64,
+    known: &[(Hash32, u64)],
+) -> Result<u32> {
+    let doomed = crate::chain_redb::block_roots_below(paths, floor_slot, known)?;
+    crate::chain_redb::remove_blocks(paths, &doomed)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::persist_ssz;
     use ethean_primitives::{Slot, ValidatorIndex};
     use ethean_types::{Block, BlockBody, MultiMessageAggregate, SignedBlock};
 
@@ -172,6 +182,15 @@ mod tests {
     }
 
     #[test]
+    fn prune_runs_in_floor_batches() {
+        assert!(!prune_due(0, 0));
+        assert!(!prune_due(0, PRUNE_FLOOR_STEP - 1));
+        assert!(prune_due(0, PRUNE_FLOOR_STEP));
+        assert!(!prune_due(100, 100 + PRUNE_FLOOR_STEP - 1));
+        assert!(prune_due(100, 100 + PRUNE_FLOOR_STEP));
+    }
+
+    #[test]
     fn resolve_prefers_cli_over_default() {
         assert_eq!(resolve_prune_keep_slots(Some(64)), 64);
         // Without CLI and without a valid env override, default keep applies.
@@ -192,5 +211,68 @@ mod tests {
         assert_eq!(report.files_removed, 1);
         assert!(!paths.block_ssz(&persist_ssz::hex32(&old_root)).exists());
         assert!(paths.block_ssz(&persist_ssz::hex32(&new_root)).exists());
+    }
+
+    #[test]
+    fn pruning_redb_uses_the_slot_index_and_keeps_it_current() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = PersistPaths::new(dir.path());
+        paths.ensure_dir().unwrap();
+        let (old_root, old_enc) = signed_at(1);
+        let (new_root, new_enc) = signed_at(100);
+        // Rows saved before the slot index existed carry no slot.
+        crate::chain_redb::save_head(&paths, &[0u8; 32], &signed_state(), None, &[]).unwrap();
+        {
+            let db = redb::Database::open(paths.redb()).unwrap();
+            let txn = db.begin_write().unwrap();
+            {
+                let mut table = txn
+                    .open_table(redb::TableDefinition::<&[u8], &[u8]>::new("ethean_blocks"))
+                    .unwrap();
+                table
+                    .insert(old_root.as_slice(), old_enc.as_slice())
+                    .unwrap();
+                table
+                    .insert(new_root.as_slice(), new_enc.as_slice())
+                    .unwrap();
+            }
+            txn.commit().unwrap();
+        }
+        persist_ssz::save_block_ssz(&paths, &old_root, &old_enc).unwrap();
+        persist_ssz::save_block_ssz(&paths, &new_root, &new_enc).unwrap();
+
+        let report = prune_below_floor(&paths, 50).unwrap();
+        assert_eq!(report.files_removed, 1);
+        assert_eq!(report.redb_removed, 1);
+        let left = crate::chain_redb::load_all_blocks(&paths).unwrap();
+        assert_eq!(left.len(), 1);
+        assert_eq!(left[0].0, new_root);
+
+        // The kept row now has a slot entry, so a later pass needs no files.
+        std::fs::remove_dir_all(paths.blocks_dir()).unwrap();
+        assert_eq!(prune_below_floor(&paths, 50).unwrap().redb_removed, 0);
+        assert_eq!(prune_below_floor(&paths, 200).unwrap().redb_removed, 1);
+        assert!(crate::chain_redb::load_all_blocks(&paths)
+            .unwrap()
+            .is_empty());
+    }
+
+    fn signed_state() -> ethean_types::State {
+        use ethean_primitives::{Bytes52, Slot, ValidatorIndex};
+        use ethean_types::{BlockHeader, Checkpoint, GenesisConfig, State, Validator};
+        State {
+            config: GenesisConfig::new(1),
+            slot: Slot::ZERO,
+            latest_block_header: BlockHeader::default(),
+            latest_justified: Checkpoint::genesis(),
+            latest_finalized: Checkpoint::genesis(),
+            historical_block_hashes: Vec::new(),
+            justified_slots: Vec::new(),
+            validators: vec![
+                Validator::new(Bytes52::ZERO, Bytes52::ZERO, ValidatorIndex::new(0)).unwrap(),
+            ],
+            justifications_roots: Vec::new(),
+            justifications_validators: Vec::new(),
+        }
     }
 }

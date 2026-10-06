@@ -12,8 +12,40 @@ the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
+## [0.1.72] - 2026-10-07
+
+Milestone covering patch work from `0.1.54` through `0.1.72`: proving devnet
+finalization, bounded caches and memory stabilization, Status request deduplication,
+fork-choice retry and pruning indices, and multi-node local devnet tooling.
+
 ### Changed
 
+- A proof job logs its wall time when it finishes (`proof worker finished job`).
+- Several `ethean-prover` processes on one host each sized their worker pool
+  from the full core count, so they oversubscribed every core and block proofs
+  stretched past the slot. Each prover now takes an equal share of the cores
+  (`ETHEAN_PROVER_COUNT`, at least 8 threads), unless `LEANVM_NUM_THREADS`
+  already sets the pool. `scripts/local-devnet.ps1` passes the node count.
+  On a 10-core / 20-thread host, 4 nodes × 3 validators, one aggregator:
+
+  | Job | Median | Max |
+  | --- | --- | --- |
+  | Block proof, no attestation data | 2.2–2.8 s | 8.2 s |
+  | Block proof, one attestation | 3.6–4.1 s | 10.1 s |
+  | Type-1 aggregate | 1.1 s | 1.5 s |
+
+  The same layout with 2 aggregators never finalized while uncapped (4 provers,
+  80 threads). Threads per prover, 240 s:
+
+  | Threads per prover | Block proof median | Finalized at head ~58 |
+  | --- | --- | --- |
+  | 20 (uncapped) | 4.3–10.0 s | 0 |
+  | 4 | 5.7–11.6 s | 0 |
+  | 5 (cores / nodes) | 5.0–7.6 s | 0 |
+  | 8 | 4.0–9.4 s | 36 |
+
+  8 threads is the only share that finalized. One aggregator still finalizes
+  with it: head 42, finalized 36 after 180 s, block proofs 3.0–5.1 s.
 - Proposers build, sign and prove the next slot's block during the last
   interval of the current slot and hold it until the slot starts (same pattern
   as ethlambda and Grandine lean); a slot already being proved is never
@@ -54,14 +86,66 @@ the curated operator-facing summary, not a dump of every working note.
   being dropped whenever the head moved.
 - Below the spec maximum, block building skips votes that change no
   justification bookkeeping, so stale pool data cannot fill the data cap.
+- Aggregators pool only votes of the subnets they cover (their validators'
+  subnets plus `--aggregate-subnet-ids`), as leanSpec does. The aggregator
+  owning subnet `slot % committees` merges the other subnets' proved
+  aggregates for the same data into one union proof, checked on every
+  interval, so no proposer has to fold partial aggregates.
+- `ethean devnet-init` takes `--attestation-committee-count` and
+  `--aggregators` and assigns each node validators of a single subnet;
+  `scripts/local-devnet.ps1` passes `-ValidatorsPerNode`, `-Subnets` and
+  `-Aggregators`.
 
 ### Fixed
 
+- Long runs grew node memory by about 6 MB per minute. Several stores never
+  shrank; each is now bounded:
+  - Outbound request-tracker entries are closed when a response arrives,
+    dropped when the peer disconnects and expire after 30 s.
+  - Fork-choice blocks and post-states that do not descend from the finalized
+    checkpoint are pruned when finalization advances.
+  - The blocks-by-root/range serve cache no longer keeps two copies of every
+    block forever. It holds bytes for the last 64 slots, indexes 3600 slots
+    (leanSpec `MIN_SLOTS_FOR_BLOCK_REQUESTS`) and reads older blocks from
+    `blocks/*.ssz`.
+  - Gossip message ids rotate through two generations of 65536 entries.
+- Blocks at or below the finalized slot are no longer buffered as orphans.
+- The durable flush rewrote state, head and redb on every interval and decoded
+  every stored block for the prune pass. It now skips when the head has not
+  changed and prunes only after the floor has advanced 32 slots. The prune
+  reads the slot from the first bytes of each block file and from an
+  `ethean_block_slots` index in redb, so stored blocks are no longer decoded.
+- Votes and aggregates the fork-choice store rejected because their block was
+  not imported yet, or because they arrived before the local tick reached
+  their slot, are retried after the next block import and tick (at most 1024,
+  dropped after 4 slots or once finalized).
+- Status requests were re-sent to a peer on every network pump window until
+  its reply arrived; the extra replies failed with `no pending status for
+  peer`. A request is now sent once per session and repeated only after 10 s
+  without a reply.
+- A node owning several validators kept only one key per role and signed every
+  vote as its first validator, so all its votes failed verification. Keys are
+  now loaded and installed per validator index; each owned validator attests
+  with its own key and blocks are signed with the proposer index's key.
 - The fork-choice store was never created on a `config.yaml` genesis (the
   sealed genesis header failed the anchor check), so mesh nodes ran without LMD
   head, safe target or justification.
 - A peer that dialed us while we dialed it was forgotten when the duplicate
   connection closed; Status requests to it failed every second.
+- One disconnected peer in the Status, blocks-by-root or blocks-by-range
+  outbox aborted the whole flush and dropped the requests behind it; a
+  checkpoint-synced joiner never completed a single Status handshake. A peer
+  that connected and dropped inside one pump window also stayed queued for
+  Status forever.
+- Gossip blocks with an unknown parent were dropped; they are now buffered and
+  their parent is requested by root from the sender, so a late joiner links the
+  live chain even before range catch-up.
+- Blocks imported from gossip were never put in the req/resp serve cache, so a
+  node served only its own proposals to peers catching up.
+- `--data-dir` was ignored on the `config.yaml` start path: nothing was
+  persisted and a restarted node began again at slot 0. The data dir is now
+  pinned to the network genesis (a different genesis is refused) and the head
+  plus fork-choice store resume from it.
 
 - XMSS key generation on Windows: `OsRandom` read `/dev/urandom` directly and
   now uses `getrandom`.
@@ -394,7 +478,8 @@ work that landed before the root `VERSION` file (`0.1.1`) through `0.1.12`.
   `blstrs` / `bls12_381` under `crates/` or `bin/` as hard-fail for release
   promotion.
 
-[Unreleased]: https://github.com/ethean-labs/ethean/compare/v0.1.53...HEAD
+[Unreleased]: https://github.com/ethean-labs/ethean/compare/v0.1.72...HEAD
+[0.1.72]: https://github.com/ethean-labs/ethean/compare/v0.1.53...v0.1.72
 [0.1.53]: https://github.com/ethean-labs/ethean/compare/v0.1.47...v0.1.53
 [0.1.47]: https://github.com/ethean-labs/ethean/compare/v0.1.27...v0.1.47
 [0.1.27]: https://github.com/ethean-labs/ethean/compare/v0.1.12...v0.1.27

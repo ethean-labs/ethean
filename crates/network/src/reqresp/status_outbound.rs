@@ -4,6 +4,7 @@ use crate::error::Result;
 use crate::reqresp::status_session::StatusSessionBook;
 use crate::reqresp::tracker::{RequestId, RequestTracker};
 use ethean_primitives::Hash32;
+use std::time::Instant;
 
 /// One Status request ready to send on a Lean req/resp stream.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -18,14 +19,17 @@ pub struct OutboundStatusRequest {
     pub payload: Vec<u8>,
 }
 
-/// Encode pending Status payloads and register them on the request tracker.
+/// Encode Status payloads for pending peers without a request in flight and
+/// register them on the request tracker.
 pub fn prepare_status_outbounds(
-    book: &StatusSessionBook,
+    book: &mut StatusSessionBook,
     tracker: &mut RequestTracker,
 ) -> Result<Vec<OutboundStatusRequest>> {
+    let now = Instant::now();
     let mut out = Vec::new();
-    for peer in book.pending_peers() {
+    for peer in book.peers_due(now) {
         let payload = book.encode_local_for(&peer)?;
+        book.mark_sent(peer, now);
         let request_id = tracker.insert(peer);
         out.push(OutboundStatusRequest {
             peer,
@@ -52,13 +56,16 @@ mod tests {
         let peer = [4u8; 32];
         book.on_peer_connected(peer, sample());
         let mut tracker = RequestTracker::default();
-        let reqs = prepare_status_outbounds(&book, &mut tracker).expect("prepare");
+        let reqs = prepare_status_outbounds(&mut book, &mut tracker).expect("prepare");
         assert_eq!(reqs.len(), 1);
         assert_eq!(reqs[0].peer, peer);
         assert!(!reqs[0].payload.is_empty());
         assert!(reqs[0]
             .protocol_id
             .starts_with("/leanconsensus/req/status/"));
+        assert_eq!(tracker.len(), 1);
+        let again = prepare_status_outbounds(&mut book, &mut tracker).expect("prepare");
+        assert!(again.is_empty(), "a request in flight is not sent twice");
         assert_eq!(tracker.len(), 1);
     }
 }

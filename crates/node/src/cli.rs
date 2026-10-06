@@ -42,6 +42,13 @@ pub struct DevnetInitArgs {
     /// QUIC port of node 0; node k uses base + k.
     #[arg(long, default_value_t = 9000)]
     pub base_port: u16,
+    /// `ATTESTATION_COMMITTEE_COUNT` written to config.yaml; node k owns
+    /// validators of subnet k % count.
+    #[arg(long, default_value_t = 1)]
+    pub attestation_committee_count: usize,
+    /// Nodes 0..N start with `--is-aggregator`.
+    #[arg(long, default_value_t = 1)]
+    pub aggregators: usize,
 }
 
 /// Flags for `ethean start` (Hive / lean-quickstart command lines mirror ream's).

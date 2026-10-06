@@ -74,12 +74,19 @@ pub struct ChainOwner {
     pub proposer: Option<LocalProposer>,
     /// Optional local attestation signer (Hive registry / smoke).
     pub attester: Option<LocalAttester>,
+    /// Registry signers by validator index. When set they replace
+    /// `attester` / `proposer`, which only serve solo and smoke runs.
+    pub signers: std::collections::BTreeMap<u64, ValidatorSigners>,
     /// Keeps installed XMSS keys' windows prepared off the signing path.
     pub key_prep: crate::key_prep::KeyPreparer,
     /// Validator indices owned by this node (from Hive registry).
     pub owned_validator_indices: Vec<u64>,
     /// Sync blobs waiting for a missing parent (blocks-by-root catch-up).
     pub sync_orphans: SyncOrphanCache,
+    /// Finalized slot the fork-choice store history was last pruned at.
+    pub fc_pruned_finalized_slot: u64,
+    /// Votes the store rejected because their block or tick had not arrived.
+    pub deferred_votes: crate::fc_vote_retry::DeferredVotes,
     /// Configured max head lag.
     pub max_head_lag_slots: u64,
     /// Attestation data per proved block; `None` means
@@ -87,6 +94,9 @@ pub struct ChainOwner {
     pub max_block_attestation_data: Option<usize>,
     /// Collect/prove aggregates (Lean aggregator role).
     pub is_aggregator: bool,
+    /// Extra subnets to aggregate (`--aggregate-subnet-ids`), on top of the
+    /// subnets of `owned_validator_indices`.
+    pub aggregate_subnet_ids: Vec<u64>,
     /// Self-apply proposals + inject full-registry votes for local finality smoke.
     pub local_finality: bool,
     /// Safe-target root (from FC store when live; else justified).
@@ -100,7 +110,54 @@ pub struct ChainOwner {
     pub known_payloads: std::collections::HashMap<Hash32, u64>,
 }
 
+/// Signing keys of one owned validator.
+#[derive(Debug, Default)]
+pub struct ValidatorSigners {
+    pub attester: Option<LocalAttester>,
+    pub proposer: Option<LocalProposer>,
+}
+
 impl ChainOwner {
+    /// Validators this node signs attestations for.
+    pub fn attesting_indices(&self) -> Vec<u64> {
+        if !self.signers.is_empty() {
+            return self
+                .signers
+                .iter()
+                .filter(|(_, s)| s.attester.is_some())
+                .map(|(i, _)| *i)
+                .collect();
+        }
+        match (&self.attester, self.owned_validator_indices.first()) {
+            (Some(_), Some(first)) => vec![*first],
+            _ => Vec::new(),
+        }
+    }
+
+    /// Attestation signer for `index`.
+    pub fn attester_for(&mut self, index: u64) -> Option<&mut LocalAttester> {
+        if self.signers.is_empty() {
+            return self.attester.as_mut();
+        }
+        self.signers.get_mut(&index)?.attester.as_mut()
+    }
+
+    /// Proposal signer for `index`.
+    pub fn proposer_for(&mut self, index: u64) -> Option<&mut LocalProposer> {
+        if self.signers.is_empty() {
+            return self.proposer.as_mut();
+        }
+        self.signers.get_mut(&index)?.proposer.as_mut()
+    }
+
+    pub fn has_attester(&self) -> bool {
+        self.attester.is_some() || self.signers.values().any(|s| s.attester.is_some())
+    }
+
+    pub fn has_proposer(&self) -> bool {
+        self.proposer.is_some() || self.signers.values().any(|s| s.proposer.is_some())
+    }
+
     /// Construct with lag budget.
     pub fn new(max_head_lag_slots: u64) -> Self {
         Self {
@@ -113,6 +170,37 @@ impl ChainOwner {
     pub fn block_attestation_data_cap(&self) -> usize {
         self.max_block_attestation_data
             .unwrap_or(crate::block_builder::DEFAULT_MAX_BLOCK_ATTESTATION_DATA)
+    }
+
+    /// Whether an aggregator pools the vote of `validator_index`. leanSpec
+    /// aggregators only see the subnets they subscribe to (their validators'
+    /// subnets plus `--aggregate-subnet-ids`); Ethean relays every subnet, so
+    /// the same scope is applied at pooling time. With no owned validators and
+    /// no extra ids every vote is pooled.
+    pub fn aggregates_vote_of(&self, validator_index: u64) -> bool {
+        self.aggregates_subnet(validator_index % self.attestation_committees())
+    }
+
+    /// Whether `subnet` is in this node's aggregation scope (see
+    /// [`Self::aggregates_vote_of`]).
+    pub fn aggregates_subnet(&self, subnet: u64) -> bool {
+        if self.owned_validator_indices.is_empty() && self.aggregate_subnet_ids.is_empty() {
+            return true;
+        }
+        let committees = self.attestation_committees();
+        self.aggregate_subnet_ids.contains(&subnet)
+            || self
+                .owned_validator_indices
+                .iter()
+                .any(|i| i % committees == subnet)
+    }
+
+    /// `ATTESTATION_COMMITTEE_COUNT` of the loaded profile (1 without one).
+    pub fn attestation_committees(&self) -> u64 {
+        self.profile
+            .as_ref()
+            .map(|p| p.attestation_committee_count.max(1))
+            .unwrap_or(1)
     }
 
     /// Apply a clock tick; returns false when duplicate.
@@ -196,6 +284,25 @@ impl ChainOwner {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn aggregator_pools_only_its_subnets() {
+        let mut owner = ChainOwner::new(0);
+        assert!(owner.aggregates_vote_of(5), "no scope: pool everything");
+        owner.profile = Some(
+            crate::lstar_devnet()
+                .unwrap()
+                .with_attestation_committee_count(3)
+                .unwrap(),
+        );
+        owner.owned_validator_indices = vec![1, 4];
+        assert!(owner.aggregates_vote_of(7));
+        assert!(!owner.aggregates_vote_of(6));
+        assert!(!owner.aggregates_vote_of(8));
+        owner.aggregate_subnet_ids = vec![2];
+        assert!(owner.aggregates_vote_of(8));
+        assert!(!owner.aggregates_vote_of(6));
+    }
 
     #[test]
     fn dedupes_ticks() {

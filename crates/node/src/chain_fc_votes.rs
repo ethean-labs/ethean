@@ -15,6 +15,10 @@ impl ChainOwner {
             return;
         };
         if let Err(e) = fc.on_attestation_data(validator, data) {
+            if crate::fc_vote_retry::is_retryable(&e) {
+                self.deferred_votes
+                    .push(crate::fc_vote_retry::DeferredVote::Single(validator, data));
+            }
             debug!(error = %e, "fork-choice on_attestation_data skipped");
             return;
         }
@@ -27,6 +31,13 @@ impl ChainOwner {
             return;
         };
         if let Err(e) = fc.on_aggregated_attestation(data, participants) {
+            if crate::fc_vote_retry::is_retryable(&e) {
+                self.deferred_votes
+                    .push(crate::fc_vote_retry::DeferredVote::Aggregated(
+                        data,
+                        participants.to_vec(),
+                    ));
+            }
             debug!(error = %e, "fork-choice on_aggregated_attestation skipped");
             return;
         }

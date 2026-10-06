@@ -29,6 +29,7 @@ mod quic_swarm_clients;
 #[cfg(feature = "libp2p-quic")]
 mod quic_swarm_send;
 pub mod reqresp;
+pub mod serve_cache;
 pub mod swarm;
 #[cfg(feature = "libp2p-quic")]
 mod swarm_bind;
@@ -41,7 +42,7 @@ pub use enr::{decode_enr, enr_to_multiaddr, peer_id_from_secp256k1, EnrRecord};
 pub use error::{NetworkError, Result};
 pub use gossip::{
     decode_gossip, delta_for, encode_gossip, validate_gossip_payload, GossipAction, GossipIngress,
-    LeanGossipTopics, PumpEvent, SCORE_ACCEPT, SCORE_IGNORE, SCORE_REJECT,
+    LeanGossipTopics, PumpEvent, SeenIds, SCORE_ACCEPT, SCORE_IGNORE, SCORE_REJECT,
     SMOKE_ATTESTATION_SUBNETS,
 };
 pub use identity::NodeIdentity;
@@ -58,7 +59,7 @@ pub use reqresp::{
     prepare_blocks_by_range_outbound, prepare_blocks_by_root_for_roots,
     prepare_blocks_by_root_outbound, prepare_status_outbounds, OutboundBlocksByRangeRequest,
     OutboundBlocksByRootRequest, OutboundStatusRequest, RequestId, RequestTracker, StatusExchange,
-    StatusSessionBook,
+    StatusSessionBook, REQUEST_EXPIRY,
 };
 pub use swarm::SwarmFacade;
 pub use transport::{

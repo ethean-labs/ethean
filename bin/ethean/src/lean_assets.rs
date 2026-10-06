@@ -23,8 +23,8 @@ pub fn load_optional_registry(
     match load_node_keys(path, node_id) {
         Ok(keys) => {
             info!(
-                proposal = keys.proposal.is_some(),
-                attestation = keys.attestation.is_some(),
+                proposal = keys.proposal_count(),
+                attestation = keys.attestation_count(),
                 "loaded registry privkey files"
             );
             Ok(Some(keys))

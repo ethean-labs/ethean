@@ -184,7 +184,9 @@ fn request_block_proof(
     }
     let root = plan.block_root()?;
     let duty_view = owner.snapshot(tick.slot, 0).duty_view;
-    let local = owner.proposer.as_mut().ok_or("no local proposer")?;
+    let local = owner
+        .proposer_for(plan.block.proposer_index.get())
+        .ok_or("no local proposer for the assigned validator")?;
     if !local.is_production() {
         return Err("proposer key is a smoke key, not an XMSS registry key".into());
     }

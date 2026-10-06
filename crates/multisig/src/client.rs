@@ -43,6 +43,19 @@ impl ProverConfig {
         }
     }
 
+    /// How many provers share this host, from `ETHEAN_PROVER_COUNT`.
+    ///
+    /// Passed to the child so it can divide the cores between them. `0` and
+    /// anything that does not parse count as one prover, which leaves the
+    /// pool uncapped.
+    pub fn prover_count() -> usize {
+        std::env::var("ETHEAN_PROVER_COUNT")
+            .ok()
+            .and_then(|v| v.trim().parse().ok())
+            .filter(|n| *n > 0)
+            .unwrap_or(1)
+    }
+
     /// `$ETHEAN_PROVER_BIN`, else `ethean-prover` beside the current executable.
     pub fn discover() -> Option<Self> {
         if let Some(path) = std::env::var_os(PROVER_BIN_ENV) {
@@ -69,6 +82,10 @@ impl Worker {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
+            .env(
+                "ETHEAN_PROVER_COUNT",
+                ProverConfig::prover_count().to_string(),
+            )
             .spawn()
             .map_err(|e| {
                 MultisigError::ProverUnavailable(format!("spawn {}: {e}", binary.display()))

@@ -15,29 +15,23 @@ use std::time::Instant;
 /// Interval used for attestation duties (proposal uses 0).
 pub const ATTESTATION_INTERVAL: u8 = 1;
 
-/// When a local attester is installed, sign attestation data for the first
-/// owned validator index (head = FC tip; target = safe-target when live),
-/// queue it for subnet gossip, and pool the signature when this node aggregates.
+/// Sign one attestation per owned validator with a local attester (head = FC
+/// tip; target = safe target when live), queue each for subnet gossip, and
+/// pool the signatures when this node aggregates.
 pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEvent> {
     let mut out = Vec::new();
     if tick.interval != ATTESTATION_INTERVAL {
         return out;
     }
     let production_started = Instant::now();
-    if owner.attester.is_none() {
+    let indices = owner.attesting_indices();
+    if indices.is_empty() {
         return out;
     }
-    let Some(index) = owner.owned_validator_indices.first().copied() else {
-        return out;
-    };
     let Some(state) = owner.head_state.as_ref() else {
         return out;
     };
-    let n = state.validators.len();
-    if n == 0 || (index as usize) >= n {
-        return out;
-    }
-
+    let n = state.validators.len() as u64;
     let head = Checkpoint {
         root: owner.head_root,
         slot: state.slot,
@@ -51,52 +45,55 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
         target,
         source,
     };
-    let data_root = data.hash_tree_root();
-    let committees = owner
-        .profile
-        .as_ref()
-        .map(|p| p.attestation_committee_count.max(1))
-        .unwrap_or(1);
-    let subnet = (index % committees) as u16;
-    let lag = 0u64;
-    let duty_view = owner.snapshot(tick.slot, lag).duty_view;
-
-    let sig = {
-        let Some(attester) = owner.attester.as_mut() else {
-            return out;
-        };
-        let signing_started = Instant::now();
-        match attester.sign_attestation(tick, &duty_view, data_root, subnet) {
-            Ok(s) => {
-                observe_since(
-                    "lean_pq_sig_attestation_signing_time_seconds",
-                    &[],
-                    signing_started,
-                );
-                inc("lean_pq_sig_attestation_signatures_total", &[], 1.0);
-                s
-            }
-            Err(e) => {
-                tracing::debug!(error = %e, index, "local attestation sign skipped");
-                return out;
-            }
-        }
-    };
-
-    if let Some(attester) = owner.attester.as_ref() {
-        if let Err(e) = attester.verify_attestation(tick, data_root, &sig) {
-            tracing::warn!(error = %e, "local attestation binding verify failed");
-            return out;
+    for index in indices.into_iter().filter(|i| *i < n) {
+        if let Some(event) = attest_as(owner, tick, index, data) {
+            out.push(event);
         }
     }
+    if !out.is_empty() {
+        observe_since(
+            "lean_attestations_production_time_seconds",
+            &[],
+            production_started,
+        );
+    }
+    out
+}
 
-    let Ok(signature) = Signature::try_from_slice(&sig) else {
-        return out;
+fn attest_as(
+    owner: &mut ChainOwner,
+    tick: DutyTick,
+    index: u64,
+    data: AttestationData,
+) -> Option<ChainEvent> {
+    let data_root = data.hash_tree_root();
+    let subnet = (index % owner.attestation_committees()) as u16;
+    let duty_view = owner.snapshot(tick.slot, 0).duty_view;
+    let attester = owner.attester_for(index)?;
+    let signing_started = Instant::now();
+    let sig = match attester.sign_attestation(tick, &duty_view, data_root, subnet) {
+        Ok(s) => {
+            observe_since(
+                "lean_pq_sig_attestation_signing_time_seconds",
+                &[],
+                signing_started,
+            );
+            inc("lean_pq_sig_attestation_signatures_total", &[], 1.0);
+            s
+        }
+        Err(e) => {
+            tracing::debug!(error = %e, index, "local attestation sign skipped");
+            return None;
+        }
     };
-    let Ok(vote) = SignedAttestation::new(ValidatorIndex::new(index), data, sig.clone()) else {
-        return out;
-    };
-    if owner.is_aggregator {
+    if let Err(e) = attester.verify_attestation(tick, data_root, &sig) {
+        tracing::warn!(error = %e, index, "local attestation binding verify failed");
+        return None;
+    }
+
+    let signature = Signature::try_from_slice(&sig).ok()?;
+    let vote = SignedAttestation::new(ValidatorIndex::new(index), data, sig.clone()).ok()?;
+    if owner.is_aggregator && owner.aggregates_vote_of(index) {
         owner.signatures.insert(data_root, &data, index, signature);
     }
     owner.fc_on_attestation(ValidatorIndex::new(index), data);
@@ -113,18 +110,12 @@ pub fn try_local_attest(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEven
             });
         }
     }
-    observe_since(
-        "lean_attestations_production_time_seconds",
-        &[],
-        production_started,
-    );
-    out.push(ChainEvent::AttestationSigned {
+    Some(ChainEvent::AttestationSigned {
         data_root,
         validator_index: ValidatorIndex::new(index),
         signature_len: sig.len(),
         subnet,
-    });
-    out
+    })
 }
 
 /// Source and target for a local vote on `head`.
@@ -219,6 +210,43 @@ mod tests {
         let vote = SignedAttestation::ssz_decode(&gossip.payload).unwrap();
         assert_eq!(vote.validator_index.get(), 2);
         assert_eq!(vote.data.hash_tree_root(), gossip.data_root);
+    }
+
+    #[test]
+    fn signs_once_per_validator_with_its_own_key() {
+        use crate::chain_owner::ValidatorSigners;
+        let mut owner = ChainOwner::new(4);
+        owner.head_state = Some(state_n(4));
+        owner.head_root = [7u8; 32];
+        owner.profile = Some(ethean_profile::lstar_devnet().unwrap());
+        owner.owned_validator_indices = vec![0, 2, 3];
+        for index in [0, 3] {
+            owner.signers.insert(
+                index,
+                ValidatorSigners {
+                    attester: Some(LocalAttester::smoke().unwrap()),
+                    proposer: None,
+                },
+            );
+        }
+        owner.signers.insert(2, ValidatorSigners::default());
+        let tick = DutyTick {
+            slot: Slot::new(3),
+            interval: 1,
+            generation: 1,
+        };
+        assert_eq!(try_local_attest(&mut owner, tick).len(), 2);
+        let voters: Vec<u64> = owner
+            .pending_aggregation_gossip
+            .iter()
+            .map(|g| {
+                SignedAttestation::ssz_decode(&g.payload)
+                    .unwrap()
+                    .validator_index
+                    .get()
+            })
+            .collect();
+        assert_eq!(voters, vec![0, 3]);
     }
 
     #[test]

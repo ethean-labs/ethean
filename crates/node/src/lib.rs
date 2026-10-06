@@ -49,6 +49,7 @@ pub mod duty_propose;
 pub mod duty_propose_gate;
 pub mod duty_step;
 pub mod events;
+pub mod fc_vote_retry;
 pub mod fork_digest_policy;
 pub mod genesis_bundle;
 pub mod gossip_attestation;

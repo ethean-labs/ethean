@@ -5,12 +5,18 @@ use crate::reqresp::handler::{handle_status, StatusExchange};
 use ethean_network_wire::{rpc_status, Status};
 use ethean_primitives::Hash32;
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
+
+/// A Status request without a reply after this long is sent again.
+pub const STATUS_RESEND_AFTER: Duration = Duration::from_secs(10);
 
 /// Book of in-flight Status exchanges (stream send still pending libp2p req/resp).
 #[derive(Debug, Default)]
 pub struct StatusSessionBook {
     /// Local Status awaiting a remote reply, keyed by peer fingerprint.
     pending: HashMap<Hash32, Status>,
+    /// When the request to a pending peer was last sent.
+    sent: HashMap<Hash32, Instant>,
     /// Completed compatible exchanges.
     completed: Vec<StatusExchange>,
 }
@@ -29,6 +35,28 @@ impl StatusSessionBook {
     /// Drop pending state when a peer disconnects.
     pub fn on_peer_disconnected(&mut self, peer: &Hash32) {
         self.pending.remove(peer);
+        self.sent.remove(peer);
+    }
+
+    /// Pending peers with no request in flight, or whose request is older
+    /// than [`STATUS_RESEND_AFTER`].
+    pub fn peers_due(&self, now: Instant) -> Vec<Hash32> {
+        self.pending
+            .keys()
+            .filter(|peer| {
+                self.sent
+                    .get(*peer)
+                    .is_none_or(|at| now.saturating_duration_since(*at) >= STATUS_RESEND_AFTER)
+            })
+            .copied()
+            .collect()
+    }
+
+    /// Record that a Status request to `peer` went out at `now`.
+    pub fn mark_sent(&mut self, peer: Hash32, now: Instant) {
+        if self.pending.contains_key(&peer) {
+            self.sent.insert(peer, now);
+        }
     }
 
     /// Encode the local Status payload for an outbound Status request.
@@ -44,6 +72,7 @@ impl StatusSessionBook {
 
     /// Ingest remote Status bytes for a pending peer; fail closed on mismatch.
     pub fn ingest_remote(&mut self, peer: Hash32, remote_bytes: &[u8]) -> Result<StatusExchange> {
+        self.sent.remove(&peer);
         let local = self
             .pending
             .remove(&peer)
@@ -104,6 +133,22 @@ mod tests {
         assert_eq!(book.take_completed().len(), 1);
         assert_eq!(book.pending_len(), 0);
         let _ = enc;
+    }
+
+    #[test]
+    fn sent_request_is_not_repeated_until_it_times_out() {
+        let peer = [5u8; 32];
+        let mut book = StatusSessionBook::default();
+        let t0 = Instant::now();
+        book.on_peer_connected(peer, sample(1));
+        assert_eq!(book.peers_due(t0), vec![peer]);
+        book.mark_sent(peer, t0);
+        book.on_peer_connected(peer, sample(1));
+        assert!(book.peers_due(t0 + Duration::from_secs(1)).is_empty());
+        assert_eq!(book.peers_due(t0 + STATUS_RESEND_AFTER), vec![peer]);
+        book.on_peer_disconnected(&peer);
+        book.on_peer_connected(peer, sample(1));
+        assert_eq!(book.peers_due(t0), vec![peer]);
     }
 
     #[test]

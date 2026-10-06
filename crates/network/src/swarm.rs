@@ -59,6 +59,14 @@ impl SwarmFacade {
         self.peers.len() as u64
     }
 
+    /// True when the QUIC swarm holds a live connection to `peer`.
+    #[cfg(feature = "libp2p-quic")]
+    pub fn is_peer_connected(&self, peer: &ethean_primitives::Hash32) -> bool {
+        self.quic
+            .as_ref()
+            .is_some_and(|q| q.peers.contains_key(peer))
+    }
+
     /// Publish compressed gossip on a Lean topic via the bound swarm.
     #[cfg(feature = "libp2p-quic")]
     pub fn publish_gossip(&mut self, topic: &str, compressed: &[u8]) -> Result<()> {
@@ -128,11 +136,9 @@ impl SwarmFacade {
             ));
         };
         let pending = std::mem::take(&mut self.status_outbox);
-        let mut sent = 0;
-        for req in pending {
-            swarm.send_status_request(req.peer, req.payload)?;
-            sent += 1;
-        }
+        let sent = send_each(pending, |req| {
+            swarm.send_status_request(req.peer, req.payload)
+        })?;
         if sent > 0 {
             self.note_progress();
         }
@@ -148,11 +154,9 @@ impl SwarmFacade {
             ));
         };
         let pending = std::mem::take(&mut self.blocks_outbox);
-        let mut sent = 0;
-        for req in pending {
-            swarm.send_blocks_by_root_request(req.peer, req.payload)?;
-            sent += 1;
-        }
+        let sent = send_each(pending, |req| {
+            swarm.send_blocks_by_root_request(req.peer, req.payload)
+        })?;
         if sent > 0 {
             self.note_progress();
         }
@@ -231,5 +235,60 @@ impl SwarmFacade {
             ));
         };
         crate::probe_udp_status(bound, multiaddr, local, timeout)
+    }
+}
+
+/// Send every staged request; a peer that dropped must not hold back the ones
+/// queued behind it. Errs only when nothing went out.
+#[cfg_attr(not(feature = "libp2p-quic"), allow(dead_code))]
+pub(crate) fn send_each<T>(
+    pending: Vec<T>,
+    mut send: impl FnMut(T) -> Result<()>,
+) -> Result<usize> {
+    let mut sent = 0;
+    let mut first_error = None;
+    for req in pending {
+        match send(req) {
+            Ok(()) => sent += 1,
+            Err(e) => {
+                first_error.get_or_insert(e);
+            }
+        }
+    }
+    match first_error {
+        Some(e) if sent == 0 => Err(e),
+        _ => Ok(sent),
+    }
+}
+
+#[cfg(test)]
+mod send_each_tests {
+    use super::*;
+
+    fn gone(peer: u8) -> Result<()> {
+        Err(NetworkError::Handshake(format!(
+            "peer {peer} not connected"
+        )))
+    }
+
+    #[test]
+    fn a_dropped_peer_does_not_block_later_requests() {
+        let mut delivered = Vec::new();
+        let sent = send_each(vec![1u8, 2, 3], |p| {
+            if p == 1 {
+                return gone(p);
+            }
+            delivered.push(p);
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(sent, 2);
+        assert_eq!(delivered, vec![2, 3]);
+    }
+
+    #[test]
+    fn errs_when_nothing_went_out() {
+        assert!(send_each(vec![1u8], gone).is_err());
+        assert_eq!(send_each(Vec::<u8>::new(), gone).unwrap(), 0);
     }
 }

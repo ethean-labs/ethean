@@ -45,7 +45,7 @@ Patch goes `0.1.0` → `0.1.1` → … → `0.1.99` → `0.2.0`. See [docs/versi
 | `run-local-finality.sh` | **Solo finality** | Recent genesis, 4 validators, aggregator on |
 | `run-pq-devnet-5.sh` | Ready path | Same binary; needs operator D5 multiaddrs |
 | `local-pq-mesh.sh` | **Private mesh** | 2 peers; writes `target/local-pq-mesh/nodes.multiaddrs` then dials it |
-| `local-devnet.ps1` | **Proving devnet (Windows)** | N nodes with PROD keys + prover via `ethean devnet-init`; polls `/lean/v0/fork_choice` |
+| `local-devnet.ps1` | **Proving devnet (Windows)** | N nodes with PROD keys + prover via `ethean devnet-init`; polls `/lean/v0/fork_choice`; `-LateJoin k -LateJoinAt s` (checkpoint-sync joiner) and `-Restart k -RestartAt s -RestartDown d` (hard kill + data-dir resume); `-ValidatorsPerNode n -Subnets C -Aggregators A` for larger layouts |
 | `run-observability.sh` | **Grafana + Prometheus** | Scrapes host `:9100`; UI on `:3000` / `:9090` |
 
 ```bash

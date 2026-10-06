@@ -113,6 +113,41 @@ impl EtheanClient {
     }
 
     #[cfg(feature = "libp2p-quic")]
+    fn request_parent_blocks(
+        &mut self,
+        peer: ethean_primitives::Hash32,
+        roots: Vec<ethean_primitives::Hash32>,
+    ) {
+        if roots.is_empty() {
+            return;
+        }
+        let Some(facade) = self.swarm.as_mut() else {
+            return;
+        };
+        let n = roots.len();
+        match ethean_network::prepare_blocks_by_root_for_roots(peer, roots, &mut facade.requests) {
+            Ok(Some(req)) => {
+                facade.enqueue_blocks_outbounds(vec![req]);
+                match facade.flush_blocks_outbox() {
+                    Ok(sent) => info!(
+                        peer0 = peer[0],
+                        parents = n,
+                        sent,
+                        "parent blocks-by-root flushed for orphan catch-up"
+                    ),
+                    Err(e) => info!(
+                        peer0 = peer[0],
+                        error = %e,
+                        "parent blocks-by-root staged; flush deferred"
+                    ),
+                }
+            }
+            Ok(None) => {}
+            Err(e) => info!(peer0 = peer[0], error = %e, "parent fetch prepare failed"),
+        }
+    }
+
+    #[cfg(feature = "libp2p-quic")]
     fn forget_disconnected_peers(&mut self, peers: &[ethean_primitives::Hash32]) {
         let mut dropped = 0usize;
         for peer in peers {
@@ -149,6 +184,25 @@ impl EtheanClient {
         budget: &crate::swarm_pump::PumpBudgetResult,
     ) -> Result<()> {
         self.forget_disconnected_peers(&budget.disconnected_peers);
+        if let Some(facade) = self.swarm.as_mut() {
+            for peer in &budget.disconnected_peers {
+                facade.requests.prune_peer(peer);
+            }
+            for (peer, _) in budget
+                .status_responses
+                .iter()
+                .chain(&budget.blocks_by_root_responses)
+                .chain(&budget.blocks_by_range_responses)
+            {
+                facade.requests.complete_oldest(peer);
+            }
+            let expired = facade
+                .requests
+                .expire(std::time::Instant::now(), ethean_network::REQUEST_EXPIRY);
+            if expired > 0 {
+                tracing::debug!(expired, "req/resp requests without a response dropped");
+            }
+        }
         if let Some(local) = self.local_status.clone() {
             let queued = crate::status_handshake::queue_peers(
                 &mut self.status_sessions,
@@ -163,8 +217,13 @@ impl EtheanClient {
                 );
             }
             if let Some(facade) = self.swarm.as_mut() {
+                for peer in self.status_sessions.pending_peers() {
+                    if !facade.is_peer_connected(&peer) {
+                        self.status_sessions.on_peer_disconnected(&peer);
+                    }
+                }
                 match ethean_network::prepare_status_outbounds(
-                    &self.status_sessions,
+                    &mut self.status_sessions,
                     &mut facade.requests,
                 ) {
                     Ok(reqs) if !reqs.is_empty() => {
@@ -195,6 +254,18 @@ impl EtheanClient {
         if !ingest.is_empty() {
             info!(n = ingest.len(), "Ingested gossip from network pump");
             self.refresh_local_status_bytes();
+            let imported =
+                crate::serve_cache_seed::imported_gossip_blocks(&self.owner, &budget.accepted);
+            if let Some(facade) = self.swarm.as_mut() {
+                for (slot, root, bytes) in imported {
+                    let _ = facade.put_block_at_slot(slot, root, bytes);
+                }
+            }
+        }
+        for (peer, parents) in
+            crate::blocks_sync::buffer_gossip_orphans(&mut self.owner, &budget.accepted)
+        {
+            self.request_parent_blocks(peer, parents);
         }
         for (peer, payload) in &budget.status_responses {
             let handshake = {
@@ -263,37 +334,7 @@ impl EtheanClient {
                     "blocks sync response ingested"
                 );
             }
-            if outcome.fetch_roots.is_empty() {
-                continue;
-            }
-            let Some(facade) = self.swarm.as_mut() else {
-                continue;
-            };
-            match ethean_network::prepare_blocks_by_root_for_roots(
-                *peer,
-                outcome.fetch_roots.clone(),
-                &mut facade.requests,
-            ) {
-                Ok(Some(req)) => {
-                    let n = outcome.fetch_roots.len();
-                    facade.enqueue_blocks_outbounds(vec![req]);
-                    match facade.flush_blocks_outbox() {
-                        Ok(sent) => info!(
-                            peer0 = peer[0],
-                            parents = n,
-                            sent,
-                            "parent blocks-by-root flushed for orphan catch-up"
-                        ),
-                        Err(e) => info!(
-                            peer0 = peer[0],
-                            error = %e,
-                            "parent blocks-by-root staged; flush deferred"
-                        ),
-                    }
-                }
-                Ok(None) => {}
-                Err(e) => info!(peer0 = peer[0], error = %e, "parent fetch prepare failed"),
-            }
+            self.request_parent_blocks(*peer, outcome.fetch_roots);
         }
         if ingested_blocks {
             self.refresh_local_status_bytes();

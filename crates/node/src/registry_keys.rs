@@ -7,13 +7,41 @@ use ethean_validator::{KeyId, KeyRecord, SigningRole};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Loaded proposal + attestation secrets for one Hive node id.
+/// Proposal + attestation secrets of one validator index.
+#[derive(Debug, Clone)]
+pub struct ValidatorKeys {
+    pub index: u64,
+    pub proposal: Option<KeyRecord>,
+    pub attestation: Option<KeyRecord>,
+}
+
+/// Loaded secrets for one Hive node id, one entry per owned validator.
 #[derive(Debug, Clone)]
 pub struct LoadedNodeKeys {
     pub node_id: String,
     pub indices: Vec<u64>,
-    pub proposal: Option<KeyRecord>,
-    pub attestation: Option<KeyRecord>,
+    pub validators: Vec<ValidatorKeys>,
+}
+
+impl LoadedNodeKeys {
+    /// Keys of `index`, if the node owns it.
+    pub fn validator(&self, index: u64) -> Option<&ValidatorKeys> {
+        self.validators.iter().find(|v| v.index == index)
+    }
+
+    pub fn proposal_count(&self) -> usize {
+        self.validators
+            .iter()
+            .filter(|v| v.proposal.is_some())
+            .count()
+    }
+
+    pub fn attestation_count(&self) -> usize {
+        self.validators
+            .iter()
+            .filter(|v| v.attestation.is_some())
+            .count()
+    }
 }
 
 /// Load key rows for `node_id` and read `privkey_file` bytes beside the registry.
@@ -21,23 +49,39 @@ pub fn load_node_keys(registry_path: &Path, node_id: &str) -> Result<LoadedNodeK
     let rows = load_registry_key_rows(registry_path, node_id)?;
     let base = registry_path.parent().unwrap_or_else(|| Path::new("."));
     let mut indices = Vec::new();
-    let mut proposal = None;
-    let mut attestation = None;
+    let mut validators: Vec<ValidatorKeys> = Vec::new();
     for row in rows {
-        if indices.last().copied() != Some(row.index) {
+        if !indices.contains(&row.index) {
             indices.push(row.index);
         }
         let record = load_key_record(base, &row)?;
-        match row.role {
-            SigningRole::Proposal => proposal = Some(record),
-            SigningRole::Attestation => attestation = Some(record),
+        let slot = match validators.iter().position(|v| v.index == row.index) {
+            Some(i) => &mut validators[i],
+            None => {
+                validators.push(ValidatorKeys {
+                    index: row.index,
+                    proposal: None,
+                    attestation: None,
+                });
+                validators.last_mut().expect("just pushed")
+            }
+        };
+        let target = match row.role {
+            SigningRole::Proposal => &mut slot.proposal,
+            SigningRole::Attestation => &mut slot.attestation,
+        };
+        if target.is_some() {
+            return Err(format!(
+                "validator {} lists two {:?} keys for {node_id}",
+                row.index, row.role
+            ));
         }
+        *target = Some(record);
     }
     Ok(LoadedNodeKeys {
         node_id: node_id.to_string(),
         indices,
-        proposal,
-        attestation,
+        validators,
     })
 }
 
@@ -152,13 +196,13 @@ mod tests {
         let reg = write_registry(dir.path(), &att_pk, &prop_pk);
         let loaded = load_node_keys(&reg, "ethean_0").unwrap();
         assert_eq!(loaded.indices, vec![0]);
-        let prop = loaded.proposal.as_ref().unwrap();
+        let keys = loaded.validator(0).unwrap();
+        let prop = keys.proposal.as_ref().unwrap();
         assert_eq!(prop.public_key.as_bytes().to_vec(), hex_bytes(&prop_pk));
         assert_eq!(prop.activation_slot, 0);
         assert_eq!(prop.num_active_slots, 112);
         assert_eq!(
-            loaded
-                .attestation
+            keys.attestation
                 .as_ref()
                 .unwrap()
                 .public_key
@@ -166,6 +210,50 @@ mod tests {
                 .to_vec(),
             hex_bytes(&att_pk)
         );
+    }
+
+    #[test]
+    fn keeps_one_key_pair_per_validator() {
+        let dir = tempdir().unwrap();
+        let keys = dir.path().join("hash-sig-keys");
+        fs::create_dir_all(&keys).unwrap();
+        let mut yaml = String::from("ethean_0:\n");
+        for index in [2usize, 0] {
+            for (role, field) in [("attestation", "attestation"), ("proposal", "proposal")] {
+                let file = format!("v{index}_{role}.ssz");
+                fs::write(
+                    keys.join(&file),
+                    hex_bytes(&test_key_hex(index, &format!("{field}_secret"))),
+                )
+                .unwrap();
+                yaml.push_str(&format!(
+                    "  - index: {index}\n    pubkey_hex: \"{}\"\n    privkey_file: \"{file}\"\n",
+                    test_key_hex(index, &format!("{field}_public"))
+                ));
+            }
+        }
+        let reg = dir.path().join("validators.yaml");
+        fs::write(&reg, yaml).unwrap();
+        let loaded = load_node_keys(&reg, "ethean_0").unwrap();
+        assert_eq!(loaded.indices, vec![2, 0]);
+        assert_eq!(loaded.proposal_count(), 2);
+        assert_eq!(loaded.attestation_count(), 2);
+        for index in [0usize, 2] {
+            let v = loaded.validator(index as u64).unwrap();
+            assert_eq!(
+                v.attestation
+                    .as_ref()
+                    .unwrap()
+                    .public_key
+                    .as_bytes()
+                    .to_vec(),
+                hex_bytes(&test_key_hex(index, "attestation_public"))
+            );
+            assert_eq!(
+                v.proposal.as_ref().unwrap().public_key.as_bytes().to_vec(),
+                hex_bytes(&test_key_hex(index, "proposal_public"))
+            );
+        }
     }
 
     #[test]

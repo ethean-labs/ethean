@@ -81,6 +81,37 @@ pub fn open_or_init(
     })
 }
 
+/// Pin a genesis the network handed us (`config.yaml`) in the data-dir.
+///
+/// A data-dir written for another genesis is refused: resuming its head
+/// would put the node on a foreign chain. `--reset-chain` clears it.
+pub fn pin_network_genesis(
+    paths: &PersistPaths,
+    profile: &ChainProfile,
+    genesis: &State,
+) -> Result<()> {
+    paths.ensure_dir()?;
+    let root = genesis
+        .hash_tree_root()
+        .map_err(|e| Error::Config(format!("genesis state root: {e}")))?;
+    if let Some(stored) = persist_ssz::load_genesis_ssz_file(paths)? {
+        let stored_root = stored
+            .hash_tree_root()
+            .map_err(|e| Error::Config(format!("stored genesis state root: {e}")))?;
+        if stored_root != root {
+            return Err(Error::Config(format!(
+                "data-dir {} holds another genesis (state root {}, network {}); \
+                 pass --reset-chain to start over",
+                paths.root.display(),
+                persist_ssz::hex32(&stored_root),
+                persist_ssz::hex32(&root)
+            )));
+        }
+        return Ok(());
+    }
+    fill_missing_genesis_ssz(paths, profile, genesis)
+}
+
 fn write_genesis_bundle(
     paths: &PersistPaths,
     profile: &ChainProfile,
@@ -261,5 +292,22 @@ mod tests {
         assert_eq!(blocks.len(), 1);
         assert_eq!(blocks[0].0, [7u8; 32]);
         assert_eq!(blocks[0].1, blob);
+    }
+
+    #[test]
+    fn pin_network_genesis_accepts_same_and_rejects_other() {
+        let profile = lstar_devnet().unwrap();
+        let src = tempfile::tempdir().unwrap();
+        let four = open_or_init(&PersistPaths::new(src.path()), &profile, 4).unwrap();
+        let other = tempfile::tempdir().unwrap();
+        let two = open_or_init(&PersistPaths::new(other.path()), &profile, 2).unwrap();
+
+        let dir = tempfile::tempdir().unwrap();
+        let paths = PersistPaths::new(dir.path());
+        pin_network_genesis(&paths, &profile, &four.state).unwrap();
+        assert!(paths.genesis_ssz().exists());
+        pin_network_genesis(&paths, &profile, &four.state).unwrap();
+        let err = pin_network_genesis(&paths, &profile, &two.state).unwrap_err();
+        assert!(err.to_string().contains("--reset-chain"));
     }
 }

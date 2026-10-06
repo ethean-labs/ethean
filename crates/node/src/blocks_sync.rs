@@ -79,7 +79,10 @@ pub fn ingest_blocks_by_root_response(
 
         let stf = import_decoded_block(owner, shutdown, &decoded);
         match stf {
-            GossipStfResult::Skipped if !owner.can_import_parent(decoded.parent) => {
+            GossipStfResult::Skipped
+                if !owner.can_import_parent(decoded.parent)
+                    && decoded.block.slot.get() > owner.finalized_slot() =>
+            {
                 info!(
                     peer0 = peer[0],
                     root0 = decoded.root[0],
@@ -119,6 +122,51 @@ pub fn ingest_blocks_by_root_response(
     // Do not re-request roots we already have as head.
     out.fetch_roots.retain(|r| *r != owner.head_root);
     out
+}
+
+/// Buffer gossip blocks whose parent is unknown and return, per source peer,
+/// the parent roots to request by root. Without this a node that joined late
+/// (checkpoint anchor) or missed a block never links the live chain unless a
+/// Status handshake happens to start range catch-up.
+pub fn buffer_gossip_orphans(
+    owner: &mut ChainOwner,
+    accepted: &[crate::network::GossipIngress],
+) -> Vec<(Hash32, Vec<Hash32>)> {
+    let mut requests: Vec<(Hash32, Vec<Hash32>)> = Vec::new();
+    for g in accepted {
+        let (Some(peer), Some(plain)) = (g.peer, g.plain.as_deref()) else {
+            continue;
+        };
+        let Some(decoded) = try_decode_block(&g.topic, plain) else {
+            continue;
+        };
+        let known = |root: &Hash32| {
+            owner.head_root == *root
+                || owner
+                    .fc
+                    .as_ref()
+                    .is_some_and(|fc| fc.blocks.contains_key(root))
+        };
+        if known(&decoded.root)
+            || owner.can_import_parent(decoded.parent)
+            || decoded.block.slot.get() <= owner.finalized_slot()
+        {
+            continue;
+        }
+        owner.sync_orphans.insert(
+            decoded.root,
+            SyncOrphan {
+                parent: decoded.parent,
+                blob: plain.to_vec(),
+            },
+        );
+        match requests.iter_mut().find(|(p, _)| *p == peer) {
+            Some((_, roots)) if !roots.contains(&decoded.parent) => roots.push(decoded.parent),
+            Some(_) => {}
+            None => requests.push((peer, vec![decoded.parent])),
+        }
+    }
+    requests
 }
 
 fn drain_orphans(owner: &mut ChainOwner, shutdown: &ShutdownState, events: &mut Vec<ChainEvent>) {
@@ -218,5 +266,37 @@ mod tests {
         assert_eq!(owner.head_root, genesis);
         assert_eq!(out.fetch_roots, vec![mid_root]);
         assert_eq!(owner.sync_orphans.len(), 1);
+    }
+
+    fn block_gossip(peer: Option<[u8; 32]>, plain: Vec<u8>) -> crate::network::GossipIngress {
+        crate::network::GossipIngress {
+            action: crate::network::GossipAction::Accept,
+            topic: "/leanconsensus/x/block/ssz_snappy".into(),
+            peer,
+            plain: Some(plain),
+        }
+    }
+
+    #[test]
+    fn gossip_orphan_asks_its_sender_for_the_parent() {
+        let genesis = [0u8; 32];
+        let (mid_root, _) = signed_child(genesis, 1, 3);
+        let (_, tip_enc) = signed_child(mid_root, 2, 4);
+        let (_, tip2_enc) = signed_child(mid_root, 2, 5);
+        let (_, on_head_enc) = signed_child(genesis, 1, 6);
+        let mut owner = ChainOwner::new(2);
+        owner.head_root = genesis;
+        let (a, b) = ([7u8; 32], [8u8; 32]);
+        let accepted = vec![
+            block_gossip(Some(a), tip_enc.clone()),
+            block_gossip(Some(a), tip2_enc),
+            block_gossip(Some(b), tip_enc),
+            block_gossip(Some(b), on_head_enc),
+            block_gossip(None, signed_child(mid_root, 3, 9).1),
+        ];
+        let requests = buffer_gossip_orphans(&mut owner, &accepted);
+        assert_eq!(requests, vec![(a, vec![mid_root]), (b, vec![mid_root])]);
+        assert_eq!(owner.sync_orphans.len(), 2);
+        assert_eq!(owner.sync_orphans.missing_parents(), vec![mid_root]);
     }
 }

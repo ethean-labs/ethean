@@ -48,7 +48,40 @@ const SERVE_STACK_BYTES: usize = 256 * 1024 * 1024;
 /// Default stack for the worker threads leanVM spawns internally.
 const WORKER_STACK_BYTES: usize = 64 * 1024 * 1024;
 
+/// Threads each prover keeps for itself when several share the host.
+///
+/// A proof parallelises inside one process, so too small a share slows every
+/// proof by more than the oversubscription did. 8 was the smallest count that
+/// let a 4-node, 2-aggregator devnet finalize on a 20-thread machine.
+const MIN_PROVER_THREADS: usize = 8;
+
+/// `LEANVM_NUM_THREADS`, else one share of the cores per prover on this host.
+///
+/// Each prover sizes its worker pool from `available_parallelism()`, so
+/// several of them on one machine run many times more threads than there are
+/// cores and every proof slows down. The share is the cores divided by the
+/// prover count, never below [`MIN_PROVER_THREADS`].
+fn apply_thread_budget() {
+    if std::env::var_os("LEANVM_NUM_THREADS").is_some() {
+        return;
+    }
+    let Some(provers) = std::env::var("ETHEAN_PROVER_COUNT")
+        .ok()
+        .and_then(|v| v.trim().parse::<usize>().ok())
+        .filter(|n| *n > 1)
+    else {
+        return;
+    };
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
+    let share = (cores / provers).max(MIN_PROVER_THREADS);
+    std::env::set_var("LEANVM_NUM_THREADS", share.to_string());
+    eprintln!("ethean-prover: {provers} provers share {cores} cores, using {share} threads");
+}
+
 fn main() {
+    apply_thread_budget();
     if std::env::args().any(|a| a == "--version") {
         println!(
             "ethean-prover {} (leanVM {LEANVM_REV})",

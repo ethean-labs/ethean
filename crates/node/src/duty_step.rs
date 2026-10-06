@@ -65,6 +65,8 @@ pub fn apply_wall_step(
             events.extend(try_plan_next_slot_proposal(owner, tick));
             if tick.interval == crate::aggregation_duty::AGGREGATION_INTERVAL {
                 events.extend(crate::aggregation_duty::schedule_aggregations(owner));
+            } else {
+                events.extend(crate::aggregation_duty::schedule_union_merges_only(owner));
             }
         }
     }

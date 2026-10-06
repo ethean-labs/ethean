@@ -22,10 +22,11 @@ impl EtheanClient {
         self.network_label = cfg.network.id.as_str().to_string();
         self.prune_keep_slots = cfg.prune_keep_slots;
         self.owner.max_block_attestation_data = cfg.max_block_attestation_data;
+        self.owner.aggregate_subnet_ids = cfg.aggregate_subnet_ids.clone();
         if !cfg.aggregate_subnet_ids.is_empty() {
             info!(
                 ids = ?cfg.aggregate_subnet_ids,
-                "aggregate-subnet-ids recorded (Ethean already subscribes to every attestation subnet)"
+                "aggregating these subnets on top of the owned validators' subnets"
             );
         }
         bind_listeners(&mut self, &cfg).await?;

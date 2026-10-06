@@ -86,6 +86,19 @@ impl AggregatePool {
         self.entries.get(key).cloned()
     }
 
+    /// Keys holding at least two variants, one of them inserted at or after
+    /// `min_slot`, sorted by message root.
+    pub fn mergeable_keys_since(&self, min_slot: u64) -> Vec<PoolKey> {
+        let mut out: Vec<PoolKey> = self
+            .entries
+            .iter()
+            .filter(|(_, list)| list.len() >= 2 && list.iter().any(|e| e.inserted_slot >= min_slot))
+            .map(|(k, _)| *k)
+            .collect();
+        out.sort_by_key(|k| k.message_root);
+        out
+    }
+
     /// Best-coverage entry per key, sorted by message root for deterministic builds.
     pub fn best_entries(&self) -> Vec<(PoolKey, PoolEntry)> {
         let mut out: Vec<(PoolKey, PoolEntry)> = self
@@ -161,5 +174,33 @@ mod tests {
         assert_eq!(best.len(), 2);
         assert_eq!(best[0].0.message_root, [3u8; 32]);
         assert_eq!(best[1].0.message_root, [9u8; 32]);
+    }
+
+    #[test]
+    fn mergeable_keys_need_two_variants_and_a_recent_one() {
+        let mut pool = AggregatePool::new(4);
+        let key = |root: u8| PoolKey {
+            profile_digest: [1u8; 32],
+            message_root: [root; 32],
+        };
+        let entry = |slot: u64| PoolEntry {
+            proof: vec![slot as u8],
+            coverage: 1,
+            inserted_slot: slot,
+            attestation_ssz: Vec::new(),
+        };
+        pool.insert_verified(key(5), entry(10));
+        pool.insert_verified(key(5), entry(10));
+        pool.insert_verified(key(3), entry(10));
+        pool.insert_verified(key(7), entry(4));
+        pool.insert_verified(key(7), entry(4));
+        pool.insert_verified(key(1), entry(4));
+        pool.insert_verified(key(1), entry(9));
+        let keys: Vec<u8> = pool
+            .mergeable_keys_since(8)
+            .iter()
+            .map(|k| k.message_root[0])
+            .collect();
+        assert_eq!(keys, vec![1, 5]);
     }
 }

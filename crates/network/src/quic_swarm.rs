@@ -3,7 +3,7 @@
 #![cfg(feature = "libp2p-quic")]
 
 use crate::error::NetworkError;
-use crate::gossip::{LeanGossipTopics, PumpEvent, SMOKE_ATTESTATION_SUBNETS};
+use crate::gossip::{LeanGossipTopics, PumpEvent, SeenIds, SMOKE_ATTESTATION_SUBNETS};
 use crate::multiaddr::parse_quic_udp;
 use crate::quic_blocks_codec::{blocks_by_root_behaviour, BlocksByRootCodec};
 use crate::quic_range_codec::{blocks_by_range_behaviour, BlocksByRangeCodec};
@@ -16,7 +16,7 @@ use libp2p::gossipsub::{self, IdentTopic};
 use libp2p::request_response;
 use libp2p::swarm::SwarmEvent;
 use libp2p::{ping, Multiaddr, PeerId, SwarmBuilder};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
@@ -42,15 +42,13 @@ pub struct QuicSwarm {
     /// Subscribed Lean mesh topics (if any).
     pub topics: Option<LeanGossipTopics>,
     pub(crate) swarm: libp2p::Swarm<LeanBehaviour>,
-    pub(crate) seen_ids: HashSet<Hash32>,
+    pub(crate) seen_ids: SeenIds,
     /// Fingerprint → PeerId for Status outbound sends.
     pub(crate) peers: HashMap<Hash32, PeerId>,
     /// Local Status SSZ used to answer inbound Status requests.
     pub(crate) local_status: Option<Vec<u8>>,
-    /// Signed-block bytes keyed by root for inbound blocks-by-root replies.
-    pub(crate) blocks_by_root: HashMap<Hash32, Vec<u8>>,
-    /// Signed-block bytes keyed by slot for inbound blocks-by-range replies.
-    pub(crate) blocks_by_slot: HashMap<u64, Vec<u8>>,
+    /// Blocks served on inbound blocks-by-root / blocks-by-range requests.
+    pub(crate) serve: crate::serve_cache::ServeCache,
     /// Cumulative slots found when serving blocks-by-range.
     pub(crate) range_serve_found: AtomicU64,
     /// Cumulative slots missing when serving blocks-by-range.
@@ -172,11 +170,10 @@ impl QuicSwarm {
             listen_addr,
             topics,
             swarm,
-            seen_ids: HashSet::new(),
+            seen_ids: SeenIds::default(),
             peers: HashMap::new(),
             local_status: None,
-            blocks_by_root: HashMap::new(),
-            blocks_by_slot: HashMap::new(),
+            serve: crate::serve_cache::ServeCache::default(),
             range_serve_found: AtomicU64::new(0),
             range_serve_missing: AtomicU64::new(0),
             agents: HashMap::new(),
@@ -188,8 +185,13 @@ impl QuicSwarm {
         (
             self.range_serve_found.load(Ordering::Relaxed),
             self.range_serve_missing.load(Ordering::Relaxed),
-            self.blocks_by_slot.len() as u64,
+            self.serve.slots() as u64,
         )
+    }
+
+    /// Read blocks that left the in-memory serve cache from durable storage.
+    pub fn set_block_loader(&mut self, loader: crate::serve_cache::BlockLoader) {
+        self.serve.set_loader(loader);
     }
 
     /// Cache local Status SSZ for inbound Status replies.
@@ -199,13 +201,12 @@ impl QuicSwarm {
 
     /// Insert or replace a block body served on inbound blocks-by-root.
     pub fn put_block_bytes(&mut self, root: Hash32, bytes: Vec<u8>) {
-        self.blocks_by_root.insert(root, bytes);
+        self.serve.put(root, bytes);
     }
 
     /// Index a block body by slot for inbound blocks-by-range replies.
     pub fn put_block_at_slot(&mut self, slot: u64, root: Hash32, bytes: Vec<u8>) {
-        self.blocks_by_root.insert(root, bytes.clone());
-        self.blocks_by_slot.insert(slot, bytes);
+        self.serve.put_at_slot(slot, root, bytes);
     }
 
     /// Dial `/ip4/.../udp/.../quic-v1` only.

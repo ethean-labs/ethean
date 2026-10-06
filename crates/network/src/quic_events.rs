@@ -84,12 +84,7 @@ impl QuicSwarm {
                 Vec::new()
             }
         };
-        let mut blocks = Vec::new();
-        for root in roots {
-            if let Some(block) = self.blocks_by_root.get(&root) {
-                blocks.push(block.clone());
-            }
-        }
+        let blocks: Vec<Vec<u8>> = roots.iter().filter_map(|r| self.serve.get(r)).collect();
         let payload =
             crate::reqresp::encode_blocks_by_root_response(&blocks).unwrap_or_else(|_| Vec::new());
         let _ = self
@@ -132,8 +127,12 @@ impl QuicSwarm {
     ) {
         let blocks = match crate::reqresp::decode_blocks_by_range(request) {
             Ok(req) => {
-                let collected =
-                    collect_slot_range(&self.blocks_by_slot, req.start_slot, req.count, 1);
+                let collected = collect_slot_range(
+                    |slot| self.serve.get_at_slot(slot),
+                    req.start_slot,
+                    req.count,
+                    1,
+                );
                 self.range_serve_found
                     .fetch_add(collected.found, Ordering::Relaxed);
                 self.range_serve_missing
@@ -145,7 +144,7 @@ impl QuicSwarm {
                         step = 1u64,
                         found = collected.found,
                         missing = collected.missing,
-                        cache_slots = self.blocks_by_slot.len(),
+                        cache_slots = self.serve.slots(),
                         "blocks-by-range serve incomplete (cold cache or gaps)"
                     );
                 } else {
@@ -234,7 +233,7 @@ struct RangeCollect {
 
 /// Collect cached block bodies for start..start+count*step (missing slots counted).
 fn collect_slot_range(
-    by_slot: &std::collections::HashMap<u64, Vec<u8>>,
+    block_at: impl Fn(u64) -> Option<Vec<u8>>,
     start: u64,
     count: u64,
     step: u64,
@@ -245,8 +244,8 @@ fn collect_slot_range(
     let mut missing = 0u64;
     let mut slot = start;
     for _ in 0..count {
-        if let Some(bytes) = by_slot.get(&slot) {
-            blocks.push(bytes.clone());
+        if let Some(bytes) = block_at(slot) {
+            blocks.push(bytes);
             found = found.saturating_add(1);
         } else {
             missing = missing.saturating_add(1);
@@ -270,7 +269,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert(10, vec![1]);
         map.insert(12, vec![2]);
-        let c = collect_slot_range(&map, 10, 3, 1);
+        let c = collect_slot_range(|s| map.get(&s).cloned(), 10, 3, 1);
         assert_eq!(c.found, 2);
         assert_eq!(c.missing, 1);
         assert_eq!(c.blocks.len(), 2);
@@ -281,7 +280,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert(0, vec![9]);
         map.insert(4, vec![8]);
-        let c = collect_slot_range(&map, 0, 2, 4);
+        let c = collect_slot_range(|s| map.get(&s).cloned(), 0, 2, 4);
         assert_eq!(c.found, 2);
         assert_eq!(c.missing, 0);
     }

@@ -7,13 +7,35 @@ use std::sync::OnceLock;
 
 const _: () = assert!(usize::BITS == 64, "this project requires a 64-bit target (for now)");
 
+/// Upper bound on worker threads, from `LEANVM_NUM_THREADS`.
+///
+/// Several provers on one host each size their pool from
+/// `available_parallelism()`, so they oversubscribe every core and every proof
+/// slows down. The variable caps each process. `0` and anything that does not
+/// parse leave the pool uncapped.
+fn thread_cap() -> Option<usize> {
+    let raw = std::env::var("LEANVM_NUM_THREADS").ok()?;
+    match raw.trim().parse::<usize>() {
+        Ok(0) => None,
+        Ok(n) => Some(n),
+        Err(_) => {
+            eprintln!("Warning: LEANVM_NUM_THREADS={raw:?} is not a number; using all cores");
+            None
+        }
+    }
+}
+
 #[must_use]
 pub fn num_threads() -> usize {
     static CACHE: OnceLock<usize> = OnceLock::new();
     *CACHE.get_or_init(|| {
-        std::thread::available_parallelism()
+        let detected = std::thread::available_parallelism()
             .expect("failed to detect available parallelism")
-            .get()
+            .get();
+        match thread_cap() {
+            Some(cap) => cap.min(detected),
+            None => detected,
+        }
     })
 }
 

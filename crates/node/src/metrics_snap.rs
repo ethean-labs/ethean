@@ -176,8 +176,8 @@ impl EtheanClient {
             .last_tick
             .map(|t| (t.slot.get(), t.interval))
             .unwrap_or((head_slot, 0));
-        let attester_loaded = self.owner.attester.is_some();
-        let proposer_loaded = self.owner.proposer.is_some();
+        let attester_loaded = self.owner.has_attester();
+        let proposer_loaded = self.owner.has_proposer();
         let committees = self
             .owner
             .profile

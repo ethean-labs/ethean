@@ -25,11 +25,26 @@ pub struct DevnetSpec {
     pub genesis_time: u64,
     /// QUIC port of node 0; node `k` listens on `base_port + k`.
     pub base_port: u16,
+    /// `ATTESTATION_COMMITTEE_COUNT` (attestation subnets).
+    pub attestation_committee_count: usize,
+    /// Nodes `0..aggregators` get `--is-aggregator`.
+    pub aggregators: usize,
 }
 
 impl DevnetSpec {
     pub fn validator_count(&self) -> usize {
         self.nodes * self.validators_per_node
+    }
+
+    /// Validator indices of node `k`. Node `k` sits on subnet `k % C` and
+    /// owns only indices of that subnet, so aggregators `0..C` cover one
+    /// subnet each; with one validator per node this is just `[k]`.
+    pub fn validator_indices(&self, k: usize) -> Vec<u64> {
+        let c = self.attestation_committee_count.max(1);
+        let (subnet, group) = (k % c, k / c);
+        (0..self.validators_per_node)
+            .map(|v| (subnet + c * (group * self.validators_per_node + v)) as u64)
+            .collect()
     }
 }
 
@@ -58,6 +73,7 @@ pub struct DevnetNode {
     /// Dialable multiaddr, when the PeerId can be derived (QUIC build).
     pub multiaddr: Option<String>,
     pub validator_indices: Vec<u64>,
+    pub is_aggregator: bool,
 }
 
 /// Paths and nodes of a written bundle.
@@ -122,44 +138,61 @@ pub fn write_bundle(
     if last_port > u32::from(u16::MAX) {
         return Err(format!("ports {}..={last_port} overflow", spec.base_port));
     }
+    let committees = spec.attestation_committee_count.max(1);
+    if spec.validators_per_node > 1 && !spec.nodes.is_multiple_of(committees) {
+        return Err(format!(
+            "{} nodes do not split evenly over {committees} subnets",
+            spec.nodes
+        ));
+    }
     let keys_dir = dir.join("hash-sig-keys");
     fs::create_dir_all(&keys_dir).map_err(|e| format!("create {}: {e}", keys_dir.display()))?;
 
     let mut generated_keys = 0;
+    let mut pubkeys = Vec::with_capacity(spec.validator_count());
+    for index in 0..spec.validator_count() as u64 {
+        let mut pair = [String::new(), String::new()];
+        for (slot, role) in [KeyRole::Attestation, KeyRole::Proposal]
+            .into_iter()
+            .enumerate()
+        {
+            let path = keys_dir.join(key_file_name(index, role));
+            let (secret, fresh) = load_or_generate(&path, index, role, keygen)?;
+            generated_keys += usize::from(fresh);
+            pair[slot] = public_key_hex(&secret)?;
+        }
+        pubkeys.push(pair);
+    }
+
     let mut config = format!(
-        "GENESIS_TIME: {}\nNUM_VALIDATORS: {}\nGENESIS_VALIDATORS:\n",
+        "GENESIS_TIME: {}\nNUM_VALIDATORS: {}\nATTESTATION_COMMITTEE_COUNT: {committees}\nGENESIS_VALIDATORS:\n",
         spec.genesis_time,
         spec.validator_count()
     );
+    for [attestation, proposal] in &pubkeys {
+        let _ = writeln!(
+            config,
+            "  - attestation_public_key: \"0x{attestation}\"\n    proposal_public_key: \"0x{proposal}\""
+        );
+    }
     let mut registry = String::new();
     let mut nodes = Vec::with_capacity(spec.nodes);
     for k in 0..spec.nodes {
         let node_id = format!("ethean_{k}");
         let _ = writeln!(registry, "{node_id}:");
-        let mut validator_indices = Vec::with_capacity(spec.validators_per_node);
-        for v in 0..spec.validators_per_node {
-            let index = (k * spec.validators_per_node + v) as u64;
-            validator_indices.push(index);
-            let mut pubkeys = [String::new(), String::new()];
+        let validator_indices = spec.validator_indices(k);
+        for &index in &validator_indices {
             for (slot, role) in [KeyRole::Attestation, KeyRole::Proposal]
                 .into_iter()
                 .enumerate()
             {
-                let file = key_file_name(index, role);
-                let (secret, fresh) = load_or_generate(&keys_dir.join(&file), index, role, keygen)?;
-                generated_keys += usize::from(fresh);
-                pubkeys[slot] = public_key_hex(&secret)?;
                 let _ = writeln!(
                     registry,
-                    "  - index: {index}\n    pubkey_hex: \"{}\"\n    privkey_file: \"{file}\"",
-                    pubkeys[slot]
+                    "  - index: {index}\n    pubkey_hex: \"{}\"\n    privkey_file: \"{}\"",
+                    pubkeys[index as usize][slot],
+                    key_file_name(index, role)
                 );
             }
-            let _ = writeln!(
-                config,
-                "  - attestation_public_key: \"0x{}\"\n    proposal_public_key: \"0x{}\"",
-                pubkeys[0], pubkeys[1]
-            );
         }
         let node_key = dir.join(format!("{node_id}.key"));
         let (key, _) = NodeKey::load_or_create(&node_key)
@@ -173,6 +206,7 @@ pub fn write_bundle(
             node_key,
             multiaddr,
             validator_indices,
+            is_aggregator: k < spec.aggregators,
         });
     }
 
@@ -235,7 +269,58 @@ mod tests {
             validators_per_node: 1,
             genesis_time,
             base_port: 9100,
+            attestation_committee_count: 1,
+            aggregators: 1,
         }
+    }
+
+    #[test]
+    fn validator_assignment_is_a_subnet_homogeneous_bijection() {
+        let s = DevnetSpec {
+            nodes: 6,
+            validators_per_node: 3,
+            attestation_committee_count: 2,
+            ..spec(1)
+        };
+        let mut all = Vec::new();
+        for k in 0..s.nodes {
+            let idx = s.validator_indices(k);
+            assert_eq!(idx.len(), 3);
+            assert!(
+                idx.iter().all(|i| *i as usize % 2 == k % 2),
+                "node {k}: {idx:?}"
+            );
+            all.extend(idx);
+        }
+        all.sort_unstable();
+        assert_eq!(all, (0..18).collect::<Vec<u64>>());
+        assert_eq!(s.validator_indices(0), vec![0, 2, 4]);
+        assert_eq!(s.validator_indices(3), vec![7, 9, 11]);
+
+        let flat = DevnetSpec {
+            nodes: 5,
+            validators_per_node: 1,
+            attestation_committee_count: 2,
+            ..spec(1)
+        };
+        for k in 0..5 {
+            assert_eq!(flat.validator_indices(k), vec![k as u64]);
+        }
+    }
+
+    #[test]
+    fn uneven_subnet_split_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = DevnetSpec {
+            nodes: 3,
+            validators_per_node: 2,
+            attestation_committee_count: 2,
+            ..spec(1)
+        };
+        let mut never = |_: u64, _: KeyRole| -> Result<SecretKeyMaterial, String> {
+            unreachable!("refused before key generation")
+        };
+        assert!(write_bundle(dir.path(), s, &mut never).is_err());
     }
 
     #[test]
@@ -246,24 +331,37 @@ mod tests {
             calls += 1;
             Ok(vendored(index as usize, role))
         };
-        let first = write_bundle(dir.path(), spec(1_700_000_000), &mut keygen).unwrap();
+        let two_aggregators = DevnetSpec {
+            attestation_committee_count: 2,
+            aggregators: 2,
+            ..spec(1_700_000_000)
+        };
+        let first = write_bundle(dir.path(), two_aggregators, &mut keygen).unwrap();
         assert_eq!(first.generated_keys, 6);
         assert_eq!(first.nodes.len(), 3);
         assert_eq!(first.nodes[2].quic_port, 9102);
         assert_eq!(first.nodes[1].validator_indices, vec![1]);
+        let aggregators: Vec<bool> = first.nodes.iter().map(|n| n.is_aggregator).collect();
+        assert_eq!(aggregators, vec![true, true, false]);
 
         let cfg = ethean_genesis::load_lean_network_config(&first.config).unwrap();
         assert_eq!(cfg.genesis_time, 1_700_000_000);
         assert_eq!(cfg.validators.len(), 3);
+        assert_eq!(cfg.attestation_committee_count, 2);
         let loaded = crate::registry_keys::load_node_keys(&first.registry, "ethean_1").unwrap();
         assert_eq!(loaded.indices, vec![1]);
-        let attestation = loaded.attestation.expect("attestation key");
+        let keys = loaded.validator(1).expect("validator 1 keys");
+        let attestation = keys.attestation.as_ref().expect("attestation key");
         assert_eq!(
             attestation.public_key.as_bytes(),
             cfg.validators[1].0.as_bytes()
         );
         assert_eq!(
-            loaded.proposal.expect("proposal key").public_key.as_bytes(),
+            keys.proposal
+                .as_ref()
+                .expect("proposal key")
+                .public_key
+                .as_bytes(),
             cfg.validators[1].1.as_bytes()
         );
 

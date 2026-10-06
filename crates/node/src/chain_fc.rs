@@ -61,6 +61,18 @@ impl ChainOwner {
             return;
         }
         self.sync_from_fork_choice();
+        self.retry_deferred_votes();
+    }
+
+    /// Finalized slot of the live store, else of the head state.
+    pub fn finalized_slot(&self) -> u64 {
+        if let Some(fc) = self.fc.as_ref() {
+            return fc.latest_finalized.slot.get();
+        }
+        self.head_state
+            .as_ref()
+            .map(|s| s.latest_finalized.slot.get())
+            .unwrap_or(0)
     }
 
     /// Advance fork-choice time to the absolute interval for this duty tick.
@@ -79,13 +91,27 @@ impl ChainOwner {
             return;
         }
         self.sync_from_fork_choice();
+        self.retry_deferred_votes();
     }
 
-    /// Copy head, safe-target, and reorg counter from the store onto the owner.
+    /// Copy head, safe-target, and reorg counter from the store onto the owner,
+    /// pruning store history once finalization has moved (blocks and ticks
+    /// both advance it).
     pub fn sync_from_fork_choice(&mut self) {
-        let Some(fc) = self.fc.as_ref() else {
+        let Some(fc) = self.fc.as_mut() else {
             return;
         };
+        let finalized = fc.latest_finalized.slot.get();
+        if finalized > self.fc_pruned_finalized_slot {
+            let pruned = fc.prune_finalized_history();
+            self.fc_pruned_finalized_slot = finalized;
+            debug!(
+                pruned,
+                kept = fc.blocks.len(),
+                finalized,
+                "fork-choice history below finalization pruned"
+            );
+        }
         let head = fc.head();
         if let Some(state) = fc.block_states.get(&head).cloned() {
             self.head_root = head;

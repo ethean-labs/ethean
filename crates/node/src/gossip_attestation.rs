@@ -213,7 +213,7 @@ fn check_signed_attestation(
         data_root,
         ..
     } = input;
-    if owner.is_aggregator {
+    if owner.is_aggregator && owner.aggregates_vote_of(vote.validator_index.get()) {
         owner
             .signatures
             .insert(data_root, &vote.data, vote.validator_index.get(), signature);

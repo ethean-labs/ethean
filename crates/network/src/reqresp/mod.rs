@@ -26,4 +26,4 @@ pub use handler::{handle_status, StatusExchange};
 pub use range_outbound::{prepare_blocks_by_range_outbound, OutboundBlocksByRangeRequest};
 pub use status_outbound::{prepare_status_outbounds, OutboundStatusRequest};
 pub use status_session::StatusSessionBook;
-pub use tracker::{RequestId, RequestTracker};
+pub use tracker::{RequestId, RequestTracker, REQUEST_EXPIRY};

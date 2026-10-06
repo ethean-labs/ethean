@@ -10,6 +10,9 @@ Cargo.lock.leansig-check.bak
 !.github/dependabot.yml
 .rules
 .cursor/
+.agents/
+agent-transcripts/
+cursor_*.md
 # Local research only — never commit or push (see .cursor/rules/12-no-research-on-github.mdc)
 bazalinacaklar/
 bazalinacaklar/**

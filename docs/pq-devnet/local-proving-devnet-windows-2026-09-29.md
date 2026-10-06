@@ -15,7 +15,7 @@ aggregator role, block proofs racing other proposers).
   (QUIC multiaddrs) and one secp256k1 `ethean_k.key` per node. Keys are
   generated once (`key_gen(0, 131072)`, about 20 s each) and reused; only the
   genesis time changes between runs. It prints one `ethean start …` line per
-  node; node 0 gets `--is-aggregator`.
+  node; node 0 gets `--is-aggregator` (nodes `0..A` with `--aggregators A`).
 - `scripts/local-devnet.ps1` builds release `ethean` + `ethean-prover`, runs
   `devnet-init`, starts the nodes (logs in `<out>/logs/`), polls
   `/lean/v0/fork_choice` on ports `5052+k` and prints head, safe target,
@@ -25,7 +25,13 @@ aggregator role, block proofs racing other proposers).
 .\scripts\local-devnet.ps1                       # 3 nodes, 180 s
 .\scripts\local-devnet.ps1 -Nodes 4 -RunSeconds 300 -DebugLog
 .\scripts\local-devnet.ps1 -MaxBlockData 3       # passes --max-block-attestation-data (default 1)
+# node 3 joins at genesis+90 s from node 0's finalized checkpoint,
+# node 2 is killed at +190 s and restarted from its data dir 20 s later
+.\scripts\local-devnet.ps1 -Nodes 4 -RunSeconds 330 -LateJoin 3 -LateJoinAt 90 -Restart 2 -RestartAt 190 -RestartDown 20
 ```
+
+Node 0 cannot be a scenario node (it serves the checkpoint and aggregates).
+The restarted node logs to `ethean_k.restart.{out,err}.log`.
 
 Ports: QUIC `9000+k`, HTTP `5052+k`, metrics `9200+k`. Output defaults to
 `target/local-devnet` (gitignored with `target/`).
@@ -57,6 +63,13 @@ Longer 300 s runs then stalled finality. The safe-target fix, the new default
 cap of 1 and once-per-slot aggregation (after which finalized trails the head
 by about 7 slots) are in
 [safe-target-merge-block-data-cap-1-2026-09-29.md](../lean-spec/safe-target-merge-block-data-cap-1-2026-09-29.md).
+
+The late-join and restart scenarios, and the sync fixes they needed, are in
+[late-join-restart-mesh-2026-09-29.md](./late-join-restart-mesh-2026-09-29.md).
+
+Several validators per node (`-ValidatorsPerNode`), several subnets
+(`-Subnets`) and aggregators (`-Aggregators`) are in
+[scale-multi-aggregator-2026-09-30.md](./scale-multi-aggregator-2026-09-30.md).
 
 ## Limits
 

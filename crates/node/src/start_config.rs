@@ -107,7 +107,7 @@ pub struct StartConfig {
     pub roles: LocalRoles,
     /// Aggregator subnet ids from `--aggregate-subnet-ids` (parity / logs).
     pub aggregate_subnet_ids: Vec<u64>,
-    /// Checkpoint-sync URL when `--checkpoint-sync-url` is set (anchor TBD).
+    /// Checkpoint-sync URL when `--checkpoint-sync-url` is set (finalized anchor source).
     pub checkpoint_sync_url: Option<String>,
     /// Slots retained below finalized before durable block prune (default 256).
     pub prune_keep_slots: u64,
@@ -210,7 +210,7 @@ impl StartConfig {
         self
     }
 
-    /// Record `--checkpoint-sync-url` (empty-datadir anchor when implemented).
+    /// Record `--checkpoint-sync-url` (finalized state/block anchor at start).
     pub fn with_checkpoint_sync_url(mut self, url: Option<String>) -> Self {
         self.checkpoint_sync_url = url;
         self

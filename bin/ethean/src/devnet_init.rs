@@ -27,6 +27,8 @@ pub fn run(args: &DevnetInitArgs) -> Result<()> {
         validators_per_node: args.validators_per_node,
         genesis_time,
         base_port: args.base_port,
+        attestation_committee_count: args.attestation_committee_count,
+        aggregators: args.aggregators,
     };
     let mut keygen = |index: u64, role: KeyRole| {
         info!(index, ?role, "generating PROD XMSS key (about 20-40 s)");
@@ -57,7 +59,11 @@ pub fn run(args: &DevnetInitArgs) -> Result<()> {
         } else {
             others.join(",")
         };
-        let aggregator = if k == 0 { " --is-aggregator" } else { "" };
+        let aggregator = if node.is_aggregator {
+            " --is-aggregator"
+        } else {
+            ""
+        };
         println!(
             "ethean start --until-signal --network {} --validator-registry {} --node-id {} \
              --node-key {} --listen-port {} --http-port {} --metrics-port {} \

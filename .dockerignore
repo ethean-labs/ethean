@@ -27,7 +27,7 @@ data/
 tmp/
 **/tmp/
 deploy/**/data/
-
+.agents
 # Documentation and planning material (not needed to compile)
 docs/
 road-to/
@@ -36,3 +36,4 @@ CHANGELOG.md
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
 README.md
+cursor_gitrelase.md

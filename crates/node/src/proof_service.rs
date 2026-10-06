@@ -181,27 +181,40 @@ fn run(client: &ProverClient, job: ProofJob) -> ProofOutcome {
             proposer_key,
             proposer_signature,
         } => {
-            let proof = plan
-                .block_root()
-                .and_then(|root| {
-                    client
-                        .aggregate_type1(
-                            Vec::new(),
-                            vec![(proposer_key, proposer_signature)],
-                            root,
-                            plan.block.slot.get(),
-                        )
-                        .map_err(|e| e.to_string())
-                })
-                .and_then(|proposer_proof| {
-                    attestation_proofs.push(KeyedProof {
-                        public_keys: vec![proposer_key],
-                        proof: proposer_proof,
-                    });
-                    client
-                        .merge_type2(attestation_proofs)
-                        .map_err(|e| e.to_string())
-                });
+            let components = attestation_proofs.len() + 1;
+            let proof = plan.block_root().and_then(|root| {
+                let stage = std::time::Instant::now();
+                client
+                    .aggregate_type1(
+                        Vec::new(),
+                        vec![(proposer_key, proposer_signature)],
+                        root,
+                        plan.block.slot.get(),
+                    )
+                    .map_err(|e| e.to_string())
+                    .and_then(|proposer_proof| {
+                        tracing::debug!(
+                            slot = plan.block.slot.get(),
+                            elapsed_ms = stage.elapsed().as_millis() as u64,
+                            "block proof proposer signature aggregated"
+                        );
+                        attestation_proofs.push(KeyedProof {
+                            public_keys: vec![proposer_key],
+                            proof: proposer_proof,
+                        });
+                        let stage = std::time::Instant::now();
+                        let merged = client
+                            .merge_type2(attestation_proofs)
+                            .map_err(|e| e.to_string());
+                        tracing::debug!(
+                            slot = plan.block.slot.get(),
+                            components,
+                            elapsed_ms = stage.elapsed().as_millis() as u64,
+                            "block proof components merged"
+                        );
+                        merged
+                    })
+            });
             ProofOutcome::Block {
                 plan,
                 proof,
@@ -260,8 +273,15 @@ impl ProofService {
                 let client = ProverClient::new(config);
                 while let Some(job) = worker_inbox.pop_blocking() {
                     let kind = job.kind_label();
+                    let started = std::time::Instant::now();
                     tracing::debug!(kind, "proof worker starting job");
-                    if outcome_tx.send(run(&client, job)).is_err() {
+                    let outcome = run(&client, job);
+                    tracing::debug!(
+                        kind,
+                        elapsed_ms = started.elapsed().as_millis() as u64,
+                        "proof worker finished job"
+                    );
+                    if outcome_tx.send(outcome).is_err() {
                         break;
                     }
                 }
