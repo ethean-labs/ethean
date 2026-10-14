@@ -12,12 +12,6 @@ the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
-## [0.1.72] - 2026-10-07
-
-Milestone covering patch work from `0.1.54` through `0.1.72`: proving devnet
-finalization, bounded caches and memory stabilization, Status request deduplication,
-fork-choice retry and pruning indices, and multi-node local devnet tooling.
-
 ### Changed
 
 - A proof job logs its wall time when it finishes (`proof worker finished job`).
@@ -478,8 +472,7 @@ work that landed before the root `VERSION` file (`0.1.1`) through `0.1.12`.
   `blstrs` / `bls12_381` under `crates/` or `bin/` as hard-fail for release
   promotion.
 
-[Unreleased]: https://github.com/ethean-labs/ethean/compare/v0.1.72...HEAD
-[0.1.72]: https://github.com/ethean-labs/ethean/compare/v0.1.53...v0.1.72
+[Unreleased]: https://github.com/ethean-labs/ethean/compare/v0.1.53...HEAD
 [0.1.53]: https://github.com/ethean-labs/ethean/compare/v0.1.47...v0.1.53
 [0.1.47]: https://github.com/ethean-labs/ethean/compare/v0.1.27...v0.1.47
 [0.1.27]: https://github.com/ethean-labs/ethean/compare/v0.1.12...v0.1.27
