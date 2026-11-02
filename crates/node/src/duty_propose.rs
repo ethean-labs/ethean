@@ -17,17 +17,14 @@ use ethean_metrics::lean::{inc, observe_since};
 use ethean_multisig::{KeyedProof, LeanMultisigVerifier};
 use ethean_primitives::{Slot, ValidatorIndex};
 use ethean_transition::{apply_block, TransitionContext};
-use ethean_types::{MultiMessageAggregate, SignedBlock, State};
+use ethean_types::{MultiMessageAggregate, SignedBlock};
 use ethean_validator::DutyTick;
 use std::time::Instant;
 
 /// Plan a proposal for an owned slot and request its block proof.
 pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEvent> {
     let mut out = Vec::new();
-    let min_slot = tick.slot.get().saturating_sub(owner.max_head_lag_slots);
-    owner.aggregates.prune_before(min_slot);
-    owner.signatures.prune_before(min_slot);
-    owner.known_payloads.retain(|_, slot| *slot >= min_slot);
+    owner.prune_untrusted_pools(tick.slot.get());
 
     let Some(profile) = owner.profile.clone() else {
         return out;
@@ -259,14 +256,17 @@ fn request_block_proof(
 /// With a live store the block stays publishable while its parent is still in
 /// the tree and no block at or past its slot has become head: it is still the
 /// only block for our slot. Without a store the head must not have moved.
-fn proof_pre_state(owner: &ChainOwner, plan: &PlanTransition) -> Result<State, String> {
+fn proof_pre_state<'a>(
+    owner: &'a ChainOwner,
+    plan: &PlanTransition,
+) -> Result<&'a ethean_types::State, String> {
     if owner.fc.is_none() {
         if owner.head_root != plan.parent_root {
             return Err("head moved while the block proof was built".into());
         }
         return owner
             .head_state
-            .clone()
+            .as_ref()
             .ok_or_else(|| "no head state".into());
     }
     let head_slot = owner.head_state.as_ref().map(|s| s.slot.get()).unwrap_or(0);
@@ -286,51 +286,61 @@ pub fn accept_block_proof(
     proof: Vec<u8>,
     aggregation: std::time::Duration,
 ) -> Result<Vec<ChainEvent>, String> {
-    let pre = proof_pre_state(owner, &plan)?;
-    let profile = owner.profile.as_ref().ok_or("no profile")?;
-    plan.aggregate_proof = proof;
-    let signed = assemble_signed_block(&plan)?;
-    let ctx = TransitionContext::new(profile.clone());
-    let started = Instant::now();
-    let applied = apply_block(&pre, &signed, &ctx, &LeanMultisigVerifier)
-        .map_err(|e| format!("own block rejected: {e}"))?;
-    crate::lean_metrics::transition(started.elapsed(), &applied.timings);
-    let payloads = plan.block.body.attestations.len() as f64;
-    ethean_metrics::lean::observe("lean_block_aggregated_payloads", &[], payloads);
-    ethean_metrics::lean::observe(
-        "lean_block_building_payload_aggregation_time_seconds",
-        &[],
-        aggregation.as_secs_f64(),
-    );
-    let gossip = encode_proposal_gossip(&plan, profile.fork_name)?;
+    let (applied, gossip, parent_header_slot, block_bits, committees) = {
+        let pre = proof_pre_state(owner, &plan)?;
+        let profile = owner.profile.as_ref().ok_or("no profile")?;
+        plan.aggregate_proof = proof;
+        let signed = assemble_signed_block(&plan)?;
+        let ctx = TransitionContext::new(profile.clone());
+        let started = Instant::now();
+        let applied = apply_block(pre, &signed, &ctx, &LeanMultisigVerifier)
+            .map_err(|e| format!("own block rejected: {e}"))?;
+        crate::lean_metrics::transition(started.elapsed(), &applied.timings);
+        let payloads = plan.block.body.attestations.len() as f64;
+        ethean_metrics::lean::observe("lean_block_aggregated_payloads", &[], payloads);
+        ethean_metrics::lean::observe(
+            "lean_block_building_payload_aggregation_time_seconds",
+            &[],
+            aggregation.as_secs_f64(),
+        );
+        let gossip = encode_proposal_gossip(&plan, profile.fork_name)?;
+        (
+            applied,
+            gossip,
+            pre.latest_block_header.slot.get(),
+            crate::lean_metrics::coverage::union_bits(plan.block.body.attestations.iter()),
+            profile.attestation_subnet_count() as u64,
+        )
+    };
     let root = gossip.block_root;
-    let block_bits = crate::lean_metrics::coverage::union_bits(plan.block.body.attestations.iter());
     let pool_now = crate::lean_metrics::coverage::pool_bits(owner);
     crate::lean_metrics::coverage::record_block_coverage(
         &block_bits,
         &block_bits,
         &pool_now,
-        profile.attestation_subnet_count() as u64,
+        committees,
     );
     for attestation in &plan.block.body.attestations {
-        owner.known_payloads.insert(
+        owner.remember_known_payload(
             attestation.data.hash_tree_root(),
             attestation.data.slot.get(),
         );
     }
     let post = applied.post_state;
+    let slot = plan.block.slot.get();
+    let attestations = plan.block.body.attestations.len();
+    let parent_root = plan.parent_root;
     if owner.fc.is_some() {
-        owner.fc_on_block(plan.block.clone(), post);
+        owner.fc_on_block(plan.block, post);
     } else {
         owner.head_state = Some(post);
-        owner.advance_head(root, plan.parent_root);
+        owner.advance_head(root, parent_root);
     }
-    owner.remember_durable_block(root, gossip.payload.clone());
     let head_slot = owner.head_state.as_ref().map(|s| s.slot.get()).unwrap_or(0);
     tracing::debug!(
-        slot = plan.block.slot.get(),
-        parent_slot = pre.latest_block_header.slot.get(),
-        attestations = plan.block.body.attestations.len(),
+        slot,
+        parent_slot = parent_header_slot,
+        attestations,
         head_slot,
         is_head = owner.head_root == root,
         "own block proved and imported"
@@ -356,7 +366,7 @@ pub fn accept_block_proof(
 }
 
 fn apply_locally(owner: &mut ChainOwner, plan: &PlanTransition, tick: DutyTick) {
-    match crate::local_finality::apply_planned_locally(owner, plan) {
+    match crate::local_finality::apply_planned_locally(owner, plan.clone()) {
         Ok(applied) => {
             // Persist the solo block for --data-dir resume and range serving. It
             // carries no proof (injected votes are unsigned) and is never gossiped.

@@ -7,7 +7,8 @@ use crate::network_target::{NetworkId, NetworkTarget};
 pub enum ForkDigestSource {
     /// `--fork-digest`, `ETHEAN_FORK_DIGEST`, or `*.forkdigest` file.
     OperatorOverride,
-    /// Default digest when no operator pin is set (lstar `GOSSIP_DIGEST`).
+    /// Default digest when no operator pin is set (lstar `GOSSIP_DIGEST`
+    /// `"12345678"`, not SHA-256 of the fork name).
     InterimNameHash,
 }
 
@@ -57,3 +58,12 @@ mod tests {
         assert!(!t.mesh_isolation_risk());
     }
 }
+
+    #[test]
+    fn blank_override_is_still_the_interim_digest() {
+        let mut t = NetworkTarget::pq_devnet_5();
+        t.bootnodes.push("/ip4/127.0.0.1/udp/9/quic-v1".into());
+        t.fork_digest = Some("  ".into());
+        assert_eq!(t.fork_digest_source(), ForkDigestSource::InterimNameHash);
+        assert!(t.mesh_isolation_risk());
+    }

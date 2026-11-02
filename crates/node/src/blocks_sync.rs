@@ -66,31 +66,27 @@ pub fn ingest_blocks_by_root_response(
         });
 
         let slot = decoded.signed.block.slot.get();
-        let stf = import_decoded_block(owner, shutdown, &decoded);
+        let root = decoded.root;
+        let parent = decoded.parent;
+        let stf = import_decoded_block(owner, shutdown, decoded);
         match stf {
             GossipStfResult::Skipped
-                if !owner.can_import_parent(decoded.parent) && slot > owner.finalized_slot() =>
+                if !owner.can_import_parent(parent) && slot > owner.finalized_slot() =>
             {
                 info!(
                     peer0 = peer[0],
-                    root0 = decoded.root[0],
-                    parent0 = decoded.parent[0],
+                    root0 = root[0],
+                    parent0 = parent[0],
                     "sync block orphaned; will fetch parent"
                 );
-                owner.sync_orphans.insert(
-                    decoded.root,
-                    SyncOrphan {
-                        parent: decoded.parent,
-                        blob,
-                    },
-                );
+                owner.sync_orphans.insert(root, SyncOrphan { parent, blob });
             }
             GossipStfResult::Applied { .. } => {
-                serve_verified_blob(swarm.as_deref_mut(), decoded.root, slot, &blob);
-                owner.remember_durable_block(decoded.root, blob);
+                serve_verified_blob(swarm.as_deref_mut(), root, slot, &blob);
+                owner.remember_durable_block(root, blob);
                 info!(
                     peer0 = peer[0],
-                    root0 = decoded.root[0],
+                    root0 = root[0],
                     ?stf,
                     "sync block imported"
                 );
@@ -99,7 +95,7 @@ pub fn ingest_blocks_by_root_response(
             GossipStfResult::Skipped | GossipStfResult::Rejected { .. } => {
                 info!(
                     peer0 = peer[0],
-                    root0 = decoded.root[0],
+                    root0 = root[0],
                     ?stf,
                     "sync block not applied"
                 );
@@ -164,7 +160,6 @@ fn serve_verified_blob(swarm: Option<&mut SwarmFacade>, root: Hash32, slot: u64,
     let Some(facade) = swarm else {
         return;
     };
-    let _ = facade.put_block_bytes(root, blob.to_vec());
     let _ = facade.put_block_at_slot(slot, root, blob.to_vec());
 }
 
@@ -193,15 +188,11 @@ fn drain_orphans(
                 progressed = true;
                 break;
             };
-            let stf = import_decoded_block(owner, shutdown, &decoded);
+            let slot = decoded.signed.block.slot.get();
+            let stf = import_decoded_block(owner, shutdown, decoded);
             match stf {
                 GossipStfResult::Applied { .. } => {
-                    serve_verified_blob(
-                        swarm.as_deref_mut(),
-                        root,
-                        decoded.signed.block.slot.get(),
-                        &orphan.blob,
-                    );
+                    serve_verified_blob(swarm.as_deref_mut(), root, slot, &orphan.blob);
                     owner.remember_durable_block(root, orphan.blob);
                     events.push(ChainEvent::GossipIngested {
                         topic: SYNC_BLOCK_TOPIC.to_string(),

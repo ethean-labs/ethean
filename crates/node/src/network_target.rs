@@ -53,7 +53,7 @@ pub struct NetworkTarget {
     pub id: NetworkId,
     /// QUIC multiaddrs to dial after swarm bind.
     pub bootnodes: Vec<String>,
-    /// Optional 8-hex operator fork digest (overrides interim name hash).
+    /// Optional 8-hex operator fork digest (overrides lstar GOSSIP_DIGEST).
     pub fork_digest: Option<String>,
 }
 

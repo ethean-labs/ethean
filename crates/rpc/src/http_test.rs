@@ -130,6 +130,20 @@ async fn lean_v0_routes_on_ephemeral_port() {
 
     let (st, _, _) = http_get(addr, "/lean/v0/health?x=1");
     assert_eq!(st, 200);
+
+    let (st, _, body) = http_get(addr, "/lean/v0/events");
+    assert_eq!(st, 200, "events is JSON poll, not 501");
+    let ev: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert!(ev.get("events").is_some());
+    assert!(ev.get("drained").is_some());
+    assert!(ev.get("pending").is_some());
+
+    let (st, _, _) = http_get(addr, "/lean/v0/ready");
+    assert_eq!(st, 200);
+    let (st, _, _) = http_get(addr, "/lean/v0/node/identity");
+    assert_eq!(st, 200);
+    let (st, _, _) = http_get(addr, "/lean/v0/chain/head");
+    assert_eq!(st, 200);
 }
 
 struct EchoDriver;

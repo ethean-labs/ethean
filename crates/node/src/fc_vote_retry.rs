@@ -193,6 +193,66 @@ mod tests {
     }
 
     #[test]
+    fn a_vote_for_a_missing_head_applies_after_the_block_imports() {
+        use ethean_transition::{apply_block_unverified, process_slots, TransitionContext};
+        use ethean_types::{Block, BlockBody};
+
+        let mut owner = owner_with_store();
+        let parent = owner.fc.as_ref().unwrap().head();
+        let mut child = Block {
+            slot: Slot::new(1),
+            proposer_index: ValidatorIndex::new(0),
+            parent_root: parent,
+            state_root: ethean_primitives::HASH32_ZERO,
+            body: BlockBody::default(),
+        };
+        let pre = owner.head_state.clone().unwrap();
+        let mut trial = pre.clone();
+        process_slots(&mut trial, Slot::new(1)).unwrap();
+        ethean_transition::process_block(
+            &mut trial,
+            &child,
+            &TransitionContext::new(crate::lstar_devnet().unwrap()),
+        )
+        .unwrap();
+        child.state_root = trial.hash_tree_root().unwrap();
+        let child_root = child.hash_tree_root().unwrap();
+        let data = AttestationData {
+            slot: Slot::new(1),
+            head: Checkpoint {
+                root: child_root,
+                slot: Slot::new(1),
+            },
+            target: Checkpoint {
+                root: parent,
+                slot: Slot::ZERO,
+            },
+            source: Checkpoint {
+                root: parent,
+                slot: Slot::ZERO,
+            },
+        };
+        owner.fc_on_attestation(ValidatorIndex::new(0), data);
+        assert_eq!(owner.deferred_votes.len(), 1);
+
+        let applied = apply_block_unverified(
+            &pre,
+            &child,
+            &TransitionContext::new(crate::lstar_devnet().unwrap()),
+        )
+        .unwrap();
+        owner.fc_on_tick(1, 0, false);
+        owner.fc_on_block(child, applied.post_state);
+        assert!(owner.deferred_votes.is_empty());
+        assert!(owner
+            .fc
+            .as_ref()
+            .unwrap()
+            .latest_new_attestations
+            .contains_key(&ValidatorIndex::new(0)));
+    }
+
+    #[test]
     fn only_block_and_clock_errors_are_retried() {
         assert!(is_retryable(&ForkChoiceError::UnknownHeadBlock));
         assert!(is_retryable(&ForkChoiceError::AttestationTooFarInFuture));

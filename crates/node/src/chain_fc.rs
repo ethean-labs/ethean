@@ -12,10 +12,13 @@ impl ChainOwner {
         if self.fc.is_some() {
             return;
         }
-        let (Some(state), Some(profile)) = (self.head_state.clone(), self.profile.clone()) else {
+        let Some(profile) = self.profile.clone() else {
             return;
         };
-        let Ok((anchor, anchor_state)) = genesis_anchor(&state) else {
+        let Some(state) = self.head_state.as_ref() else {
+            return;
+        };
+        let Ok((anchor, anchor_state)) = genesis_anchor(state) else {
             warn!("fork-choice init skipped: cannot rebuild genesis block");
             return;
         };
@@ -38,12 +41,14 @@ impl ChainOwner {
     }
 
     /// Pre-state for STF: FC parent state when the store is live, else head state.
-    pub fn pre_state_for_parent(&self, parent: Hash32) -> Option<State> {
+    ///
+    /// Borrowed: `apply_block` clones internally to produce the post-state.
+    pub fn pre_state_for_parent(&self, parent: Hash32) -> Option<&State> {
         if let Some(fc) = self.fc.as_ref() {
-            return fc.block_states.get(&parent).cloned();
+            return fc.block_states.get(&parent);
         }
         if parent == self.head_root {
-            return self.head_state.clone();
+            return self.head_state.as_ref();
         }
         None
     }
@@ -112,6 +117,7 @@ impl ChainOwner {
                 "fork-choice history below finalization pruned"
             );
         }
+        fc.prune_stale_votes_and_payloads();
         let head = fc.head();
         if let Some(state) = fc.block_states.get(&head).cloned() {
             self.head_root = head;

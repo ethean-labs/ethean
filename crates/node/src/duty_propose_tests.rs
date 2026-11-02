@@ -122,6 +122,14 @@ fn local_finality_blocks_are_recorded_for_durable_flush() {
 }
 
 #[test]
+fn the_same_slot_is_not_planned_twice_after_the_head_advances() {
+    let mut owner = owner_at_slot_one();
+    owner.local_finality = true;
+    assert!(!try_plan_proposal(&mut owner, tick(1)).is_empty());
+    assert!(try_plan_proposal(&mut owner, tick(1)).is_empty());
+}
+
+#[test]
 fn a_slot_with_a_block_proof_in_flight_is_not_replanned() {
     let mut owner = owner_at_slot_one();
     owner.block_proof_slot = Some(1);

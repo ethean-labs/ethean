@@ -1,6 +1,10 @@
 # Development backlog (2026-09-25)
 
-## Current snapshot (v0.1.70)
+Superseded as the live queue: see
+[process/development-todo-full-backlog-2026-11-02.md](../process/development-todo-full-backlog-2026-11-02.md)
+(workspace **0.1.72**, unreleased work on top). This page is a 2026-09-25 snapshot.
+
+## Snapshot at v0.1.70
 
 - Majority Status tip + head-behind-finalized root pin + local Hive smoke script
 - Proof queue priority / Type-2 retry (0.1.69)

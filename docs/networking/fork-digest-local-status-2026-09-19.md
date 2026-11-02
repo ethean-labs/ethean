@@ -2,7 +2,7 @@
 
 ## Landed
 
-- `fork_segment_resolve(fork_name, override)` — operator 8-hex digest wins over interim SHA-256(`lstar`) hash.
+- `fork_segment_resolve(fork_name, override)` — operator 8-hex digest wins over lstar `GOSSIP_DIGEST` `"12345678"` (not SHA-256 of the name; see [fork-digest-warn-only-2026-11-02.md](./fork-digest-warn-only-2026-11-02.md)).
 - CLI `--fork-digest`, env `ETHEAN_FORK_DIGEST`, file `config/networks/pq-devnet-5.forkdigest`.
 - QuicSwarm binds topics as `/leanconsensus/{segment}/…` using the resolved segment.
 - `local_status` builds Lean Status (genesis/head/finalized) for future peer handshake; logs on start.

@@ -34,6 +34,8 @@ Operator aliases still served:
 ```bash
 curl -s http://127.0.0.1:5052/lean/v1/health
 curl -s http://127.0.0.1:5052/lean/v1/ready
+curl -s http://127.0.0.1:5052/lean/v0/events
+curl -s http://127.0.0.1:5052/lean/v0/chain/head
 curl -s http://127.0.0.1:5052/lean/v1/chain/head
 curl -s http://127.0.0.1:5052/lean/v1/chain/finalized
 curl -s http://127.0.0.1:5052/lean/v1/chain/sync

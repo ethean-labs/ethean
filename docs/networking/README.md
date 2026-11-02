@@ -13,6 +13,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [blocks by root multihop catchup](blocks-by-root-multihop-catchup-2026-09-19.md)
 - [blocks by root reqresp wire](blocks-by-root-reqresp-wire-2026-09-19.md)
 - [blocks by root signedblock ingest](blocks-by-root-signedblock-ingest-2026-09-19.md)
+- [fork digest warn-only 2026-11-02](fork-digest-warn-only-2026-11-02.md)
 - [c3 fork digest mesh isolation b1 refuse](c3-fork-digest-mesh-isolation-b1-refuse-2026-09-20.md)
 - [d2 type1 aggregation gossip publish](d2-type1-aggregation-gossip-publish-2026-09-20.md)
 - [d5 type2 gossip envelope gate](d5-type2-gossip-envelope-gate-2026-09-19.md)

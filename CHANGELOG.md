@@ -37,6 +37,36 @@ the curated operator-facing summary, not a dump of every working note.
   the proof and state transition succeed, so this node does not hand out
   unverified pending bodies. Type-1 aggregation waits while a block proof
   is already running.
+- Aggregators skip Type-1 jobs that cannot move quorum (one raw signature
+  and no children, or a single child and no new signatures), matching
+  leanSpec PR #748. The signatures stay in the pool for a later round.
+- Block import borrows the parent state instead of cloning it; only the
+  validator registry is copied for post-block proof recovery.
+- Gossip import moves the decoded block into fork choice. The serve cache is
+  filled once per verified blob. Split recovery moves component keys into the
+  last job instead of cloning them for every attestation.
+- When this node proposes the next slot and the pool already has a Type-1,
+  interval 2 does not start another aggregate proof, so the early Type-2 is
+  not queued behind a ~1.1 s job. An empty pool still proves.
+- At most one union merge is queued while any attestation proof is in flight,
+  so a second Type-1-class job does not occupy the prover until the early
+  Type-2.
+- `/readyz` fails when the head, the prover thread, or a Type-2 job is stuck
+  for eight slots. Gossip idle is a scrape gauge, not a 503.
+- Known payloads and the Type-1 pool are capped at 256 keys and pruned on
+  every duty tick with the signature pool. Fork-choice vote maps prune on
+  every head sync.
+- Fork-choice unit tests cover fresh vs activated votes, unknown-head pending
+  votes, duplicate proposals, and prune of votes below finalized.
+- `GET /lean/v0/events` is locked as a 200 JSON poll (not 501). v0
+  `chain/head`, `chain/finalized`, and `chain/sync` alias the v1 handlers.
+- Gossip fork-digest comments and boot warnings state the default is lstar
+  `GOSSIP_DIGEST`, not SHA-256 of the fork name. No operator digest invented.
+- Roadmap no longer lists QUIC / RocksDB / FFI as open compile gates. Local
+  proving-mesh scale flags are documented; no large soak on this host.
+- Fork-choice init borrows the sealed head state. A proved own block is
+  copied into the durable queue only when gossip publish (or the no-peer
+  skip) runs, not while it still sits in `pending_block_gossip`.
 
 ## [0.1.72] - 2026-11-02
 

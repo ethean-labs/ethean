@@ -59,9 +59,11 @@ pub fn match_route(method: &str, path: &str) -> Result<Route> {
         ("GET", "/lean/v0/health" | "/lean/v1/health") => Ok(Route::Health),
         ("GET", "/lean/v0/ready" | "/lean/v1/ready") => Ok(Route::Ready),
         ("GET", "/lean/v0/node/identity" | "/lean/v1/node/identity") => Ok(Route::NodeIdentity),
-        ("GET", "/lean/v1/chain/head") => Ok(Route::ChainHead),
-        ("GET", "/lean/v1/chain/finalized") => Ok(Route::ChainFinalized),
-        ("GET", "/lean/v1/chain/sync") => Ok(Route::ChainSync),
+        ("GET", "/lean/v1/chain/head" | "/lean/v0/chain/head") => Ok(Route::ChainHead),
+        ("GET", "/lean/v1/chain/finalized" | "/lean/v0/chain/finalized") => {
+            Ok(Route::ChainFinalized)
+        }
+        ("GET", "/lean/v1/chain/sync" | "/lean/v0/chain/sync") => Ok(Route::ChainSync),
         ("GET", "/lean/v1/chain/fork_choice") => Ok(Route::ChainForkChoice),
         ("GET", "/lean/v1/validator/duties") => Ok(Route::ValidatorDuties),
         ("POST", "/lean/v1/admin/shutdown" | "/lean/v0/admin/shutdown") => Ok(Route::AdminShutdown),
@@ -199,5 +201,13 @@ mod tests {
         // Operator extras are not hive rpc_compat requirements.
         assert!(match_route("GET", "/lean/v0/validator/duties").is_err());
         assert!(match_route("GET", "/metrics").is_ok());
+        assert_eq!(
+            match_route("GET", "/lean/v0/events").unwrap(),
+            Route::AdminEvents
+        );
+        assert_eq!(
+            match_route("GET", "/lean/v0/chain/head").unwrap(),
+            Route::ChainHead
+        );
     }
 }

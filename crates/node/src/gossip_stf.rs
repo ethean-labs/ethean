@@ -9,6 +9,7 @@ use ethean_metrics::lean::observe_since;
 use ethean_multisig::LeanMultisigVerifier;
 use ethean_primitives::Hash32;
 use ethean_transition::{apply_block, TransitionContext};
+use ethean_types::SignedBlock;
 use std::time::Instant;
 
 /// Outcome of importing a decoded block.
@@ -30,7 +31,7 @@ pub enum GossipStfResult {
 pub fn import_decoded_block(
     owner: &mut ChainOwner,
     shutdown: &ShutdownState,
-    decoded: &DecodedBlockGossip,
+    decoded: DecodedBlockGossip,
 ) -> GossipStfResult {
     if shutdown.phase() == ShutdownPhase::Stopped {
         return GossipStfResult::Skipped;
@@ -42,63 +43,58 @@ pub fn import_decoded_block(
         );
         return GossipStfResult::Skipped;
     }
-    let Some(pre) = owner.pre_state_for_parent(decoded.parent) else {
-        tracing::debug!(
-            slot = decoded.signed.block.slot.get(),
-            "gossip block skipped: no parent state"
+    let (post, validators, committees, timely) = {
+        let Some(pre) = owner.pre_state_for_parent(decoded.parent) else {
+            tracing::debug!(
+                slot = decoded.signed.block.slot.get(),
+                "gossip block skipped: no parent state"
+            );
+            return GossipStfResult::Skipped;
+        };
+        let Some(profile) = owner.profile.as_ref() else {
+            return GossipStfResult::Skipped;
+        };
+        let ctx = TransitionContext::new(profile.clone());
+        let committees = profile.attestation_subnet_count() as u64;
+        let timely = crate::lean_metrics::coverage::pool_bits(owner);
+        let started = Instant::now();
+        let applied = apply_block(pre, &decoded.signed, &ctx, &LeanMultisigVerifier);
+        observe_since(
+            "lean_fork_choice_block_processing_time_seconds",
+            &[],
+            started,
         );
-        return GossipStfResult::Skipped;
-    };
-    let Some(profile) = owner.profile.as_ref() else {
-        return GossipStfResult::Skipped;
-    };
-    let ctx = TransitionContext::new(profile.clone());
-    let committees = profile.attestation_subnet_count() as u64;
-    let timely = crate::lean_metrics::coverage::pool_bits(owner);
-    let started = Instant::now();
-    let applied = apply_block(&pre, &decoded.signed, &ctx, &LeanMultisigVerifier);
-    observe_since(
-        "lean_fork_choice_block_processing_time_seconds",
-        &[],
-        started,
-    );
-    match applied {
-        Ok(out) => {
-            lean_metrics::transition(started.elapsed(), &out.timings);
-            let post = out.post_state;
-            if owner.fc.is_some() {
-                // Tick store time so historical sync imports are not "too far".
-                let slot = decoded.signed.block.slot.get();
-                owner.fc_on_tick(slot, 0, false);
-                owner.fc_on_block(decoded.signed.block.clone(), post);
-            } else {
-                owner.head_state = Some(post);
-                owner.advance_head(decoded.root, decoded.parent);
+        match applied {
+            Ok(out) => {
+                lean_metrics::transition(started.elapsed(), &out.timings);
+                (out.post_state, pre.validators.clone(), committees, timely)
             }
-            let block_bits = crate::lean_metrics::coverage::union_bits(
-                decoded.signed.block.body.attestations.iter(),
-            );
-            crate::lean_metrics::coverage::record_block_coverage(
-                &block_bits,
-                &timely,
-                &[],
-                committees,
-            );
-            let seeded = crate::block_payloads::seed_known_payloads(
-                owner,
-                &decoded.signed.block,
-                &decoded.signed.proof.proof,
-                &pre.validators,
-            );
-            if !seeded.is_empty() {
-                tracing::debug!(jobs = seeded.len(), "block vote proof recovery queued");
+            Err(e) => {
+                return GossipStfResult::Rejected {
+                    reason: e.to_string(),
+                };
             }
-            GossipStfResult::Applied { root: decoded.root }
         }
-        Err(e) => GossipStfResult::Rejected {
-            reason: e.to_string(),
-        },
+    };
+    let root = decoded.root;
+    let parent = decoded.parent;
+    let SignedBlock { block, proof } = decoded.signed;
+    let block_bits = crate::lean_metrics::coverage::union_bits(block.body.attestations.iter());
+    crate::lean_metrics::coverage::record_block_coverage(&block_bits, &timely, &[], committees);
+    let seeded =
+        crate::block_payloads::seed_known_payloads(owner, &block, &proof.proof, &validators);
+    if !seeded.is_empty() {
+        tracing::debug!(jobs = seeded.len(), "block vote proof recovery queued");
     }
+    if owner.fc.is_some() {
+        // Tick store time so historical sync imports are not "too far".
+        owner.fc_on_tick(block.slot.get(), 0, false);
+        owner.fc_on_block(block, post);
+    } else {
+        owner.head_state = Some(post);
+        owner.advance_head(root, parent);
+    }
+    GossipStfResult::Applied { root }
 }
 
 #[cfg(test)]
@@ -153,7 +149,7 @@ mod tests {
         let result = import_decoded_block(
             &mut owner,
             &ShutdownState::default(),
-            &decoded(head, vec![0u8; 32]),
+            decoded(head, vec![0u8; 32]),
         );
         assert!(
             matches!(result, GossipStfResult::Rejected { .. }),
@@ -168,7 +164,7 @@ mod tests {
         let result = import_decoded_block(
             &mut owner,
             &ShutdownState::default(),
-            &decoded([9u8; 32], vec![1]),
+            decoded([9u8; 32], vec![1]),
         );
         assert_eq!(result, GossipStfResult::Skipped);
         owner.head_state = None;
@@ -176,7 +172,7 @@ mod tests {
         let result = import_decoded_block(
             &mut owner,
             &ShutdownState::default(),
-            &decoded(head, vec![1]),
+            decoded(head, vec![1]),
         );
         assert_eq!(
             result,

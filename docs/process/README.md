@@ -1,4 +1,4 @@
-﻿# Process / README / git house rules
+# Process / README / git house rules
 
 Dated development notes for this topic. Index: [../README.md](../../README.md).
 
@@ -12,3 +12,5 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [scrub unpublished cursor trailers](scrub-unpublished-cursor-trailers-2026-09-19.md)
 - [source file size limit 2000](source-file-size-limit-2000-2026-09-25.md)
 - [what external backlog means](what-external-backlog-means-2026-09-24.md)
+- [development todo — full backlog (2026-11-02)](development-todo-full-backlog-2026-11-02.md)
+- [docs honesty 2026-11-02](docs-honesty-2026-11-02.md)

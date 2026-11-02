@@ -158,6 +158,26 @@ pub fn ensure_core_families(reg: &mut Registry) -> Result<()> {
             MetricKind::Gauge,
         ),
         ("ready_prover", "1 if prover gate passed", MetricKind::Gauge),
+        (
+            "ready_head_progress",
+            "1 if the head moved within the stall window",
+            MetricKind::Gauge,
+        ),
+        (
+            "ready_prover_alive",
+            "1 if the prover worker is running or not expected",
+            MetricKind::Gauge,
+        ),
+        (
+            "ready_block_proof",
+            "1 if no Type-2 job is stuck past the stall window",
+            MetricKind::Gauge,
+        ),
+        (
+            "gossip_idle",
+            "1 if peers exist but no gossip arrived within the stall window",
+            MetricKind::Gauge,
+        ),
     ];
     for (name, help, kind) in specs {
         if reg.set(name, 0.0).is_err() {
@@ -237,17 +257,19 @@ pub fn record_bootnode_count(reg: &mut Registry, bootnode_count: u64) -> Result<
 /// Mirror readiness bits as separate gauges (dashboard “node health” row).
 pub fn record_readiness_gauges(
     reg: &mut Registry,
-    storage: bool,
-    crypto: bool,
-    signer: bool,
-    network: bool,
-    prover: bool,
+    r: crate::readiness::Readiness,
+    gossip_idle: bool,
 ) -> Result<()> {
-    reg.set("ready_storage", if storage { 1.0 } else { 0.0 })?;
-    reg.set("ready_crypto", if crypto { 1.0 } else { 0.0 })?;
-    reg.set("ready_signer", if signer { 1.0 } else { 0.0 })?;
-    reg.set("ready_network", if network { 1.0 } else { 0.0 })?;
-    reg.set("ready_prover", if prover { 1.0 } else { 0.0 })?;
+    let bit = |v: bool| if v { 1.0 } else { 0.0 };
+    reg.set("ready_storage", bit(r.storage))?;
+    reg.set("ready_crypto", bit(r.crypto))?;
+    reg.set("ready_signer", bit(r.signer))?;
+    reg.set("ready_network", bit(r.network))?;
+    reg.set("ready_prover", bit(r.prover))?;
+    reg.set("ready_head_progress", bit(r.head_progress))?;
+    reg.set("ready_prover_alive", bit(r.prover_alive))?;
+    reg.set("ready_block_proof", bit(r.block_proof_progress))?;
+    reg.set("gossip_idle", bit(gossip_idle))?;
     Ok(())
 }
 
@@ -266,7 +288,7 @@ mod tests {
         set_ready(&mut r, true).unwrap();
         record_slot_gauges(&mut r, 10, 8, 6, 9, 11, 1).unwrap();
         record_role_gauges(&mut r, 4, true, true, 1_700_000_000, 4).unwrap();
-        record_readiness_gauges(&mut r, true, true, true, true, true).unwrap();
+        record_readiness_gauges(&mut r, crate::readiness::Readiness::default(), false).unwrap();
         record_durable_persist(&mut r, 2, 44, 1, 1, 256).unwrap();
         record_range_serve(&mut r, 5, 2, 8).unwrap();
         record_serve_cache_seed(&mut r, 10, 9).unwrap();

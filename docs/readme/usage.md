@@ -152,6 +152,15 @@ peer A’s dialable address to `target/local-pq-mesh/nodes.multiaddrs`, then dia
 
 Details: [docs/local-pq-mesh-private-dial-2026-09-20.md](../pq-devnet/local-pq-mesh-private-dial-2026-09-20.md).
 
+Windows proving mesh (PROD keys, `ethean-prover`):
+
+```powershell
+.\scripts\local-devnet.ps1 -Nodes 4 -ValidatorsPerNode 3 -Subnets 2 -Aggregators 2
+```
+
+Larger layouts heat this CPU; do not start a long soak unless asked.
+See [scale-multi-aggregator-2026-09-30.md](../pq-devnet/scale-multi-aggregator-2026-09-30.md).
+
 ### Join an operator mesh (pq-devnet-4)
 
 ```bash
@@ -231,7 +240,7 @@ Metrics HTTP binds to `127.0.0.1:9100` unless overridden:
 | URL | Expect | Meaning |
 | --- | --- | --- |
 | [http://127.0.0.1:9100/healthz](http://127.0.0.1:9100/healthz) | `200` + `ok` | Process alive |
-| [http://127.0.0.1:9100/readyz](http://127.0.0.1:9100/readyz) | `200` + `ready` (or `503` while booting) | Storage/crypto/signer/network gates |
+| [http://127.0.0.1:9100/readyz](http://127.0.0.1:9100/readyz) | `200` + `ready` (or `503` while booting or stalled) | Start gates plus head / prover / Type-2 progress |
 | [http://127.0.0.1:9100/metrics](http://127.0.0.1:9100/metrics) | Prometheus text | Slot gauges for Grafana |
 
 ```bash
@@ -244,7 +253,8 @@ curl -s http://127.0.0.1:9100/metrics | findstr ethean_head_slot
 Useful gauges: `ethean_head_slot`, `ethean_justified_slot`, `ethean_finalized_slot`,
 `ethean_slot_current`, `ethean_peer_count`, `ethean_bootnode_count`,
 `ethean_validator_count`, `ethean_finality_lag_slots`, `ethean_ready`,
-`ethean_aggregator_enabled`.
+`ethean_aggregator_enabled`, `ethean_ready_head_progress`,
+`ethean_ready_prover_alive`, `ethean_ready_block_proof`, `ethean_gossip_idle`.
 
 If Grafana shows **1970** dates or **No data** on validators/roles, rebuild the
 binary and reload dashboards:
@@ -286,7 +296,7 @@ ethean start --until-signal --network pq-devnet-5 --observability-stack
 | `--no-local-finality` | off | Disable solo head/finality advance (solo default **on**; mesh always off) |
 | `--aggregate-subnet-ids` | unset | CSV of subnet ids (recorded; all subnets already subscribed) |
 | `--attestation-committee-count` | unset | Override `ATTESTATION_COMMITTEE_COUNT` from `config.yaml` |
-| `--checkpoint-sync-url` | unset | Accepted; empty-datadir SSZ fetch not yet applied |
+| `--checkpoint-sync-url` | unset | Fetch finalized state+block from a peer `/lean/v0` (plain `http://` only; `https://` is refused) |
 | `--http-address` | `127.0.0.1` | Lean HTTP bind (`ETHEAN_HTTP_ADDRESS`) |
 | `--http-port` | `5052` | Lean HTTP port |
 | `--validator-registry` | unset | Alias `--validator-registry-path` |

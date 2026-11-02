@@ -109,6 +109,25 @@ impl EtheanClient {
             self.profile.seconds_per_slot,
         )?;
         self.observability.record_bootnodes(self.bootnode_count)?;
+        self.observability
+            .apply_progress(crate::progress_health::ProgressSample {
+                current_slot: current,
+                head_slot,
+                peer_count: peers,
+                gossip_rx_total: self.owner.gossip_rx_total,
+                prover_expected: self.owner.prover.is_some(),
+                prover_alive: self
+                    .owner
+                    .prover
+                    .as_ref()
+                    .map(|p| p.worker_alive())
+                    .unwrap_or(true),
+                block_in_flight: self
+                    .owner
+                    .prover
+                    .as_ref()
+                    .is_some_and(|p| p.block_in_flight()),
+            });
         self.observability.record_readiness_bits()?;
         self.observability.refresh_ready_gauge()?;
         #[cfg(feature = "libp2p-quic")]

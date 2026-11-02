@@ -86,12 +86,13 @@ pub(crate) fn ingest_gossip(
 
     if let Some(decoded) = try_decode_block(&topic, &payload) {
         crate::lean_metrics::gossip_block(owner, decoded.signed.block.slot.get(), payload.len());
-        match import_decoded_block(owner, shutdown, &decoded) {
+        let root = decoded.root;
+        match import_decoded_block(owner, shutdown, decoded) {
             crate::gossip_stf::GossipStfResult::Applied { .. } => {
-                owner.remember_durable_block(decoded.root, payload.clone());
+                owner.remember_durable_block(root, payload);
             }
             crate::gossip_stf::GossipStfResult::Rejected { reason } => {
-                tracing::info!(root0 = decoded.root[0], %reason, "gossip block rejected");
+                tracing::info!(root0 = root[0], %reason, "gossip block rejected");
             }
             crate::gossip_stf::GossipStfResult::Skipped => {}
         }

@@ -79,14 +79,17 @@ impl EtheanClient {
                 info!(%fork_segment, "resolved gossip fork segment from operator digest");
             }
             ForkDigestSource::InterimNameHash => {
-                info!(%fork_segment, "resolved gossip fork segment from fork GOSSIP_DIGEST");
+                info!(
+                    %fork_segment,
+                    "resolved gossip fork segment from lstar GOSSIP_DIGEST (not SHA-256 of fork_name)"
+                );
             }
         }
         if network.mesh_isolation_risk() {
             warn!(
                 network = network.id.as_str(),
                 %fork_segment,
-                "dialing bootnodes without operator --fork-digest; Lean topics will not match peer mesh"
+                "dialing bootnodes without --fork-digest; using interim lstar GOSSIP_DIGEST, not SHA-256(fork_name). Paste the operator pin (A2) or topics will not match the public mesh"
             );
         }
         info!(

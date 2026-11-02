@@ -20,6 +20,7 @@ pub fn ingest_accepted(
         .iter()
         .filter_map(|g| Some((g.topic.as_str(), g.plain.as_deref()?)))
         .collect();
+    owner.gossip_rx_total = owner.gossip_rx_total.saturating_add(accepted.len() as u64);
     let verdicts = preverify_votes(owner, &plain);
     plain
         .into_iter()

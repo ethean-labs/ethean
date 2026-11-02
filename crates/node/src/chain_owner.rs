@@ -108,6 +108,8 @@ pub struct ChainOwner {
     /// Attestation data seen on chain, by data root -> vote slot
     /// (leanSpec `latest_known_aggregated_payloads`).
     pub known_payloads: std::collections::HashMap<Hash32, u64>,
+    /// Accepted gossip payloads ingested this process (idle detection).
+    pub gossip_rx_total: u64,
 }
 
 /// Signing keys of one owned validator.
@@ -251,6 +253,38 @@ impl ChainOwner {
         generation == self.generation && parent_root == self.head_root
     }
 
+    /// Drop signatures, aggregates, and known payloads older than the lag window.
+    pub fn prune_untrusted_pools(&mut self, current_slot: u64) {
+        let min_slot = current_slot.saturating_sub(self.max_head_lag_slots);
+        self.aggregates.prune_before(min_slot);
+        self.signatures.prune_before(min_slot);
+        self.known_payloads.retain(|_, slot| *slot >= min_slot);
+    }
+
+    /// Record a vote data root as known; drops the oldest slot when over
+    /// [`crate::aggregation::MAX_TRACKED_DATA`].
+    pub fn remember_known_payload(&mut self, data_root: Hash32, slot: u64) {
+        use crate::aggregation::MAX_TRACKED_DATA;
+        if let Some(existing) = self.known_payloads.get_mut(&data_root) {
+            *existing = (*existing).max(slot);
+            return;
+        }
+        while self.known_payloads.len() >= MAX_TRACKED_DATA {
+            let drop = self
+                .known_payloads
+                .iter()
+                .min_by_key(|(_, s)| *s)
+                .map(|(k, _)| *k);
+            match drop {
+                Some(k) => {
+                    self.known_payloads.remove(&k);
+                }
+                None => break,
+            }
+        }
+        self.known_payloads.insert(data_root, slot);
+    }
+
     /// Queue a vote or aggregate for gossip publish. Drops the oldest when full.
     pub fn queue_aggregation_gossip(
         &mut self,
@@ -326,6 +360,32 @@ mod tests {
         };
         assert!(owner.on_tick(tick));
         assert!(!owner.on_tick(tick));
+    }
+
+    #[test]
+    fn known_payloads_drop_the_oldest_slot_at_the_cap() {
+        let mut owner = ChainOwner::new(2);
+        for i in 0..crate::aggregation::MAX_TRACKED_DATA {
+            let mut root = [0u8; 32];
+            root[0] = (i / 256) as u8;
+            root[1] = (i % 256) as u8;
+            owner.remember_known_payload(root, i as u64);
+        }
+        assert_eq!(
+            owner.known_payloads.len(),
+            crate::aggregation::MAX_TRACKED_DATA
+        );
+        owner.remember_known_payload([9u8; 32], 10_000);
+        assert_eq!(
+            owner.known_payloads.len(),
+            crate::aggregation::MAX_TRACKED_DATA
+        );
+        assert_eq!(owner.known_payloads.get(&[9u8; 32]), Some(&10_000));
+        owner.prune_untrusted_pools(10_001);
+        assert!(
+            owner.known_payloads.len() <= 3,
+            "lag 2 keeps only slots >= 9999"
+        );
     }
 
     #[test]

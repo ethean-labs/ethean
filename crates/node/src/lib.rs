@@ -69,6 +69,7 @@ pub mod network_target;
 pub mod observability;
 pub mod persist_paths;
 pub mod persist_ssz;
+pub mod progress_health;
 pub mod proof_collect;
 pub mod proof_service;
 pub mod registry_apply;

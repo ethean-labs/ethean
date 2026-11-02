@@ -25,6 +25,9 @@ pub struct PoolEntry {
     pub attestation_ssz: Vec<u8>,
 }
 
+/// Distinct attestation-data keys retained (same bound as the signature pool).
+pub const MAX_POOL_KEYS: usize = super::MAX_TRACKED_DATA;
+
 /// In-memory pool with per-key variant bounds.
 #[derive(Debug)]
 pub struct AggregatePool {
@@ -49,6 +52,11 @@ impl AggregatePool {
 
     /// Insert only after local verify; drops oldest when over cap.
     pub fn insert_verified(&mut self, key: PoolKey, entry: PoolEntry) {
+        if !self.entries.contains_key(&key) && self.entries.len() >= MAX_POOL_KEYS {
+            if let Some(drop) = self.oldest_key() {
+                self.entries.remove(&drop);
+            }
+        }
         let list = self.entries.entry(key).or_default();
         list.push(entry);
         while list.len() > self.max_variants {
@@ -71,6 +79,18 @@ impl AggregatePool {
         self.entries.retain(|_, v| !v.is_empty());
     }
 
+    fn oldest_key(&self) -> Option<PoolKey> {
+        self.entries
+            .iter()
+            .min_by_key(|(_, list)| {
+                list.iter()
+                    .map(|e| e.inserted_slot)
+                    .min()
+                    .unwrap_or(u64::MAX)
+            })
+            .map(|(k, _)| *k)
+    }
+
     /// Number of keys.
     pub fn len(&self) -> usize {
         self.entries.len()
@@ -79,6 +99,11 @@ impl AggregatePool {
     /// True when empty.
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
+    }
+
+    /// True when at least one verified Type-1 is pooled (a block body candidate).
+    pub fn has_proved_entry(&self) -> bool {
+        self.entries.values().flatten().any(|e| !e.proof.is_empty())
     }
 
     /// All retained variants for a key (insertion order). Callers that keep a
@@ -147,6 +172,48 @@ mod tests {
         }
         assert_eq!(pool.best(&key).unwrap().coverage, 2);
         assert_eq!(pool.entries.get(&key).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn bounds_distinct_keys() {
+        let mut pool = AggregatePool::new(1);
+        for i in 0..MAX_POOL_KEYS {
+            let mut root = [0u8; 32];
+            root[0] = (i / 256) as u8;
+            root[1] = (i % 256) as u8;
+            pool.insert_verified(
+                PoolKey {
+                    profile_digest: [1u8; 32],
+                    message_root: root,
+                },
+                PoolEntry {
+                    proof: vec![1],
+                    coverage: 1,
+                    inserted_slot: i as u64,
+                    attestation_ssz: Vec::new(),
+                },
+            );
+        }
+        assert_eq!(pool.len(), MAX_POOL_KEYS);
+        pool.insert_verified(
+            PoolKey {
+                profile_digest: [1u8; 32],
+                message_root: [9u8; 32],
+            },
+            PoolEntry {
+                proof: vec![2],
+                coverage: 1,
+                inserted_slot: MAX_POOL_KEYS as u64,
+                attestation_ssz: Vec::new(),
+            },
+        );
+        assert_eq!(pool.len(), MAX_POOL_KEYS);
+        assert!(pool
+            .best(&PoolKey {
+                profile_digest: [1u8; 32],
+                message_root: [9u8; 32],
+            })
+            .is_some());
     }
 
     #[test]

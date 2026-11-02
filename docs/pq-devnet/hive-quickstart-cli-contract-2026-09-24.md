@@ -22,7 +22,7 @@ copy of peer crate layout.
 | `--no-aggregator` | `--no-aggregator` | Still wins over `--is-aggregator` |
 | `--aggregate-subnet-ids` | `--aggregate-subnet-ids` | Recorded; Ethean already subscribes to every attestation subnet |
 | `--attestation-committee-count` | `--attestation-committee-count` | Overrides `ATTESTATION_COMMITTEE_COUNT` from `config.yaml` |
-| `--checkpoint-sync-url` | `--checkpoint-sync-url` | Accepted; logs a warning until empty-datadir SSZ fetch is wired |
+| `--checkpoint-sync-url` | `--checkpoint-sync-url` | Fetches finalized state+block from a peer `/lean/v0`; plain `http://` only |
 | `--metrics` | `--metrics` | No-op keep-on for scrape HTTP (already default). Does **not** start Docker |
 | Grafana / Prometheus compose | `--observability-stack` | `docker compose up` in `deploy/observability` |
 | HTTP bind | `--http-address` / `--http-port` (defaults `127.0.0.1:5052`) | Env fallback `ETHEAN_HTTP_ADDRESS` |

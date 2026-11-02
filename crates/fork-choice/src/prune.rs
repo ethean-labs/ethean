@@ -52,6 +52,11 @@ impl ForkChoiceStore {
             .retain(|root, _| self.blocks.contains_key(root));
         before - self.blocks.len()
     }
+
+    /// Drop votes and payloads that can no longer change the head.
+    pub fn prune_stale_votes_and_payloads(&mut self) {
+        prune_stale_attestation_data(self);
+    }
 }
 
 /// Drop votes and payloads whose head can no longer influence fork choice.

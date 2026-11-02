@@ -2,6 +2,7 @@
 
 Dated development notes for this topic. Index: [../README.md](../../README.md).
 
+- [progress health 2026-11-02](progress-health-2026-11-02.md)
 - [admin event backlog gauge](admin-event-backlog-gauge-2026-09-25.md)
 - [leanmetrics standard v3](leanmetrics-standard-v3-2026-09-23.md)
 - [dev backlog fc store](dev-backlog-fc-store-2026-09-24.md)

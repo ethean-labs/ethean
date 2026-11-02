@@ -257,7 +257,7 @@ fn check_signed_aggregate(
     );
     *verification = Some(verify_started.elapsed());
     checked.map_err(|e| e.to_string())?;
-    insert_proved(owner, &aggregate.data, bits.clone(), aggregate.proof.proof)?;
+    insert_proved(owner, &aggregate.data, &bits, &aggregate.proof.proof)?;
     owner.fc_on_aggregated(aggregate.data, &bits);
     Ok(data_root)
 }
@@ -266,18 +266,18 @@ fn check_signed_aggregate(
 pub fn insert_proved(
     owner: &mut ChainOwner,
     data: &AttestationData,
-    participants: Vec<bool>,
-    proof: Vec<u8>,
+    participants: &[bool],
+    proof: &[u8],
 ) -> Result<(), String> {
     let coverage = participants.iter().filter(|b| **b).count() as u32;
     let attestation = AggregatedAttestation {
-        aggregation_bits: AggregationBits::new(participants).map_err(|e| e.to_string())?,
+        aggregation_bits: AggregationBits::new(participants.to_vec()).map_err(|e| e.to_string())?,
         data: *data,
     };
     owner.aggregates.insert_verified(
         pool_key(data.hash_tree_root()),
         PoolEntry {
-            proof,
+            proof: proof.to_vec(),
             coverage,
             inserted_slot: data.slot.get(),
             attestation_ssz: attestation.ssz_encode(),

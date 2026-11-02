@@ -1,5 +1,11 @@
 # Late joiner and restart on the local proving mesh (2026-09-29)
 
+`--checkpoint-sync-url` is applied at start (`client_start.rs`): the node
+fetches the peer's finalized state+block over plain `http://` and anchors
+fork choice. `https://` is refused. Empty-body 3SF lag after a late join is
+expected until the joiner has voted through two justified checkpoints; that
+is not a parent-fetch stall.
+
 Two operator scenarios added to `scripts/local-devnet.ps1` and the fixes they
 forced. Setup: 4 Ethean nodes, 1 validator each, PROD XMSS keys, leanVM
 prover `e2592df4`, one 20-core Windows host (see

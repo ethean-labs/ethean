@@ -60,22 +60,24 @@ pub fn full_registry_attestation(state: &State, head: Checkpoint) -> Option<Aggr
 /// Apply a planned proposal to the local head (proposer self-import).
 pub fn apply_planned_locally(
     owner: &mut ChainOwner,
-    plan: &PlanTransition,
+    plan: PlanTransition,
 ) -> Result<Hash32, String> {
-    let (pre, profile) = match (
-        owner.pre_state_for_parent(plan.block.parent_root),
-        owner.profile.clone(),
-    ) {
-        (Some(s), Some(p)) => (s, p),
-        _ => return Err("missing parent state or profile".into()),
+    let out = {
+        let pre = owner
+            .pre_state_for_parent(plan.block.parent_root)
+            .ok_or("missing parent state or profile")?;
+        let profile = owner
+            .profile
+            .as_ref()
+            .ok_or("missing parent state or profile")?;
+        let ctx = TransitionContext::new(profile.clone());
+        apply_block_unverified(pre, &plan.block, &ctx).map_err(|e| e.to_string())?
     };
-    let ctx = TransitionContext::new(profile);
-    let out = apply_block_unverified(&pre, &plan.block, &ctx).map_err(|e| e.to_string())?;
     let root = plan.block_root()?;
     let parent = plan.block.parent_root;
     let post = out.post_state;
     if owner.fc.is_some() {
-        owner.fc_on_block(plan.block.clone(), post);
+        owner.fc_on_block(plan.block, post);
     } else {
         owner.head_state = Some(post);
         owner.advance_head(root, parent);
@@ -217,7 +219,7 @@ mod tests {
         .unwrap();
         inject_local_aggregate(&mut owner, &mut plan);
         rebind_plan_state_root(&owner, &mut plan).unwrap();
-        let root = apply_planned_locally(&mut owner, &plan).unwrap();
+        let root = apply_planned_locally(&mut owner, plan).unwrap();
         assert_ne!(root, HASH32_ZERO);
         assert_eq!(owner.head_state.as_ref().unwrap().slot.get(), 1);
         promote_local_checkpoints(&mut owner, root);

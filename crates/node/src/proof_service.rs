@@ -250,6 +250,7 @@ pub struct ProofService {
     outcomes: Receiver<ProofOutcome>,
     attestations_in_flight: HashSet<Hash32>,
     block_in_flight: Option<Hash32>,
+    worker: std::thread::JoinHandle<()>,
 }
 
 impl std::fmt::Debug for ProofService {
@@ -267,7 +268,7 @@ impl ProofService {
         let inbox = SharedInbox::new();
         let worker_inbox = Arc::clone(&inbox);
         let (outcome_tx, outcomes) = mpsc::channel();
-        std::thread::Builder::new()
+        let worker = std::thread::Builder::new()
             .name("ethean-proof-service".into())
             .spawn(move || {
                 let client = ProverClient::new(config);
@@ -291,6 +292,7 @@ impl ProofService {
             outcomes,
             attestations_in_flight: HashSet::new(),
             block_in_flight: None,
+            worker,
         })
     }
 
@@ -306,9 +308,19 @@ impl ProofService {
         self.attestations_in_flight.contains(data_root)
     }
 
+    /// Number of Type-1 / split jobs still on the worker.
+    pub fn attestations_in_flight_count(&self) -> usize {
+        self.attestations_in_flight.len()
+    }
+
     /// True while a block proof is being produced.
     pub fn block_in_flight(&self) -> bool {
         self.block_in_flight.is_some()
+    }
+
+    /// False after the proving thread has exited (panic or inbox close).
+    pub fn worker_alive(&self) -> bool {
+        !self.worker.is_finished()
     }
 
     /// Queue a job; false when the queue is full or the worker is gone.

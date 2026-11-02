@@ -232,6 +232,115 @@ fn tie_break_prefers_lexicographically_larger_root() {
 }
 
 #[test]
+fn a_past_tick_is_rejected() {
+    let (mut store, _, _) = anchor_store(1);
+    store.on_tick_with(10, false).unwrap();
+    let err = store.on_tick_with(9, false).unwrap_err();
+    assert_eq!(err, ForkChoiceError::TickInPast);
+}
+
+#[test]
+fn a_vote_for_an_unknown_head_is_pending_until_the_block_exists() {
+    let (mut store, anchor, _) = anchor_store(2);
+    let data = AttestationData {
+        slot: Slot::new(1),
+        head: Checkpoint::new([9u8; 32], Slot::new(1)),
+        target: Checkpoint::new(anchor, Slot::ZERO),
+        source: Checkpoint::new(anchor, Slot::ZERO),
+    };
+    let err = store
+        .on_attestation_data(ValidatorIndex::new(0), data)
+        .unwrap_err();
+    assert_eq!(err, ForkChoiceError::UnknownHeadBlock);
+}
+
+#[test]
+fn interval_zero_without_a_proposal_leaves_votes_fresh() {
+    let (mut store, anchor, state) = anchor_store(3);
+    let (child, _) = import_child(&mut store, &state, 1, 1);
+    let data = AttestationData {
+        slot: Slot::new(1),
+        head: Checkpoint::new(child, Slot::new(1)),
+        target: Checkpoint::new(child, Slot::new(1)),
+        source: Checkpoint::new(anchor, Slot::new(0)),
+    };
+    store
+        .on_attestation_data(ValidatorIndex::new(0), data)
+        .unwrap();
+    // One interval onto a slot boundary with has_proposal=false. Walking a
+    // full slot would hit interval 4, which always promotes.
+    let next_zero = (store.time / store.intervals_per_slot + 1) * store.intervals_per_slot;
+    store.time = next_zero - 1;
+    store.on_tick_with(next_zero, false).unwrap();
+    assert_eq!(store.latest_new_attestations.len(), 1);
+    assert!(store.latest_known_attestations.is_empty());
+    assert!(store.relevant_known_votes().is_empty());
+    assert_eq!(store.relevant_new_votes().len(), 1);
+}
+
+#[test]
+fn an_older_vote_does_not_replace_a_newer_one() {
+    let (mut store, anchor, state) = anchor_store(3);
+    let (child, _) = import_child(&mut store, &state, 1, 1);
+    let newer = AttestationData {
+        slot: Slot::new(1),
+        head: Checkpoint::new(child, Slot::new(1)),
+        target: Checkpoint::new(child, Slot::new(1)),
+        source: Checkpoint::new(anchor, Slot::new(0)),
+    };
+    let older = AttestationData {
+        slot: Slot::ZERO,
+        head: Checkpoint::new(anchor, Slot::ZERO),
+        target: Checkpoint::new(anchor, Slot::ZERO),
+        source: Checkpoint::new(anchor, Slot::ZERO),
+    };
+    store
+        .on_attestation_data(ValidatorIndex::new(0), newer)
+        .unwrap();
+    store
+        .on_attestation_data(ValidatorIndex::new(0), older)
+        .unwrap();
+    assert_eq!(
+        store.latest_new_attestations[&ValidatorIndex::new(0)].slot,
+        Slot::new(1)
+    );
+}
+
+#[test]
+fn stale_votes_below_finalized_are_dropped_and_live_votes_stay() {
+    let (mut store, roots) = chain_store(6);
+    let cp = |slot: u64| Checkpoint::new(roots[slot as usize], Slot::new(slot));
+    let stale = AttestationData {
+        slot: Slot::new(3),
+        head: cp(3),
+        target: cp(3),
+        source: cp(0),
+    };
+    let live = AttestationData {
+        slot: Slot::new(6),
+        head: cp(6),
+        target: cp(6),
+        source: cp(0),
+    };
+    store
+        .latest_new_attestations
+        .insert(ValidatorIndex::new(0), stale);
+    store
+        .latest_new_attestations
+        .insert(ValidatorIndex::new(1), live);
+    store.latest_finalized = cp(4);
+    store.latest_justified = cp(5);
+    store.prune_stale_votes_and_payloads();
+    assert!(!store
+        .latest_new_attestations
+        .contains_key(&ValidatorIndex::new(0)));
+    assert_eq!(
+        store.latest_new_attestations[&ValidatorIndex::new(1)].slot,
+        Slot::new(6)
+    );
+}
+
+#[test]
 fn require_proofs_rejects_attestation_data() {
     let profile = lstar_devnet().unwrap();
     let (state, block) = make_anchor(1);

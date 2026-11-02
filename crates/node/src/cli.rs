@@ -90,7 +90,7 @@ pub struct StartArgs {
     /// YAML file (`nodes.yaml`). Overrides `ETHEAN_BOOTNODES` and the label file.
     #[arg(long, value_name = "NONE|CSV|PATH")]
     pub bootnodes: Option<String>,
-    /// Optional 8-hex fork digest for gossip topics (overrides interim name hash).
+    /// Optional 8-hex fork digest for gossip topics (overrides lstar GOSSIP_DIGEST).
     #[arg(long)]
     pub fork_digest: Option<String>,
     /// Local registry size (recent genesis; default 4 for finality smoke).

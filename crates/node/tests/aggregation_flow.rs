@@ -267,11 +267,11 @@ fn votes_aggregate_into_a_block_that_a_peer_verifies() {
     tampered.signed.proof.proof[mid] ^= 1;
     let shutdown = ShutdownState::default();
     assert!(matches!(
-        gossip_stf::import_decoded_block(&mut peer, &shutdown, &tampered),
+        gossip_stf::import_decoded_block(&mut peer, &shutdown, tampered),
         gossip_stf::GossipStfResult::Rejected { .. }
     ));
     assert_eq!(
-        gossip_stf::import_decoded_block(&mut peer, &shutdown, &decoded),
+        gossip_stf::import_decoded_block(&mut peer, &shutdown, decoded),
         gossip_stf::GossipStfResult::Applied {
             root: block.block_root
         }

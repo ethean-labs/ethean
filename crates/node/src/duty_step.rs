@@ -43,6 +43,7 @@ pub fn apply_wall_step(
     let was_accepted = matches!(accepted, ChainEvent::TickAccepted(_));
     if was_accepted {
         crate::lean_metrics::tick();
+        owner.prune_untrusted_pools(tick.slot.get());
         owner.fc_on_tick(tick.slot.get(), tick.interval, tick.interval == 0);
     }
     events.push(accepted);

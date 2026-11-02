@@ -22,3 +22,10 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [prover-thread-share-2026-09-30.md](./prover-thread-share-2026-09-30.md) — provers on one host share the cores (`ETHEAN_PROVER_COUNT`, `LEANVM_NUM_THREADS`); measured block proof times and the 2-aggregator finality result
 - [early-block-two-intervals-2026-11-02.md](./early-block-two-intervals-2026-11-02.md) — next-slot block proof starts two intervals early; union merges and splits wait while the prover is reserved
 - [copy-cuts-gossip-cap-2026-11-02.md](./copy-cuts-gossip-cap-2026-11-02.md) — no head-state clone when planning, proofs moved into the job, gossip validator list borrowed, unpublished aggregates capped at 32
+- [borrow-parent-state-import-2026-11-02.md](./borrow-parent-state-import-2026-11-02.md) — import borrows parent `State`; only the registry is copied for Split recovery
+- [hot-path-copies-2026-11-02.md](./hot-path-copies-2026-11-02.md) — move decoded block into FC, one serve-cache put, last Split takes keys by move
+- [yield-type1-to-early-block-2026-11-02.md](./yield-type1-to-early-block-2026-11-02.md) — skip interval-2 Type-1 when we propose N+1 and a body proof is already pooled
+- [cap-union-jobs-2026-11-02.md](./cap-union-jobs-2026-11-02.md) — at most one union merge while any Type-1 is in flight
+- [bound-untrusted-queues-2026-11-02.md](./bound-untrusted-queues-2026-11-02.md) — 256-key caps on known payloads and Type-1 pool; prune on every tick
+- [fork-choice-peer-trip-tests-2026-11-02.md](./fork-choice-peer-trip-tests-2026-11-02.md) — fresh vs activated votes, pending heads, prune, duplicate proposal
+- [scale-flags-no-soak-2026-11-02.md](./scale-flags-no-soak-2026-11-02.md) — `-ValidatorsPerNode` / `-Subnets` / `-Aggregators` exist; no large run on this CPU

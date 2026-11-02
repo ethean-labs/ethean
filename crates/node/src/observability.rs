@@ -1,5 +1,6 @@
 //! Metrics registry and Lean RPC smoke helpers for the node process.
 
+use crate::progress_health::{ProgressSample, ProgressTracker};
 use ethean_metrics::{
     ensure_core_families, record_admin_event_backlog, record_bootnode_count,
     record_durable_persist, record_fc_reorg, record_fc_reorg_total, record_range_serve,
@@ -50,6 +51,7 @@ impl NodeObservability {
             readiness: Readiness::default(),
             ready_flag: Arc::new(AtomicBool::new(false)),
         })
+            progress: ProgressTracker::default(),
     }
 
     /// Mark storage schema open as healthy.
@@ -152,12 +154,37 @@ impl NodeObservability {
     }
 
     /// Mirror readiness subsystem bits into gauges for the ops dashboard.
+    /// Fold a chain snapshot into progress gates (head, prover thread, Type-2).
+    pub fn apply_progress(&mut self, sample: ProgressSample) {
+        let before = self.progress.flags();
+        let flags = self.progress.observe(sample);
+        self.readiness.head_progress = flags.head_progress;
+        self.readiness.prover_alive = flags.prover_alive;
+        self.readiness.block_proof_progress = flags.block_proof_progress;
+        if before.head_progress && !flags.head_progress {
+            tracing::warn!(
+                head_slot = sample.head_slot,
+                current_slot = sample.current_slot,
+                "head has not moved for eight slots"
+            );
+        }
+        if before.prover_alive && !flags.prover_alive {
+            tracing::warn!("prover worker thread has exited");
+        }
+        if before.block_proof_progress && !flags.block_proof_progress {
+            tracing::warn!("block proof has been in flight for eight slots");
+        }
+        if !before.gossip_idle && flags.gossip_idle {
+            tracing::warn!("gossip idle: peers connected but no inbound messages");
+        }
+    }
+
+    /// Mirror readiness subsystem bits into gauges for the ops dashboard.
     pub fn record_readiness_bits(&mut self) -> Result<(), MetricsError> {
         let r = self.readiness;
-        self.registry.with_mut(|reg| {
-            record_readiness_gauges(reg, r.storage, r.crypto, r.signer, r.network, r.prover)
-        })
-    }
+        let idle = self.progress.flags().gossip_idle;
+        self.registry
+            .with_mut(|reg| record_readiness_gauges(reg, r, idle))
 
     /// How many bootnode multiaddrs were configured for this process.
     pub fn record_bootnodes(&mut self, bootnode_count: u64) -> Result<(), MetricsError> {

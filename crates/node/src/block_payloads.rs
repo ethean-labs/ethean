@@ -21,7 +21,7 @@ pub fn seed_known_payloads(
 ) -> Vec<ChainEvent> {
     let mut events = Vec::new();
     for attestation in &block.body.attestations {
-        owner.known_payloads.insert(
+        owner.remember_known_payload(
             attestation.data.hash_tree_root(),
             attestation.data.slot.get(),
         );
@@ -32,7 +32,8 @@ pub fn seed_known_payloads(
     let Ok(components) = block_proof_components(block, validators) else {
         return events;
     };
-    let keys: Vec<_> = components.into_iter().map(|c| c.public_keys).collect();
+    let mut keys: Vec<_> = components.into_iter().map(|c| c.public_keys).collect();
+    let mut pending = Vec::new();
     for attestation in &block.body.attestations {
         let data = attestation.data;
         let data_root = data.hash_tree_root();
@@ -59,11 +60,20 @@ pub fn seed_known_payloads(
         if covered || in_flight || block_busy {
             continue;
         }
+        pending.push((data, attestation.aggregation_bits.bits.clone(), data_root));
+    }
+    let last = pending.len().saturating_sub(1);
+    for (i, (data, participants, data_root)) in pending.into_iter().enumerate() {
+        let public_keys_per_component = if i == last {
+            std::mem::take(&mut keys)
+        } else {
+            keys.clone()
+        };
         let job = ProofJob::Split {
             data,
-            participants: attestation.aggregation_bits.bits.clone(),
+            participants,
             block_proof: block_proof.to_vec(),
-            public_keys_per_component: keys.clone(),
+            public_keys_per_component,
         };
         if owner.prover.as_mut().is_some_and(|p| p.submit(job)) {
             events.push(ChainEvent::ProofScheduled {

@@ -4,5 +4,5 @@
 mod pool;
 mod signatures;
 
-pub use pool::{AggregatePool, PoolEntry, PoolKey};
+pub use pool::{AggregatePool, PoolEntry, PoolKey, MAX_POOL_KEYS};
 pub use signatures::{AttestationSignaturePool, MAX_TRACKED_DATA};

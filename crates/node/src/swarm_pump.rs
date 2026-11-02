@@ -134,12 +134,12 @@ pub fn publish_pending_block(
     })?;
     match facade.publish_gossip(&gossip.topic, &compressed) {
         Ok(()) => {
-            let _ = facade.put_block_bytes(gossip.block_root, gossip.payload.clone());
-            let _ =
-                facade.put_block_at_slot(gossip.slot, gossip.block_root, gossip.payload.clone());
+            let payload_len = gossip.payload.len();
+            owner.remember_durable_block(gossip.block_root, gossip.payload.clone());
+            let _ = facade.put_block_at_slot(gossip.slot, gossip.block_root, gossip.payload);
             Ok(Some(PublishedBlock {
                 topic: gossip.topic,
-                payload_len: gossip.payload.len(),
+                payload_len,
                 proof_len: gossip.proof_len,
             }))
         }
@@ -154,15 +154,12 @@ pub fn publish_pending_block(
                     solo = owner.local_finality,
                     "gossip publish skipped (no peers); local head already updated"
                 );
-                let _ = facade.put_block_bytes(gossip.block_root, gossip.payload.clone());
-                let _ = facade.put_block_at_slot(
-                    gossip.slot,
-                    gossip.block_root,
-                    gossip.payload.clone(),
-                );
+                let payload_len = gossip.payload.len();
+                owner.remember_durable_block(gossip.block_root, gossip.payload.clone());
+                let _ = facade.put_block_at_slot(gossip.slot, gossip.block_root, gossip.payload);
                 return Ok(Some(PublishedBlock {
                     topic: gossip.topic,
-                    payload_len: gossip.payload.len(),
+                    payload_len,
                     proof_len: gossip.proof_len,
                 }));
             }

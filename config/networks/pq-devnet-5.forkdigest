@@ -1,10 +1,10 @@
 # Optional operator fork digest for pq-devnet-5 gossip topics
 #
-# One 8-hex-char line (optional 0x prefix). When empty/missing, Ethean uses the
-# interim SHA-256(fork_name) segment — peers will not share topics until this
-# matches the leanSpec / operator genesis digest for the run.
+# One 8-hex-char line (optional 0x prefix). Leave empty: Ethean uses lstar
+# GOSSIP_DIGEST "12345678" (leanSpec), not SHA-256(fork_name). That will not
+# match a public mesh until you paste the operator pin (A2).
 #
 # Also: --fork-digest AABBCCDD  or  ETHEAN_FORK_DIGEST=AABBCCDD
 #
-# Example:
+# Example (replace with the live run digest; do not invent one):
 # aabbccdd

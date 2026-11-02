@@ -119,54 +119,85 @@ pub fn schedule_aggregations(owner: &mut ChainOwner) -> Vec<ChainEvent> {
         tracing::debug!("type-1 deferred: block proof in flight");
         return events;
     }
-    for data_root in owner.signatures.roots() {
-        if owner
-            .prover
-            .as_ref()
-            .is_some_and(|p| p.attestation_in_flight(&data_root))
-        {
-            continue;
-        }
-        let Some(data) = owner.signatures.data(&data_root).cloned() else {
-            continue;
-        };
-        let (children, covered) = select_children(owner, data_root);
-        let fresh = owner.signatures.uncovered(&data_root, &covered);
-        if fresh.is_empty() && children.len() < 2 {
-            continue;
-        }
-        let mut participants = covered;
-        let mut raw = Vec::with_capacity(fresh.len());
-        for (index, signature) in fresh {
-            let key = match owner.head_state.as_ref() {
-                Some(state) => match attestation_key(state, index) {
-                    Ok(key) => key,
-                    Err(e) => {
-                        tracing::debug!(index, error = %e, "signature dropped");
-                        continue;
-                    }
-                },
-                None => continue,
-            };
-            set(&mut participants, index as usize);
-            raw.push((key, signature));
-        }
-        submit_type1(owner, data, participants, raw, children, &mut events);
-    }
-    // A union merge started here would still be running when the early block
-    // proof is queued two intervals later. Local Type-1s stay; they go into
-    // the block.
     let next_is_ours = owner
         .last_tick
         .is_some_and(|t| crate::duty_propose::proposes_next_slot(owner, t));
+    if defer_type1_for_early_block(owner) {
+        tracing::debug!("type-1 deferred: next slot is ours and a body proof is pooled");
+    } else {
+        for data_root in owner.signatures.roots() {
+            if owner
+                .prover
+                .as_ref()
+                .is_some_and(|p| p.attestation_in_flight(&data_root))
+            {
+                continue;
+            }
+            let Some(data) = owner.signatures.data(&data_root).cloned() else {
+                continue;
+            };
+            let (children, covered) = select_children(owner, data_root);
+            let fresh = owner.signatures.uncovered(&data_root, &covered);
+            let mut participants = covered;
+            let mut raw = Vec::with_capacity(fresh.len());
+            for (index, signature) in fresh {
+                let key = match owner.head_state.as_ref() {
+                    Some(state) => match attestation_key(state, index) {
+                        Ok(key) => key,
+                        Err(e) => {
+                            tracing::debug!(index, error = %e, "signature dropped");
+                            continue;
+                        }
+                    },
+                    None => continue,
+                };
+                set(&mut participants, index as usize);
+                raw.push((key, signature));
+            }
+            if trivial_type1(raw.len(), children.len()) {
+                continue;
+            }
+            submit_type1(owner, data, participants, raw, children, &mut events);
+        }
+    }
+    // A union merge started here would still be running when the early block
+    // proof is queued two intervals later.
     if !next_is_ours {
         schedule_union_merges(owner, &mut events);
     }
     events
 }
 
+/// Type-1 jobs that add no consensus value (leanSpec PR #748 / zeam #907).
+///
+/// A single raw gossip signature is already on the attestation subnet; a lone
+/// child proof is already a valid Type-1. Proving either costs a full STARK.
+fn trivial_type1(raw: usize, children: usize) -> bool {
+    (children == 0 && raw <= 1) || (raw == 0 && children < 2)
+}
+
+/// Interval-2 Type-1 (~1.1 s) would still occupy the prover when the early
+/// Type-2 starts. Skip it when this node proposes N+1 and a proved body is
+/// already pooled. An empty pool still proves so a lone aggregator can fill
+/// the next block.
+fn defer_type1_for_early_block(owner: &ChainOwner) -> bool {
+    owner
+        .last_tick
+        .is_some_and(|t| crate::duty_propose::proposes_next_slot(owner, t))
+        && owner.aggregates.has_proved_entry()
+}
+
 /// Slots back from the current one whose partial aggregates are still merged.
 const UNION_WINDOW_SLOTS: u64 = 2;
+
+/// A union merge costs about as much as a Type-2. A second in-flight
+/// attestation on the same process (Type-1 or another union) delayed the
+/// block proof past the 4 s slot on the 2-aggregator host.
+const MAX_IN_FLIGHT_UNIONS: usize = 1;
+
+fn remaining_union_slots(in_flight: usize) -> usize {
+    MAX_IN_FLIGHT_UNIONS.saturating_sub(in_flight)
+}
 
 /// Aggregators on different subnets each prove only their own votes, so no
 /// single pooled proof reaches a supermajority. leanSpec folds those proofs
@@ -175,6 +206,15 @@ const UNION_WINDOW_SLOTS: u64 = 2;
 /// were gossiped. Only the aggregator owning subnet `slot % committees` runs
 /// the merge, so the others do not prove the same union again.
 fn schedule_union_merges(owner: &mut ChainOwner, events: &mut Vec<ChainEvent>) {
+    let in_flight = owner
+        .prover
+        .as_ref()
+        .map(|p| p.attestations_in_flight_count())
+        .unwrap_or(0);
+    if remaining_union_slots(in_flight) == 0 {
+        tracing::debug!("union merge deferred: an attestation proof is already in flight");
+        return;
+    }
     let current = owner.last_tick.map(|t| t.slot.get()).unwrap_or(0);
     let min_slot = current.saturating_sub(UNION_WINDOW_SLOTS);
     for key in owner.aggregates.mergeable_keys_since(min_slot) {
@@ -212,6 +252,7 @@ fn schedule_union_merges(owner: &mut ChainOwner, events: &mut Vec<ChainEvent>) {
             "union merge queued"
         );
         submit_type1(owner, data, covered, Vec::new(), children, events);
+        break;
     }
 }
 
@@ -278,7 +319,7 @@ pub fn accept_attestation_proof(
         elapsed_ms = building.as_millis() as u64,
         "aggregate proved"
     );
-    insert_proved(owner, &data, participants.clone(), proof.clone())?;
+    insert_proved(owner, &data, &participants, &proof)?;
     owner.signatures.remove_covered(&data_root, &participants);
     if let Some(fork) = owner.profile.as_ref().map(|p| p.fork_name) {
         let signed = SignedAggregatedAttestation {
@@ -327,11 +368,99 @@ pub fn accept_recovered_proof(
         elapsed_ms = building.as_millis() as u64,
         "block vote proof recovered"
     );
-    insert_proved(owner, &data, participants, proof)?;
-    owner.known_payloads.insert(data_root, data.slot.get());
+    insert_proved(owner, &data, &participants, &proof)?;
+    owner.remember_known_payload(data_root, data.slot.get());
     Ok(ChainEvent::AggregateProved {
         data_root,
         coverage,
         proof_len,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        defer_type1_for_early_block, remaining_union_slots, trivial_type1, MAX_IN_FLIGHT_UNIONS,
+    };
+    use crate::aggregation::{PoolEntry, PoolKey};
+    use crate::chain_owner::ChainOwner;
+    use crate::duty_propose::proposes_next_slot;
+    use ethean_primitives::{Bytes52, Slot};
+    use ethean_profile::lstar_devnet;
+    use ethean_types::{BlockHeader, Checkpoint, GenesisConfig, State, Validator};
+    use ethean_validator::DutyTick;
+
+    #[test]
+    fn skips_jobs_that_cannot_move_quorum() {
+        assert!(trivial_type1(0, 0));
+        assert!(trivial_type1(1, 0));
+        assert!(trivial_type1(0, 1));
+        assert!(!trivial_type1(2, 0));
+        assert!(!trivial_type1(1, 1));
+        assert!(!trivial_type1(0, 2));
+    }
+
+    fn owner_three_validators() -> ChainOwner {
+        let vals = (0..3)
+            .map(|i| {
+                Validator::new(
+                    Bytes52::ZERO,
+                    Bytes52::ZERO,
+                    ethean_primitives::ValidatorIndex::new(i),
+                )
+                .unwrap()
+            })
+            .collect();
+        let mut owner = ChainOwner::new(2);
+        owner.head_state = Some(State {
+            config: GenesisConfig::new(1_700_000_000),
+            slot: Slot::ZERO,
+            latest_block_header: BlockHeader::default(),
+            latest_justified: Checkpoint::genesis(),
+            latest_finalized: Checkpoint::genesis(),
+            historical_block_hashes: Vec::new(),
+            justified_slots: Vec::new(),
+            validators: vals,
+            justifications_roots: Vec::new(),
+            justifications_validators: Vec::new(),
+        });
+        owner.profile = Some(lstar_devnet().unwrap());
+        owner.last_tick = Some(DutyTick {
+            slot: Slot::ZERO,
+            interval: 2,
+            generation: 1,
+        });
+        owner
+    }
+
+    #[test]
+    fn defers_type1_only_when_next_slot_is_ours_and_a_body_is_pooled() {
+        let mut owner = owner_three_validators();
+        owner.owned_validator_indices = vec![1];
+        assert!(proposes_next_slot(&owner, owner.last_tick.unwrap()));
+        assert!(!defer_type1_for_early_block(&owner));
+        owner.aggregates.insert_verified(
+            PoolKey {
+                profile_digest: [1u8; 32],
+                message_root: [2u8; 32],
+            },
+            PoolEntry {
+                proof: vec![9],
+                coverage: 1,
+                inserted_slot: 0,
+                attestation_ssz: Vec::new(),
+            },
+        );
+        assert!(defer_type1_for_early_block(&owner));
+        owner.owned_validator_indices = vec![0];
+        assert!(!defer_type1_for_early_block(&owner));
+    }
+
+    #[test]
+    fn one_in_flight_attestation_uses_the_union_budget() {
+        assert_eq!(MAX_IN_FLIGHT_UNIONS, 1);
+        assert_eq!(remaining_union_slots(0), 1);
+        assert_eq!(remaining_union_slots(1), 0);
+        assert_eq!(remaining_union_slots(4), 0);
+    }
 }

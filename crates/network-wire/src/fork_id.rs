@@ -110,6 +110,13 @@ mod tests {
     }
 
     #[test]
+    fn lstar_default_is_not_sha256_of_the_fork_name() {
+        // SHA-256("lstar")[0..4] is aa4c6403 — must not become the default.
+        assert_eq!(LSTAR_GOSSIP_DIGEST, "12345678");
+        assert_ne!(fork_segment_from_name("lstar").unwrap(), "aa4c6403");
+    }
+
+    #[test]
     fn accepts_lstar_digest_override() {
         assert_eq!(
             fork_segment_resolve("lstar", Some("12345678")).unwrap(),
