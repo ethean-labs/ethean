@@ -3,7 +3,7 @@
 Operator-facing milestone notes live in the root
 [`CHANGELOG.md`](../../CHANGELOG.md). Published cuts are GitHub Releases on
 tags `vMAJOR.MINOR.PATCH` (public milestones include `v0.1.12`, `v0.1.27`,
-`v0.1.47`, `v0.1.53`). Session write-ups under `docs/` stay detailed; the changelog is
+`v0.1.47`, `v0.1.53`, `v0.1.72`). Session write-ups under `docs/` stay detailed; the changelog is
 the curated summary copied into each Release body.
 
 - [binaries.md](./binaries.md) — multi-platform `ethean` archives on Releases
@@ -16,4 +16,5 @@ the curated summary copied into each Release body.
 - Session: [windows-leanvm-overlay-2026-09-24.md](./windows-leanvm-overlay-2026-09-24.md)
 - Session: [fork-release-mirror-ethean-labs-2026-09-24.md](./fork-release-mirror-ethean-labs-2026-09-24.md)
 - Session: [restore-v0-1-53-notes-2026-09-25.md](./restore-v0-1-53-notes-2026-09-25.md)
+- Session: [cut-v0-1-72-2026-11-02.md](./cut-v0-1-72-2026-11-02.md)
 - Org Releases: https://github.com/ethean-labs/ethean/releases

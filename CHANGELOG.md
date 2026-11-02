@@ -12,6 +12,14 @@ the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
+## [0.1.72] - 2026-11-02
+
+Milestone covering work after `0.1.53` (workspace `0.1.54` through `0.1.72`):
+a multi-node proving mesh that finalizes on one host, leanSpec attestation
+targets and aggregator subnets, checkpoint sync, Hive `/lean/v0` plus test
+driver, multi-arch GHCR images, bounded stores, and catch-up that follows a
+majority Status tip.
+
 ### Changed
 
 - A proof job logs its wall time when it finishes (`proof worker finished job`).
@@ -472,7 +480,8 @@ work that landed before the root `VERSION` file (`0.1.1`) through `0.1.12`.
   `blstrs` / `bls12_381` under `crates/` or `bin/` as hard-fail for release
   promotion.
 
-[Unreleased]: https://github.com/ethean-labs/ethean/compare/v0.1.53...HEAD
+[Unreleased]: https://github.com/ethean-labs/ethean/compare/v0.1.72...HEAD
+[0.1.72]: https://github.com/ethean-labs/ethean/compare/v0.1.53...v0.1.72
 [0.1.53]: https://github.com/ethean-labs/ethean/compare/v0.1.47...v0.1.53
 [0.1.47]: https://github.com/ethean-labs/ethean/compare/v0.1.27...v0.1.47
 [0.1.27]: https://github.com/ethean-labs/ethean/compare/v0.1.12...v0.1.27
