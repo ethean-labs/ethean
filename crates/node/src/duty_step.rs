@@ -66,7 +66,9 @@ pub fn apply_wall_step(
             if tick.interval == crate::aggregation_duty::AGGREGATION_INTERVAL {
                 events.extend(crate::aggregation_duty::schedule_aggregations(owner));
             } else {
-                events.extend(crate::aggregation_duty::schedule_union_merges_only(owner));
+                events.extend(crate::aggregation_duty::schedule_union_merges_only(
+                    owner, tick,
+                ));
             }
         }
     }

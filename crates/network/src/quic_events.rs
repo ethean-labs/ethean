@@ -17,7 +17,7 @@ impl QuicSwarm {
         ev: request_response::Event<Vec<u8>, Vec<u8>>,
     ) -> PumpEvent {
         match ev {
-            request_response::Event::Message { peer, message } => match message {
+            request_response::Event::Message { peer, message, .. } => match message {
                 request_response::Message::Request {
                     request, channel, ..
                 } => {
@@ -51,7 +51,7 @@ impl QuicSwarm {
         ev: request_response::Event<Vec<u8>, Vec<u8>>,
     ) -> PumpEvent {
         match ev {
-            request_response::Event::Message { peer, message } => match message {
+            request_response::Event::Message { peer, message, .. } => match message {
                 request_response::Message::Request {
                     request, channel, ..
                 } => {
@@ -99,7 +99,7 @@ impl QuicSwarm {
         ev: request_response::Event<Vec<u8>, Vec<u8>>,
     ) -> PumpEvent {
         match ev {
-            request_response::Event::Message { peer, message } => match message {
+            request_response::Event::Message { peer, message, .. } => match message {
                 request_response::Message::Request {
                     request, channel, ..
                 } => {

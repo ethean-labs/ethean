@@ -27,9 +27,10 @@ pub fn union_bits<'a>(attestations: impl Iterator<Item = &'a AggregatedAttestati
 pub fn pool_bits(owner: &ChainOwner) -> Vec<bool> {
     let decoded: Vec<AggregatedAttestation> = owner
         .aggregates
-        .best_entries()
+        .keys_by_message_root()
         .into_iter()
-        .filter_map(|(_, e)| AggregatedAttestation::ssz_decode(&e.attestation_ssz).ok())
+        .filter_map(|k| owner.aggregates.best(&k))
+        .filter_map(|e| AggregatedAttestation::ssz_decode(&e.attestation_ssz).ok())
         .collect();
     union_bits(decoded.iter())
 }

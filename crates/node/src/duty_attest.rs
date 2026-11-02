@@ -102,7 +102,7 @@ fn attest_as(
             .ok()
             .and_then(|segment| topic_attestation(&segment, subnet).ok());
         if let Some(topic) = topic {
-            owner.pending_aggregation_gossip.push(AggregationGossip {
+            owner.queue_aggregation_gossip(AggregationGossip {
                 topic,
                 payload: vote.ssz_encode(),
                 data_root,

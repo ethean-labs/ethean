@@ -37,23 +37,22 @@ pub fn import_decoded_block(
     }
     if !owner.can_import_parent(decoded.parent) {
         tracing::debug!(
-            slot = decoded.block.slot.get(),
+            slot = decoded.signed.block.slot.get(),
             "gossip block skipped: parent not importable"
         );
         return GossipStfResult::Skipped;
     }
     let Some(pre) = owner.pre_state_for_parent(decoded.parent) else {
         tracing::debug!(
-            slot = decoded.block.slot.get(),
+            slot = decoded.signed.block.slot.get(),
             "gossip block skipped: no parent state"
         );
         return GossipStfResult::Skipped;
     };
-    let Some(profile) = owner.profile.clone() else {
+    let Some(profile) = owner.profile.as_ref() else {
         return GossipStfResult::Skipped;
     };
     let ctx = TransitionContext::new(profile.clone());
-    let parent_validators = pre.validators.clone();
     let committees = profile.attestation_subnet_count() as u64;
     let timely = crate::lean_metrics::coverage::pool_bits(owner);
     let started = Instant::now();
@@ -69,9 +68,9 @@ pub fn import_decoded_block(
             let post = out.post_state;
             if owner.fc.is_some() {
                 // Tick store time so historical sync imports are not "too far".
-                let slot = decoded.block.slot.get();
+                let slot = decoded.signed.block.slot.get();
                 owner.fc_on_tick(slot, 0, false);
-                owner.fc_on_block(decoded.block.clone(), post);
+                owner.fc_on_block(decoded.signed.block.clone(), post);
             } else {
                 owner.head_state = Some(post);
                 owner.advance_head(decoded.root, decoded.parent);
@@ -89,7 +88,7 @@ pub fn import_decoded_block(
                 owner,
                 &decoded.signed.block,
                 &decoded.signed.proof.proof,
-                &parent_validators,
+                &pre.validators,
             );
             if !seeded.is_empty() {
                 tracing::debug!(jobs = seeded.len(), "block vote proof recovery queued");

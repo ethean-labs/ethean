@@ -37,12 +37,12 @@ fn select_children(owner: &ChainOwner, data_root: Hash32) -> (Vec<BitsAndProof>,
     let mut variants: Vec<BitsAndProof> = owner
         .aggregates
         .variants(&pool_key(data_root))
-        .unwrap_or_default()
-        .into_iter()
+        .unwrap_or(&[])
+        .iter()
         .filter(|e| !e.proof.is_empty())
         .filter_map(|e| {
             let att = AggregatedAttestation::ssz_decode(&e.attestation_ssz).ok()?;
-            Some((att.aggregation_bits.bits, e.proof))
+            Some((att.aggregation_bits.bits, e.proof.clone()))
         })
         .collect();
     variants.sort_by_key(|(bits, _)| std::cmp::Reverse(bits.iter().filter(|b| **b).count()));
@@ -72,32 +72,39 @@ fn select_children(owner: &ChainOwner, data_root: Hash32) -> (Vec<BitsAndProof>,
 /// `tick_interval`): once per slot, after the interval-1 votes have spread.
 pub const AGGREGATION_INTERVAL: u8 = 2;
 
-/// Head state when this node may queue aggregation work.
-fn aggregation_state(owner: &ChainOwner) -> Option<ethean_types::State> {
+/// True when this node may queue aggregation work (no head-state copy).
+fn aggregator_ready(owner: &ChainOwner) -> bool {
     let skipped = if !owner.is_aggregator {
         "not_aggregator"
     } else if owner.syncing {
         "not_synced"
     } else if owner.prover.is_none() {
         "other"
-    } else if let Some(state) = owner.head_state.as_ref() {
-        return Some(state.clone());
-    } else {
+    } else if owner.head_state.is_none() {
         "missing_state"
+    } else {
+        return true;
     };
     crate::lean_metrics::aggregation_skipped(skipped);
-    None
+    false
 }
 
 /// Merge partial aggregates of other subnets as soon as they arrive; run on
 /// the intervals where [`schedule_aggregations`] does not.
-pub fn schedule_union_merges_only(owner: &mut ChainOwner) -> Vec<ChainEvent> {
+pub fn schedule_union_merges_only(
+    owner: &mut ChainOwner,
+    tick: ethean_validator::DutyTick,
+) -> Vec<ChainEvent> {
     let mut events = Vec::new();
     if !owner.is_aggregator || owner.syncing || owner.prover.is_none() {
         return events;
     }
-    if let Some(state) = owner.head_state.clone() {
-        schedule_union_merges(owner, &state, &mut events);
+    if crate::duty_propose::prover_reserved_for_block(owner, tick) {
+        tracing::debug!("union merge deferred: prover reserved for the next block");
+        return events;
+    }
+    if owner.head_state.is_some() {
+        schedule_union_merges(owner, &mut events);
     }
     events
 }
@@ -105,9 +112,13 @@ pub fn schedule_union_merges_only(owner: &mut ChainOwner) -> Vec<ChainEvent> {
 /// Queue Type-1 jobs for every attestation data with fresh signatures.
 pub fn schedule_aggregations(owner: &mut ChainOwner) -> Vec<ChainEvent> {
     let mut events = Vec::new();
-    let Some(state) = aggregation_state(owner) else {
+    if !aggregator_ready(owner) {
         return events;
-    };
+    }
+    if owner.prover.as_ref().is_some_and(|p| p.block_in_flight()) {
+        tracing::debug!("type-1 deferred: block proof in flight");
+        return events;
+    }
     for data_root in owner.signatures.roots() {
         if owner
             .prover
@@ -127,25 +138,30 @@ pub fn schedule_aggregations(owner: &mut ChainOwner) -> Vec<ChainEvent> {
         let mut participants = covered;
         let mut raw = Vec::with_capacity(fresh.len());
         for (index, signature) in fresh {
-            match attestation_key(&state, index) {
-                Ok(key) => {
-                    set(&mut participants, index as usize);
-                    raw.push((key, signature));
-                }
-                Err(e) => tracing::debug!(index, error = %e, "signature dropped"),
-            }
+            let key = match owner.head_state.as_ref() {
+                Some(state) => match attestation_key(state, index) {
+                    Ok(key) => key,
+                    Err(e) => {
+                        tracing::debug!(index, error = %e, "signature dropped");
+                        continue;
+                    }
+                },
+                None => continue,
+            };
+            set(&mut participants, index as usize);
+            raw.push((key, signature));
         }
-        submit_type1(
-            owner,
-            &state,
-            data,
-            participants,
-            raw,
-            children,
-            &mut events,
-        );
+        submit_type1(owner, data, participants, raw, children, &mut events);
     }
-    schedule_union_merges(owner, &state, &mut events);
+    // A union merge started here would still be running when the early block
+    // proof is queued two intervals later. Local Type-1s stay; they go into
+    // the block.
+    let next_is_ours = owner
+        .last_tick
+        .is_some_and(|t| crate::duty_propose::proposes_next_slot(owner, t));
+    if !next_is_ours {
+        schedule_union_merges(owner, &mut events);
+    }
     events
 }
 
@@ -158,11 +174,7 @@ const UNION_WINDOW_SLOTS: u64 = 2;
 /// proposer's path and merges here, one round after the partial aggregates
 /// were gossiped. Only the aggregator owning subnet `slot % committees` runs
 /// the merge, so the others do not prove the same union again.
-fn schedule_union_merges(
-    owner: &mut ChainOwner,
-    state: &ethean_types::State,
-    events: &mut Vec<ChainEvent>,
-) {
+fn schedule_union_merges(owner: &mut ChainOwner, events: &mut Vec<ChainEvent>) {
     let current = owner.last_tick.map(|t| t.slot.get()).unwrap_or(0);
     let min_slot = current.saturating_sub(UNION_WINDOW_SLOTS);
     for key in owner.aggregates.mergeable_keys_since(min_slot) {
@@ -177,7 +189,7 @@ fn schedule_union_merges(
         let Some(data) = owner
             .aggregates
             .variants(&key)
-            .unwrap_or_default()
+            .unwrap_or(&[])
             .iter()
             .find_map(|e| AggregatedAttestation::ssz_decode(&e.attestation_ssz).ok())
             .map(|a| a.data)
@@ -199,13 +211,12 @@ fn schedule_union_merges(
             coverage = covered.iter().filter(|b| **b).count(),
             "union merge queued"
         );
-        submit_type1(owner, state, data, covered, Vec::new(), children, events);
+        submit_type1(owner, data, covered, Vec::new(), children, events);
     }
 }
 
 fn submit_type1(
     owner: &mut ChainOwner,
-    state: &ethean_types::State,
     data: AttestationData,
     participants: Vec<bool>,
     raw: Vec<(ethean_crypto::PublicKey, ethean_crypto::Signature)>,
@@ -213,15 +224,21 @@ fn submit_type1(
     events: &mut Vec<ChainEvent>,
 ) {
     let data_root = data.hash_tree_root();
-    let children: Vec<KeyedProof> = children
-        .into_iter()
-        .filter_map(|(bits, proof)| {
-            Some(KeyedProof {
-                public_keys: attestation_keys_for_bits(state, &bits).ok()?,
-                proof,
+    let children: Vec<KeyedProof> = {
+        let Some(state) = owner.head_state.as_ref() else {
+            crate::lean_metrics::aggregation_skipped("missing_state");
+            return;
+        };
+        children
+            .into_iter()
+            .filter_map(|(bits, proof)| {
+                Some(KeyedProof {
+                    public_keys: attestation_keys_for_bits(state, &bits).ok()?,
+                    proof,
+                })
             })
-        })
-        .collect();
+            .collect()
+    };
     let job = ProofJob::Attestation {
         data,
         participants,
@@ -273,7 +290,7 @@ pub fn accept_attestation_proof(
             .map_err(|e| e.to_string())?,
         };
         let segment = fork_segment_from_name(fork).map_err(|e| e.to_string())?;
-        owner.pending_aggregation_gossip.push(AggregationGossip {
+        owner.queue_aggregation_gossip(AggregationGossip {
             topic: topic_aggregation(&segment).map_err(|e| e.to_string())?,
             payload: signed.ssz_encode().map_err(|e| e.to_string())?,
             data_root,

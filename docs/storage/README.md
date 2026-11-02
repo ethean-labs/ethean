@@ -7,6 +7,7 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [duty loop and rocksdb gate](duty-loop-and-rocksdb-gate-2026-09-19.md)
 - [ethean redb ssz data dir](ethean-redb-ssz-data-dir-2026-09-20.md)
 - [persist applied blocks durable](persist-applied-blocks-durable-2026-09-20.md)
+- [redb 4 file format](redb-4-format-2026-11-02.md)
 - [prune keep slots config](prune-keep-slots-config-2026-09-20.md)
 - [reset chain wipes data dir](reset-chain-wipes-data-dir-2026-09-20.md)
 - [checkpoint sync client](checkpoint-sync-client-2026-09-24.md)

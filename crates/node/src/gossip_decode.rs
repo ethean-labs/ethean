@@ -1,7 +1,7 @@
 //! Decode Lean gossip payloads (Snappy already removed).
 
 use ethean_primitives::Hash32;
-use ethean_types::{Block, SignedBlock};
+use ethean_types::SignedBlock;
 use sha2::{Digest, Sha256};
 
 /// A `SignedBlock` from the block topic (or a sync response).
@@ -11,8 +11,6 @@ pub struct DecodedBlockGossip {
     pub root: Hash32,
     /// Parent root the block extends.
     pub parent: Hash32,
-    /// Inner block (convenience copy of `signed.block`).
-    pub block: Block,
     /// Block with its merged proof.
     pub signed: SignedBlock,
 }
@@ -27,7 +25,6 @@ pub fn try_decode_block(topic: &str, payload: &[u8]) -> Option<DecodedBlockGossi
     Some(DecodedBlockGossip {
         root,
         parent: signed.block.parent_root,
-        block: signed.block.clone(),
         signed,
     })
 }
@@ -53,7 +50,7 @@ pub fn provisional_content_root(payload: &[u8]) -> Hash32 {
 mod tests {
     use super::*;
     use ethean_primitives::{Slot, ValidatorIndex, HASH32_ZERO};
-    use ethean_types::{BlockBody, MultiMessageAggregate};
+    use ethean_types::{Block, BlockBody, MultiMessageAggregate};
 
     #[test]
     fn decodes_signed_blocks_only_on_block_topics() {

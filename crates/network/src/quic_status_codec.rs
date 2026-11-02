@@ -3,7 +3,6 @@
 #![cfg(feature = "libp2p-quic")]
 
 use crate::quic_framed::{read_framed, read_framed_request, write_framed, write_framed_request};
-use async_trait::async_trait;
 use ethean_network_wire::rpc_status;
 use futures::prelude::*;
 use libp2p::request_response;
@@ -26,7 +25,6 @@ pub fn status_behaviour() -> request_response::Behaviour<StatusCodec> {
     )
 }
 
-#[async_trait]
 impl request_response::Codec for StatusCodec {
     type Protocol = StreamProtocol;
     type Request = Vec<u8>;

@@ -128,7 +128,13 @@ pub fn imported_gossip_blocks(
                     .fc
                     .as_ref()
                     .is_some_and(|fc| fc.blocks.contains_key(&decoded.root));
-            known.then(|| (decoded.block.slot.get(), decoded.root, plain.to_vec()))
+            known.then(|| {
+                (
+                    decoded.signed.block.slot.get(),
+                    decoded.root,
+                    plain.to_vec(),
+                )
+            })
         })
         .collect()
 }

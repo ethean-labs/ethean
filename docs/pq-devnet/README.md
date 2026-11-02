@@ -20,3 +20,5 @@ Dated development notes for this topic. Index: [../README.md](../../README.md).
 - [soak-memory-bounds-2026-09-30.md](./soak-memory-bounds-2026-09-30.md) — 20-minute soak, bounded serve cache / request tracker / fork-choice history / gossip ids, cheaper durable flush
 - [vote-retry-and-prune-index-2026-09-30.md](./vote-retry-and-prune-index-2026-09-30.md) — deferred retry of votes rejected for a missing block or an early slot; pruning reads slots from file headers and a redb index instead of decoding
 - [prover-thread-share-2026-09-30.md](./prover-thread-share-2026-09-30.md) — provers on one host share the cores (`ETHEAN_PROVER_COUNT`, `LEANVM_NUM_THREADS`); measured block proof times and the 2-aggregator finality result
+- [early-block-two-intervals-2026-11-02.md](./early-block-two-intervals-2026-11-02.md) — next-slot block proof starts two intervals early; union merges and splits wait while the prover is reserved
+- [copy-cuts-gossip-cap-2026-11-02.md](./copy-cuts-gossip-cap-2026-11-02.md) — no head-state clone when planning, proofs moved into the job, gossip validator list borrowed, unpublished aggregates capped at 32

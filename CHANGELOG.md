@@ -12,6 +12,32 @@ the curated operator-facing summary, not a dump of every working note.
 
 ## [Unreleased]
 
+### Changed
+
+- libp2p 0.57: request/response codecs use native async trait methods, gossipsub
+  publish-message cap stays at 500, Status/blocks events ignore the new
+  `connection_id` field.
+- redb 4.3 for `ethean.redb`. Older KV files cannot be opened; delete
+  `ethean.redb` or `--reset-chain` so the node recreates a v3 file.
+- The next slot's block proof starts in the last two intervals of the current
+  slot (1.6 s of overlap at 800 ms intervals), not only the last one. A Type-2
+  of two components is about 3.3 s, so one interval of overlap still landed the
+  block after slot start. Union merges and split recovery are deferred while
+  that window is open for the next proposer, or while a block job is already
+  running, so they do not occupy the prover.
+- Proposal planning no longer clones the head state; the job takes attestation
+  proofs by move instead of copying them (~180 KB each). Gossip block import
+  reuses the parent state's validator list instead of cloning it. Unpublished
+  vote/aggregate gossip is capped at 32 payloads, dropping the oldest.
+- Aggregators no longer clone the head state each interval; they borrow
+  validator keys when building Type-1 jobs. The aggregate pool returns
+  borrowed variants instead of copying every proof. Gossip decode keeps a
+  single `SignedBlock` instead of a second copy of the inner block.
+- Blocks-by-root blobs reach the serve cache and durable queue only after
+  the proof and state transition succeed, so this node does not hand out
+  unverified pending bodies. Type-1 aggregation waits while a block proof
+  is already running.
+
 ## [0.1.72] - 2026-11-02
 
 Milestone covering work after `0.1.53` (workspace `0.1.54` through `0.1.72`):

@@ -24,7 +24,7 @@ pub const HISTORY_GOSSIP: usize = 3;
 pub const SEEN_TTL: Duration = Duration::from_secs(24);
 /// IDONTWANT size threshold (bytes).
 pub const IDONTWANT_MESSAGE_SIZE_THRESHOLD: usize = 1000;
-/// Max messages per RPC.
+/// Max publish messages processed in one gossipsub RPC.
 pub const MAX_MESSAGES_PER_RPC: usize = 500;
 
 /// Maximum gossipsub transmit size (snappy-framed SignedBlock budget).

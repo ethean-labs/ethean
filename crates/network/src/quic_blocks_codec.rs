@@ -5,7 +5,6 @@
 use crate::quic_framed::{
     read_framed_request, read_response_stream, write_framed_request, write_response_bytes,
 };
-use async_trait::async_trait;
 use ethean_network_wire::rpc_blocks_by_root;
 use futures::prelude::*;
 use libp2p::request_response;
@@ -28,7 +27,6 @@ pub fn blocks_by_root_behaviour() -> request_response::Behaviour<BlocksByRootCod
     )
 }
 
-#[async_trait]
 impl request_response::Codec for BlocksByRootCodec {
     type Protocol = StreamProtocol;
     type Request = Vec<u8>;

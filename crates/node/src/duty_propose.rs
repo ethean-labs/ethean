@@ -29,17 +29,20 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     owner.signatures.prune_before(min_slot);
     owner.known_payloads.retain(|_, slot| *slot >= min_slot);
 
-    let (pre, profile) = match (owner.head_state.clone(), owner.profile.clone()) {
-        (Some(s), Some(p)) => (s, p),
-        _ => return out,
+    let Some(profile) = owner.profile.clone() else {
+        return out;
+    };
+    let Some(pre) = owner.head_state.as_ref() else {
+        return out;
     };
     let n = pre.validators.len() as u64;
+    let pre_slot = pre.slot.get();
     if n == 0 || !is_assigned_proposer(owner, tick.slot.get(), n) {
         return out;
     }
     // The head already holds a block for this slot (ours or imported); later
     // ticks of the same slot have nothing to build.
-    if pre.slot.get() >= tick.slot.get() {
+    if pre_slot >= tick.slot.get() {
         return out;
     }
     // Already proving (or holding) this slot's block, e.g. one started during
@@ -64,16 +67,19 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     } else {
         owner.block_attestation_data_cap()
     };
-    let planned = plan_from_pool(
-        &owner.aggregates,
-        owner.head_root,
-        tick.slot,
-        proposer,
-        &pre,
-        profile,
-        &known_roots,
-        max_data,
-    );
+    let planned = match owner.head_state.as_ref() {
+        Some(pre) => plan_from_pool(
+            &owner.aggregates,
+            owner.head_root,
+            tick.slot,
+            proposer,
+            pre,
+            profile,
+            &known_roots,
+            max_data,
+        ),
+        None => return out,
+    };
     observe_since("lean_block_building_time_seconds", &[], build_started);
     let mut plan = match planned {
         Ok(p) => {
@@ -97,14 +103,13 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     // Interval 0 is the preferred publish window. Intervals 1–2 still allow a
     // Type-2 request when interval 0 was blocked by a busy prover queue
     // (same-client meshes). Local finality accepts any first tick of a future slot.
-    let future_slot = tick.slot.get() > pre.slot.get();
+    let future_slot = tick.slot.get() > pre_slot;
     let publish_allowed = matches!(decide_publish(tick, tick, true), PublishDecision::Allow)
         && future_slot
         && (tick.interval <= 2 || owner.local_finality);
     let Ok(root) = plan.block_root() else {
         return out;
     };
-    owner.planned_proposal = Some(plan.clone());
     owner.planned_tick = Some(tick);
     out.push(ChainEvent::ProposalPlanned {
         root,
@@ -113,14 +118,17 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
         publish_allowed,
     });
     if !publish_allowed {
+        owner.planned_proposal = Some(plan);
         return out;
     }
     if owner.local_finality {
         // Smoke mode: injected votes carry no signatures, so the block cannot be
         // proved. It advances the local head only and is never gossiped.
         apply_locally(owner, &plan, tick);
+        owner.planned_proposal = Some(plan);
         return out;
     }
+    owner.planned_proposal = Some(plan.clone());
     match request_block_proof(owner, tick, plan) {
         Ok(events) => out.extend(events),
         Err(reason) => {
@@ -130,19 +138,55 @@ pub fn try_plan_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEve
     out
 }
 
-/// During the last interval of a slot, start the next slot's block when we
+/// How many trailing intervals of slot N start the proof for slot N+1.
+///
+/// A Type-2 of two components is about 3.3 s at leanVM `e2592df4`; one
+/// interval (800 ms) of overlap is not enough to land the block at slot start.
+pub const EARLY_PROPOSAL_INTERVALS: u64 = 2;
+
+/// True in the last [`EARLY_PROPOSAL_INTERVALS`] of a slot (intervals 3–4
+/// when `intervals_per_slot` is 5). Interval 2 stays free for aggregation.
+pub fn in_early_proposal_window(owner: &ChainOwner, interval: u8) -> bool {
+    let Some(profile) = owner.profile.as_ref() else {
+        return false;
+    };
+    let last = profile.intervals_per_slot.saturating_sub(1);
+    let first = last.saturating_sub(EARLY_PROPOSAL_INTERVALS.saturating_sub(1));
+    let i = u64::from(interval);
+    i >= first && i <= last
+}
+
+/// True when this node is the proposer of `tick.slot + 1`.
+pub fn proposes_next_slot(owner: &ChainOwner, tick: DutyTick) -> bool {
+    let n = owner
+        .head_state
+        .as_ref()
+        .map(|s| s.validators.len() as u64)
+        .unwrap_or(0);
+    is_assigned_proposer(owner, tick.slot.get() + 1, n)
+}
+
+/// Keep the prover free for the next slot's block: it is already proving a
+/// block, or this node proposes N+1 and the early-build window has opened.
+pub fn prover_reserved_for_block(owner: &ChainOwner, tick: DutyTick) -> bool {
+    if owner.local_finality || owner.prover.is_none() {
+        return false;
+    }
+    if owner.prover.as_ref().is_some_and(|p| p.block_in_flight()) {
+        return true;
+    }
+    in_early_proposal_window(owner, tick.interval) && proposes_next_slot(owner, tick)
+}
+
+/// During the last two intervals of a slot, start the next slot's block when we
 /// propose it. The Type-2 merge takes seconds at leanVM `e2592df4`; starting
-/// one interval early lets it overlap the boundary. Import and gossip still
+/// two intervals early lets it overlap the boundary. Import and gossip still
 /// wait until the wall clock reaches the block's slot
 /// ([`crate::proof_collect::release_deferred_block`]).
 pub fn try_plan_next_slot_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Vec<ChainEvent> {
-    let last_interval = owner
-        .profile
-        .as_ref()
-        .map(|p| p.intervals_per_slot.saturating_sub(1));
     if owner.local_finality
         || owner.prover.is_none()
-        || last_interval != Some(u64::from(tick.interval))
+        || !in_early_proposal_window(owner, tick.interval)
     {
         return Vec::new();
     }
@@ -157,7 +201,7 @@ pub fn try_plan_next_slot_proposal(owner: &mut ChainOwner, tick: DutyTick) -> Ve
 fn request_block_proof(
     owner: &mut ChainOwner,
     tick: DutyTick,
-    plan: PlanTransition,
+    mut plan: PlanTransition,
 ) -> Result<Vec<ChainEvent>, String> {
     if owner
         .prover
@@ -169,17 +213,12 @@ fn request_block_proof(
     }
     let state = owner.head_state.as_ref().ok_or("no head state")?;
     let proposer_key = proposal_key(state, plan.block.proposer_index.get())?;
-    let mut attestation_proofs = Vec::with_capacity(plan.attestation_proofs.len());
-    for (attestation, proof) in plan
-        .block
-        .body
-        .attestations
-        .iter()
-        .zip(&plan.attestation_proofs)
-    {
+    let proofs = std::mem::take(&mut plan.attestation_proofs);
+    let mut attestation_proofs = Vec::with_capacity(proofs.len());
+    for (attestation, proof) in plan.block.body.attestations.iter().zip(proofs) {
         attestation_proofs.push(KeyedProof {
             public_keys: attestation_keys_for_bits(state, &attestation.aggregation_bits.bits)?,
-            proof: proof.clone(),
+            proof,
         });
     }
     let root = plan.block_root()?;
@@ -248,7 +287,7 @@ pub fn accept_block_proof(
     aggregation: std::time::Duration,
 ) -> Result<Vec<ChainEvent>, String> {
     let pre = proof_pre_state(owner, &plan)?;
-    let profile = owner.profile.clone().ok_or("no profile")?;
+    let profile = owner.profile.as_ref().ok_or("no profile")?;
     plan.aggregate_proof = proof;
     let signed = assemble_signed_block(&plan)?;
     let ctx = TransitionContext::new(profile.clone());

@@ -130,7 +130,7 @@ fn a_slot_with_a_block_proof_in_flight_is_not_replanned() {
 }
 
 #[test]
-fn next_slot_build_only_runs_in_the_last_interval_with_a_prover() {
+fn next_slot_build_only_runs_in_the_last_two_intervals_with_a_prover() {
     let mut owner = owner_at_slot_one();
     let last = DutyTick {
         slot: Slot::new(0),
@@ -143,13 +143,42 @@ fn next_slot_build_only_runs_in_the_last_interval_with_a_prover() {
     );
     owner.local_finality = true;
     assert!(try_plan_next_slot_proposal(&mut owner, last).is_empty());
-    let early = DutyTick {
-        interval: 3,
+    owner.local_finality = false;
+    assert!(in_early_proposal_window(&owner, 3));
+    assert!(in_early_proposal_window(&owner, 4));
+    assert!(!in_early_proposal_window(&owner, 2));
+    assert!(try_plan_next_slot_proposal(&mut owner, last).is_empty());
+    let too_early = DutyTick {
+        interval: 2,
         ..last
     };
-    owner.local_finality = false;
-    assert!(try_plan_next_slot_proposal(&mut owner, early).is_empty());
+    assert!(try_plan_next_slot_proposal(&mut owner, too_early).is_empty());
     assert!(owner.planned_proposal.is_none());
+}
+
+#[test]
+fn next_slot_assignment_drives_the_early_window_reservation() {
+    let mut owner = owner_at_slot_one();
+    let window = DutyTick {
+        slot: Slot::new(0),
+        interval: 3,
+        generation: 1,
+    };
+    owner.owned_validator_indices = vec![1];
+    assert!(proposes_next_slot(&owner, window));
+    assert!(
+        !prover_reserved_for_block(&owner, window),
+        "no prover process, so nothing to reserve"
+    );
+    owner.owned_validator_indices = vec![0];
+    assert!(!proposes_next_slot(&owner, window));
+    let before = DutyTick {
+        interval: 2,
+        ..window
+    };
+    owner.owned_validator_indices = vec![1];
+    assert!(proposes_next_slot(&owner, before));
+    assert!(!in_early_proposal_window(&owner, before.interval));
 }
 
 #[test]

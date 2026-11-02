@@ -24,8 +24,8 @@ impl ProofVariant {
 /// message-root order; the selector re-sorts by target slot.
 pub fn candidates_from_pool(pool: &AggregatePool) -> Vec<(AttestationData, Vec<ProofVariant>)> {
     let mut out: Vec<(AttestationData, Vec<ProofVariant>)> = Vec::new();
-    for (key, _) in pool.best_entries() {
-        for entry in pool.variants(&key).unwrap_or_default() {
+    for key in pool.keys_by_message_root() {
+        for entry in pool.variants(&key).unwrap_or(&[]) {
             if entry.proof.is_empty() {
                 continue;
             }
@@ -34,7 +34,7 @@ pub fn candidates_from_pool(pool: &AggregatePool) -> Vec<(AttestationData, Vec<P
             };
             let variant = ProofVariant {
                 bits: att.aggregation_bits.bits,
-                proof: entry.proof,
+                proof: entry.proof.clone(),
             };
             match out.iter_mut().find(|(d, _)| *d == att.data) {
                 Some((_, list)) => list.push(variant),

@@ -81,9 +81,17 @@ impl AggregatePool {
         self.entries.is_empty()
     }
 
-    /// All retained variants for a key (insertion order).
-    pub fn variants(&self, key: &PoolKey) -> Option<Vec<PoolEntry>> {
-        self.entries.get(key).cloned()
+    /// All retained variants for a key (insertion order). Callers that keep a
+    /// proof clone only the entries they select.
+    pub fn variants(&self, key: &PoolKey) -> Option<&[PoolEntry]> {
+        self.entries.get(key).map(|v| v.as_slice())
+    }
+
+    /// Pool keys in message-root order (no proof copies).
+    pub fn keys_by_message_root(&self) -> Vec<PoolKey> {
+        let mut out: Vec<PoolKey> = self.entries.keys().copied().collect();
+        out.sort_by_key(|k| k.message_root);
+        out
     }
 
     /// Keys holding at least two variants, one of them inserted at or after
@@ -174,6 +182,9 @@ mod tests {
         assert_eq!(best.len(), 2);
         assert_eq!(best[0].0.message_root, [3u8; 32]);
         assert_eq!(best[1].0.message_root, [9u8; 32]);
+        let keys = pool.keys_by_message_root();
+        assert_eq!(keys[0].message_root, [3u8; 32]);
+        assert_eq!(keys[1].message_root, [9u8; 32]);
     }
 
     #[test]

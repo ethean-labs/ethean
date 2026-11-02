@@ -5,7 +5,7 @@ use crate::{Error, Result};
 use ethean_primitives::Hash32;
 use ethean_storage::SCHEMA_ID;
 use ethean_types::State;
-use redb::{Database, ReadableTable, TableDefinition};
+use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use tracing::info;
 
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("ethean_meta");
@@ -33,11 +33,18 @@ fn map_redb(err: impl std::fmt::Display) -> Error {
 fn open_db(paths: &PersistPaths) -> Result<Database> {
     paths.ensure_dir()?;
     let path = paths.redb();
-    if path.exists() {
-        Database::open(&path).map_err(map_redb)
+    let opened = if path.exists() {
+        Database::open(&path)
     } else {
-        Database::create(&path).map_err(map_redb)
-    }
+        Database::create(&path)
+    };
+    opened.map_err(|e| match e {
+        redb::DatabaseError::UpgradeRequired(_) => Error::Config(format!(
+            "ethean.redb at {} is an older redb format; redb 4 cannot open it. Delete that file or reset --data-dir",
+            path.display()
+        )),
+        other => map_redb(other),
+    })
 }
 
 /// Store genesis SSZ, head root, head state, and any block blobs.

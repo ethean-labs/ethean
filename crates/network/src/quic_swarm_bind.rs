@@ -32,7 +32,7 @@ pub(crate) fn build_gossipsub(_keypair: &identity::Keypair) -> NetResult<gossips
         .gossip_lazy(GOSSIP_LAZY)
         .history_length(HISTORY_LENGTH)
         .history_gossip(HISTORY_GOSSIP)
-        .max_messages_per_rpc(Some(MAX_MESSAGES_PER_RPC))
+        .max_publish_messages(MAX_MESSAGES_PER_RPC)
         .duplicate_cache_time(SEEN_TTL)
         .validation_mode(ValidationMode::Anonymous)
         .allow_self_origin(true)

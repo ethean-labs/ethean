@@ -251,6 +251,18 @@ impl ChainOwner {
         generation == self.generation && parent_root == self.head_root
     }
 
+    /// Queue a vote or aggregate for gossip publish. Drops the oldest when full.
+    pub fn queue_aggregation_gossip(
+        &mut self,
+        gossip: crate::aggregation_gossip::AggregationGossip,
+    ) {
+        const CAP: usize = crate::aggregation_gossip::MAX_PENDING_AGGREGATION_GOSSIP;
+        if self.pending_aggregation_gossip.len() >= CAP {
+            self.pending_aggregation_gossip.remove(0);
+        }
+        self.pending_aggregation_gossip.push(gossip);
+    }
+
     /// Queue a block blob for durable flush (capped; newest wins on duplicate root).
     pub fn remember_durable_block(&mut self, root: Hash32, payload: Vec<u8>) {
         const CAP: usize = 64;

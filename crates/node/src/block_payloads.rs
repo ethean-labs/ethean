@@ -52,7 +52,10 @@ pub fn seed_known_payloads(
             .is_some_and(|p| p.attestation_in_flight(&data_root));
         // Defer Split while a Type-2 block proof is in flight so the critical
         // path is not queued behind reaggregation on a busy host.
-        let block_busy = owner.prover.as_ref().is_some_and(|p| p.block_in_flight());
+        let block_busy = owner.prover.as_ref().is_some_and(|p| p.block_in_flight())
+            || owner
+                .last_tick
+                .is_some_and(|t| crate::duty_propose::prover_reserved_for_block(owner, t));
         if covered || in_flight || block_busy {
             continue;
         }

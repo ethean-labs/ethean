@@ -59,29 +59,17 @@ pub fn ingest_blocks_by_root_response(
             );
             continue;
         };
-        if let Some(facade) = swarm.as_deref_mut() {
-            #[cfg(feature = "libp2p-quic")]
-            {
-                let _ = facade.put_block_bytes(decoded.root, blob.clone());
-                let _ =
-                    facade.put_block_at_slot(decoded.block.slot.get(), decoded.root, blob.clone());
-            }
-            #[cfg(not(feature = "libp2p-quic"))]
-            {
-                let _ = facade;
-            }
-        }
         owner.last_gossip_root = Some(decoded.root);
         out.events.push(ChainEvent::GossipIngested {
             topic: SYNC_BLOCK_TOPIC.to_string(),
             content_root: decoded.root,
         });
 
+        let slot = decoded.signed.block.slot.get();
         let stf = import_decoded_block(owner, shutdown, &decoded);
         match stf {
             GossipStfResult::Skipped
-                if !owner.can_import_parent(decoded.parent)
-                    && decoded.block.slot.get() > owner.finalized_slot() =>
+                if !owner.can_import_parent(decoded.parent) && slot > owner.finalized_slot() =>
             {
                 info!(
                     peer0 = peer[0],
@@ -98,14 +86,15 @@ pub fn ingest_blocks_by_root_response(
                 );
             }
             GossipStfResult::Applied { .. } => {
-                owner.remember_durable_block(decoded.root, blob.clone());
+                serve_verified_blob(swarm.as_deref_mut(), decoded.root, slot, &blob);
+                owner.remember_durable_block(decoded.root, blob);
                 info!(
                     peer0 = peer[0],
                     root0 = decoded.root[0],
                     ?stf,
                     "sync block imported"
                 );
-                drain_orphans(owner, shutdown, &mut out.events);
+                drain_orphans(owner, shutdown, swarm.as_deref_mut(), &mut out.events);
             }
             GossipStfResult::Skipped | GossipStfResult::Rejected { .. } => {
                 info!(
@@ -149,7 +138,7 @@ pub fn buffer_gossip_orphans(
         };
         if known(&decoded.root)
             || owner.can_import_parent(decoded.parent)
-            || decoded.block.slot.get() <= owner.finalized_slot()
+            || decoded.signed.block.slot.get() <= owner.finalized_slot()
         {
             continue;
         }
@@ -169,7 +158,22 @@ pub fn buffer_gossip_orphans(
     requests
 }
 
-fn drain_orphans(owner: &mut ChainOwner, shutdown: &ShutdownState, events: &mut Vec<ChainEvent>) {
+/// Serve cache is filled only after `import_decoded_block` succeeds. Peers
+/// must not be able to fetch a blob we have not verified (ethlambda #545).
+fn serve_verified_blob(swarm: Option<&mut SwarmFacade>, root: Hash32, slot: u64, blob: &[u8]) {
+    let Some(facade) = swarm else {
+        return;
+    };
+    let _ = facade.put_block_bytes(root, blob.to_vec());
+    let _ = facade.put_block_at_slot(slot, root, blob.to_vec());
+}
+
+fn drain_orphans(
+    owner: &mut ChainOwner,
+    shutdown: &ShutdownState,
+    mut swarm: Option<&mut SwarmFacade>,
+    events: &mut Vec<ChainEvent>,
+) {
     loop {
         let parents: Vec<Hash32> = {
             let mut p = vec![owner.head_root];
@@ -192,7 +196,13 @@ fn drain_orphans(owner: &mut ChainOwner, shutdown: &ShutdownState, events: &mut 
             let stf = import_decoded_block(owner, shutdown, &decoded);
             match stf {
                 GossipStfResult::Applied { .. } => {
-                    owner.remember_durable_block(root, orphan.blob.clone());
+                    serve_verified_blob(
+                        swarm.as_deref_mut(),
+                        root,
+                        decoded.signed.block.slot.get(),
+                        &orphan.blob,
+                    );
+                    owner.remember_durable_block(root, orphan.blob);
                     events.push(ChainEvent::GossipIngested {
                         topic: SYNC_BLOCK_TOPIC.to_string(),
                         content_root: root,
@@ -244,6 +254,10 @@ mod tests {
         assert_eq!(
             owner.head_root, [0u8; 32],
             "no state and no proof: head unchanged"
+        );
+        assert!(
+            owner.durable_blocks.is_empty(),
+            "unverified sync blobs are not stored for serving"
         );
     }
 
