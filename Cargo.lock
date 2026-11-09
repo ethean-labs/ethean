@@ -1556,7 +1556,7 @@ dependencies = [
  "getrandom 0.3.4",
  "serde",
  "sha2 0.10.9",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1568,7 +1568,7 @@ dependencies = [
  "ethean-ssz",
  "ethean-transition",
  "ethean-types",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1581,7 +1581,7 @@ dependencies = [
  "ethean-types",
  "serde",
  "serde_yaml",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1589,7 +1589,7 @@ name = "ethean-metrics"
 version = "0.1.75"
 dependencies = [
  "ethean-primitives",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tracing",
 ]
@@ -1601,7 +1601,7 @@ dependencies = [
  "ethean-crypto",
  "lean-multisig",
  "leansig_wrapper",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1617,7 +1617,7 @@ dependencies = [
  "rand 0.8.8",
  "rlp",
  "sha2 0.10.9",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tracing",
 ]
@@ -1629,7 +1629,7 @@ dependencies = [
  "ethean-primitives",
  "sha2 0.10.9",
  "snap",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1663,7 +1663,7 @@ dependencies = [
  "serde_yaml",
  "sha2 0.10.9",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -1674,7 +1674,7 @@ name = "ethean-primitives"
 version = "0.1.75"
 dependencies = [
  "serde",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1683,7 +1683,7 @@ version = "0.1.75"
 dependencies = [
  "ethean-primitives",
  "serde",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1701,7 +1701,7 @@ dependencies = [
  "ethean-primitives",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tracing",
 ]
@@ -1722,7 +1722,7 @@ dependencies = [
  "ethean-types",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1730,7 +1730,7 @@ name = "ethean-ssz"
 version = "0.1.75"
 dependencies = [
  "sha2 0.10.9",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1741,7 +1741,7 @@ dependencies = [
  "rocksdb",
  "sha2 0.10.9",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1750,7 +1750,7 @@ version = "0.1.75"
 dependencies = [
  "ethean-network-wire",
  "ethean-primitives",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1762,7 +1762,7 @@ dependencies = [
  "ethean-profile",
  "ethean-ssz",
  "ethean-types",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1772,7 +1772,7 @@ dependencies = [
  "ethean-primitives",
  "ethean-profile",
  "ethean-ssz",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1784,7 +1784,7 @@ dependencies = [
  "ethean-profile",
  "serde",
  "sha2 0.10.9",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
